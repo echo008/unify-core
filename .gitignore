@@ -1,0 +1,50 @@
+# Kotlin/Java/Gradle
+.gradle/
+.build/
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# IntelliJ IDEA / Android Studio
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# macOS
+.DS_Store
+
+# Android
+local.properties
+.cxx/
+**/captures/
+*.keystore
+*.jks
+
+# iOS/Xcode
+*.xcuserdatad/
+*.xcworkspace/
+DerivedData/
+Pods/
+
+# Node/Web
+node_modules/
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+
+# Kotlin/Native
+.konan/
+
+# Logs
+*.log
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+
+# Misc
+/.env
+.env.*
