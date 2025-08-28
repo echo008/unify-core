@@ -74,6 +74,10 @@ kotlin {
 
                 implementation(libs.navigation.compose)
                 implementation(libs.lifecycle.viewmodel)
+
+                // 性能监控和测试依赖
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.4.1")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
             }
         }
         val androidMain by getting {
