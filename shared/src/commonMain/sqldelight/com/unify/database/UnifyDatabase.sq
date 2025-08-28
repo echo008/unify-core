@@ -1,0 +1,147 @@
+-- Unify KMP Database Schema
+-- 基于文档要求的SQLDelight数据库设计
+
+-- 用户信息表
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    displayName TEXT NOT NULL,
+    avatarUrl TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    isActive INTEGER NOT NULL DEFAULT 1
+);
+
+-- 应用配置表
+CREATE TABLE AppConfig (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'STRING',
+    updatedAt INTEGER NOT NULL
+);
+
+-- 缓存数据表
+CREATE TABLE CacheData (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    expiresAt INTEGER,
+    createdAt INTEGER NOT NULL
+);
+
+-- 性能监控数据表
+CREATE TABLE PerformanceMetrics (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    componentId TEXT NOT NULL,
+    metricType TEXT NOT NULL,
+    value REAL NOT NULL,
+    timestamp INTEGER NOT NULL,
+    platform TEXT NOT NULL
+);
+
+-- 错误日志表
+CREATE TABLE ErrorLog (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    errorType TEXT NOT NULL,
+    message TEXT NOT NULL,
+    stackTrace TEXT,
+    timestamp INTEGER NOT NULL,
+    platform TEXT NOT NULL,
+    userId INTEGER,
+    FOREIGN KEY(userId) REFERENCES User(id)
+);
+
+-- 用户查询
+selectAllUsers:
+SELECT * FROM User WHERE isActive = 1 ORDER BY createdAt DESC;
+
+selectUserById:
+SELECT * FROM User WHERE id = ?;
+
+selectUserByUsername:
+SELECT * FROM User WHERE username = ? AND isActive = 1;
+
+selectUserByEmail:
+SELECT * FROM User WHERE email = ? AND isActive = 1;
+
+insertUser:
+INSERT INTO User(username, email, displayName, avatarUrl, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateUser:
+UPDATE User SET 
+    email = ?, 
+    displayName = ?, 
+    avatarUrl = ?, 
+    updatedAt = ?
+WHERE id = ?;
+
+deleteUser:
+UPDATE User SET isActive = 0, updatedAt = ? WHERE id = ?;
+
+-- 配置查询
+selectAllConfigs:
+SELECT * FROM AppConfig ORDER BY key;
+
+selectConfigByKey:
+SELECT * FROM AppConfig WHERE key = ?;
+
+insertOrReplaceConfig:
+INSERT OR REPLACE INTO AppConfig(key, value, type, updatedAt)
+VALUES (?, ?, ?, ?);
+
+deleteConfig:
+DELETE FROM AppConfig WHERE key = ?;
+
+-- 缓存查询
+selectCacheByKey:
+SELECT * FROM CacheData WHERE key = ? AND (expiresAt IS NULL OR expiresAt > ?);
+
+insertOrReplaceCache:
+INSERT OR REPLACE INTO CacheData(key, value, expiresAt, createdAt)
+VALUES (?, ?, ?, ?);
+
+deleteExpiredCache:
+DELETE FROM CacheData WHERE expiresAt IS NOT NULL AND expiresAt <= ?;
+
+deleteCacheByKey:
+DELETE FROM CacheData WHERE key = ?;
+
+clearAllCache:
+DELETE FROM CacheData;
+
+-- 性能监控查询
+selectPerformanceMetrics:
+SELECT * FROM PerformanceMetrics 
+WHERE componentId = ? AND timestamp >= ? 
+ORDER BY timestamp DESC;
+
+insertPerformanceMetric:
+INSERT INTO PerformanceMetrics(componentId, metricType, value, timestamp, platform)
+VALUES (?, ?, ?, ?, ?);
+
+deleteOldPerformanceMetrics:
+DELETE FROM PerformanceMetrics WHERE timestamp < ?;
+
+-- 错误日志查询
+selectErrorLogs:
+SELECT * FROM ErrorLog 
+WHERE timestamp >= ? 
+ORDER BY timestamp DESC 
+LIMIT ?;
+
+selectErrorLogsByType:
+SELECT * FROM ErrorLog 
+WHERE errorType = ? AND timestamp >= ? 
+ORDER BY timestamp DESC;
+
+insertErrorLog:
+INSERT INTO ErrorLog(errorType, message, stackTrace, timestamp, platform, userId)
+VALUES (?, ?, ?, ?, ?, ?);
+
+deleteOldErrorLogs:
+DELETE FROM ErrorLog WHERE timestamp < ?;
+
+-- 获取最后插入的行ID
+selectLastInsertRowId:
+SELECT last_insert_rowid();
