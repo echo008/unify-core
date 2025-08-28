@@ -2,6 +2,11 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
+}
+
+repositories {
+    google()
 }
 
 android {
@@ -65,6 +70,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.material3:material3")
     implementation(project(":shared"))
     
     // Compose BOM
@@ -77,8 +83,8 @@ dependencies {
     // Android Core
     implementation(libs.androidx.core)
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.lifecycle.runtime)
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.lifecycle.runtime)
+    implementation(libs.lifecycle.viewmodel.ktx)
     
     // Koin
     implementation(libs.koin.android)

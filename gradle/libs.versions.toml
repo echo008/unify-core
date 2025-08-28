@@ -2,7 +2,7 @@
 kotlin = "2.0.21"
 compose = "1.7.0"
 ktor = "2.3.7"
-sqldelight = "2.0.1"
+sqldelight = "2.1.0"
 koin = "3.5.3"
 navigation = "2.7.0-alpha07"
 lifecycle = "2.8.0"
@@ -20,8 +20,10 @@ coil = "2.5.0"
 logback = "1.4.14"
 
 [libraries]
+
 # Kotlin & Testing
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
@@ -83,13 +85,17 @@ coil-network = { module = "io.coil-kt:coil-network-okhttp", version.ref = "coil"
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 
 [plugins]
+
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
 android-application = { id = "com.android.application", version = "8.2.2" }
 android-library = { id = "com.android.library", version = "8.2.2" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
+koin = { id = "io.insert-koin", version.ref = "koin" }
 room = { id = "androidx.room", version.ref = "room" }
 ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.25" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.4" }
