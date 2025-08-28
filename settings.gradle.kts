@@ -20,4 +20,8 @@ dependencyResolutionManagement {
 
 rootProject.name = "unify-kmp"
 include(":shared")
+include(":androidApp")
+include(":iosApp")
+include(":webApp")
+include(":electronApp")
 include(":miniAppBridge")

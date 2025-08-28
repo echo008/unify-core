@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Unify KMP</string>
+    <string name="app_description">基于Kotlin Multiplatform的跨平台应用框架</string>
+    
+    <!-- 通用文本 -->
+    <string name="loading">加载中...</string>
+    <string name="error">错误</string>
+    <string name="retry">重试</string>
+    <string name="cancel">取消</string>
+    <string name="confirm">确认</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="back">返回</string>
+    
+    <!-- 用户相关 -->
+    <string name="user_list">用户列表</string>
+    <string name="user_detail">用户详情</string>
+    <string name="create_user">创建用户</string>
+    <string name="username">用户名</string>
+    <string name="email">邮箱</string>
+    <string name="display_name">显示名称</string>
+    
+    <!-- 错误信息 -->
+    <string name="network_error">网络连接错误</string>
+    <string name="database_error">数据库错误</string>
+    <string name="unknown_error">未知错误</string>
+</resources>
