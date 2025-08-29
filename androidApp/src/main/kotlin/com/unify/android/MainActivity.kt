@@ -6,8 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.unify.android.di.AndroidDI
-import com.unify.examples.HelloWorldScreen
-import com.unify.examples.initializeHelloWorldTranslations
+import com.unify.helloworld.HelloWorldApp
+import com.unify.helloworld.PlatformInfo
 import com.unify.ui.theme.UnifyTheme
 
 /**
@@ -21,13 +21,10 @@ class MainActivity : ComponentActivity() {
         // 初始化依赖注入
         AndroidDI.initialize(this)
         
-        // 初始化Hello World翻译
-        initializeHelloWorldTranslations()
-        
         setContent {
-            UnifyTheme {
-                HelloWorldScreen()
-            }
+            HelloWorldApp(
+                platformName = PlatformInfo.getPlatformName()
+            )
         }
     }
 }
@@ -35,15 +32,11 @@ class MainActivity : ComponentActivity() {
 @Preview
 @Composable
 fun AppAndroidPreview() {
-    UnifyTheme {
-        HelloWorldScreen()
-    }
+    HelloWorldApp(platformName = "Android Preview")
 }
 
 @Preview(showBackground = true)
 @Composable
 fun UnifyAndroidAppPreview() {
-    UnifyTheme {
-        HelloWorldScreen()
-    }
+    HelloWorldApp(platformName = "Android")
 }

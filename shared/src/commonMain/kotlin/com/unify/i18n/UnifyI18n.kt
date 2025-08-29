@@ -247,27 +247,27 @@ enum class Locale(val code: String, val displayName: String) {
 /**
  * 国际化资源管理器
  */
-class I18nResourceManager {
+expect class I18nResourceManager() {
     
     /**
      * 从平台特定位置加载翻译资源
      */
-    expect suspend fun loadTranslationsFromAssets(locale: Locale, fileName: String): String?
+    suspend fun loadTranslationsFromAssets(locale: Locale, fileName: String): String?
     
     /**
      * 获取系统默认语言
      */
-    expect fun getSystemLocale(): Locale
+    fun getSystemLocale(): Locale
     
     /**
      * 保存用户选择的语言设置
      */
-    expect suspend fun saveLocalePreference(locale: Locale)
+    suspend fun saveLocalePreference(locale: Locale)
     
     /**
      * 加载用户选择的语言设置
      */
-    expect suspend fun loadLocalePreference(): Locale?
+    suspend fun loadLocalePreference(): Locale?
 }
 
 /**
@@ -276,7 +276,7 @@ class I18nResourceManager {
 @androidx.compose.runtime.Composable
 fun rememberI18nString(key: String, vararg args: Any): String {
     val locale by UnifyI18n.currentLocale.collectAsState()
-    return remember(key, locale, *args) {
+    return androidx.compose.runtime.remember(key, locale, *args) {
         UnifyI18n.getString(key, *args)
     }
 }
@@ -284,7 +284,7 @@ fun rememberI18nString(key: String, vararg args: Any): String {
 @androidx.compose.runtime.Composable
 fun rememberI18nString(key: String, defaultValue: String, vararg args: Any): String {
     val locale by UnifyI18n.currentLocale.collectAsState()
-    return remember(key, defaultValue, locale, *args) {
+    return androidx.compose.runtime.remember(key, defaultValue, locale, *args) {
         UnifyI18n.getString(key, defaultValue, *args)
     }
 }
