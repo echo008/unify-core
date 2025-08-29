@@ -44,8 +44,19 @@ kotlin {
     // Android 目标
     androidTarget()
     
-    // JVM 目标 (桌面端)
-    jvm("desktop")
+    // JVM 目标 (桌面端) - 暂时禁用，使用独立桌面应用
+    // 注意：Kotlin 2.0.21 + Compose Desktop存在编译器内部错误
+    // 解决方案：创建独立的desktopApp模块，避免shared模块依赖冲突
+    // jvm("desktop") {
+    //     compilations.all {
+    //         compileTaskProvider.configure {
+    //             compilerOptions {
+    //                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    //                 freeCompilerArgs.add("-Xjvm-default=all")
+    //             }
+    //         }
+    //     }
+    // }
     
     // iOS 目标
     listOf(
@@ -117,12 +128,13 @@ kotlin {
             }
         }
         
-        val desktopMain by getting {
-            dependencies {
-                implementation(libs.ktor.client.cio)
-                implementation(libs.sqldelight.native)
-            }
-        }
+        // 桌面端依赖禁用，使用独立桌面应用
+        // val desktopMain by getting {
+        //     dependencies {
+        //         implementation(libs.ktor.client.cio)
+        //         implementation(compose.desktop.currentOs)
+        //     }
+        // }
         
         val commonTest by getting {
             dependencies {

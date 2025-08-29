@@ -3,40 +3,30 @@ package com.unify.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import com.unify.android.di.AndroidDI
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Modifier
 import com.unify.helloworld.HelloWorldApp
-import com.unify.helloworld.PlatformInfo
-import com.unify.ui.theme.UnifyTheme
 
 /**
- * Android平台主Activity
- * 集成Unify KMP框架的示例应用
+ * Android应用主Activity
+ * 使用Jetpack Compose实现UI
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // 初始化依赖注入
-        AndroidDI.initialize(this)
-        
         setContent {
-            HelloWorldApp(
-                platformName = PlatformInfo.getPlatformName()
-            )
+            MaterialTheme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    HelloWorldApp(platformName = "Android")
+                }
+            }
         }
     }
 }
 
-@Preview
-@Composable
-fun AppAndroidPreview() {
-    HelloWorldApp(platformName = "Android Preview")
-}
 
-@Preview(showBackground = true)
-@Composable
-fun UnifyAndroidAppPreview() {
-    HelloWorldApp(platformName = "Android")
-}

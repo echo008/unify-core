@@ -5,10 +5,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-repositories {
-    google()
-}
-
 android {
     namespace = "com.unify.android"
     compileSdk = 34
@@ -70,15 +66,14 @@ android {
 }
 
 dependencies {
-    implementation("androidx.material3:material3")
     implementation(project(":shared"))
     
-    // Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2024.02.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.ui:ui-graphics")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material3:material3")
+    // Compose BOM - 统一版本管理
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
     
     // Android Core
     implementation(libs.androidx.core)
@@ -92,7 +87,7 @@ dependencies {
     
     // Testing
     testImplementation(libs.kotlin.test)
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    androidTestImplementation(libs.compose.ui.test.junit4)
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 }

@@ -44,7 +44,6 @@ class HelloWorldLogic {
  * 跨平台Hello World主界面
  * 使用Compose Multiplatform实现
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelloWorldApp(
     platformName: String = "Unknown",
