@@ -190,10 +190,8 @@ fun MyScreen(viewModel: MyViewModel = koinInject()) {
 
 ## 📚 文档
 
-- 📖 [开发设计指导](开发设计指导.md) - 详细的架构设计和实现指南
-- 📋 [项目实施总结](PROJECT_IMPLEMENTATION_SUMMARY.md) - 完整的项目实施报告
-- 🔧 [API 文档](docs/api/) - 详细的 API 参考文档
-- 💡 [示例代码](shared/src/commonMain/kotlin/com/unify/sample/) - 完整的示例应用
+- 📖 [架构文档](docs/ARCHITECTURE.md) - 详细的架构设计和实现指南
+- 📋 [API参考](docs/API_REFERENCE.md) - 完整的API文档
 
 ## 🤝 贡献指南
 

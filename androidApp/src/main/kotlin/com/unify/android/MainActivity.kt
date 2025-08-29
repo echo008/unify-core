@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.unify.helloworld.HelloWorldApp
+import com.unify.helloworld.PlatformInfo
 
 /**
  * Android应用主Activity
@@ -22,11 +23,9 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    HelloWorldApp(platformName = "Android")
+                    HelloWorldApp(platformName = PlatformInfo.getPlatformName())
                 }
             }
         }
     }
 }
-
-
