@@ -51,7 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unify.ui.theme.UnifyTheme
+import com.unify.ui.theme.UnifyThemeAccessor
 
 /**
  * 统一按钮组件 - 支持多种样式
@@ -70,23 +70,23 @@ fun UnifyButton(
 ) {
     val buttonColors = when (variant) {
         ButtonVariant.Primary -> ButtonColors(
-            backgroundColor = UnifyTheme.colors.primary,
-            contentColor = UnifyTheme.colors.onPrimary,
-            disabledBackgroundColor = UnifyTheme.colors.primary.copy(alpha = 0.38f),
-            disabledContentColor = UnifyTheme.colors.onPrimary.copy(alpha = 0.38f)
+            backgroundColor = UnifyThemeAccessor.colors.primary,
+            contentColor = UnifyThemeAccessor.colors.onPrimary,
+            disabledBackgroundColor = UnifyThemeAccessor.colors.primary.copy(alpha = 0.38f),
+            disabledContentColor = UnifyThemeAccessor.colors.onPrimary.copy(alpha = 0.38f)
         )
         ButtonVariant.Secondary -> ButtonColors(
-            backgroundColor = UnifyTheme.colors.secondary,
-            contentColor = UnifyTheme.colors.onSecondary,
-            disabledBackgroundColor = UnifyTheme.colors.secondary.copy(alpha = 0.38f),
-            disabledContentColor = UnifyTheme.colors.onSecondary.copy(alpha = 0.38f)
+            backgroundColor = UnifyThemeAccessor.colors.secondary,
+            contentColor = UnifyThemeAccessor.colors.onSecondary,
+            disabledBackgroundColor = UnifyThemeAccessor.colors.secondary.copy(alpha = 0.38f),
+            disabledContentColor = UnifyThemeAccessor.colors.onSecondary.copy(alpha = 0.38f)
         )
         ButtonVariant.Outlined -> ButtonColors(
             backgroundColor = Color.Transparent,
-            contentColor = UnifyTheme.colors.primary,
+            contentColor = UnifyThemeAccessor.colors.primary,
             disabledBackgroundColor = Color.Transparent,
-            disabledContentColor = UnifyTheme.colors.primary.copy(alpha = 0.38f),
-            borderColor = UnifyTheme.colors.primary
+            disabledContentColor = UnifyThemeAccessor.colors.primary.copy(alpha = 0.38f),
+            borderColor = UnifyThemeAccessor.colors.primary
         )
     }
 
@@ -105,9 +105,9 @@ fun UnifyButton(
     Surface(
         modifier = modifier
             .defaultMinSize(minHeight = buttonHeight)
-            .clip(RoundedCornerShape(UnifyTheme.shapes.medium.dp)),
+            .clip(RoundedCornerShape(UnifyThemeAccessor.shapes.medium.dp)),
         color = if (enabled) buttonColors.backgroundColor else buttonColors.disabledBackgroundColor,
-        shape = RoundedCornerShape(UnifyTheme.shapes.medium.dp),
+        shape = RoundedCornerShape(UnifyThemeAccessor.shapes.medium.dp),
         border = if (variant == ButtonVariant.Outlined) {
             BorderStroke(1.dp, buttonColors.borderColor ?: Color.Transparent)
         } else {
@@ -144,7 +144,7 @@ fun UnifyButton(
                     Text(
                         text = text,
                         color = if (enabled) buttonColors.contentColor else buttonColors.disabledContentColor,
-                        style = UnifyTheme.typography.button.copy(fontSize = when (size) {
+                        style = UnifyThemeAccessor.typography.button.copy(fontSize = when (size) {
                             ButtonSize.Small -> 12.sp
                             ButtonSize.Medium -> 14.sp
                             ButtonSize.Large -> 16.sp
@@ -189,7 +189,7 @@ fun UnifyTextField(
         label?.let {
             Text(
                 text = it,
-                style = UnifyTheme.typography.body2.copy(color = UnifyTheme.colors.onSurface),
+                style = UnifyThemeAccessor.typography.body2.copy(color = UnifyThemeAccessor.colors.onSurface),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
         }
@@ -199,16 +199,16 @@ fun UnifyTextField(
                 .border(
                     width = 1.dp,
                     color = when {
-                        isError -> UnifyTheme.colors.error
-                        !enabled -> UnifyTheme.colors.onSurface.copy(alpha = 0.12f)
-                        else -> UnifyTheme.colors.onSurface.copy(alpha = 0.24f)
+                        isError -> UnifyThemeAccessor.colors.error
+                        !enabled -> UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.12f)
+                        else -> UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.24f)
                     },
-                    shape = RoundedCornerShape(UnifyTheme.shapes.small.dp)
+                    shape = RoundedCornerShape(UnifyThemeAccessor.shapes.small.dp)
                 )
                 .background(
-                    color = if (enabled) UnifyTheme.colors.surface 
-                           else UnifyTheme.colors.onSurface.copy(alpha = 0.04f),
-                    shape = RoundedCornerShape(UnifyTheme.shapes.small.dp)
+                    color = if (enabled) UnifyThemeAccessor.colors.surface 
+                           else UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.04f),
+                    shape = RoundedCornerShape(UnifyThemeAccessor.shapes.small.dp)
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
@@ -219,7 +219,7 @@ fun UnifyTextField(
                 enabled = enabled,
                 singleLine = singleLine,
                 maxLines = maxLines,
-                textStyle = UnifyTheme.typography.body1.copy(color = UnifyTheme.colors.onSurface),
+                textStyle = UnifyThemeAccessor.typography.body1.copy(color = UnifyThemeAccessor.colors.onSurface),
                 keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
                 decorationBox = { innerTextField ->
                     Row(
@@ -231,7 +231,7 @@ fun UnifyTextField(
                                 imageVector = it,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                tint = UnifyTheme.colors.onSurface.copy(alpha = 0.6f)
+                                tint = UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.6f)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                         }
@@ -243,8 +243,8 @@ fun UnifyTextField(
                             if (value.isEmpty()) {
                                 Text(
                                     text = placeholder,
-                                    style = UnifyTheme.typography.body1.copy(
-                                        color = UnifyTheme.colors.onSurface.copy(alpha = 0.6f)
+                                    style = UnifyThemeAccessor.typography.body1.copy(
+                                        color = UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.6f)
                                     )
                                 )
                             }
@@ -257,7 +257,7 @@ fun UnifyTextField(
                                 imageVector = it,
                                 contentDescription = null,
                                 modifier = Modifier.size(20.dp),
-                                tint = UnifyTheme.colors.onSurface.copy(alpha = 0.6f)
+                                tint = UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.6f)
                             )
                         }
                     }
@@ -280,10 +280,10 @@ fun UnifyCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(UnifyTheme.shapes.medium.dp),
+        shape = RoundedCornerShape(UnifyThemeAccessor.shapes.medium.dp),
         colors = CardDefaults.cardColors(
-            containerColor = UnifyTheme.colors.surface,
-            contentColor = UnifyTheme.colors.onSurface
+            containerColor = UnifyThemeAccessor.colors.surface,
+            contentColor = UnifyThemeAccessor.colors.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
         onClick = onClick ?: {}
@@ -299,7 +299,7 @@ fun UnifyCard(
 fun UnifyLoadingIndicator(
     modifier: Modifier = Modifier,
     size: Dp = 48.dp,
-    color: Color = UnifyTheme.colors.primary
+    color: Color = UnifyThemeAccessor.colors.primary
 ) {
     Box(
         modifier = modifier,
@@ -319,7 +319,7 @@ fun UnifyLoadingIndicator(
 @Composable
 fun UnifyDivider(
     modifier: Modifier = Modifier,
-    color: Color = UnifyTheme.colors.onSurface.copy(alpha = 0.12f),
+    color: Color = UnifyThemeAccessor.colors.onSurface.copy(alpha = 0.12f),
     thickness: Dp = 1.dp
 ) {
     Spacer(

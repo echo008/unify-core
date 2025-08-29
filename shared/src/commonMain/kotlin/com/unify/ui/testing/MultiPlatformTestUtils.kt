@@ -1,16 +1,12 @@
 package com.unify.ui.testing
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.junit4.ComposeContentTestRule
-import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.datetime.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import com.unify.platform.PlatformType
 
 /**
  * 多平台测试工具类
@@ -209,52 +205,26 @@ data class PerformanceThreshold(
 /**
  * 平台类型枚举
  */
-enum class PlatformType {
-    ANDROID, IOS, WEB, DESKTOP
+data class TestCase(
+    val name: String,
+    val type: TestCaseType,
+    val target: String,
+    val inputValue: String? = null,
+    val expectedResult: () -> Boolean,
+    val performanceThreshold: Long? = null
+)
+
+/**
+ * 测试用例类型枚举
+ */
+enum class TestCaseType {
+    BUTTON_CLICK, TEXT_INPUT, PERFORMANCE
 }
 
 /**
- * Compose测试扩展函数
+ * 重试机制工具函数
  */
-fun ComposeContentTestRule.testButtonClick(
-    buttonText: String,
-    expectedResult: () -> Boolean
-) {
-    onNodeWithText(buttonText).performClick()
-    assert(expectedResult())
-}
-
-fun ComposeContentTestRule.testTextInput(
-    fieldTag: String,
-    inputText: String,
-    expectedResult: (String) -> Boolean
-) {
-    onNodeWithTag(fieldTag).performTextInput(inputText)
-    assert(expectedResult(inputText))
-}
-
-fun ComposeContentTestRule.testComponentPerformance(
-    componentTag: String,
-    iterations: Int = 10,
-    performanceCheck: (Long) -> Boolean
-) {
-    val times = mutableListOf<Long>()
-    
-    repeat(iterations) {
-        val startTime = System.currentTimeMillis()
-        onNodeWithTag(componentTag).performClick()
-        val endTime = System.currentTimeMillis()
-        times.add(endTime - startTime)
-    }
-    
-    val averageTime = times.average()
-    assert(performanceCheck(averageTime.toLong()))
-}
-
-/**
- * 异步测试支持
- */
-suspend fun <T> withRetry(
+suspend fun <T> retryWithDelay(
     retries: Int = 3,
     delay: Duration = 1.seconds,
     block: suspend () -> T

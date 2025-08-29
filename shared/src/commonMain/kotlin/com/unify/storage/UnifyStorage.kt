@@ -2,10 +2,10 @@ package com.unify.storage
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 
@@ -34,8 +34,8 @@ interface UnifyStorage {
     suspend fun getAllKeys(): Set<String>
     
     // 对象存储
-    suspend inline fun <reified T> getObject(key: String): T?
-    suspend inline fun <reified T> putObject(key: String, value: T)
+    suspend fun <T> getObject(key: String, serializer: KSerializer<T>): T?
+    suspend fun <T> putObject(key: String, value: T, serializer: KSerializer<T>)
     
     // 流式数据
     fun <T> observeKey(key: String): Flow<T?>
@@ -177,17 +177,17 @@ class MemoryStorage : UnifyStorage {
         return storage.keys.toSet()
     }
     
-    override suspend inline fun <reified T> getObject(key: String): T? {
+    override suspend fun <T> getObject(key: String, serializer: KSerializer<T>): T? {
         val json = getString(key) ?: return null
         return try {
-            Json.decodeFromString<T>(json)
+            Json.decodeFromString(serializer, json)
         } catch (e: Exception) {
             null
         }
     }
     
-    override suspend inline fun <reified T> putObject(key: String, value: T) {
-        val json = Json.encodeToString(value)
+    override suspend fun <T> putObject(key: String, value: T, serializer: KSerializer<T>) {
+        val json = Json.encodeToString(serializer, value)
         putString(key, json)
     }
     
@@ -271,17 +271,17 @@ class EncryptedStorage(
         return delegate.getAllKeys()
     }
     
-    override suspend inline fun <reified T> getObject(key: String): T? {
+    override suspend fun <T> getObject(key: String, serializer: KSerializer<T>): T? {
         val json = getString(key) ?: return null
         return try {
-            Json.decodeFromString<T>(json)
+            Json.decodeFromString(serializer, json)
         } catch (e: Exception) {
             null
         }
     }
     
-    override suspend inline fun <reified T> putObject(key: String, value: T) {
-        val json = Json.encodeToString(value)
+    override suspend fun <T> putObject(key: String, value: T, serializer: KSerializer<T>) {
+        val json = Json.encodeToString(serializer, value)
         putString(key, json)
     }
     
@@ -290,13 +290,6 @@ class EncryptedStorage(
     }
 }
 
-/**
- * 存储加密器接口
- */
-interface StorageEncryptor {
-    fun encrypt(data: String): String
-    fun decrypt(encryptedData: String): String
-}
 
 /**
  * 简单存储加密器实现（生产环境应使用更安全的实现）
@@ -355,7 +348,7 @@ abstract class StorageRepository<T>(
     }
     
     fun observe(id: String): Flow<T?> {
-        return storage.observeKey<String>(getKey(id))
+        return storage.observeKey(getKey(id))
     }
 }
 

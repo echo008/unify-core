@@ -151,36 +151,42 @@ fun UnifyTheme(
 ) {
     val theme = if (isDarkTheme) DarkUnifyTheme else LightUnifyTheme
     
-    MaterialTheme(
-        colorScheme = if (isDarkTheme) darkColorScheme() else lightColorScheme(),
-        typography = Typography(
-            displayLarge = theme.typography.h1,
-            displayMedium = theme.typography.h2,
-            displaySmall = theme.typography.h3,
-            headlineLarge = theme.typography.h4,
-            headlineMedium = theme.typography.h5,
-            headlineSmall = theme.typography.h6,
-            titleLarge = theme.typography.subtitle1,
-            titleMedium = theme.typography.subtitle2,
-            titleSmall = theme.typography.body1,
-            bodyLarge = theme.typography.body2,
-            bodyMedium = theme.typography.button,
-            bodySmall = theme.typography.caption,
-            labelLarge = theme.typography.overline
-        )
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalUnifyTheme provides theme
     ) {
-        content()
+        MaterialTheme(
+            colorScheme = if (isDarkTheme) darkColorScheme() else lightColorScheme(),
+            typography = Typography(
+                displayLarge = theme.typography.h1,
+                displayMedium = theme.typography.h2,
+                displaySmall = theme.typography.h3,
+                headlineLarge = theme.typography.h4,
+                headlineMedium = theme.typography.h5,
+                headlineSmall = theme.typography.h6,
+                titleLarge = theme.typography.subtitle1,
+                titleMedium = theme.typography.subtitle2,
+                titleSmall = theme.typography.body1,
+                bodyLarge = theme.typography.body2,
+                bodyMedium = theme.typography.button,
+                bodySmall = theme.typography.caption,
+                labelLarge = theme.typography.overline
+            )
+        ) {
+            content()
+        }
     }
 }
 
 /**
- * 主题扩展函数
+ * 主题访问器对象
  */
-val UnifyTheme.colors: UnifyColors
-    @Composable get() = LocalUnifyTheme.current.colors
+object UnifyThemeAccessor {
+    val colors: UnifyColors
+        @Composable get() = LocalUnifyTheme.current.colors
 
-val UnifyTheme.typography: UnifyTypography  
-    @Composable get() = LocalUnifyTheme.current.typography
+    val typography: UnifyTypography  
+        @Composable get() = LocalUnifyTheme.current.typography
 
-val UnifyTheme.shapes: UnifyShapes
-    @Composable get() = LocalUnifyTheme.current.shapes
+    val shapes: UnifyShapes
+        @Composable get() = LocalUnifyTheme.current.shapes
+}

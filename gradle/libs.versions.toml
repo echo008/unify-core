@@ -2,7 +2,7 @@
 kotlin = "2.0.21"
 compose = "1.7.0"
 ktor = "2.3.7"
-sqldelight = "2.1.0"
+sqldelight = "2.0.0"
 koin = "3.5.3"
 navigation = "2.7.0-alpha07"
 lifecycle = "2.8.0"

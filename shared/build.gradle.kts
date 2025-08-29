@@ -40,22 +40,56 @@ android {
 
 kotlin {
     jvmToolchain(17)
+    
+    // Android 目标
     androidTarget()
-    jvm()
-
-    applyDefaultHierarchyTemplate()
-    js {
-        browser {
-            binaries.executable()
+    
+    // JVM 目标 (桌面端)
+    jvm("desktop")
+    
+    // iOS 目标
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "shared"
+            isStatic = true
         }
     }
+    
+    // Web 目标
+    js(IR) {
+        browser {
+            binaries.executable()
+            commonWebpackConfig {
+                cssSupport {
+                    enabled.set(true)
+                }
+            }
+        }
+    }
+    
+    applyDefaultHierarchyTemplate()
     sourceSets {
         val commonMain by getting {
             dependencies {
-            implementation(libs.koin.core)
-            implementation(libs.sqldelight.runtime)
-            implementation(libs.sqldelight.coroutines)
-        }
+                implementation(libs.koin.core)
+                implementation(libs.sqldelight.runtime)
+                implementation(libs.sqldelight.coroutines)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.serialization.json)
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.serialization)
+                implementation(libs.ktor.content.negotiation)
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.components.resources)
+            }
         }
         val androidMain by getting {
             dependencies {
@@ -66,6 +100,34 @@ kotlin {
                 implementation(libs.sqldelight.android)
                 implementation(libs.koin.android)
                 implementation(libs.koin.core)
+            }
+        }
+        
+        val iosMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+                implementation(libs.sqldelight.native)
+            }
+        }
+        
+        val jsMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.js)
+                // Web平台暂时不使用SQLDelight，使用localStorage
+            }
+        }
+        
+        val desktopMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.cio)
+                implementation(libs.sqldelight.native)
+            }
+        }
+        
+        val commonTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

@@ -3,16 +3,11 @@ package com.unify.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.unify.sample.UnifySampleApp
+import com.unify.android.di.AndroidDI
+import com.unify.examples.HelloWorldScreen
+import com.unify.examples.initializeHelloWorldTranslations
 import com.unify.ui.theme.UnifyTheme
 
 /**
@@ -22,33 +17,33 @@ import com.unify.ui.theme.UnifyTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        
+        // 初始化依赖注入
+        AndroidDI.initialize(this)
+        
+        // 初始化Hello World翻译
+        initializeHelloWorldTranslations()
         
         setContent {
-            UnifyAndroidApp()
+            UnifyTheme {
+                HelloWorldScreen()
+            }
         }
     }
 }
 
+@Preview
 @Composable
-fun UnifyAndroidApp() {
+fun AppAndroidPreview() {
     UnifyTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Scaffold(
-                modifier = Modifier.fillMaxSize()
-            ) { paddingValues ->
-                // 使用共享的示例应用
-                UnifySampleApp()
-            }
-        }
+        HelloWorldScreen()
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun UnifyAndroidAppPreview() {
-    UnifyAndroidApp()
+    UnifyTheme {
+        HelloWorldScreen()
+    }
 }

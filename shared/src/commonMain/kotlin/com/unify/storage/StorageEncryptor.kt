@@ -1,5 +1,7 @@
 package com.unify.storage
 
+import kotlinx.serialization.KSerializer
+
 /**
  * 存储加密器接口
  */
@@ -78,14 +80,11 @@ class EncryptedStorageDecorator(
         putString(key, value.toString())
     }
     
-    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? {
+    override suspend fun <T> getObject(key: String, serializer: KSerializer<T>): T? {
         val jsonString = getString(key, null)
         return if (jsonString != null) {
             try {
-                kotlinx.serialization.json.Json.decodeFromString(
-                    kotlinx.serialization.serializer(clazz.kotlin),
-                    jsonString
-                ) as T
+                kotlinx.serialization.json.Json.decodeFromString(serializer, jsonString)
             } catch (e: Exception) {
                 null
             }
@@ -94,9 +93,8 @@ class EncryptedStorageDecorator(
         }
     }
     
-    override suspend fun <T> putObject(key: String, value: T) {
-        val jsonString = kotlinx.serialization.json.Json.encodeToString(
-            kotlinx.serialization.serializer(value!!::class),
+    override suspend fun <T> putObject(key: String, value: T, serializer: KSerializer<T>) {
+        val jsonString = kotlinx.serialization.json.Json.encodeToString(serializer,
             value
         )
         putString(key, jsonString)
@@ -118,9 +116,7 @@ class EncryptedStorageDecorator(
         return storage.getAllKeys()
     }
     
-    override fun <T> observeKey(key: String, clazz: Class<T>): kotlinx.coroutines.flow.Flow<T?> {
-        return kotlinx.coroutines.flow.flow {
-            emit(getObject(key, clazz))
-        }
+    override fun <T> observeKey(key: String): kotlinx.coroutines.flow.Flow<T?> {
+        return storage.observeKey(key)
     }
 }

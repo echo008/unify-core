@@ -1,0 +1,54 @@
+<!--微信小程序Hello World示例页面-->
+<view class="container">
+  <!-- 标题 -->
+  <text class="title">{{translations[currentLanguage]['app.name']}}</text>
+  
+  <!-- 欢迎卡片 -->
+  <view class="welcome-card">
+    <text class="welcome-title">{{translations[currentLanguage]['hello.welcome']}}</text>
+    <text class="welcome-desc">{{translations[currentLanguage]['hello.description']}}</text>
+  </view>
+  
+  <!-- 计数器卡片 -->
+  <view class="counter-card">
+    <text class="counter-title">{{translations[currentLanguage]['counter.title']}}</text>
+    <text class="counter-value">{{counter}}</text>
+    
+    <view class="counter-buttons">
+      <button class="counter-btn" disabled="{{counter <= 0}}" bindtap="decrementCounter">-</button>
+      <button class="counter-btn primary" bindtap="incrementCounter">+</button>
+      <button class="counter-btn" disabled="{{counter <= 0}}" bindtap="resetCounter">
+        {{translations[currentLanguage]['common.reset']}}
+      </button>
+    </view>
+  </view>
+  
+  <!-- 语言切换卡片 -->
+  <view class="language-card">
+    <text class="language-title">{{translations[currentLanguage]['language.title']}}</text>
+    
+    <view class="language-buttons">
+      <button 
+        class="language-btn {{currentLanguage === 'zh' ? 'active' : ''}}" 
+        bindtap="switchLanguage" 
+        data-lang="zh">
+        中文
+      </button>
+      <button 
+        class="language-btn {{currentLanguage === 'en' ? 'active' : ''}}" 
+        bindtap="switchLanguage" 
+        data-lang="en">
+        English
+      </button>
+      <button 
+        class="language-btn {{currentLanguage === 'ja' ? 'active' : ''}}" 
+        bindtap="switchLanguage" 
+        data-lang="ja">
+        日本語
+      </button>
+    </view>
+  </view>
+  
+  <!-- 框架信息 -->
+  <text class="framework-info">{{translations[currentLanguage]['framework.info']}}</text>
+</view>

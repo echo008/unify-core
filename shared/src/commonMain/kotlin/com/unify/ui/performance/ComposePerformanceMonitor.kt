@@ -37,7 +37,7 @@ class ComposePerformanceMonitor {
         val metrics = compositionMetrics.getOrPut(componentName) { CompositionMetrics() }
         metrics.totalCompositions++
         metrics.totalCompositionTime += duration
-        metrics.averageCompositionTime = metrics.totalCompositionTime / metrics.totalCompositions
+        metrics.averageCompositionTime = metrics.totalCompositionTime.div(metrics.totalCompositions.toInt())
         
         if (duration > metrics.maxCompositionTime) {
             metrics.maxCompositionTime = duration
@@ -62,7 +62,7 @@ class ComposePerformanceMonitor {
         val metrics = compositionMetrics.getOrPut(componentName) { CompositionMetrics() }
         metrics.totalRecompositions++
         metrics.totalRecompositionTime += duration
-        metrics.averageRecompositionTime = metrics.totalRecompositionTime / metrics.totalRecompositions
+        metrics.averageRecompositionTime = metrics.totalRecompositionTime.div(metrics.totalRecompositions.toInt())
 
         if (duration > metrics.maxRecompositionTime) {
             metrics.maxRecompositionTime = duration
@@ -93,8 +93,8 @@ class ComposePerformanceMonitor {
             totalComponents = compositionMetrics.size,
             totalCompositions = totalCompositions,
             totalRecompositions = totalRecompositions,
-            averageCompositionTime = totalCompositionTime.milliseconds / totalCompositions.coerceAtLeast(1),
-            averageRecompositionTime = totalRecompositionTime.milliseconds / totalRecompositions.coerceAtLeast(1),
+            averageCompositionTime = (totalCompositionTime / totalCompositions.coerceAtLeast(1)).milliseconds,
+            averageRecompositionTime = (totalRecompositionTime / totalRecompositions.coerceAtLeast(1)).milliseconds,
             componentMetrics = compositionMetrics,
             timestamp = Clock.System.now()
         )
