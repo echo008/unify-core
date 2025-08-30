@@ -1,6 +1,6 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.detekt)
@@ -80,6 +80,18 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(compose.ui)
+                
+                // 网络请求
+                implementation("io.ktor:ktor-client-core:2.3.7")
+                implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
+                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
+                implementation("io.ktor:ktor-client-logging:2.3.7")
+                
+                // 序列化
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+                
+                // 协程
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
 
@@ -92,18 +104,26 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(libs.androidx.activity.compose)
+                
+                // Android网络引擎
+                implementation("io.ktor:ktor-client-android:2.3.7")
+                
+                // Android协程
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
             }
         }
 
         val iosMain by getting {
             dependencies {
-                // iOS 特定依赖
+                // iOS网络引擎
+                implementation("io.ktor:ktor-client-darwin:2.3.7")
             }
         }
 
         val jsMain by getting {
             dependencies {
-                // Web 特定依赖
+                // Web网络引擎
+                implementation("io.ktor:ktor-client-js:2.3.7")
             }
         }
     }
