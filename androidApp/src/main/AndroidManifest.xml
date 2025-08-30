@@ -7,39 +7,22 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:name=".UnifyAndroidApplication"
         android:allowBackup="true"
-        android:dataExtractionRules="@xml/data_extraction_rules"
-        android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@android:drawable/sym_def_app_icon"
+        android:label="Unify KMP"
         android:supportsRtl="true"
-        android:theme="@style/Theme.UnifyKmp"
+        android:theme="@android:style/Theme.DeviceDefault"
         tools:targetApi="31">
         
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:label="@string/app_name"
-            android:theme="@style/Theme.UnifyKmp"
+            android:label="Unify KMP"
+            android:theme="@android:style/Theme.DeviceDefault"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        
-        <!-- 深度链接支持 -->
-        <activity
-            android:name=".DeepLinkActivity"
-            android:exported="true"
-            android:theme="@style/Theme.UnifyKmp">
-            <intent-filter android:autoVerify="true">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="unify" />
             </intent-filter>
         </activity>
     </application>

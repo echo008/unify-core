@@ -4,15 +4,32 @@
 **/build/
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
+gradle-app.setting
+.gradletasknamecache
 
 # IntelliJ IDEA / Android Studio
 .idea/
 *.iml
 *.ipr
 *.iws
+.vscode/
+*.swp
+*.swo
+*~
 
 # macOS
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Windows
+*.tmp
+*.temp
+desktop.ini
 
 # Android
 local.properties
@@ -20,24 +37,75 @@ local.properties
 **/captures/
 *.keystore
 *.jks
+*.apk
+*.aab
+*.ap_
+*.dex
+proguard/
+lint-results*.xml
 
 # iOS/Xcode
 *.xcuserdatad/
 *.xcworkspace/
 DerivedData/
 Pods/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+*.xccheckout
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+.build/
 
-# Node/Web
+# Node/Web/JavaScript
 node_modules/
 yarn.lock
 pnpm-lock.yaml
 package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.eslintcache
+.parcel-cache/
+dist/
+.cache/
+.vite/
+.next/
+.nuxt/
+.output/
+.vercel/
 
-# Kotlin/Native
+# Kotlin Multiplatform
+kotlin-js-store/
+.kotlin/
 .konan/
+*.klib
+
+# Compose Multiplatform
+compose-resources/
+
+# Documentation
+docs/node_modules/
+docs/.vitepress/cache/
+docs/.vitepress/dist/
 
 # Logs
 *.log
+logs/
+*.log.*
+
+# Test results
+**/test-results/
+**/reports/
+coverage/
+.nyc_output/
 
 # Fastlane
 fastlane/report.xml
@@ -45,6 +113,45 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 
-# Misc
+# Environment files
 /.env
 .env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.orig
+*.rej
+
+# IDE specific
+.fleet/
+.cursor/
+
+# Platform specific
+# HarmonyOS
+.hvigor/
+hvigor/
+oh_modules/
+
+# Mini Program
+miniprogram_npm/
+.tea/
+
+# Desktop specific
+*.exe
+*.dmg
+*.pkg
+*.msi
+
+# Mobile specific
+*.mobileprovision
+*.p12
+*.cer

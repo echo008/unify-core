@@ -1,9 +1,11 @@
 package com.unify.helloworld
 
-actual object PlatformInfo {
-    actual fun getPlatformName(): String = "Web"
-    
-    actual fun getDeviceInfo(): String {
-        return js("navigator.userAgent").toString()
+import kotlinx.browser.window
+
+actual class PlatformInfo {
+    actual companion object {
+        actual fun getPlatformName(): String = "Web"
+        
+        actual fun getDeviceInfo(): String = window.navigator.userAgent
     }
 }

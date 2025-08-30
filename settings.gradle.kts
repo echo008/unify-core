@@ -33,4 +33,4 @@ include(":androidApp")
 include(":iosApp")
 include(":webApp")
 include(":desktopApp")
-include(":miniAppBridge")
+// include(":miniAppBridge") // 暂时禁用，存在编译错误

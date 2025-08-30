@@ -248,10 +248,10 @@ jobs:
           name: web-build
           path: webApp/build/distributions/
 
-  build-electron:
-    name: Build Electron
+  build-desktop:
+    name: Build Desktop
     runs-on: ubuntu-latest
-    needs: [test-common, test-web]
+    needs: [test-common]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -262,24 +262,19 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
           
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
           
-      - name: Build Electron App
-        run: ./gradlew electronApp:build --stacktrace
+      - name: Build Desktop App
+        run: ./gradlew :desktopApp:packageUberJarForCurrentOS --stacktrace
         
-      - name: Upload Electron Build
+      - name: Upload Desktop Build
         uses: actions/upload-artifact@v4
         with:
-          name: electron-build
-          path: electronApp/build/
+          name: desktop-build
+          path: desktopApp/build/compose/jars/*.jar
 
   code-quality:
     name: Code Quality Analysis
@@ -396,7 +391,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-electron, code-quality, security-scan]
+    needs: [build-android, build-ios, build-web, build-desktop, code-quality, security-scan]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -413,32 +408,32 @@ jobs:
             android-apk/*.apk
             ios-framework/**/*
             web-build/**/*
-            electron-build/**/*
+            desktop-build/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     name: Notify Status
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-electron, code-quality, security-scan]
+    needs: [build-android, build-ios, build-web, build-desktop, code-quality, security-scan]
     if: always()
     steps:
       - name: Notify Success
-        if: ${{ needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-web.result == 'success' && needs.build-electron.result == 'success' }}
+        if: ${{ needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-web.result == 'success' && needs.build-desktop.result == 'success' }}
         run: |
           echo "✅ All builds completed successfully!"
           echo "- Android APK: Built"
           echo "- iOS Framework: Built" 
           echo "- Web Application: Built"
-          echo "- Electron App: Built"
+          echo "- Desktop App: Built"
           echo "- Code Quality: Passed"
           echo "- Security Scan: Completed"
           
       - name: Notify Failure
-        if: ${{ needs.build-android.result == 'failure' || needs.build-ios.result == 'failure' || needs.build-web.result == 'failure' || needs.build-electron.result == 'failure' }}
+        if: ${{ needs.build-android.result == 'failure' || needs.build-ios.result == 'failure' || needs.build-web.result == 'failure' || needs.build-desktop.result == 'failure' }}
         run: |
           echo "❌ Some builds failed!"
           echo "- Android: ${{ needs.build-android.result }}"
           echo "- iOS: ${{ needs.build-ios.result }}"
           echo "- Web: ${{ needs.build-web.result }}"
-          echo "- Electron: ${{ needs.build-electron.result }}"
+          echo "- Desktop: ${{ needs.build-desktop.result }}"

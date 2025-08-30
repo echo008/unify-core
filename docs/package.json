@@ -1,0 +1,23 @@
+{
+  "name": "unify-kmp-docs",
+  "version": "1.0.0",
+  "description": "Unify KMP 跨平台开发框架文档",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview"
+  },
+  "devDependencies": {
+    "vitepress": "^1.0.0-rc.31",
+    "vue": "^3.3.8"
+  },
+  "keywords": [
+    "kotlin-multiplatform",
+    "cross-platform",
+    "documentation",
+    "compose-multiplatform"
+  ],
+  "author": "Unify KMP Team",
+  "license": "MIT"
+}
