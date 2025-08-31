@@ -50,7 +50,7 @@ fun DemoNavigationHost() {
         DemoScreen.HOME -> HomeScreen(
             onNavigate = { screen -> currentScreen = screen }
         )
-        DemoScreen.TODO_LIST -> TodoListScreen(
+        DemoScreen.TASK_LIST -> TaskListScreen(
             onNavigateBack = { currentScreen = DemoScreen.HOME }
         )
         DemoScreen.PROFILE -> ProfileScreen(
@@ -69,7 +69,7 @@ fun DemoNavigationHost() {
  * 3. 屏幕枚举
  */
 enum class DemoScreen {
-    HOME, TODO_LIST, PROFILE, SETTINGS, PERFORMANCE
+    HOME, TASK_LIST, PROFILE, SETTINGS, PERFORMANCE
 }
 
 /**
@@ -118,7 +118,7 @@ fun HomeScreen(
                         title = "待办事项",
                         description = "MVI 架构 + 数据持久化",
                         icon = "✅",
-                        onClick = { onNavigate(DemoScreen.TODO_LIST) }
+                        onClick = { onNavigate(DemoScreen.TASK_LIST) }
                     )
                     
                     DemoNavigationItem(
@@ -172,19 +172,21 @@ fun HomeScreen(
  * 5. 待办事项屏幕
  */
 @Composable
-fun TodoListScreen(
+fun TaskListScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val viewModel = remember { TodoViewModel(scope) }
+    val viewModel = remember { TaskViewModel(scope) }
     
-    PerformanceTracker("TodoListScreen") {
+    PerformanceTracker("TaskListScreen") {
         UnifyMVIContainer(
             stateManager = viewModel,
             onEffect = { effect ->
                 when (effect) {
-                    is TodoEffect.ShowMessage -> {
-                        // 显示消息
+                    is TaskEffect.ShowMessage -> {
+                        // 处理消息显示
+                        UnifyPerformanceMonitor.recordMetric("demo_message_shown", 1.0, "count",
+                            mapOf("message_type" to "task_effect"))
                     }
                 }
             }
@@ -214,22 +216,22 @@ fun TodoListScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 // 添加待办
-                var newTodoText by remember { mutableStateOf("") }
+                var newTaskText by remember { mutableStateOf("") }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     UnifyTextField(
-                        value = newTodoText,
-                        onValueChange = { newTodoText = it },
-                        placeholder = "输入新的待办事项",
+                        value = newTaskText,
+                        onValueChange = { newTaskText = it },
+                        placeholder = "输入新的任务项",
                         modifier = Modifier.weight(1f)
                     )
                     UnifyButton(
                         onClick = {
-                            if (newTodoText.isNotBlank()) {
-                                onIntent(TodoIntent.AddTodo(newTodoText))
-                                newTodoText = ""
+                            if (newTaskText.isNotBlank()) {
+                                onIntent(TaskIntent.AddTask(newTaskText))
+                                newTaskText = ""
                             }
                         },
                         text = "添加"
@@ -241,19 +243,19 @@ fun TodoListScreen(
                 // 待办列表
                 if (isLoading) {
                     UnifyLoadingIndicator()
-                } else if (state.todos.isEmpty()) {
+                } else if (state.tasks.isEmpty()) {
                     UnifyEmptyState(
-                        message = "还没有待办事项，添加一个吧！"
+                        message = "还没有任务项，添加一个吧！"
                     )
                 } else {
                     UnifyLazyList(
-                        items = state.todos,
+                        items = state.tasks,
                         key = { it.id }
-                    ) { todo ->
-                        TodoItem(
-                            todo = todo,
-                            onToggle = { onIntent(TodoIntent.ToggleTodo(todo.id)) },
-                            onDelete = { onIntent(TodoIntent.DeleteTodo(todo.id)) }
+                    ) { task ->
+                        TaskItem(
+                            task = task,
+                            onToggle = { onIntent(TaskIntent.ToggleTask(task.id)) },
+                            onDelete = { onIntent(TaskIntent.DeleteTask(task.id)) }
                         )
                     }
                 }
@@ -265,149 +267,127 @@ fun TodoListScreen(
 /**
  * 6. 待办事项 MVI 实现
  */
-data class TodoState(
-    val todos: List<Todo> = emptyList(),
-    val filter: TodoFilter = TodoFilter.ALL
-) : UnifyState
+data class TaskState(
+    val tasks: List<Task> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
 
-sealed class TodoIntent : UnifyIntent {
-    data class AddTodo(val text: String) : TodoIntent()
-    data class ToggleTodo(val id: String) : TodoIntent()
-    data class DeleteTodo(val id: String) : TodoIntent()
-    data class SetFilter(val filter: TodoFilter) : TodoIntent()
-    object LoadTodos : TodoIntent()
+sealed class TaskIntent {
+    data class AddTask(val text: String) : TaskIntent()
+    data class ToggleTask(val id: String) : TaskIntent()
+    data class DeleteTask(val id: String) : TaskIntent()
+    object LoadTasks : TaskIntent()
 }
 
-sealed class TodoEffect : UnifyEffect {
-    data class ShowMessage(val message: String) : TodoEffect()
+sealed class TaskEffect {
+    data class ShowMessage(val message: String) : TaskEffect()
 }
 
-data class Todo(
-    val id: String,
+data class Task(
+    val id: String = UUID.randomUUID().toString(),
     val text: String,
     val isCompleted: Boolean = false,
     val createdAt: Long = System.currentTimeMillis()
 )
 
-enum class TodoFilter {
-    ALL, ACTIVE, COMPLETED
-}
-
-class TodoViewModel(scope: CoroutineScope) : UnifyViewModel<TodoIntent, TodoState, TodoEffect>(
-    initialState = TodoState(),
-    scope = scope
-) {
+class TaskViewModel(private val scope: CoroutineScope) : UnifyStateManager<TaskState, TaskIntent, TaskEffect> {
+    override val state = MutableStateFlow(TaskState())
+    override val effects = MutableSharedFlow<TaskEffect>()
     
     init {
-        handleIntent(TodoIntent.LoadTodos)
+        handleIntent(TaskIntent.LoadTasks)
     }
     
-    override fun handleIntent(intent: TodoIntent) {
+    override fun handleIntent(intent: TaskIntent) {
         when (intent) {
-            is TodoIntent.AddTodo -> {
-                val newTodo = Todo(
-                    id = generateId(),
-                    text = intent.text
-                )
-                updateState { state ->
-                    state.copy(todos = state.todos + newTodo)
+            is TaskIntent.AddTask -> {
+                val newTask = Task(text = intent.text)
+                updateState { 
+                    copy(tasks = tasks + newTask) 
                 }
-                sendEffect(TodoEffect.ShowMessage("已添加待办事项"))
             }
-            
-            is TodoIntent.ToggleTodo -> {
-                updateState { state ->
-                    state.copy(
-                        todos = state.todos.map { todo ->
-                            if (todo.id == intent.id) {
-                                todo.copy(isCompleted = !todo.isCompleted)
+            is TaskIntent.ToggleTask -> {
+                updateState {
+                    copy(
+                        tasks = tasks.map { task ->
+                            if (task.id == intent.id) {
+                                task.copy(isCompleted = !task.isCompleted)
                             } else {
-                                todo
+                                task
                             }
                         }
                     )
                 }
             }
-            
-            is TodoIntent.DeleteTodo -> {
-                updateState { state ->
-                    state.copy(
-                        todos = state.todos.filter { it.id != intent.id }
-                    )
-                }
-                sendEffect(TodoEffect.ShowMessage("已删除待办事项"))
-            }
-            
-            is TodoIntent.SetFilter -> {
-                updateState { state ->
-                    state.copy(filter = intent.filter)
+            is TaskIntent.DeleteTask -> {
+                updateState {
+                    copy(tasks = tasks.filter { it.id != intent.id })
                 }
             }
-            
-            TodoIntent.LoadTodos -> {
-                handleAsyncIntent(intent) {
-                    // 模拟加载数据
-                    delay(1000)
-                    val sampleTodos = listOf(
-                        Todo("1", "学习 Kotlin Multiplatform"),
-                        Todo("2", "实现 Compose UI", true),
-                        Todo("3", "编写单元测试")
-                    )
-                    updateState { state ->
-                        state.copy(todos = sampleTodos)
-                    }
+            TaskIntent.LoadTasks -> {
+                updateState { copy(isLoading = true) }
+                scope.launch {
+                    delay(500) // 模拟加载
+                    updateState { copy(isLoading = false) }
                 }
             }
         }
     }
     
-    private fun generateId(): String = System.currentTimeMillis().toString()
+    private fun updateState(update: TaskState.() -> TaskState) {
+        state.value = state.value.update()
+    }
 }
 
-/**
- * 7. 待办事项组件
- */
 @Composable
-fun TodoItem(
-    todo: Todo,
+fun TaskItem(
+    task: Task,
     onToggle: () -> Unit,
     onDelete: () -> Unit
 ) {
-    UnifyCard {
+    UnifyCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Checkbox(
-                    checked = todo.isCompleted,
+                UnifyCheckbox(
+                    checked = task.isCompleted,
                     onCheckedChange = { onToggle() }
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = todo.text,
-                    style = if (todo.isCompleted) {
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                UnifyText(
+                    text = task.text,
+                    style = if (task.isCompleted) {
+                        UnifyTheme.typography.body1.copy(
+                            textDecoration = TextDecoration.LineThrough,
+                            color = UnifyTheme.colors.onSurface.copy(alpha = 0.6f)
                         )
                     } else {
-                        MaterialTheme.typography.bodyMedium
+                        UnifyTheme.typography.body1
                     }
                 )
             }
-            
-            TextButton(onClick = onDelete) {
-                Text("删除", color = MaterialTheme.colorScheme.error)
-            }
+            UnifyIconButton(
+                onClick = onDelete,
+                icon = "🗑️"
+            )
         }
     }
 }
 
 /**
+ * 7. 待办事项组件
  * 8. 通用组件
  */
 @Composable

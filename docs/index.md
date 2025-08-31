@@ -11,10 +11,10 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/getting-started
+      link: /guide/getting_started
     - theme: alt
       text: 查看示例
-      link: /examples/hello-world
+      link: /examples/hello_world
     - theme: alt
       text: GitHub
       link: https://github.com/unify-kmp/unify-core
@@ -64,21 +64,30 @@ features:
 
 ### 🏗️ 架构设计
 
-```mermaid
-graph TB
-    A[共享业务逻辑层<br/>Kotlin Multiplatform] --> B[Android App]
-    A --> C[iOS App]
-    A --> D[Web App]
-    A --> E[Desktop App]
-    A --> F[HarmonyOS App]
-    A --> G[Mini Program]
-    A --> H[Watch App]
-    A --> I[TV App]
-    
-    J[平台特定实现<br/>expect/actual] --> A
-    K[UI 层<br/>Compose Multiplatform] --> A
-    L[网络层<br/>Ktor] --> A
-    M[存储层<br/>SQLDelight] --> A
+```
+                    共享业务逻辑层
+                 Kotlin Multiplatform
+                         |
+        +----------------+----------------+
+        |                |                |
+   Android App      iOS App         Web App
+        |                |                |
+   Desktop App    HarmonyOS App    Mini Program
+        |                |                |
+    Watch App         TV App
+        
+        
+    平台特定实现 ──┐
+    expect/actual  │
+                   │
+    UI层 ──────────┼──── 共享业务逻辑层
+    Compose        │
+                   │
+    网络层 ────────┤
+    Ktor           │
+                   │
+    存储层 ────────┘
+    SQLDelight
 ```
 
 ## 🚀 快速体验
@@ -191,7 +200,7 @@ actual class PlatformInfo {
 
 ### 贡献代码
 
-我们欢迎社区贡献！请查看 [贡献指南](/contributing) 了解如何参与项目开发。
+我们欢迎社区贡献！请查看 [贡献指南](/contributing/contributing) 了解如何参与项目开发。
 
 ### 许可证
 

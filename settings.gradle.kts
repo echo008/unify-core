@@ -4,7 +4,6 @@ pluginManagement {
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-        maven("https://mirrors.tencent.com/repository/maven/kuikly-public/")
         ivy {
             url = uri("https://nodejs.org/dist/")
             patternLayout {
@@ -23,7 +22,6 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-        maven("https://mirrors.tencent.com/repository/maven/kuikly-public/")
     }
 }
 

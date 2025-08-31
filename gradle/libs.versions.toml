@@ -1,26 +1,25 @@
 [versions]
-kotlin = "1.9.22"
-compose = "1.5.12"
-agp = "8.5.1"
-compose-bom = "2024.02.00"
-ktor = "2.3.7"
-sqldelight = "2.0.0"
-koin = "3.5.3"
-navigation = "2.7.0-alpha07"
-lifecycle = "2.8.0"
-kuikly = "1.0.0"
-vite-kotlin = "0.5.1"
-serialization = "1.6.3"
-coroutines = "1.8.1"
-datetime = "0.6.0"
+kotlin = "2.1.0"
+compose = "1.7.5"
+agp = "8.7.2"
+compose-bom = "2024.12.01"
+ktor = "3.2.3"
+sqldelight = "2.0.2"
+koin = "4.0.0"
+navigation = "2.8.4"
+lifecycle = "2.8.7"
+vite-kotlin = "0.8.2"
+serialization = "1.7.3"
+coroutines = "1.9.0"
+datetime = "0.6.1"
 okhttp = "4.12.0"
-androidx-core = "1.12.0"
-androidx-activity = "1.8.2"
-androidx-lifecycle = "2.7.0"
+androidx-core = "1.15.0"
+androidx-activity = "1.9.3"
+androidx-lifecycle = "2.8.7"
 androidx-security = "1.1.0-alpha06"
-room = "2.6.1"
-coil = "2.5.0"
-logback = "1.4.14"
+room = "2.7.0-alpha11"
+coil = "3.0.4"
+logback = "1.5.12"
 
 [libraries]
 
@@ -66,11 +65,7 @@ lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-vie
 lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "androidx-lifecycle" }
 
-# KuiklyUI
-kuikly-compose = { module = "com.tencent.kuikly:kuikly-compose", version.ref = "kuikly" }
-kuikly-runtime = { module = "com.tencent.kuikly:kuikly-runtime", version.ref = "kuikly" }
-kuikly-arkui = { module = "com.tencent.kuikly:kuikly-arkui", version.ref = "kuikly" }
-kuikly-performance = { module = "com.tencent.kuikly:kuikly-performance", version.ref = "kuikly" }
+# 已移除KuiklyUI依赖 - Unify-Core采用100%原生Kotlin Multiplatform + Compose实现
 
 # Serialization
 serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
@@ -102,17 +97,18 @@ logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "lo
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 
-android-application = { id = "com.android.application", version = "8.2.2" }
-android-library = { id = "com.android.library", version = "8.2.2" }
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
 compose-multiplatform = { id = "org.jetbrains.compose", version.ref = "compose" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 koin = { id = "io.insert-koin", version.ref = "koin" }
 room = { id = "androidx.room", version.ref = "room" }
-ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.25" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.4" }
-ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.0.3" }
+ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.7" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.2" }
 vite-kotlin = { id = "dev.opensavvy.vite.kotlin", version.ref = "vite-kotlin" }
-binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.14.0" }
-kover = { id = "org.jetbrains.kotlinx.kover", version = "0.7.5" }
+binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version = "0.17.0" }
+kover = { id = "org.jetbrains.kotlinx.kover", version = "0.8.3" }
+dokka = { id = "org.jetbrains.dokka", version = "2.0.0" }

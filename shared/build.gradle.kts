@@ -83,16 +83,16 @@ kotlin {
                 implementation(compose.ui)
                 
                 // 网络请求
-                implementation("io.ktor:ktor-client-core:2.3.7")
-                implementation("io.ktor:ktor-client-content-negotiation:2.3.7")
-                implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.7")
-                implementation("io.ktor:ktor-client-logging:2.3.7")
+                implementation(libs.ktor.client.core)
+                implementation(libs.ktor.content.negotiation)
+                implementation(libs.ktor.serialization)
+                implementation(libs.ktor.client.logging)
                 
                 // 序列化
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+                implementation(libs.serialization.json)
                 
                 // 协程
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 
@@ -107,24 +107,24 @@ kotlin {
                 implementation(libs.androidx.activity.compose)
                 
                 // Android网络引擎
-                implementation("io.ktor:ktor-client-android:2.3.7")
+                implementation(libs.ktor.client.android)
                 
                 // Android协程
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
 
         val iosMain by getting {
             dependencies {
                 // iOS网络引擎
-                implementation("io.ktor:ktor-client-darwin:2.3.7")
+                implementation(libs.ktor.client.darwin)
             }
         }
 
         val jsMain by getting {
             dependencies {
                 // Web网络引擎
-                implementation("io.ktor:ktor-client-js:2.3.7")
+                implementation(libs.ktor.client.js)
             }
         }
     }

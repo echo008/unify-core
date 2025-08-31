@@ -10,7 +10,7 @@ export default defineConfig({
     
     nav: [
       { text: '首页', link: '/' },
-      { text: '快速开始', link: '/guide/getting-started' },
+      { text: '快速开始', link: '/guide/getting_started' },
       { text: 'API 参考', link: '/api/' },
       { text: '示例', link: '/examples/' },
       { 
@@ -33,7 +33,7 @@ export default defineConfig({
           text: '开始使用',
           items: [
             { text: '项目介绍', link: '/guide/introduction' },
-            { text: '快速开始', link: '/guide/getting-started' }
+            { text: '快速开始', link: '/guide/getting_started' }
           ]
         },
         {
@@ -65,8 +65,8 @@ export default defineConfig({
           text: 'API 参考',
           items: [
             { text: '核心 API', link: '/api/core' },
-            { text: 'UI 组件', link: '/api/ui-components' },
-            { text: '平台接口', link: '/api/platform-interfaces' },
+            { text: 'UI 组件', link: '/api/ui_components' },
+            { text: '平台接口', link: '/api/platform_interfaces' },
             { text: '工具类', link: '/api/utilities' }
           ]
         }
@@ -76,10 +76,10 @@ export default defineConfig({
         {
           text: '示例项目',
           items: [
-            { text: 'Hello World', link: '/examples/hello-world' },
-            { text: '计数器应用', link: '/examples/counter-app' },
-            { text: 'Todo 应用', link: '/examples/todo-app' },
-            { text: '天气应用', link: '/examples/weather-app' }
+            { text: 'Hello World', link: '/examples/hello_world' },
+            { text: '计数器应用', link: '/examples/counter_app' },
+            { text: 'Todo 应用', link: '/examples/todo_app' },
+            { text: '天气应用', link: '/examples/weather_app' }
           ]
         }
       ]

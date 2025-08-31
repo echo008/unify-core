@@ -22,7 +22,16 @@ import com.unify.ui.components.foundation.*
  * AI模型类型
  */
 enum class UnifyAIModelType {
-    TEXT_GENERATION, IMAGE_GENERATION, SPEECH_TO_TEXT, TEXT_TO_SPEECH, TRANSLATION
+    TEXT_GENERATION,        // 文本生成
+    IMAGE_GENERATION,       // 图像生成
+    SPEECH_TO_TEXT,         // 语音转文字
+    TEXT_TO_SPEECH,         // 文字转语音
+    TRANSLATION,            // 翻译
+    CODE_GENERATION,        // 代码生成
+    SENTIMENT_ANALYSIS,     // 情感分析
+    CONTENT_MODERATION,     // 内容审核
+    QUESTION_ANSWERING,     // 问答系统
+    SUMMARIZATION          // 文本摘要
 }
 
 /**
@@ -41,7 +50,14 @@ data class UnifyAIMessage(
 data class UnifyAIChatConfig(
     val modelType: UnifyAIModelType = UnifyAIModelType.TEXT_GENERATION,
     val maxTokens: Int = 2048,
-    val temperature: Float = 0.7f
+    val temperature: Float = 0.7f,
+    val topP: Float = 0.9f,
+    val frequencyPenalty: Float = 0.0f,
+    val presencePenalty: Float = 0.0f,
+    val systemPrompt: String = "你是一个有用的AI助手",
+    val enableStreaming: Boolean = true,
+    val enableContextMemory: Boolean = true,
+    val maxContextLength: Int = 4096
 )
 
 /**

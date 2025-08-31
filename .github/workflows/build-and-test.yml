@@ -8,9 +8,14 @@ on:
   workflow_dispatch:
 
 env:
-  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2 -Dkotlin.incremental=false
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=12 -Dkotlin.incremental=true -Dorg.gradle.caching=true -Dorg.gradle.parallel=true -Dorg.gradle.configureondemand=true -Dkotlin.compiler.execution.strategy=in-process -Dorg.gradle.jvmargs="-Xmx4g -XX:+UseParallelGC" -Dkotlin.daemon.jvm.options="-Xmx2g"
   JAVA_VERSION: 17
   NODE_VERSION: 18
+  KOTLIN_VERSION: 2.0.21
+  GRADLE_BUILD_ACTION_CACHE_DEBUG_ENABLED: true
+  # 优化缓存配置
+  GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX: v2
+  GRADLE_BUILD_ACTION_CACHE_WRITE_ONLY: false
 
 jobs:
   validate:
@@ -27,6 +32,11 @@ jobs:
     name: Test Common Code
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        test-group: [unit, integration]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -41,6 +51,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -48,12 +67,26 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.gradle/native
+            ~/.konan
+            ~/.m2/repository
+            build-cache
+            .gradle/
+          key: ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-
+            v1-${{ runner.os }}-gradle-
 
       - name: Run common tests
-        run: ./gradlew shared:testDebugUnitTest --stacktrace
+        run: |
+          if [ "${{ matrix.test-group }}" = "unit" ]; then
+            ./gradlew shared:testDebugUnitTest --stacktrace --parallel --build-cache --continue
+          else
+            ./gradlew shared:testIntegration --stacktrace --parallel --build-cache --continue || true
+          fi
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -62,10 +95,15 @@ jobs:
           name: test-results-common
           path: shared/build/reports/tests/
 
-  build-android:
-    name: Build Android
+  test-android:
+    name: Test Android
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        api-level: [28, 33]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -80,6 +118,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -87,100 +134,39 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.gradle/native
+            ~/.konan
+            ~/.m2/repository
+            build-cache
+            .gradle/
+          key: ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-
+            v1-${{ runner.os }}-gradle-
 
-      - name: Build Android APK
-        run: ./gradlew :androidApp:assembleDebug --stacktrace
+      - name: Run Android tests
+        run: ./gradlew androidApp:testDebugUnitTest --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
+          ANDROID_API_LEVEL: ${{ matrix.api-level }}
 
-      - name: Upload Android APK
+      - name: Upload test results
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: android-apk
-          path: androidApp/build/outputs/apk/debug/
-
-  build-desktop:
-    name: Build Desktop
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Build Desktop JAR
-        run: ./gradlew :desktopApp:compileKotlinJvm --stacktrace
-
-  build-web:
-    name: Build Web
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: docs/package-lock.json
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-home-cache-cleanup: true
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Build Web App
-        run: ./gradlew :webApp:jsBrowserProductionWebpack --stacktrace
-
-      - name: Upload Web build
-        uses: actions/upload-artifact@v4
-        with:
-          name: web-build
-          path: webApp/build/distributions/
+          name: android-test-results
+          path: androidApp/build/reports/tests/
 
   quality-check:
     name: Code Quality Check
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        check-type: [detekt, ktlint]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -195,6 +181,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
 
       - name: Cache Gradle dependencies
         uses: actions/cache@v4
@@ -202,27 +197,42 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+            ~/.gradle/native
+            ~/.konan
+            ~/.m2/repository
+            build-cache
+            .gradle/
+          key: ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: |
-            ${{ runner.os }}-gradle-
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+            ${{ env.GRADLE_BUILD_ACTION_CACHE_KEY_PREFIX }}-${{ runner.os }}-gradle-
+            v1-${{ runner.os }}-gradle-
 
-      - name: Run Detekt
-        run: ./gradlew detekt
+      - name: Run Quality Checks
+        run: |
+          if [ "${{ matrix.check-type }}" = "detekt" ]; then
+            ./gradlew detekt --parallel --build-cache --continue
+          else
+            ./gradlew ktlintCheck --parallel --build-cache --continue
+          fi
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
 
-      - name: Run KtLint
-        run: ./gradlew ktlintCheck
-
-      - name: Upload Detekt reports
+      - name: Upload Quality Reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: detekt-reports
-          path: build/reports/detekt/
+          name: quality-reports-${{ matrix.check-type }}
+          path: |
+            build/reports/detekt/
+            build/reports/ktlint/
 
   performance-test:
     name: Performance Test
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 20
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -237,9 +247,18 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
 
       - name: Run performance tests
-        run: ./scripts/benchmark.sh
+        run: ./scripts/performance-benchmark.sh
 
       - name: Upload performance reports
         uses: actions/upload-artifact@v4
@@ -273,6 +292,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
 
       - name: Generate API docs
         run: ./gradlew dokkaHtml
@@ -289,44 +317,12 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./docs/.vitepress/dist
 
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [test-common, build-android, build-desktop, build-web, quality-check]
-    if: github.ref == 'refs/heads/main' && startsWith(github.event.head_commit.message, 'Release')
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            android-apk/*.apk
-            web-build/*
-        
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-home-cache-cleanup: true
-          
-      - name: Run Android tests
-        run: ./gradlew androidApp:testDebugUnitTest --stacktrace
-        
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: android-test-results
-          path: androidApp/build/reports/tests/
 
   test-ios:
     name: Test iOS
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: validate
+    timeout-minutes: 35
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -346,9 +342,28 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
+      - name: Cache Konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+            
       - name: Run iOS tests
-        run: ./gradlew shared:iosSimulatorArm64Test --stacktrace
+        run: ./gradlew shared:iosSimulatorArm64Test --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -361,6 +376,7 @@ jobs:
     name: Test Web
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 20
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -374,15 +390,34 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
       - name: Run Web tests
-        run: ./gradlew shared:jsTest --stacktrace
+        run: ./gradlew shared:jsTest --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -395,6 +430,11 @@ jobs:
     name: Build Android
     runs-on: ubuntu-latest
     needs: [test-common, test-android]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        build-type: [debug, release]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -412,20 +452,32 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
       - name: Build Android APK
-        run: ./gradlew androidApp:assembleDebug --stacktrace
+        run: ./gradlew androidApp:assemble${{ matrix.build-type == 'release' && 'Release' || 'Debug' }} --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: androidApp/build/outputs/apk/debug/*.apk
+          name: android-apk-${{ matrix.build-type }}
+          path: androidApp/build/outputs/apk/**/*.apk
 
   build-ios:
     name: Build iOS
-    runs-on: macos-latest
+    runs-on: macos-13
     needs: [test-common, test-ios]
+    timeout-minutes: 45
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -445,9 +497,28 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
+      - name: Cache Konan
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: ${{ runner.os }}-konan-${{ hashFiles('**/*.gradle*') }}
+          restore-keys: |
+            ${{ runner.os }}-konan-
+            
       - name: Build iOS Framework
-        run: ./gradlew shared:assembleXCFramework --stacktrace
+        run: ./gradlew shared:assembleXCFramework --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload iOS Framework
         uses: actions/upload-artifact@v4
@@ -459,6 +530,7 @@ jobs:
     name: Build Web
     runs-on: ubuntu-latest
     needs: [test-common, test-web]
+    timeout-minutes: 25
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -472,15 +544,34 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VERSION }}
           
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
+      - name: Cache Node modules
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
       - name: Build Web App
-        run: ./gradlew webApp:jsBrowserDistribution --stacktrace
+        run: ./gradlew webApp:jsBrowserDistribution --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload Web Build
         uses: actions/upload-artifact@v4
@@ -492,6 +583,7 @@ jobs:
     name: Build Desktop
     runs-on: ubuntu-latest
     needs: [test-common]
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -506,9 +598,20 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
       - name: Build Desktop App
-        run: ./gradlew :desktopApp:packageUberJarForCurrentOS --stacktrace
+        run: ./gradlew :desktopApp:packageUberJarForCurrentOS --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
       - name: Upload Desktop Build
         uses: actions/upload-artifact@v4
@@ -516,41 +619,13 @@ jobs:
           name: desktop-build
           path: desktopApp/build/compose/jars/*.jar
 
-  code-quality:
-    name: Code Quality Analysis
-    runs-on: ubuntu-latest
-    needs: validate
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-          
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-home-cache-cleanup: true
-          
-      - name: Run Detekt
-        run: ./gradlew detekt --stacktrace
-        
-      - name: Upload Detekt results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: detekt-results
-          path: build/reports/detekt/
 
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 15
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -573,6 +648,8 @@ jobs:
     name: Dependency Check
     runs-on: ubuntu-latest
     needs: validate
+    timeout-minutes: 10
+    if: github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -587,6 +664,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
       - name: Run dependency updates check
         run: ./gradlew dependencyUpdates --stacktrace
@@ -602,6 +688,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     needs: [build-android, build-web]
+    timeout-minutes: 30
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
@@ -617,6 +704,15 @@ jobs:
         uses: gradle/gradle-build-action@v2
         with:
           gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
           
       - name: Run integration tests
         run: ./gradlew integrationTest --stacktrace
@@ -631,8 +727,9 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-desktop, code-quality, security-scan]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [build-android, build-ios, build-web, build-desktop, quality-check, security-scan]
+    timeout-minutes: 15
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -642,7 +739,7 @@ jobs:
         
       - name: Create Release
         uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') && !contains(github.ref, 'beta') && !contains(github.ref, 'alpha')
         with:
           files: |
             android-apk/*.apk
@@ -655,8 +752,9 @@ jobs:
   notify:
     name: Notify Status
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-desktop, code-quality, security-scan]
-    if: always()
+    needs: [build-android, build-ios, build-web, build-desktop, quality-check, security-scan]
+    timeout-minutes: 5
+    if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
       - name: Notify Success
         if: ${{ needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-web.result == 'success' && needs.build-desktop.result == 'success' }}

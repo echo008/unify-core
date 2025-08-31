@@ -16,6 +16,27 @@ actual fun UnifyWatchFace(
 ) {
     // Watch平台表盘实现
     // 实现圆形表盘布局和时间显示
+    val calendar = java.util.Calendar.getInstance()
+    calendar.timeInMillis = time
+
+    val hour = calendar.get(java.util.Calendar.HOUR)
+    val minute = calendar.get(java.util.Calendar.MINUTE)
+    val second = calendar.get(java.util.Calendar.SECOND)
+
+    // 简单的数字表盘实现
+    androidx.compose.foundation.Canvas(
+        modifier = modifier.size(200.dp)
+    ) {
+        // 绘制表盘背景
+        drawCircle(
+            color = androidx.compose.ui.graphics.Color.Black,
+            radius = size.minDimension / 2
+        )
+
+        // 绘制时间文本
+        val timeText = String.format("%02d:%02d:%02d", hour, minute, second)
+        // 注意：实际实现需要使用drawText或Text组件
+    }
 }
 
 /**
@@ -30,6 +51,33 @@ actual fun UnifyHealthMonitor(
 ) {
     // Watch平台健康数据监控
     // 集成心率传感器、计步器等
+    androidx.compose.foundation.lazy.LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+    ) {
+        items(healthData) { data ->
+            androidx.compose.material3.Card(
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+            ) {
+                androidx.compose.foundation.layout.Row(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
+                ) {
+                    androidx.compose.foundation.layout.Column {
+                        androidx.compose.material3.Text(data.type.displayName)
+                        androidx.compose.material3.Text("${data.value} ${data.unit}")
+                    }
+                    androidx.compose.material3.Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = androidx.compose.ui.graphics.Color.Red
+                    )
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -46,6 +94,48 @@ actual fun UnifyWearableNotification(
 ) {
     // Watch平台通知组件
     // 针对小屏幕优化的通知显示
+    androidx.compose.material3.Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = when (type) {
+                NotificationType.INFO -> androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.1f)
+                NotificationType.WARNING -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
+                NotificationType.ERROR -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
+                NotificationType.SUCCESS -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
+            }
+        )
+    ) {
+        androidx.compose.foundation.layout.Column(
+            modifier = androidx.compose.ui.Modifier.padding(8.dp)
+        ) {
+            androidx.compose.foundation.layout.Row(
+                modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+            ) {
+                androidx.compose.material3.Text(
+                    text = title,
+                    style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
+                    maxLines = 1
+                )
+                androidx.compose.material3.IconButton(
+                    onClick = { onDismiss?.invoke() },
+                    modifier = androidx.compose.ui.Modifier.size(24.dp)
+                ) {
+                    androidx.compose.material3.Icon(
+                        androidx.compose.material.icons.Icons.Default.Close,
+                        contentDescription = "关闭"
+                    )
+                }
+            }
+            androidx.compose.material3.Text(
+                text = content,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
 }
 
 /**
@@ -60,6 +150,17 @@ actual fun UnifyHapticFeedback(
 ) {
     // Watch平台触觉反馈实现
     // 实现自定义振动模式
+    androidx.compose.runtime.LaunchedEffect(pattern, intensity) {
+        try {
+            // 模拟Watch平台触觉反馈
+            for (duration in pattern) {
+                // 执行振动
+                kotlinx.coroutines.delay(duration)
+            }
+        } catch (e: Exception) {
+            // 静默处理触觉反馈错误
+        }
+    }
 }
 
 /**
@@ -73,6 +174,36 @@ actual fun UnifyHeartRateMonitor(
 ) {
     // Watch平台心率传感器集成
     // 实时心率数据获取
+    var heartRate by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(70) }
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        try {
+            // 模拟心率数据更新
+            while (true) {
+                val newHeartRate = (60..100).random()
+                heartRate = newHeartRate
+                onHeartRateUpdate?.invoke(newHeartRate)
+                kotlinx.coroutines.delay(2000) // 每2秒更新一次
+            }
+        } catch (e: Exception) {
+            onError?.invoke("Heart rate monitoring error: ${e.message}")
+        }
+    }
+
+    androidx.compose.foundation.layout.Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+    ) {
+        androidx.compose.material3.Text(
+            text = "$heartRate",
+            style = androidx.compose.material3.MaterialTheme.typography.displayLarge,
+            color = androidx.compose.ui.graphics.Color.Red
+        )
+        androidx.compose.material3.Text(
+            text = "BPM",
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+        )
+    }
 }
 
 /**
@@ -86,6 +217,50 @@ actual fun UnifyStepCounter(
 ) {
     // Watch平台步数统计
     // 显示当前步数和目标进度
+    var stepCount by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    val progress = stepCount.toFloat() / targetSteps.toFloat()
+
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        try {
+            // 模拟步数更新
+            while (true) {
+                val increment = (1..10).random()
+                stepCount = (stepCount + increment).coerceAtMost(targetSteps)
+                onStepCountUpdate?.invoke(stepCount)
+                kotlinx.coroutines.delay(5000) // 每5秒更新一次
+            }
+        } catch (e: Exception) {
+            // 静默处理步数更新错误
+        }
+    }
+
+    androidx.compose.foundation.layout.Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+    ) {
+        androidx.compose.material3.Text(
+            text = "$stepCount",
+            style = androidx.compose.material3.MaterialTheme.typography.displayMedium,
+            color = androidx.compose.ui.graphics.Color.Blue
+        )
+        androidx.compose.material3.Text(
+            text = "/ $targetSteps 步",
+            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+        )
+
+        androidx.compose.material3.LinearProgressIndicator(
+            progress = progress,
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            color = if (progress >= 1.0f) androidx.compose.ui.graphics.Color.Green else androidx.compose.ui.graphics.Color.Blue
+        )
+
+        androidx.compose.material3.Text(
+            text = "${(progress * 100).toInt()}% 完成",
+            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
+        )
+    }
 }
 
 /**

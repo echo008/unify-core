@@ -173,13 +173,13 @@ interface UnifyMiddleware<I : UnifyIntent, S : UnifyState, E : UnifyEffect> {
 class UnifyLoggingMiddleware<I : UnifyIntent, S : UnifyState, E : UnifyEffect> : 
     UnifyMiddleware<I, S, E> {
     
-    override suspend fun process(
+    override suspend fun intercept(
         intent: I,
         currentState: S,
         next: suspend (I) -> Unit
     ) {
-        println("🎯 Intent: $intent")
-        println("📊 Current State: $currentState")
+        UnifyPerformanceMonitor.recordMetric("mvi_intent_processed", 1.0, "count",
+            mapOf("intent_type" to intent::class.simpleName.orEmpty()))
         next(intent)
     }
 }

@@ -18,7 +18,7 @@
 - **小程序生态**: 8大平台API、登录支付、分享流程
 - **安全验证**: 密码强度、多重验证、生物识别
 
-### [Hello World 示例](./hello-world.md)
+### [Hello World 示例](./hello_world.md)
 最基础的跨平台应用示例，展示：
 - 基本项目结构
 - 跨平台 UI 组件
@@ -580,7 +580,7 @@ fun `test button click`() {
 
 ## 🔗 相关资源
 
-- [Hello World 详细教程](./hello-world.md)
+- [Hello World 详细教程](./hello_world.md)
 - [API 参考文档](../api/)
 - [平台开发指南](../platforms/)
 - [最佳实践指南](../guide/advanced.md)
