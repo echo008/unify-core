@@ -164,7 +164,7 @@ class UnifyIntegrationTestSuite {
                         else -> {
                             for (i in 1..param2) {
                                 if (i % 2 == 0) {
-                                    println("Even: $i")
+                                    // Process even numbers
                                 }
                             }
                             Text("Default: $param2")

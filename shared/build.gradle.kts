@@ -24,7 +24,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 }
 
@@ -34,16 +34,12 @@ kotlin {
     // Android 目标
     androidTarget()
 
-    // JVM 目标 (桌面端) - 启用Desktop支持
-    // 使用Compose Multiplatform替代独立的Compose Desktop
-    // 避免Kotlin 2.0.21 + Compose Desktop编译器冲突
+    // JVM 目标 (桌面端)
     jvm("desktop") {
         compilations.all {
             compileTaskProvider.configure {
                 compilerOptions.configure {
                     jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                    // 移除可能导致冲突的编译选项
-                    freeCompilerArgs.remove("-Xjvm-default=all")
                 }
             }
         }
@@ -127,6 +123,25 @@ kotlin {
                 implementation(libs.ktor.client.js)
             }
         }
+
+        val jsTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        val desktopMain by getting {
+            dependencies {
+                // Desktop网络引擎
+                implementation(libs.ktor.client.cio)
+            }
+        }
+
+        val iosTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
     }
 }
 
@@ -151,16 +166,16 @@ ktlint {
     }
 }
 
-// 测试覆盖率配置 - 暂时注释，等待Kover插件配置
-// kover {
-//     reports {
-//         total {
-//             html {
-//                 onCheck = true
-//             }
-//             xml {
-//                 onCheck = true
-//             }
-//         }
-//     }
-// }
+// 测试覆盖率配置
+kover {
+    reports {
+        total {
+            html {
+                onCheck = true
+            }
+            xml {
+                onCheck = true
+            }
+        }
+    }
+}

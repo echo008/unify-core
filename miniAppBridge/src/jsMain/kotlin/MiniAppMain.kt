@@ -3,7 +3,6 @@ package com.unify.miniapp
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.window.CanvasBasedWindow
 import com.unify.helloworld.HelloWorldApp
-import com.unify.helloworld.PlatformInfo
 
 /**
  * 小程序应用入口点

@@ -1,8 +1,8 @@
 [versions]
-kotlin = "2.1.0"
-compose = "1.7.5"
-agp = "8.7.2"
-compose-bom = "2024.12.01"
+kotlin = "2.0.21"
+compose = "1.7.0"
+agp = "8.6.1"
+compose-bom = "2024.11.00"
 ktor = "3.2.3"
 sqldelight = "2.0.2"
 koin = "4.0.0"
@@ -105,7 +105,7 @@ kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", versi
 sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 koin = { id = "io.insert-koin", version.ref = "koin" }
 room = { id = "androidx.room", version.ref = "room" }
-ksp = { id = "com.google.devtools.ksp", version = "2.1.0-1.0.29" }
+ksp = { id = "com.google.devtools.ksp", version = "2.0.21-1.0.25" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version = "1.23.7" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version = "12.1.2" }
 vite-kotlin = { id = "dev.opensavvy.vite.kotlin", version.ref = "vite-kotlin" }

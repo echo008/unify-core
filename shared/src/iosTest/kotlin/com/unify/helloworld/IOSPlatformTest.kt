@@ -11,13 +11,13 @@ class IOSPlatformTest {
     
     @Test
     fun testIOSPlatformName() {
-        val platformName = PlatformInfo.getPlatformName()
+        val platformName = SimplePlatformInfo.getPlatformName()
         assertEquals("iOS", platformName, "iOS平台名称应为'iOS'")
     }
     
     @Test
     fun testIOSDeviceInfo() {
-        val deviceInfo = PlatformInfo.getDeviceInfo()
+        val deviceInfo = SimplePlatformInfo.getDeviceInfo()
         
         // iOS设备信息应包含系统版本
         assertTrue(deviceInfo.contains("iOS") || deviceInfo.contains("iPhone") || deviceInfo.contains("iPad"), 

@@ -28,5 +28,11 @@ kotlin {
                 implementation(compose.ui)
             }
         }
+        
+        val jsTest by getting {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }

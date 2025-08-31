@@ -11,13 +11,13 @@ class WebPlatformTest {
     
     @Test
     fun testWebPlatformName() {
-        val platformName = PlatformInfo.getPlatformName()
+        val platformName = SimplePlatformInfo.getPlatformName()
         assertEquals("Web", platformName, "Web平台名称应为'Web'")
     }
     
     @Test
     fun testWebDeviceInfo() {
-        val deviceInfo = PlatformInfo.getDeviceInfo()
+        val deviceInfo = SimplePlatformInfo.getDeviceInfo()
         
         // Web设备信息应包含用户代理信息
         assertTrue(deviceInfo.isNotEmpty(), "Web设备信息不应为空")

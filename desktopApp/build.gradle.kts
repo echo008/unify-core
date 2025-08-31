@@ -19,8 +19,7 @@ kotlin {
     sourceSets {
         val jvmMain by getting {
             dependencies {
-                // 暂时不依赖shared模块，避免编译器内部错误
-                // implementation(project(":shared"))
+                implementation(project(":shared"))
                 implementation(compose.desktop.currentOs)
                 implementation(compose.material3)
                 implementation(compose.ui)

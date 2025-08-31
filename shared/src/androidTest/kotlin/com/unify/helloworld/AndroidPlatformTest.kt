@@ -11,13 +11,13 @@ class AndroidPlatformTest {
 
     @Test
     fun testAndroidPlatformName() {
-        val platformName = PlatformInfo.getPlatformName()
+        val platformName = SimplePlatformInfo.getPlatformName()
         assertEquals("Android", platformName, "Android平台名称应为'Android'")
     }
 
     @Test
     fun testAndroidDeviceInfo() {
-        val deviceInfo = PlatformInfo.getDeviceInfo()
+        val deviceInfo = SimplePlatformInfo.getDeviceInfo()
 
         // Android设备信息应包含API级别
         assertTrue(deviceInfo.contains("API"), "Android设备信息应包含API级别")

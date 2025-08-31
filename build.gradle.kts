@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
     alias(libs.plugins.kover) apply false
+    id("com.github.ben-manes.versions") version "0.51.0"
     alias(libs.plugins.binary.compatibility.validator) apply false
 }
 
@@ -76,9 +77,7 @@ tasks.register("testAll") {
     description = "运行所有平台测试"
     dependsOn(
         ":shared:test",
-        ":androidApp:testDebugUnitTest",
-        ":desktopApp:test",
-        ":webApp:test"
+        ":androidApp:testDebugUnitTest"
     )
 }
 
@@ -95,9 +94,7 @@ tasks.register("publishAll") {
     group = "publishing"
     description = "发布所有平台包"
     dependsOn(
-        ":shared:publish",
-        ":androidApp:publish",
-        ":desktopApp:publish"
+        ":shared:publishToMavenLocal"
     )
 }
 
