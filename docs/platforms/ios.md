@@ -4,7 +4,18 @@
 
 Unify KMP 为 iOS 平台提供了完整的 Kotlin Multiplatform 支持，通过 Kotlin/Native 编译器生成原生 iOS Framework，实现高性能的跨平台开发体验。
 
-## 🛠️ 环境要求
+### 🎯 平台特性
+- **原生性能**: AVPlayer、CoreMotion、LocalAuthentication原生支持
+- **深度集成**: 与iOS生态系统完美融合
+- **Swift兼容**: 生成的Framework可无缝集成Swift项目
+- **系统优化**: 针对iOS 13+深度优化
+
+### 技术栈
+- **Kotlin**: 2.0.21
+- **Compose Multiplatform**: 1.7.0
+- **Xcode**: 15.0+
+- **iOS Target**: 13.0+
+- **Deployment Target**: iOS 13.0
 
 ### 必需工具
 - **macOS**: 12.0+ (Monterey 或更高版本)

@@ -1,8 +1,21 @@
 # Android 平台开发指南
 
-本指南详细介绍如何在 Unify KMP 框架中开发 Android 应用。
+本指南详细介绍如何在 Unify KMP 框架中开发 Android 应用，支持完整的原生功能集成。
 
-## 环境配置
+## 🎯 平台特性
+
+### 核心特性
+- **完整功能支持**: 100% 平台功能覆盖
+- **原生性能**: MediaPlayer、Camera2、传感器、生物识别完整集成
+- **系统优化**: 针对Android 7.0+深度优化
+- **生态集成**: 与Android生态系统完美融合
+
+### 技术栈
+- **Kotlin**: 2.0.21
+- **Compose Multiplatform**: 1.7.0
+- **Android Gradle Plugin**: 8.2.0
+- **Target SDK**: 34 (Android 14)
+- **Min SDK**: 24 (Android 7.0)
 
 ### 必需工具
 

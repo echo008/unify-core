@@ -4,7 +4,18 @@
 
 Unify KMP 通过 Compose Desktop 为桌面平台提供原生应用开发支持，基于 Kotlin/JVM 编译器生成跨平台桌面应用，支持 Windows、macOS 和 Linux 系统。
 
-## 🛠️ 环境要求
+### 🎯 平台特性
+- **跨平台桌面**: Windows/macOS/Linux原生支持
+- **系统集成**: 系统托盘、窗口管理、文件操作原生功能
+- **原生体验**: 真正的桌面应用性能和用户体验
+- **灵活部署**: JAR包、安装程序等多种打包方式
+
+### 技术栈
+- **Kotlin**: 2.0.21
+- **Compose Desktop**: 1.6.0
+- **Kotlin/JVM**: 2.0.21
+- **JDK**: 17+
+- **Swing/AWT**: 系统集成
 
 ### 必需工具
 - **JDK**: 17 或更高版本 (推荐 JDK 21)

@@ -8,6 +8,8 @@
 - **JDK**: 17+ (推荐 OpenJDK 或 Temurin)
 - **IDE**: IntelliJ IDEA 2023.3+ 或 Android Studio Hedgehog+
 - **Git**: 2.30+
+- **Kotlin**: 2.0.21+
+- **Compose Multiplatform**: 1.7.0+
 
 ### 本地开发设置
 ```bash
@@ -23,6 +25,9 @@ cd unify-core
 
 # 4. 构建项目
 ./gradlew build
+
+# 5. 运行示例应用
+./gradlew :shared:run
 ```
 
 ## 📋 贡献类型

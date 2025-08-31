@@ -4,7 +4,18 @@
 
 Unify KMP 通过 Kotlin/JS 编译器为 Web 平台提供完整支持，使用 Compose for Web 技术栈实现跨平台 UI 组件的 Web 渲染，同时支持现代 Web 开发工具链。
 
-## 🛠️ 环境要求
+### 🎯 平台特性
+- **现代技术栈**: HTML5、WebRTC、WebAuthn、PWA支持
+- **Canvas/DOM渲染**: 灵活的渲染引擎选择
+- **现代化浏览器兼容**: 支持现代Web标准
+- **开发体验优化**: 热重载、调试工具集成
+
+### 技术栈
+- **Kotlin**: 2.0.21
+- **Compose Multiplatform**: 1.7.0
+- **Kotlin/JS**: 2.0.21
+- **Webpack**: 5.x
+- **Vite**: 4.x (开发服务器)
 
 ### 必需工具
 - **Node.js**: 18.0+ (推荐 LTS 版本)

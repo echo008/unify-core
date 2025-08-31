@@ -27,10 +27,14 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "unify-kmp"
+rootProject.name = "unify-core"
 include(":shared")
 include(":androidApp")
 include(":iosApp")
 include(":webApp")
 include(":desktopApp")
-// include(":miniAppBridge") // 暂时禁用，存在编译错误
+include(":harmonyApp")     // HarmonyOS应用
+include(":miniApp")        // 小程序应用
+include(":miniAppBridge")  // 小程序桥接层
+// include(":watchApp")   // Watch应用 - 暂时注释，待平台支持完善
+// include(":tvApp")      // TV应用 - 暂时注释，待平台支持完善

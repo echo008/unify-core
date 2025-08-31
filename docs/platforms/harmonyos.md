@@ -4,7 +4,18 @@
 
 Unify KMP 为 HarmonyOS 平台提供原生开发支持，使用 ArkTS 语言和 ArkUI 框架构建符合 HarmonyOS 设计规范的应用，实现与其他平台的代码逻辑共享。
 
-## 🛠️ 环境要求
+### 🎯 平台特性
+- **分布式特性**: 分布式设备发现、多屏协同、原子化服务
+- **鸿蒙生态**: 深度集成ArkUI和鸿蒙设计语言
+- **原生体验**: 充分利用HarmonyOS系统能力
+- **跨设备协同**: 支持多设备无缝流转
+
+### 技术栈
+- **Kotlin**: 2.0.21
+- **Compose Multiplatform**: 1.7.0
+- **HarmonyOS SDK**: API 11
+- **ArkUI**: 1.0+
+- **ArkTS**: 1.0+
 
 ### 必需工具
 - **DevEco Studio**: 4.0+ (HarmonyOS 开发 IDE)

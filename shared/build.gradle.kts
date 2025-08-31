@@ -34,19 +34,20 @@ kotlin {
     // Android 目标
     androidTarget()
 
-    // JVM 目标 (桌面端) - 暂时禁用，使用独立桌面应用
-    // 注意：Kotlin 2.0.21 + Compose Desktop存在编译器内部错误
-    // 解决方案：创建独立的desktopApp模块，避免shared模块依赖冲突
-    // jvm("desktop") {
-    //     compilations.all {
-    //         compileTaskProvider.configure {
-    //             compilerOptions {
-    //                 jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-    //                 freeCompilerArgs.add("-Xjvm-default=all")
-    //             }
-    //         }
-    //     }
-    // }
+    // JVM 目标 (桌面端) - 启用Desktop支持
+    // 使用Compose Multiplatform替代独立的Compose Desktop
+    // 避免Kotlin 2.0.21 + Compose Desktop编译器冲突
+    jvm("desktop") {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.configure {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                    // 移除可能导致冲突的编译选项
+                    freeCompilerArgs.remove("-Xjvm-default=all")
+                }
+            }
+        }
+    }
 
     // iOS 目标
     listOf(
