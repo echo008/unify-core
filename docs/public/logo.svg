@@ -1,0 +1,40 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="32" cy="32" r="30" fill="url(#gradient)" stroke="#1e40af" stroke-width="2"/>
+  
+  <!-- Unify symbol - interconnected nodes -->
+  <g fill="white" opacity="0.9">
+    <!-- Central hub -->
+    <circle cx="32" cy="32" r="4" fill="white"/>
+    
+    <!-- Platform nodes -->
+    <circle cx="20" cy="20" r="3"/>
+    <circle cx="44" cy="20" r="3"/>
+    <circle cx="20" cy="44" r="3"/>
+    <circle cx="44" cy="44" r="3"/>
+    
+    <!-- Connection lines -->
+    <line x1="32" y1="32" x2="20" y2="20" stroke="white" stroke-width="2" opacity="0.7"/>
+    <line x1="32" y1="32" x2="44" y2="20" stroke="white" stroke-width="2" opacity="0.7"/>
+    <line x1="32" y1="32" x2="20" y2="44" stroke="white" stroke-width="2" opacity="0.7"/>
+    <line x1="32" y1="32" x2="44" y2="44" stroke="white" stroke-width="2" opacity="0.7"/>
+    
+    <!-- Cross-platform connections -->
+    <line x1="20" y1="20" x2="44" y2="20" stroke="white" stroke-width="1.5" opacity="0.5"/>
+    <line x1="20" y1="44" x2="44" y2="44" stroke="white" stroke-width="1.5" opacity="0.5"/>
+    <line x1="20" y1="20" x2="20" y2="44" stroke="white" stroke-width="1.5" opacity="0.5"/>
+    <line x1="44" y1="20" x2="44" y2="44" stroke="white" stroke-width="1.5" opacity="0.5"/>
+  </g>
+  
+  <!-- Kotlin "K" symbol overlay -->
+  <g transform="translate(28, 24)" fill="white" opacity="0.8">
+    <path d="M0 0 L4 0 L8 8 L4 16 L0 16 L6 8 Z" stroke="white" stroke-width="0.5"/>
+  </g>
+</svg>

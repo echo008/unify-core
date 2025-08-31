@@ -103,7 +103,7 @@ logs/
 
 # Test results
 **/test-results/
-**/reports/
+**/tests/reports/
 coverage/
 .nyc_output/
 
