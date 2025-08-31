@@ -266,56 +266,6 @@ jobs:
           name: performance-reports
           path: performance-reports/
 
-  deploy-docs:
-    name: Deploy Documentation
-    runs-on: ubuntu-latest
-    needs: [validate, test-common]
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: docs/package-lock.json
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'temurin'
-
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          gradle-home-cache-cleanup: true
-          cache-read-only: false
-          cache-write-only: false
-          gradle-home-cache-includes: |
-            caches
-            notifications
-            wrapper
-          gradle-home-cache-excludes: |
-            caches/*/tmp
-            caches/*/locks
-
-      - name: Generate API docs
-        run: ./gradlew dokkaHtml
-
-      - name: Build docs site
-        run: |
-          cd docs
-          npm install
-          npm run build
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/.vitepress/dist
 
 
   test-ios:
