@@ -12,7 +12,7 @@
 - **150%超越现有方案**: 深度超越微信小程序和KuiklyUI
 
 ### 🚀 新增示例项目
-- **[AI智能应用](./ai-app.md)**: 智能聊天、图像生成、语音助手演示
+- **[AI智能应用](./ai_app.md)**: 智能聊天、图像生成、语音助手演示
 - **HarmonyOS分布式**: 多屏协同、原子化服务示例
 - **桌面原生体验**: 系统托盘、窗口管理、文件操作
 - **小程序生态**: 8大平台API、登录支付、分享流程
@@ -582,7 +582,7 @@ fun `test button click`() {
 
 - [Hello World 详细教程](./hello_world.md)
 - [API 参考文档](../api/)
-- [平台开发指南](../platforms/)
+- [平台开发指南](../platforms/android.md)
 - [最佳实践指南](../guide/advanced.md)
 
 ---

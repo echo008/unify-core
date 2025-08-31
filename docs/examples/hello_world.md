@@ -449,7 +449,7 @@ fun HelloWorldWithNetwork() {
 
 ## 下一步
 
-- 学习 [状态管理](/guide/state-management) 进阶技巧
-- 探索 [网络请求](/guide/networking) 实现方法
-- 了解 [导航路由](/guide/navigation) 系统
+- 学习 [状态管理](/guide/state_management.md) 进阶技巧
+- 探索 [网络请求](/guide/core_concepts.md) 实现方法
+- 了解 [导航路由](/guide/advanced.md) 系统
 - 查看更复杂的 [Todo 应用示例](/examples/todo_app)

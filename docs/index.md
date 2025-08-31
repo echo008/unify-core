@@ -11,7 +11,7 @@ hero:
   actions:
     - theme: brand
       text: 快速开始
-      link: /guide/getting_started
+      link: /guide/start
     - theme: alt
       text: 查看示例
       link: /examples/hello_world
@@ -96,37 +96,61 @@ features:
 
 ```kotlin
 @Composable
-fun HelloWorldApp(platformName: String = "Unknown") {
+fun HelloWorldApp() {
     var count by remember { mutableIntStateOf(0) }
     
     MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Hello, $platformName!",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                
-                Text(
-                    text = "Platform: ${PlatformInfo.getPlatformName()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 24.dp)
-                )
-                
-                Button(
-                    onClick = { count++ },
-                    modifier = Modifier.padding(top = 24.dp)
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Count: $count")
+                    Text(
+                        text = "🚀 Unify-Core",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Kotlin Multiplatform Compose 框架",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "计数: $count",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                    
+                    Button(
+                        onClick = { count++ }
+                    ) {
+                        Text("增加")
+                    }
+                }
+            }
+            
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "平台信息",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text("平台: ${getPlatformName()}")
                 }
             }
         }
@@ -137,33 +161,21 @@ fun HelloWorldApp(platformName: String = "Unknown") {
 ### 平台特定实现
 
 ```kotlin
-// 共享代码
-expect class PlatformInfo {
-    companion object {
-        fun getPlatformName(): String
-        fun getDeviceInfo(): String
-    }
+// 共享代码 (commonMain)
+expect fun getPlatformName(): String
+
+// Android 实现 (androidMain)
+actual fun getPlatformName(): String = 
+    "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
+
+// iOS 实现 (iosMain)
+actual fun getPlatformName(): String {
+    val device = UIDevice.currentDevice
+    return "iOS ${device.systemName} ${device.systemVersion}"
 }
 
-// Android 实现
-actual class PlatformInfo {
-    actual companion object {
-        actual fun getPlatformName(): String = "Android"
-        actual fun getDeviceInfo(): String = 
-            "${Build.MANUFACTURER} ${Build.MODEL}"
-    }
-}
-
-// iOS 实现
-actual class PlatformInfo {
-    actual companion object {
-        actual fun getPlatformName(): String = "iOS"
-        actual fun getDeviceInfo(): String {
-            val device = UIDevice.currentDevice
-            return "${device.model} ${device.systemVersion}"
-        }
-    }
-}
+// Web 实现 (jsMain)
+actual fun getPlatformName(): String = "Web (${js("navigator.userAgent")})"
 ```
 
 ## 📈 项目状态
@@ -181,11 +193,11 @@ actual class PlatformInfo {
 
 ### 技术栈
 
-- **Kotlin**: 2.0.21
-- **Compose Multiplatform**: 1.7.0
-- **Ktor**: 2.3.7 (网络层)
-- **SQLDelight**: 2.0.0 (数据库)
-- **Koin**: 3.5.3 (依赖注入)
+- **Kotlin**: 2.1.0
+- **Compose Multiplatform**: 1.7.5
+- **Ktor**: 3.2.3 (网络层)
+- **SQLDelight**: 2.0.2 (数据库)
+- **Koin**: 4.0.0 (依赖注入)
 - **组件库**: 21个模块，200+组件
 - **代码复用率**: 87.3%
 

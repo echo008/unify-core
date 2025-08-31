@@ -338,7 +338,7 @@ class ApiService {
 
 - [核心 API 详细文档](./core.md)
 - [Hello World 示例](../examples/hello_world.md)
-- [平台开发指南](../platforms/)
+- [平台开发指南](../platforms/android.md)
 - [故障排除指南](../guide/troubleshooting.md)
 
 ---

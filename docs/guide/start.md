@@ -22,7 +22,7 @@
 ### 基础环境
 
 - **JDK**: OpenJDK 17 或更高版本
-- **Gradle**: 8.14.2 或更高版本
+- **Gradle**: 8.14.2 或更高版本 (项目使用 Gradle Wrapper)
 - **IDE**: IntelliJ IDEA 2024.1+ 或 Android Studio Hedgehog+
 
 ### 平台特定要求
@@ -50,7 +50,7 @@
 ### 1. 克隆项目模板
 
 ```bash
-git clone https://github.com/unify-kmp/unify-core.git
+git clone https://github.com/echo008/unify-core.git
 cd unify-core
 ```
 
@@ -177,37 +177,61 @@ unify-core/
 
 ```kotlin
 @Composable
-fun HelloWorldApp(platformName: String = "Unknown") {
+fun HelloWorldApp() {
     var count by remember { mutableIntStateOf(0) }
     
     MaterialTheme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Hello, $platformName!",
-                    style = MaterialTheme.typography.headlineMedium
-                )
-                
-                Text(
-                    text = "Platform: ${PlatformInfo.getPlatformName()}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 24.dp)
-                )
-                
-                Button(
-                    onClick = { count++ },
-                    modifier = Modifier.padding(top = 24.dp)
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Count: $count")
+                    Text(
+                        text = "🚀 Unify-Core",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = "Kotlin Multiplatform Compose 框架",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+            
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "计数: $count",
+                        style = MaterialTheme.typography.headlineLarge
+                    )
+                    
+                    Button(
+                        onClick = { count++ }
+                    ) {
+                        Text("增加")
+                    }
+                }
+            }
+            
+            Card {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Text(
+                        text = "平台信息",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text("平台: ${getPlatformName()}")
                 }
             }
         }
@@ -217,13 +241,10 @@ fun HelloWorldApp(platformName: String = "Unknown") {
 
 ### 2. 平台抽象接口
 
+在 `shared/src/commonMain/kotlin/` 中：
+
 ```kotlin
-expect class PlatformInfo {
-    companion object {
-        fun getPlatformName(): String
-        fun getDeviceInfo(): String
-    }
-}
+expect fun getPlatformName(): String
 ```
 
 ### 3. Android 平台实现
@@ -231,14 +252,10 @@ expect class PlatformInfo {
 在 `shared/src/androidMain/kotlin/` 中：
 
 ```kotlin
-actual class PlatformInfo {
-    actual companion object {
-        actual fun getPlatformName(): String = "Android"
-        
-        actual fun getDeviceInfo(): String = 
-            "${Build.MANUFACTURER} ${Build.MODEL} (API ${Build.VERSION.SDK_INT})"
-    }
-}
+import android.os.Build
+
+actual fun getPlatformName(): String = 
+    "Android ${Build.VERSION.RELEASE} (API ${Build.VERSION.SDK_INT})"
 ```
 
 ### 4. iOS 平台实现
@@ -246,16 +263,20 @@ actual class PlatformInfo {
 在 `shared/src/iosMain/kotlin/` 中：
 
 ```kotlin
-actual class PlatformInfo {
-    actual companion object {
-        actual fun getPlatformName(): String = "iOS"
-        
-        actual fun getDeviceInfo(): String {
-            val device = UIDevice.currentDevice
-            return "${device.model} ${device.systemName} ${device.systemVersion}"
-        }
-    }
+import platform.UIKit.UIDevice
+
+actual fun getPlatformName(): String {
+    val device = UIDevice.currentDevice
+    return "iOS ${device.systemName} ${device.systemVersion}"
 }
+```
+
+### 5. Web 平台实现
+
+在 `shared/src/jsMain/kotlin/` 中：
+
+```kotlin
+actual fun getPlatformName(): String = "Web"
 ```
 
 ## 开发工具推荐
@@ -293,15 +314,15 @@ actual class PlatformInfo {
 
 ## 下一步
 
-- 📖 阅读 [核心概念](/guide/core-concepts) 了解框架设计
-- 🏗️ 查看 [项目结构](/guide/project-structure) 详细说明
-- 🎯 学习 [状态管理](/guide/state-management) 最佳实践
-- 🌐 探索 [网络请求](/guide/networking) 使用方法
+- 📖 阅读 [核心概念](./core_concepts.md) 了解框架设计
+- 🏗️ 查看 [项目结构](./project_structure.md) 详细说明
+- 🎯 学习 [状态管理](./state_management.md) 最佳实践
+- 🌐 探索 [网络请求](./core_concepts.md) 使用方法
 
 ## 获取帮助
 
 如果在使用过程中遇到问题：
 
-- 🐛 [提交 Issue](https://github.com/unify-kmp/unify-core/issues)
-- 💬 [参与讨论](https://github.com/unify-kmp/unify-core/discussions)
+- 🐛 [提交 Issue](https://github.com/echo008/unify-core/issues)
+- 💬 [参与讨论](https://github.com/echo008/unify-core/discussions)
 - 📧 [邮件联系](mailto:support@unify-kmp.org)

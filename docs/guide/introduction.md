@@ -55,8 +55,8 @@ Unify KMP 是一个基于 Kotlin Multiplatform 技术的跨平台开发框架，
 ## 🌟 主要特性
 
 ### 跨平台支持
-- ✅ **Android**: 原生 Android 应用，支持 API 21+
-- ✅ **iOS**: 原生 iOS 应用，支持 iOS 14+
+- ✅ **Android**: 原生 Android 应用，支持 API 24+
+- ✅ **iOS**: 原生 iOS 应用，支持 iOS 13+
 - ✅ **Web**: 现代 Web 应用，支持主流浏览器
 - ✅ **桌面端**: Windows、macOS、Linux 桌面应用
 - ✅ **HarmonyOS**: 华为鸿蒙系统原生应用
@@ -114,7 +114,7 @@ Unify KMP 是一个基于 Kotlin Multiplatform 技术的跨平台开发框架，
 java -version
 
 # 2. 克隆项目
-git clone https://github.com/unify-kmp/unify-core.git
+git clone https://github.com/echo008/unify-core.git
 cd unify-core
 
 # 3. 构建项目

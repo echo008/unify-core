@@ -4,7 +4,7 @@ export default defineConfig({
   title: 'Unify KMP',
   description: 'Kotlin Multiplatform 跨平台开发框架 - 一套代码，多端复用',
   lang: 'zh-CN',
-  base: '/',
+  base: '/unify-core/',
   
   head: [
     ['link', { rel: 'icon', href: '/logo.svg' }],
@@ -14,7 +14,7 @@ export default defineConfig({
     ['meta', { property: 'og:title', content: 'Unify KMP | Kotlin Multiplatform 跨平台开发框架' }],
     ['meta', { property: 'og:description', content: '一套代码，多端复用 - 支持8大平台的现代化跨平台开发框架' }],
     ['meta', { property: 'og:site_name', content: 'Unify KMP' }],
-    ['meta', { property: 'og:url', content: 'https://unify-kmp.github.io/' }],
+    ['meta', { property: 'og:url', content: 'https://echo008.github.io/unify-core/' }],
     ['meta', { name: 'keywords', content: 'Kotlin Multiplatform, 跨平台开发, Android, iOS, Web, Desktop, HarmonyOS' }]
   ],
   
@@ -82,6 +82,14 @@ export default defineConfig({
           items: [
             { text: '项目介绍', link: '/guide/introduction' },
             { text: '快速开始', link: '/guide/start' },
+            { text: '核心概念', link: '/guide/core_concepts' },
+            { text: '项目结构', link: '/guide/project_structure' }
+          ]
+        },
+        {
+          text: '核心功能',
+          items: [
+            { text: '状态管理', link: '/guide/state_management' },
             { text: '高级教程', link: '/guide/advanced' }
           ]
         },
@@ -89,18 +97,23 @@ export default defineConfig({
           text: '开发指南',
           items: [
             { text: '集成指南', link: '/guide/integration' },
-            { text: '生产部署', link: '/guide/production' },
-            { text: '热更新', link: '/guide/hot_update' },
-            { text: '开发工具', link: '/guide/tools' },
-            { text: '发布指南', link: '/guide/publishing' },
             { text: '最佳实践', link: '/guide/practices' },
-            { text: '工具链', link: '/guide/toolchain' }
+            { text: '工具链', link: '/guide/toolchain' },
+            { text: '开发工具', link: '/guide/tools' }
+          ]
+        },
+        {
+          text: '生产部署',
+          items: [
+            { text: '生产环境', link: '/guide/production' },
+            { text: '部署指南', link: '/guide/deployment' },
+            { text: '发布指南', link: '/guide/publishing' },
+            { text: '热更新', link: '/guide/hot_update' }
           ]
         },
         {
           text: '运维指南',
           items: [
-            { text: '部署指南', link: '/guide/deployment' },
             { text: '故障排除', link: '/guide/troubleshooting' }
           ]
         }
@@ -188,7 +201,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/unify-kmp/unify-core' }
+      { icon: 'github', link: 'https://github.com/echo008/unify-core' }
     ],
 
     footer: {
@@ -197,7 +210,7 @@ export default defineConfig({
     },
 
     editLink: {
-      pattern: 'https://github.com/unify-kmp/unify-core/edit/main/docs/:path',
+      pattern: 'https://github.com/echo008/unify-core/edit/main/docs/:path',
       text: '在 GitHub 上编辑此页'
     },
 
@@ -265,6 +278,6 @@ export default defineConfig({
   },
 
   sitemap: {
-    hostname: 'https://unify-kmp.github.io'
+    hostname: 'https://echo008.github.io/unify-core'
   }
 })

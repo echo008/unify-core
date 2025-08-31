@@ -41,7 +41,7 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: docs/.vitepress/dist
-        cname: unify-kmp.github.io
+        destination_dir: unify-core
         
     - name: 上传构建产物
       if: github.event_name == 'pull_request'
