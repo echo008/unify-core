@@ -35,6 +35,10 @@ jobs:
         cd docs
         npm run docs:build
         
+    - name: 创建 CNAME 文件
+      run: |
+        echo 'echo008.github.io' > docs/.vitepress/dist/CNAME
+        
     - name: 部署到 GitHub Pages
       if: github.ref == 'refs/heads/main'
       uses: peaceiris/actions-gh-pages@v3
