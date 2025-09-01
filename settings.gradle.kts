@@ -32,7 +32,9 @@ include(":iosApp")
 include(":webApp")
 include(":desktopApp")
 include(":harmonyApp")     // HarmonyOS应用
-include(":miniApp")        // 小程序应用
 include(":miniAppBridge")  // 小程序桥接层
-// include(":watchApp")   // Watch应用 - 暂时注释，待平台支持完善
-// include(":tvApp")      // TV应用 - 暂时注释，待平台支持完善
+include(":wearApp")       // Wear OS应用
+include(":watchApp")      // watchOS应用
+include(":tvApp")         // Android TV应用
+include(":harmonyWearApp") // HarmonyOS穿戴应用
+include(":harmonyTVApp")   // HarmonyOS TV应用

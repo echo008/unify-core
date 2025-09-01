@@ -45,6 +45,39 @@ kotlin {
         }
     }
 
+    // HarmonyOS 目标 (通过JVM实现)
+    jvm("harmony") {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.configure {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+
+    // Watch 目标 (通过JVM实现)
+    jvm("watch") {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.configure {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+
+    // TV 目标 (通过JVM实现)
+    jvm("tv") {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions.configure {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+
     // iOS 目标
     listOf(
         iosX64(),
@@ -59,6 +92,18 @@ kotlin {
 
     // Web 目标
     js(IR) {
+        browser {
+            binaries.executable()
+            commonWebpackConfig {
+                cssSupport {
+                    enabled.set(true)
+                }
+            }
+        }
+    }
+
+    // MiniApp 目标 (通过JS实现)
+    js("miniApp", IR) {
         browser {
             binaries.executable()
             commonWebpackConfig {
@@ -110,10 +155,22 @@ kotlin {
             }
         }
 
+        val androidTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
         val iosMain by getting {
             dependencies {
                 // iOS网络引擎
                 implementation(libs.ktor.client.darwin)
+            }
+        }
+
+        val iosTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
             }
         }
 
@@ -137,7 +194,60 @@ kotlin {
             }
         }
 
-        val iosTest by getting {
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        // HarmonyOS平台源集
+        val harmonyMain by getting {
+            dependencies {
+                // HarmonyOS网络引擎
+                implementation(libs.ktor.client.cio)
+            }
+        }
+
+        val harmonyTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        // Watch平台源集
+        val watchMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.cio)
+            }
+        }
+
+        val watchTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        // TV平台源集
+        val tvMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.cio)
+            }
+        }
+
+        val tvTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+
+        // MiniApp平台源集
+        val miniAppMain by getting {
+            dependencies {
+                implementation(libs.ktor.client.js)
+            }
+        }
+
+        val miniAppTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
             }

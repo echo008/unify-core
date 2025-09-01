@@ -523,17 +523,184 @@ jobs:
         env:
           GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
         
-      - name: Upload Web Build
+      - name: Upload Web build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: web-build
-          path: webApp/build/distributions/
+          path: webApp/build/dist/js/productionExecutable/
+
+  build-harmony:
+    name: Build HarmonyOS
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
+          
+      - name: Build HarmonyOS App
+        run: ./gradlew harmonyApp:buildHarmonyApp --stacktrace --parallel --build-cache --continue
+        env:
+          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
+        
+      - name: Upload HarmonyOS build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmony-build
+          path: harmonyApp/build/libs/
+
+  build-miniapp:
+    name: Build MiniApp Multi-platform
+    runs-on: ubuntu-latest
+    needs: validate
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: miniApp/package-lock.json
+          
+      - name: Install MiniApp dependencies
+        run: |
+          cd miniApp
+          npm ci
+          
+      - name: Run MiniApp Multi-platform Build Script
+        run: |
+          chmod +x scripts/build-miniapp.sh
+          bash scripts/build-miniapp.sh
+          
+      - name: Upload MiniApp build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: miniapp-build
+          path: miniApp/dist/
+
+  build-watch:
+    name: Build Watch Platforms
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
+          
+      - name: Run Watch Platform Build Script
+        run: |
+          chmod +x scripts/build-watch.sh
+          bash scripts/build-watch.sh
+          
+      - name: Upload Watch build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: watch-build-${{ matrix.os }}
+          path: |
+            wearApp/build/outputs/apk/
+            shared/build/bin/watchosArm64/
+            harmonyWearApp/build/default/outputs/default/
+
+  build-tv:
+    name: Build TV Platforms
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'temurin'
+          
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          gradle-home-cache-cleanup: true
+          cache-read-only: false
+          cache-write-only: false
+          gradle-home-cache-includes: |
+            caches
+            notifications
+            wrapper
+          gradle-home-cache-excludes: |
+            caches/*/tmp
+            caches/*/locks
+          
+      - name: Run TV Platform Build Script
+        run: |
+          chmod +x scripts/build-tv.sh
+          bash scripts/build-tv.sh
+          
+      - name: Upload TV build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tv-build-${{ matrix.os }}
+          path: |
+            tvApp/build/outputs/apk/
+            shared/build/bin/tvosArm64/
+            harmonyTVApp/build/default/outputs/default/
 
   build-desktop:
     name: Build Desktop
-    runs-on: ubuntu-latest
-    needs: [test-common]
-    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    needs: validate
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -559,16 +726,20 @@ jobs:
             caches/*/locks
           
       - name: Build Desktop App
-        run: ./gradlew desktopApp:jar --stacktrace --parallel --build-cache --continue
-        env:
-          GRADLE_OPTS: ${{ env.GRADLE_OPTS }}
+        run: ./gradlew desktopApp:packageDistributionForCurrentOS --stacktrace
         
-      - name: Upload Desktop Build
+      - name: Run Desktop Multi-platform Build Script
+        run: |
+          chmod +x scripts/build-desktop-multiplatform.sh
+          bash scripts/build-desktop-multiplatform.sh
+        
+      - name: Upload Desktop build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-build
-          path: desktopApp/build/libs/*.jar
-
+          name: desktop-build-${{ matrix.os }}
+          path: |
+            desktopApp/build/compose/binaries/main/app/
+            build/desktop/
 
   security-scan:
     name: Security Scan
@@ -639,7 +810,7 @@ jobs:
   integration-tests:
     name: Integration Tests
     runs-on: ubuntu-latest
-    needs: [build-android, build-web]
+    needs: [build-android, build-web, build-harmony, build-miniapp]
     timeout-minutes: 30
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
@@ -679,7 +850,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-desktop, quality-check, security-scan]
+    needs: [build-android, build-ios, build-web, build-desktop, build-harmony, build-miniapp, build-watch, build-tv, quality-check, security-scan]
     timeout-minutes: 15
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     steps:
@@ -698,33 +869,45 @@ jobs:
             android-apk-release/*.apk
             ios-framework/**/*
             web-build/**/*
-            desktop-build/*.jar
+            desktop-build*/**/*
+            harmony-build/**/*.hap
+            miniapp-build/**/*
+            watch-build*/**/*
+            tv-build*/**/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     name: Notify Status
     runs-on: ubuntu-latest
-    needs: [build-android, build-ios, build-web, build-desktop, quality-check, security-scan]
+    needs: [build-android, build-ios, build-web, build-desktop, build-harmony, build-miniapp, build-watch, build-tv, quality-check, security-scan]
     timeout-minutes: 5
     if: always() && (github.event_name == 'push' && github.ref == 'refs/heads/main')
     steps:
       - name: Notify Success
-        if: ${{ needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-web.result == 'success' && needs.build-desktop.result == 'success' }}
+        if: ${{ needs.build-android.result == 'success' && needs.build-ios.result == 'success' && needs.build-web.result == 'success' && needs.build-desktop.result == 'success' && needs.build-harmony.result == 'success' && needs.build-miniapp.result == 'success' && needs.build-watch.result == 'success' && needs.build-tv.result == 'success' }}
         run: |
           echo "✅ All builds completed successfully!"
           echo "- Android APK: Built"
           echo "- iOS Framework: Built" 
           echo "- Web Application: Built"
-          echo "- Desktop App: Built"
+          echo "- Desktop Multi-platform: Built"
+          echo "- HarmonyOS HAP: Built"
+          echo "- MiniApp Multi-platform: Built"
+          echo "- Watch Platforms: Built"
+          echo "- TV Platforms: Built"
           echo "- Code Quality: Passed"
           echo "- Security Scan: Completed"
           
       - name: Notify Failure
-        if: ${{ needs.build-android.result == 'failure' || needs.build-ios.result == 'failure' || needs.build-web.result == 'failure' || needs.build-desktop.result == 'failure' }}
+        if: ${{ needs.build-android.result == 'failure' || needs.build-ios.result == 'failure' || needs.build-web.result == 'failure' || needs.build-desktop.result == 'failure' || needs.build-harmony.result == 'failure' || needs.build-miniapp.result == 'failure' || needs.build-watch.result == 'failure' || needs.build-tv.result == 'failure' }}
         run: |
           echo "❌ Some builds failed!"
           echo "- Android: ${{ needs.build-android.result }}"
           echo "- iOS: ${{ needs.build-ios.result }}"
           echo "- Web: ${{ needs.build-web.result }}"
           echo "- Desktop: ${{ needs.build-desktop.result }}"
+          echo "- HarmonyOS: ${{ needs.build-harmony.result }}"
+          echo "- MiniApp: ${{ needs.build-miniapp.result }}"
+          echo "- Watch: ${{ needs.build-watch.result }}"
+          echo "- TV: ${{ needs.build-tv.result }}"

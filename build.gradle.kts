@@ -7,7 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
-    alias(libs.plugins.kover) apply false
+    alias(libs.plugins.kover)
     id("com.github.ben-manes.versions") version "0.51.0"
     alias(libs.plugins.binary.compatibility.validator) apply false
 }
@@ -30,9 +30,9 @@ subprojects {
     apply(plugin = "org.jlleitschuh.gradle.ktlint")
     
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "17"
-            freeCompilerArgs += listOf(
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+            freeCompilerArgs.addAll(
                 "-Xopt-in=kotlin.RequiresOptIn",
                 "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
                 "-Xopt-in=androidx.compose.material3.ExperimentalMaterial3Api",
@@ -108,7 +108,6 @@ tasks.register("benchmarkAll") {
 }
 
 // 代码覆盖率报告
-apply(plugin = "org.jetbrains.kotlinx.kover")
 
 kover {
     reports {

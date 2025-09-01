@@ -66,12 +66,42 @@ fi
 
 echo ""
 
-# 构建小程序
-echo "📱 构建小程序平台..."
+# 构建小程序多平台
+echo "📱 构建小程序多平台..."
 if [ -f "$SCRIPT_DIR/build-miniapp.sh" ]; then
     bash "$SCRIPT_DIR/build-miniapp.sh"
 else
     echo "⚠️  小程序构建脚本未找到，跳过小程序构建"
+fi
+
+echo ""
+
+# 构建Desktop多平台
+echo "🖥️ 构建Desktop多平台..."
+if [ -f "$SCRIPT_DIR/build-desktop-multiplatform.sh" ]; then
+    bash "$SCRIPT_DIR/build-desktop-multiplatform.sh"
+else
+    echo "⚠️  Desktop多平台构建脚本未找到，跳过Desktop多平台构建"
+fi
+
+echo ""
+
+# 构建Watch平台
+echo "⌚ 构建Watch平台..."
+if [ -f "$SCRIPT_DIR/build-watch.sh" ]; then
+    bash "$SCRIPT_DIR/build-watch.sh"
+else
+    echo "⚠️  Watch构建脚本未找到，跳过Watch构建"
+fi
+
+echo ""
+
+# 构建TV平台
+echo "📺 构建TV平台..."
+if [ -f "$SCRIPT_DIR/build-tv.sh" ]; then
+    bash "$SCRIPT_DIR/build-tv.sh"
+else
+    echo "⚠️  TV构建脚本未找到，跳过TV构建"
 fi
 
 echo ""
@@ -81,6 +111,10 @@ echo "📦 构建产物位置:"
 echo "  - Android: androidApp/build/outputs/apk/debug/androidApp-debug.apk"
 echo "  - iOS: 通过Xcode运行iosApp项目"
 echo "  - Web: webApp/build/distributions/"
-echo "  - Desktop: desktopApp/build/compose/binaries/main/app/"
+echo "  - Desktop Windows: build/desktop/windows/"
+echo "  - Desktop macOS: build/desktop/macos/"
+echo "  - Desktop Linux: build/desktop/linux/"
 echo "  - HarmonyOS: harmonyApp/build/default/outputs/default/entry-default-signed.hap"
-echo "  - 小程序: miniApp/ (使用微信开发者工具打开)"
+echo "  - 小程序: miniApp/dist/ (8个平台)"
+echo "  - Watch: wearApp/build/outputs/apk/, shared/build/bin/watchosArm64/"
+echo "  - TV: tvApp/build/outputs/apk/, shared/build/bin/tvosArm64/"

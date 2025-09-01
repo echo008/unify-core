@@ -17,6 +17,39 @@ import com.unify.core.platform.PerformanceInfo
  */
 class UnifyPlatformTestSuite {
 
+    companion object {
+        // 屏幕和显示相关常量
+        private const val MAX_REFRESH_RATE = 240 // 最高240Hz
+        private const val MAX_SCREEN_SIZE_INCHES = 100 // 合理的屏幕尺寸范围
+        
+        // 网络相关常量
+        private const val MIN_SIGNAL_STRENGTH = -100
+        private const val MAX_SIGNAL_STRENGTH = 0
+        
+        // 性能相关常量
+        private const val MIN_PERCENTAGE = 0.0
+        private const val MAX_PERCENTAGE = 100.0
+        private const val MIN_BATTERY_LEVEL = 0
+        private const val MAX_BATTERY_LEVEL = 100
+        
+        // 时间相关常量
+        private const val NETWORK_MONITOR_DELAY_MS = 1000L
+        private const val PERFORMANCE_MONITOR_INTERVAL_MS = 1000L
+        private const val PERFORMANCE_MONITOR_DURATION_MS = 3000L
+        private const val API_PERFORMANCE_THRESHOLD_MS = 1000L
+        private const val MEMORY_CLEANUP_DELAY_MS = 100L
+        private const val MAX_MEMORY_INCREASE_MB = 10L
+        
+        // 性能基准测试常量
+        private const val BENCHMARK_ITERATIONS = 100
+        private const val NANOSECONDS_TO_MILLISECONDS = 1_000_000.0
+        private const val MAX_DEVICE_INFO_TIME_MS = 10.0
+        private const val MAX_SCREEN_INFO_TIME_MS = 5.0
+        private const val STORAGE_TEST_DATA_REPEAT = 100 // ~2KB
+        private const val MAX_WRITE_TIME_MS = 100.0
+        private const val MAX_READ_TIME_MS = 50.0
+    }
+
     @BeforeTest
     fun setup() {
         PlatformManager.initialize()
@@ -123,7 +156,7 @@ class UnifyPlatformTestSuite {
         
         // 刷新率应该是合理值
         assertTrue(screenInfo.refreshRate > 0)
-        assertTrue(screenInfo.refreshRate <= 240) // 最高240Hz
+        assertTrue(screenInfo.refreshRate <= MAX_REFRESH_RATE) // 最高240Hz
     }
 
     @Test
@@ -142,7 +175,7 @@ class UnifyPlatformTestSuite {
         ) / metrics.dpi
         
         assertTrue(diagonalInches > 0)
-        assertTrue(diagonalInches < 100) // 合理的屏幕尺寸范围
+        assertTrue(diagonalInches < MAX_SCREEN_SIZE_INCHES) // 合理的屏幕尺寸范围
     }
 
     // 网络状态测试
@@ -161,8 +194,8 @@ class UnifyPlatformTestSuite {
             ))
             
             // 如果有网络，应该有基本的网络信息
-            assertTrue(networkStatus.signalStrength >= -100)
-            assertTrue(networkStatus.signalStrength <= 0)
+            assertTrue(networkStatus.signalStrength >= MIN_SIGNAL_STRENGTH)
+            assertTrue(networkStatus.signalStrength <= MAX_SIGNAL_STRENGTH)
         }
     }
 
@@ -176,7 +209,7 @@ class UnifyPlatformTestSuite {
         }
         
         // 等待一段时间以检测网络状态变化
-        kotlinx.coroutines.delay(1000)
+        kotlinx.coroutines.delay(NETWORK_MONITOR_DELAY_MS)
         
         PlatformManager.stopNetworkMonitoring()
         
@@ -200,9 +233,9 @@ class UnifyPlatformTestSuite {
         assertTrue(storageInfo.availableSpace + storageInfo.usedSpace <= storageInfo.totalSpace)
         
         // 使用率计算
-        val usagePercentage = (storageInfo.usedSpace.toDouble() / storageInfo.totalSpace) * 100
-        assertTrue(usagePercentage >= 0.0)
-        assertTrue(usagePercentage <= 100.0)
+        val usagePercentage = (storageInfo.usedSpace.toDouble() / storageInfo.totalSpace) * MAX_PERCENTAGE
+        assertTrue(usagePercentage >= MIN_PERCENTAGE)
+        assertTrue(usagePercentage <= MAX_PERCENTAGE)
     }
 
     @Test
@@ -236,8 +269,8 @@ class UnifyPlatformTestSuite {
         assertNotNull(performanceInfo)
         
         // CPU使用率验证
-        assertTrue(performanceInfo.cpuUsage >= 0.0)
-        assertTrue(performanceInfo.cpuUsage <= 100.0)
+        assertTrue(performanceInfo.cpuUsage >= MIN_PERCENTAGE)
+        assertTrue(performanceInfo.cpuUsage <= MAX_PERCENTAGE)
         
         // 内存信息验证
         assertTrue(performanceInfo.memoryUsage.totalMemory > 0)
@@ -247,8 +280,8 @@ class UnifyPlatformTestSuite {
         
         // 电池信息验证（如果支持）
         if (performanceInfo.batteryInfo != null) {
-            assertTrue(performanceInfo.batteryInfo.level >= 0)
-            assertTrue(performanceInfo.batteryInfo.level <= 100)
+            assertTrue(performanceInfo.batteryInfo.level >= MIN_BATTERY_LEVEL)
+            assertTrue(performanceInfo.batteryInfo.level <= MAX_BATTERY_LEVEL)
             assertTrue(performanceInfo.batteryInfo.isCharging != null)
         }
     }
@@ -257,12 +290,12 @@ class UnifyPlatformTestSuite {
     fun testPerformanceMonitoring() = runTest {
         val metrics = mutableListOf<PerformanceInfo>()
         
-        PlatformManager.startPerformanceMonitoring(1000) { info ->
+        PlatformManager.startPerformanceMonitoring(PERFORMANCE_MONITOR_INTERVAL_MS) { info ->
             metrics.add(info)
         }
         
         // 等待收集几个样本
-        kotlinx.coroutines.delay(3000)
+        kotlinx.coroutines.delay(PERFORMANCE_MONITOR_DURATION_MS)
         
         PlatformManager.stopPerformanceMonitoring()
         
@@ -371,7 +404,7 @@ class UnifyPlatformTestSuite {
             PlatformManager.getDeviceInfo()
         }
         val duration = System.currentTimeMillis() - startTime
-        assertTrue(duration < 1000, "API calls too slow: ${duration}ms")
+        assertTrue(duration < API_PERFORMANCE_THRESHOLD_MS, "API calls too slow: ${duration}ms")
     }
 
     @Test
@@ -418,7 +451,7 @@ class UnifyPlatformTestSuite {
         // 测试资源清理
         val initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
         
-        repeat(100) {
+        repeat(BENCHMARK_ITERATIONS) {
             PlatformManager.getDeviceInfo()
             PlatformManager.getScreenInfo()
             PlatformManager.getNetworkStatus()
@@ -427,13 +460,13 @@ class UnifyPlatformTestSuite {
         }
         
         System.gc()
-        kotlinx.coroutines.delay(100)
+        kotlinx.coroutines.delay(MEMORY_CLEANUP_DELAY_MS)
         
         val finalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
         val memoryIncrease = finalMemory - initialMemory
         
         // 内存增长应该控制在合理范围内
-        assertTrue(memoryIncrease < 10 * 1024 * 1024, "Memory leak detected: ${memoryIncrease / 1024 / 1024}MB")
+        assertTrue(memoryIncrease < MAX_MEMORY_INCREASE_MB * 1024 * 1024, "Memory leak detected: ${memoryIncrease / 1024 / 1024}MB")
     }
 
     // 并发和线程安全测试
@@ -484,49 +517,49 @@ class UnifyPlatformTestSuite {
     fun testPerformanceBenchmarks() = runTest {
         // 设备信息获取性能
         val deviceInfoTimes = mutableListOf<Long>()
-        repeat(100) {
+        repeat(BENCHMARK_ITERATIONS) {
             val start = System.nanoTime()
             PlatformManager.getDeviceInfo()
             val end = System.nanoTime()
             deviceInfoTimes.add(end - start)
         }
         
-        val avgDeviceInfoTime = deviceInfoTimes.average() / 1_000_000 // 转换为毫秒
-        assertTrue(avgDeviceInfoTime < 10.0, "Device info retrieval too slow: ${avgDeviceInfoTime}ms")
+        val avgDeviceInfoTime = deviceInfoTimes.average() / NANOSECONDS_TO_MILLISECONDS // 转换为毫秒
+        assertTrue(avgDeviceInfoTime < MAX_DEVICE_INFO_TIME_MS, "Device info retrieval too slow: ${avgDeviceInfoTime}ms")
         
         // 屏幕信息获取性能
         val screenInfoTimes = mutableListOf<Long>()
-        repeat(100) {
+        repeat(BENCHMARK_ITERATIONS) {
             val start = System.nanoTime()
             PlatformManager.getScreenInfo()
             val end = System.nanoTime()
             screenInfoTimes.add(end - start)
         }
         
-        val avgScreenInfoTime = screenInfoTimes.average() / 1_000_000
-        assertTrue(avgScreenInfoTime < 5.0, "Screen info retrieval too slow: ${avgScreenInfoTime}ms")
+        val avgScreenInfoTime = screenInfoTimes.average() / NANOSECONDS_TO_MILLISECONDS
+        assertTrue(avgScreenInfoTime < MAX_SCREEN_INFO_TIME_MS, "Screen info retrieval too slow: ${avgScreenInfoTime}ms")
     }
 
     @Test
     fun testStoragePerformance() = runTest {
-        val testData = "Performance test data ".repeat(100) // ~2KB
+        val testData = "Performance test data ".repeat(STORAGE_TEST_DATA_REPEAT) // ~2KB
         val fileName = "perf_test_${System.currentTimeMillis()}.txt"
         
         // 写入性能测试
         val writeStart = System.nanoTime()
         PlatformManager.writeToStorage(fileName, testData)
-        val writeTime = (System.nanoTime() - writeStart) / 1_000_000.0
+        val writeTime = (System.nanoTime() - writeStart) / NANOSECONDS_TO_MILLISECONDS
         
         // 读取性能测试
         val readStart = System.nanoTime()
         val readData = PlatformManager.readFromStorage(fileName)
-        val readTime = (System.nanoTime() - readStart) / 1_000_000.0
+        val readTime = (System.nanoTime() - readStart) / NANOSECONDS_TO_MILLISECONDS
         
         // 清理
         PlatformManager.deleteFromStorage(fileName)
         
         assertEquals(testData, readData)
-        assertTrue(writeTime < 100.0, "Write operation too slow: ${writeTime}ms")
-        assertTrue(readTime < 50.0, "Read operation too slow: ${readTime}ms")
+        assertTrue(writeTime < MAX_WRITE_TIME_MS, "Write operation too slow: ${writeTime}ms")
+        assertTrue(readTime < MAX_READ_TIME_MS, "Read operation too slow: ${readTime}ms")
     }
 }

@@ -17,6 +17,55 @@ import com.unify.core.quality.DuplicationDetector
  */
 class UnifyQualityTestSuite {
 
+    companion object {
+        // 质量指标相关常量
+        private const val MAX_PERCENTAGE = 100.0
+        private const val MIN_PERCENTAGE = 0.0
+        private const val PERFECT_COVERAGE = 100.0
+        
+        // 代码质量规则常量
+        private const val MAX_METHOD_LENGTH = 50
+        private const val MAX_CLASS_LENGTH = 500
+        private const val MAX_CYCLOMATIC_COMPLEXITY = 10
+        private const val MIN_TEST_COVERAGE = 80
+        
+        // 测试覆盖率数据常量
+        private const val TEST_COVERAGE_CLASS1 = 85.5
+        private const val TEST_COVERAGE_CLASS2 = 92.3
+        private const val TEST_COVERAGE_CLASS3 = 67.8
+        
+        // 安全检查相关常量
+        private const val HARDCODED_PASSWORD = "hardcoded_password_123"
+        private const val COMPLEXITY_THRESHOLD = 100
+        private const val MAX_STRING_LENGTH = 100
+        
+        // 历史指标常量
+        private const val TIMESTAMP_1000 = 1000L
+        private const val TIMESTAMP_2000 = 2000L
+        private const val TIMESTAMP_3000 = 3000L
+        private const val TIMESTAMP_4000 = 4000L
+        private const val LINES_1000 = 1000
+        private const val LINES_1200 = 1200
+        private const val LINES_1500 = 1500
+        private const val LINES_1800 = 1800
+        private const val COMPLEXITY_50 = 50
+        private const val COMPLEXITY_55 = 55
+        private const val COMPLEXITY_60 = 60
+        private const val COMPLEXITY_58 = 58
+        private const val COVERAGE_75 = 75.0
+        private const val COVERAGE_78 = 78.0
+        private const val COVERAGE_82 = 82.0
+        private const val COVERAGE_85 = 85.0
+        
+        // 性能测试常量
+        private const val LARGE_CODEBASE_SIZE = 100
+        private const val EXPECTED_CLASS_COUNT = 100
+        private const val EXPECTED_METHOD_COUNT = 300
+        private const val MAX_ANALYSIS_TIME_MS = 5000L
+        private const val GC_DELAY_MS = 100L
+        private const val MAX_MEMORY_INCREASE_MB = 20L
+    }
+
     private lateinit var qualityManager: UnifyCodeQualityManager
 
     @BeforeTest
@@ -160,16 +209,16 @@ class UnifyQualityTestSuite {
         assertTrue(coverageResult.totalLines > 0)
         assertTrue(coverageResult.coveredLines >= 0)
         assertTrue(coverageResult.coveragePercentage >= 0.0)
-        assertTrue(coverageResult.coveragePercentage <= 100.0)
+        assertTrue(coverageResult.coveragePercentage <= MAX_PERCENTAGE)
     }
 
     @Test
     fun testCoverageReporting() = runTest {
         val mockCoverageData = mapOf(
-            "com.unify.core.TestClass1" to 85.5,
-            "com.unify.core.TestClass2" to 92.3,
-            "com.unify.core.TestClass3" to 67.8,
-            "com.unify.core.TestClass4" to 100.0
+            "com.unify.core.TestClass1" to TEST_COVERAGE_CLASS1,
+            "com.unify.core.TestClass2" to TEST_COVERAGE_CLASS2,
+            "com.unify.core.TestClass3" to TEST_COVERAGE_CLASS3,
+            "com.unify.core.TestClass4" to PERFECT_COVERAGE
         )
 
         val report = qualityManager.generateCoverageReport(mockCoverageData)
@@ -184,10 +233,10 @@ class UnifyQualityTestSuite {
     @Test
     fun testQualityRulesEnforcement() = runTest {
         val rules = listOf(
-            QualityRule("max_method_length", "Methods should not exceed 50 lines", 50),
-            QualityRule("max_class_length", "Classes should not exceed 500 lines", 500),
-            QualityRule("max_cyclomatic_complexity", "Cyclomatic complexity should not exceed 10", 10),
-            QualityRule("min_test_coverage", "Test coverage should be at least 80%", 80)
+            QualityRule("max_method_length", "Methods should not exceed 50 lines", MAX_METHOD_LENGTH),
+            QualityRule("max_class_length", "Classes should not exceed 500 lines", MAX_CLASS_LENGTH),
+            QualityRule("max_cyclomatic_complexity", "Cyclomatic complexity should not exceed 10", MAX_CYCLOMATIC_COMPLEXITY),
+            QualityRule("min_test_coverage", "Test coverage should be at least 80%", MIN_TEST_COVERAGE)
         )
 
         qualityManager.setQualityRules(rules)
@@ -270,7 +319,7 @@ class UnifyQualityTestSuite {
             fun unsafeMethod(userInput: String): String {
                 val sql = "SELECT * FROM users WHERE name = '$userInput'"
                 val command = "rm -rf " + userInput
-                val password = "hardcoded_password_123"
+                val password = HARDCODED_PASSWORD
                 return executeQuery(sql)
             }
             
@@ -366,7 +415,7 @@ class UnifyQualityTestSuite {
                                     var result = 0
                                     for (j in 1..b) {
                                         result += j
-                                        if (result > 100) {
+                                        if (result > COMPLEXITY_THRESHOLD) {
                                             break
                                         }
                                     }
@@ -396,10 +445,10 @@ class UnifyQualityTestSuite {
     @Test
     fun testQualityTrendAnalysis() = runTest {
         val historicalMetrics = listOf(
-            QualityMetrics(timestamp = 1000, linesOfCode = 1000, cyclomaticComplexity = 50, testCoverage = 75.0),
-            QualityMetrics(timestamp = 2000, linesOfCode = 1200, cyclomaticComplexity = 55, testCoverage = 78.0),
-            QualityMetrics(timestamp = 3000, linesOfCode = 1500, cyclomaticComplexity = 60, testCoverage = 82.0),
-            QualityMetrics(timestamp = 4000, linesOfCode = 1800, cyclomaticComplexity = 58, testCoverage = 85.0)
+            QualityMetrics(timestamp = TIMESTAMP_1000, linesOfCode = LINES_1000, cyclomaticComplexity = COMPLEXITY_50, testCoverage = COVERAGE_75),
+            QualityMetrics(timestamp = TIMESTAMP_2000, linesOfCode = LINES_1200, cyclomaticComplexity = COMPLEXITY_55, testCoverage = COVERAGE_78),
+            QualityMetrics(timestamp = TIMESTAMP_3000, linesOfCode = LINES_1500, cyclomaticComplexity = COMPLEXITY_60, testCoverage = COVERAGE_82),
+            QualityMetrics(timestamp = TIMESTAMP_4000, linesOfCode = LINES_1800, cyclomaticComplexity = COMPLEXITY_58, testCoverage = COVERAGE_85)
         )
 
         val trendAnalysis = qualityManager.analyzeTrends(historicalMetrics)
@@ -421,7 +470,7 @@ class UnifyQualityTestSuite {
         assertNotNull(report.recommendations)
         assertTrue(report.timestamp > 0)
         assertTrue(report.overallScore >= 0.0)
-        assertTrue(report.overallScore <= 100.0)
+        assertTrue(report.overallScore <= MAX_PERCENTAGE)
     }
 
     @Test
@@ -478,7 +527,7 @@ class UnifyQualityTestSuite {
                                 for (item in param4) {
                                     if (item.contains(param1)) {
                                         result += item
-                                        if (result.length > 100) {
+                                        if (result.length > MAX_STRING_LENGTH) {
                                             break
                                         }
                                     }
@@ -517,7 +566,7 @@ class UnifyQualityTestSuite {
     // 性能和内存测试
     @Test
     fun testQualityAnalysisPerformance() = runTest {
-        val largeCodebase = (1..100).joinToString("\n\n") { index ->
+        val largeCodebase = (1..LARGE_CODEBASE_SIZE).joinToString("\n\n") { index ->
             """
             class GeneratedClass$index {
                 fun method1(): String = "result$index"
@@ -532,9 +581,9 @@ class UnifyQualityTestSuite {
         val duration = System.currentTimeMillis() - startTime
 
         assertNotNull(metrics)
-        assertTrue(duration < 5000, "Quality analysis took too long: ${duration}ms")
-        assertTrue(metrics.classCount == 100)
-        assertTrue(metrics.methodCount == 300)
+        assertTrue(duration < MAX_ANALYSIS_TIME_MS, "Quality analysis took too long: ${duration}ms")
+        assertTrue(metrics.classCount == EXPECTED_CLASS_COUNT)
+        assertTrue(metrics.methodCount == EXPECTED_METHOD_COUNT)
     }
 
     @Test
@@ -556,12 +605,12 @@ class UnifyQualityTestSuite {
         }
 
         System.gc()
-        kotlinx.coroutines.delay(100)
+        kotlinx.coroutines.delay(GC_DELAY_MS)
 
         val finalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
         val memoryIncrease = finalMemory - initialMemory
 
-        assertTrue(memoryIncrease < 20 * 1024 * 1024, "Memory usage too high: ${memoryIncrease / 1024 / 1024}MB")
+        assertTrue(memoryIncrease < MAX_MEMORY_INCREASE_MB * 1024 * 1024, "Memory usage too high: ${memoryIncrease / 1024 / 1024}MB")
     }
 
     // 集成和配置测试

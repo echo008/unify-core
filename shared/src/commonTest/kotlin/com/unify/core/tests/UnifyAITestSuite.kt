@@ -9,6 +9,37 @@ import kotlinx.coroutines.test.runTest
  */
 class UnifyAITestSuite {
     
+    companion object {
+        // AI置信度相关常量
+        private const val MIN_CONFIDENCE = 0.0f
+        private const val HIGH_CONFIDENCE_THRESHOLD = 0.7f
+        private const val VERY_HIGH_CONFIDENCE_THRESHOLD = 0.8f
+        private const val MAX_CONFIDENCE = 1.0f
+        
+        // 性能测试相关常量
+        private const val RENDER_TIME_THRESHOLD_MS = 25L
+        private const val MEMORY_USAGE_150MB = 150L * 1024 * 1024
+        private const val CPU_USAGE_85_PERCENT = 85.0f
+        private const val HIGH_RENDER_TIME_MS = 120L
+        private const val MEMORY_USAGE_80MB = 80L * 1024 * 1024
+        private const val CPU_USAGE_60_PERCENT = 60.0f
+        private const val RENDER_TIME_100MS = 100L
+        private const val MEMORY_USAGE_200MB = 200L * 1024 * 1024
+        private const val CPU_USAGE_75_PERCENT = 75.0f
+        
+        // 配置相关常量
+        private const val AI_THRESHOLD = 0.8f
+        private const val MAX_RESULTS = 10
+        private const val AI_ACCURACY = 0.85f
+        private const val FEEDBACK_SCORE = 0.9f
+        private const val FEEDBACK_BASE = 0.8f
+        private const val FEEDBACK_INCREMENT = 0.1f
+        
+        // 测试数据相关常量
+        private const val SMALL_DATASET_SIZE = 10
+        private const val LARGE_DATASET_SIZE = 100
+    }
+    
     private lateinit var aiEngine: UnifyAIEngine
     private lateinit var configManager: AIConfigurationManager
     
@@ -37,7 +68,7 @@ class UnifyAITestSuite {
         val recommendations = aiEngine.recommendComponents(context)
         
         assertTrue(recommendations.isNotEmpty(), "应该有组件推荐")
-        assertTrue(recommendations.all { it.confidence > 0.0f }, "所有推荐都应该有置信度")
+        assertTrue(recommendations.all { it.confidence > MIN_CONFIDENCE }, "所有推荐都应该有置信度")
         assertTrue(recommendations.any { it.componentName.contains("TextField") }, "应该推荐输入框组件")
     }
     
@@ -52,7 +83,7 @@ class UnifyAITestSuite {
         val result = aiEngine.generateCode(request)
         
         assertNotNull(result.code, "应该生成代码")
-        assertTrue(result.confidence > 0.7f, "代码生成置信度应该较高")
+        assertTrue(result.confidence > HIGH_CONFIDENCE_THRESHOLD, "代码生成置信度应该较高")
         assertTrue(result.code.contains("@Composable"), "生成的代码应该是Compose组件")
         assertTrue(result.suggestions.isNotEmpty(), "应该提供优化建议")
     }
@@ -76,21 +107,21 @@ class UnifyAITestSuite {
         assertEquals("NullPointerException", diagnosis.errorType, "错误类型识别应该正确")
         assertTrue(diagnosis.rootCause.contains("未初始化"), "应该识别出根本原因")
         assertTrue(diagnosis.solutions.isNotEmpty(), "应该提供解决方案")
-        assertTrue(diagnosis.confidence > 0.8f, "诊断置信度应该很高")
+        assertTrue(diagnosis.confidence > VERY_HIGH_CONFIDENCE_THRESHOLD, "诊断置信度应该很高")
     }
     
     @Test
     fun testPerformanceOptimization() = runTest {
         val metrics = PerformanceMetrics(
-            renderTime = 25L, // 超过16ms阈值
-            memoryUsage = 150 * 1024 * 1024L, // 150MB
-            cpuUsage = 85.0f // 85% CPU使用率
+            renderTime = RENDER_TIME_THRESHOLD_MS, // 超过16ms阈值
+            memoryUsage = MEMORY_USAGE_150MB, // 150MB
+            cpuUsage = CPU_USAGE_85_PERCENT // 85% CPU使用率
         )
         
         val suggestions = aiEngine.optimizePerformance(metrics)
         
         assertTrue(suggestions.suggestions.isNotEmpty(), "应该提供优化建议")
-        assertTrue(suggestions.expectedImprovement > 0.0f, "应该有预期改进效果")
+        assertTrue(suggestions.expectedImprovement > MIN_CONFIDENCE, "应该有预期改进效果")
         assertTrue(suggestions.suggestions.any { it.contains("LazyColumn") || it.contains("remember") }, 
                   "应该包含具体的优化建议")
     }
@@ -117,8 +148,8 @@ class UnifyAITestSuite {
         val config = AIConfiguration(
             modelType = modelType,
             version = "1.0.0",
-            parameters = mapOf("threshold" to 0.8f, "maxResults" to 10),
-            accuracy = 0.85f,
+            parameters = mapOf("threshold" to AI_THRESHOLD, "maxResults" to MAX_RESULTS),
+            accuracy = AI_ACCURACY,
             enabled = true
         )
         
@@ -134,9 +165,9 @@ class UnifyAITestSuite {
     fun testAutoTuneConfiguration() = runTest {
         val modelType = "component_recommendation"
         val metrics = PerformanceMetrics(
-            renderTime = 120L, // 高渲染时间
-            memoryUsage = 80 * 1024 * 1024L,
-            cpuUsage = 60.0f
+            renderTime = HIGH_RENDER_TIME_MS, // 高渲染时间
+            memoryUsage = MEMORY_USAGE_80MB,
+            cpuUsage = CPU_USAGE_60_PERCENT
         )
         
         val optimizedConfig = configManager.autoTuneConfiguration(modelType, metrics)
@@ -152,7 +183,7 @@ class UnifyAITestSuite {
             input = "测试输入",
             expectedOutput = "期望输出",
             actualOutput = "实际输出",
-            feedback = 0.9f,
+            feedback = FEEDBACK_SCORE,
             context = mapOf("platform" to "Android", "version" to "1.0")
         )
         
@@ -170,8 +201,8 @@ class UnifyAITestSuite {
         
         assertNotNull(statistics, "应该返回统计信息")
         assertEquals(modelType, statistics.modelType, "模型类型应该正确")
-        assertTrue(statistics.accuracy >= 0.0f && statistics.accuracy <= 1.0f, "准确率应该在0-1之间")
-        assertTrue(statistics.performanceScore >= 0.0f, "性能分数应该非负")
+        assertTrue(statistics.accuracy >= MIN_CONFIDENCE && statistics.accuracy <= MAX_CONFIDENCE, "准确率应该在0-1之间")
+        assertTrue(statistics.performanceScore >= MIN_CONFIDENCE, "性能分数应该非负")
     }
     
     @Test
@@ -209,9 +240,9 @@ class UnifyAITestSuite {
         
         val recommendations = aiEngine.recommendComponents(context)
         
-        assertTrue(recommendations.all { it.confidence >= 0.0f && it.confidence <= 1.0f }, 
+        assertTrue(recommendations.all { it.confidence >= MIN_CONFIDENCE && it.confidence <= MAX_CONFIDENCE }, 
                   "置信度应该在0-1之间")
-        assertTrue(recommendations.any { it.confidence > 0.8f }, "应该有高置信度的推荐")
+        assertTrue(recommendations.any { it.confidence > VERY_HIGH_CONFIDENCE_THRESHOLD }, "应该有高置信度的推荐")
     }
     
     @Test
@@ -254,15 +285,15 @@ class UnifyAITestSuite {
         val testConfig = AIConfiguration(
             modelType = "test",
             version = "1.0",
-            parameters = mapOf("threshold" to 0.8f),
-            accuracy = 0.85f,
+            parameters = mapOf("threshold" to AI_THRESHOLD),
+            accuracy = AI_ACCURACY,
             enabled = true
         )
         
         val testMetrics = PerformanceMetrics(
-            renderTime = 100L,
-            memoryUsage = 200 * 1024 * 1024L,
-            cpuUsage = 75.0f
+            renderTime = RENDER_TIME_100MS,
+            memoryUsage = MEMORY_USAGE_200MB,
+            cpuUsage = CPU_USAGE_75_PERCENT
         )
         
         strategies.forEach { strategy ->
@@ -277,31 +308,31 @@ class UnifyAITestSuite {
         val dataSet = LearningDataSet("test_model")
         
         assertEquals(0, dataSet.size, "初始数据集应该为空")
-        assertEquals(0.0f, dataSet.quality, "初始质量应该为0")
+        assertEquals(MIN_CONFIDENCE, dataSet.quality, "初始质量应该为0")
         
         // 添加学习数据
-        repeat(10) { i ->
+        repeat(SMALL_DATASET_SIZE) { i ->
             dataSet.addData(LearningData(
                 input = "input_$i",
                 expectedOutput = "expected_$i",
                 actualOutput = "actual_$i",
-                feedback = 0.8f + (i % 3) * 0.1f
+                feedback = FEEDBACK_BASE + (i % 3) * FEEDBACK_INCREMENT
             ))
         }
         
-        assertEquals(10, dataSet.size, "数据集大小应该为10")
-        assertTrue(dataSet.quality > 0.0f, "质量应该大于0")
+        assertEquals(SMALL_DATASET_SIZE, dataSet.size, "数据集大小应该为10")
+        assertTrue(dataSet.quality > MIN_CONFIDENCE, "质量应该大于0")
         
         // 测试重训练条件
         assertFalse(dataSet.shouldRetrain(), "数据量不足时不应该重训练")
         
         // 添加更多数据
-        repeat(100) { i ->
+        repeat(LARGE_DATASET_SIZE) { i ->
             dataSet.addData(LearningData(
                 input = "input_${i + 10}",
                 expectedOutput = "expected_${i + 10}",
                 actualOutput = "actual_${i + 10}",
-                feedback = 0.9f
+                feedback = FEEDBACK_SCORE
             ))
         }
         

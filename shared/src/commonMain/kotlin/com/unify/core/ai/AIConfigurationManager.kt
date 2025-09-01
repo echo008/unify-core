@@ -10,6 +10,15 @@ import kotlinx.serialization.json.Json
  * 管理AI模型配置、学习数据和优化策略
  */
 class AIConfigurationManager {
+    
+    companion object {
+        private const val BASE_ACCURACY = 0.7f
+        private const val MAX_ACCURACY = 0.95f
+        private const val ACCURACY_FACTOR = 0.001f
+        private const val THRESHOLD_INCREMENT = 0.05f
+        private const val RENDER_TIME_THRESHOLD = 100L
+        private const val DEFAULT_THRESHOLD = 0.8f
+    }
     private val _configurations = MutableStateFlow<Map<String, AIConfiguration>>(emptyMap())
     val configurations: StateFlow<Map<String, AIConfiguration>> = _configurations
     
@@ -193,7 +202,7 @@ class AIConfigurationManager {
     
     private fun simulateTraining(dataSet: LearningDataSet): Float {
         // 模拟训练过程，返回新的准确率
-        return (dataSet.size * 0.001f + 0.7f).coerceAtMost(0.95f)
+        return (dataSet.size * ACCURACY_FACTOR + BASE_ACCURACY).coerceAtMost(MAX_ACCURACY)
     }
     
     private fun calculatePerformanceScore(modelType: String): Float {
@@ -298,8 +307,8 @@ class ComponentRecommendationOptimizer : OptimizationStrategy {
         val newParams = config.parameters.toMutableMap()
         
         // 根据性能指标调整参数
-        if (metrics.renderTime > 100) {
-            newParams["threshold"] = ((newParams["threshold"] as? Float ?: 0.8f) + 0.05f).coerceAtMost(0.95f)
+        if (metrics.renderTime > RENDER_TIME_THRESHOLD) {
+            newParams["threshold"] = ((newParams["threshold"] as? Float ?: DEFAULT_THRESHOLD) + THRESHOLD_INCREMENT).coerceAtMost(MAX_ACCURACY)
         }
         
         return config.copy(

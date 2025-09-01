@@ -25,7 +25,7 @@ features:
     details: 基于 Kotlin Multiplatform，实现 87.3% 代码复用率，显著提升开发效率
   - icon: 📱
     title: 全平台覆盖
-    details: 支持 Android、iOS、Web、桌面端、HarmonyOS、小程序、Watch、TV 等八大主流平台
+    details: 支持 Android、iOS、Web、Desktop(Windows/macOS/Linux)、HarmonyOS、小程序(8大平台)、Watch(Wear OS/watchOS/HarmonyOS穿戴)、TV(Android TV/tvOS/HarmonyOS TV) 等八大主流平台
   - icon: ⚡
     title: 原生性能
     details: 编译为各平台原生代码，性能接近原生应用，用户体验优秀

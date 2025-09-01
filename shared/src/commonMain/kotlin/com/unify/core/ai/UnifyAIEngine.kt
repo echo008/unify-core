@@ -11,6 +11,16 @@ import kotlin.random.Random
  * 提供智能组件推荐、代码生成、错误诊断等AI能力
  */
 class UnifyAIEngine {
+    
+    companion object {
+        private const val HIGH_CONFIDENCE = 0.95f
+        private const val MEDIUM_HIGH_CONFIDENCE = 0.92f
+        private const val MEDIUM_CONFIDENCE = 0.90f
+        private const val GOOD_CONFIDENCE = 0.89f
+        private const val ACCEPTABLE_CONFIDENCE = 0.88f
+        private const val CODE_CONFIDENCE = 0.85f
+        private const val PERFORMANCE_IMPROVEMENT_THRESHOLD = 0.3f
+    }
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized
     
@@ -140,13 +150,13 @@ class UnifyAIEngine {
         return listOf(
             ComponentRecommendation(
                 componentName = "UnifyColumn",
-                confidence = 0.95f,
+                confidence = HIGH_CONFIDENCE,
                 reason = "基于垂直布局模式分析",
                 usage = "适用于垂直排列的UI元素"
             ),
             ComponentRecommendation(
                 componentName = "UnifyCard",
-                confidence = 0.88f,
+                confidence = ACCEPTABLE_CONFIDENCE,
                 reason = "检测到卡片式内容结构",
                 usage = "用于展示结构化内容"
             )
@@ -157,13 +167,13 @@ class UnifyAIEngine {
         return listOf(
             ComponentRecommendation(
                 componentName = "UnifyTextField",
-                confidence = 0.92f,
+                confidence = MEDIUM_HIGH_CONFIDENCE,
                 reason = "检测到文本输入需求",
                 usage = "用于用户文本输入"
             ),
             ComponentRecommendation(
                 componentName = "UnifyButton",
-                confidence = 0.90f,
+                confidence = MEDIUM_CONFIDENCE,
                 reason = "需要用户交互触发",
                 usage = "用于提交或确认操作"
             )
@@ -174,7 +184,7 @@ class UnifyAIEngine {
         return listOf(
             ComponentRecommendation(
                 componentName = "UnifyNavigationBar",
-                confidence = 0.94f,
+                confidence = HIGH_CONFIDENCE - 0.01f,
                 reason = "检测到导航需求",
                 usage = "用于页面间导航"
             )
@@ -185,7 +195,7 @@ class UnifyAIEngine {
         return listOf(
             ComponentRecommendation(
                 componentName = "UnifyViewModel",
-                confidence = 0.89f,
+                confidence = GOOD_CONFIDENCE,
                 reason = "需要状态管理",
                 usage = "用于业务逻辑处理"
             )
@@ -251,7 +261,7 @@ class CodeGenerationModel(private val config: CodeGenConfig) : AIModel {
     suspend fun generateCode(request: CodeGenerationRequest): CodeGenerationResult {
         return CodeGenerationResult(
             code = "// AI生成的代码\n@Composable\nfun GeneratedComponent() {\n    // 实现内容\n}",
-            confidence = 0.85f,
+            confidence = CODE_CONFIDENCE,
             suggestions = listOf("建议添加参数验证", "考虑性能优化")
         )
     }
@@ -263,7 +273,7 @@ class ErrorDiagnosisModel(private val config: ErrorDiagnosisConfig) : AIModel {
             errorType = "NullPointerException",
             rootCause = "未初始化的变量访问",
             solutions = listOf("添加空值检查", "确保变量正确初始化"),
-            confidence = 0.92f
+            confidence = MEDIUM_HIGH_CONFIDENCE
         )
     }
 }
@@ -276,7 +286,7 @@ class PerformanceOptimizationModel(private val config: PerformanceConfig) : AIMo
                 "添加remember缓存计算结果",
                 "优化重组范围"
             ),
-            expectedImprovement = 0.3f
+            expectedImprovement = PERFORMANCE_IMPROVEMENT_THRESHOLD
         )
     }
 }

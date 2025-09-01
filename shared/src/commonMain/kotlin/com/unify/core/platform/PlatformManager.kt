@@ -270,7 +270,8 @@ enum class DialogType {
 data class DialogResult(
     val buttonIndex: Int,
     val inputText: String? = null,
-    val cancelled: Boolean = false
+    val cancelled: Boolean = false,
+    val error: String? = null
 )
 
 /**

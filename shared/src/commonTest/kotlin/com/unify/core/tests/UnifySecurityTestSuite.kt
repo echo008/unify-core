@@ -17,6 +17,35 @@ import com.unify.core.security.SecurityConfiguration
  */
 class UnifySecurityTestSuite {
 
+    companion object {
+        // 加密相关常量
+        private const val AES_256_KEY_SIZE = 256
+        private const val AES_128_KEY_SIZE = 128
+        private const val RSA_2048_KEY_SIZE = 2048
+        
+        // 认证相关常量
+        private const val TEST_PASSWORD = "SecurePassword123!"
+        private const val BIOMETRIC_HASH = "fingerprint_hash_12345"
+        private const val TOKEN_PASSWORD = "TokenPassword123!"
+        private const val SESSION_PASSWORD = "SessionPassword123!"
+        private const val CORRECT_PASSWORD = "CorrectPassword123!"
+        private const val AUDIT_IP = "192.168.1.100"
+        private const val STRONG_PASSWORD = "StrongPass123!"
+        
+        // 性能测试常量
+        private const val PERFORMANCE_DATA_REPEAT = 1000
+        private const val PERFORMANCE_TEST_ITERATIONS = 100
+        private const val MAX_ENCRYPTION_TIME_MS = 5000L
+        private const val SESSION_TIMEOUT_MS = 3600000L // 1 hour
+        private const val MEMORY_TEST_ITERATIONS = 1000
+        private const val MAX_MEMORY_INCREASE_MB = 50L
+        private const val GC_DELAY_MS = 100L
+        
+        // 用户ID和权限常量
+        private const val TEST_USER_ID = "user123"
+        private const val VALID_PASSWORD_PATTERN = "Valid password123!"
+    }
+
     private lateinit var securityManager: UnifySecurityManager
 
     @BeforeTest
@@ -109,8 +138,8 @@ class UnifySecurityTestSuite {
     @Test
     fun testUserAuthentication() = runTest {
         val username = "testuser"
-        val password = "SecurePassword123!"
-        val biometricData = "fingerprint_hash_12345"
+        val password = TEST_PASSWORD
+        val biometricData = BIOMETRIC_HASH
 
         // 测试密码认证
         val passwordAuth = securityManager.authenticate(
@@ -137,7 +166,7 @@ class UnifySecurityTestSuite {
     @Test
     fun testTokenManagement() = runTest {
         val username = "tokenuser"
-        val password = "TokenPassword123!"
+        val password = TOKEN_PASSWORD
 
         // 生成令牌
         val authResult = securityManager.authenticate(username, password, AuthenticationMethod.PASSWORD)
@@ -160,7 +189,7 @@ class UnifySecurityTestSuite {
     @Test
     fun testSessionManagement() = runTest {
         val username = "sessionuser"
-        val password = "SessionPassword123!"
+        val password = SESSION_PASSWORD
 
         // 创建会话
         val session = securityManager.createSession(username, password)
@@ -182,7 +211,7 @@ class UnifySecurityTestSuite {
     // 权限管理测试
     @Test
     fun testPermissionManagement() = runTest {
-        val userId = "user123"
+        val userId = TEST_USER_ID
         val permissions = listOf("read", "write", "admin", "delete")
 
         // 授予权限
@@ -260,7 +289,7 @@ class UnifySecurityTestSuite {
         val normalInputs = listOf(
             "normal user input",
             "user@example.com",
-            "Valid password123!",
+            VALID_PASSWORD_PATTERN,
             "正常的中文输入"
         )
 
@@ -286,7 +315,7 @@ class UnifySecurityTestSuite {
         assertTrue(securityManager.isAccountLocked(username))
 
         // 尝试正确密码也应该失败
-        val correctPassword = "CorrectPassword123!"
+        val correctPassword = CORRECT_PASSWORD
         val result = securityManager.authenticate(username, correctPassword, AuthenticationMethod.PASSWORD)
         assertFalse(result.isSuccess)
 
@@ -300,7 +329,7 @@ class UnifySecurityTestSuite {
     fun testSecurityAuditLogging() = runTest {
         val username = "audituser"
         val action = "login_attempt"
-        val details = "User login from IP: 192.168.1.100"
+        val details = "User login from IP: $AUDIT_IP"
 
         // 记录安全事件
         securityManager.logSecurityEvent(username, action, details)
@@ -326,7 +355,7 @@ class UnifySecurityTestSuite {
             requireNumbers = true,
             requireSpecialChars = true,
             maxLoginAttempts = 3,
-            sessionTimeout = 3600000, // 1 hour
+            sessionTimeout = SESSION_TIMEOUT_MS, // 1 hour
             requireMFA = true
         )
 
@@ -336,10 +365,10 @@ class UnifySecurityTestSuite {
         assertFalse(securityManager.validatePassword("weak"))
         assertFalse(securityManager.validatePassword("NoNumbers!"))
         assertFalse(securityManager.validatePassword("nonumbers123"))
-        assertTrue(securityManager.validatePassword("StrongPass123!"))
+        assertTrue(securityManager.validatePassword(STRONG_PASSWORD))
 
         // 测试会话超时
-        val session = securityManager.createSession("policyuser", "StrongPass123!")
+        val session = securityManager.createSession("policyuser", STRONG_PASSWORD)
         assertTrue(session.isActive)
 
         // 模拟会话超时
@@ -386,19 +415,19 @@ class UnifySecurityTestSuite {
     // 性能和压力测试
     @Test
     fun testEncryptionPerformance() = runTest {
-        val testData = "Performance test data ".repeat(1000) // ~20KB
+        val testData = "Performance test data ".repeat(PERFORMANCE_DATA_REPEAT) // ~20KB
         val key = securityManager.generateEncryptionKey(EncryptionType.AES_256)
 
         val startTime = System.currentTimeMillis()
         
-        repeat(100) {
+        repeat(PERFORMANCE_TEST_ITERATIONS) {
             val encrypted = securityManager.encrypt(testData, key, EncryptionType.AES_256)
             val decrypted = securityManager.decrypt(encrypted, key, EncryptionType.AES_256)
             assertEquals(testData, decrypted)
         }
 
         val duration = System.currentTimeMillis() - startTime
-        assertTrue(duration < 5000, "Encryption performance test took too long: ${duration}ms")
+        assertTrue(duration < MAX_ENCRYPTION_TIME_MS, "Encryption performance test took too long: ${duration}ms")
     }
 
     @Test
@@ -444,7 +473,7 @@ class UnifySecurityTestSuite {
     @Test
     fun testSecurityMetrics() = runTest {
         // 执行一些安全操作
-        securityManager.authenticate("metricsuser", "Password123!", AuthenticationMethod.PASSWORD)
+        securityManager.authenticate("metricsuser", TEST_PASSWORD, AuthenticationMethod.PASSWORD)
         securityManager.encrypt("test data", securityManager.generateEncryptionKey(EncryptionType.AES_256), EncryptionType.AES_256)
         securityManager.detectThreat("normal input", "general")
 
@@ -481,7 +510,7 @@ class UnifySecurityTestSuite {
         val initialMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
 
         // 执行大量安全操作
-        repeat(1000) {
+        repeat(MEMORY_TEST_ITERATIONS) {
             val key = securityManager.generateEncryptionKey(EncryptionType.AES_256)
             val encrypted = securityManager.encrypt("test data $it", key, EncryptionType.AES_256)
             securityManager.decrypt(encrypted, key, EncryptionType.AES_256)
@@ -492,12 +521,12 @@ class UnifySecurityTestSuite {
 
         // 强制垃圾回收
         System.gc()
-        kotlinx.coroutines.delay(100)
+        kotlinx.coroutines.delay(GC_DELAY_MS)
 
         val finalMemory = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
         val memoryIncrease = finalMemory - initialMemory
 
         // 内存增长应该控制在合理范围内
-        assertTrue(memoryIncrease < 50 * 1024 * 1024, "Memory leak detected: ${memoryIncrease / 1024 / 1024}MB increase")
+        assertTrue(memoryIncrease < MAX_MEMORY_INCREASE_MB * 1024 * 1024, "Memory leak detected: ${memoryIncrease / 1024 / 1024}MB increase")
     }
 }

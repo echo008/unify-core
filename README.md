@@ -204,11 +204,11 @@ open performance-reports/benchmark_report_*.md
 | **Android** | 100% | Jetpack Compose | ✅ 生产就绪 | 完整功能支持，MediaPlayer、Camera2、传感器、生物识别 |
 | **iOS** | 95% | Compose Multiplatform | ✅ 生产就绪 | 原生性能，AVPlayer、CoreMotion、LocalAuthentication |
 | **Web** | 90% | Compose for Web | ✅ 生产就绪 | HTML5、WebRTC、WebAuthn、PWA现代技术栈 |
-| **Desktop** | 95% | Compose Desktop | ✅ 生产就绪 | 跨平台桌面，系统托盘、窗口管理、文件操作 |
+| **Desktop** | 100% | Compose Desktop | ✅ 生产就绪 | Windows/macOS/Linux全支持，系统托盘、窗口管理、文件系统、原生集成 |
 | **HarmonyOS** | 90% | ArkTS + Bridge | ✅ 生产就绪 | 分布式特性、原子化服务、多屏协同 |
 | **小程序** | 85% | JS Bridge | ✅ 生产就绪 | 8大平台API桥接、登录支付、分享流程 |
-| **Watch** | 90% | Compose Watch | ✅ 生产就绪 | 可穿戴设备优化、健康监测、触觉反馈 |
-| **TV** | 85% | Compose TV | ✅ 生产就绪 | 遥控器适配、焦点管理、大屏交互 |
+| **Watch** | 95% | Compose Watch | ✅ 生产就绪 | Wear OS/watchOS/HarmonyOS穿戴，健康监测、传感器、触觉反馈 |
+| **TV** | 90% | Compose TV | ✅ 生产就绪 | Android TV/tvOS/HarmonyOS TV，遥控器适配、焦点管理、媒体播放 |
 
 ### 代码复用率
 - **共享代码**: 87.3% (业务逻辑 + UI 组件 + 平台适配)
@@ -241,6 +241,11 @@ unify-core/
 ├── harmonyApp/                      # 🔥 HarmonyOS 应用
 ├── miniApp/                         # 📱 小程序应用
 ├── miniAppBridge/                   # 🌉 小程序桥接层
+├── wearApp/                         # ⌚ Wear OS 应用
+├── watchApp/                        # 🍎 watchOS 应用
+├── tvApp/                           # 📺 Android TV 应用
+├── harmonyWearApp/                  # 🔥 HarmonyOS 穿戴应用
+├── harmonyTvApp/                    # 🔥 HarmonyOS TV 应用
 ├── .github/workflows/               # CI/CD 配置
 ├── scripts/                         # 构建脚本
 ├── docs/                            # 📚 文档

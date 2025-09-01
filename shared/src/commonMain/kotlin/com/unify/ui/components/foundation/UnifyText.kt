@@ -20,10 +20,11 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
-import com.unify.ui.LocalUnifyTheme
-import com.unify.ui.LocalUnifyPlatformTheme
+import com.unify.core.theme.UnifyTheme
 import com.unify.core.platform.PlatformManager
 import com.unify.core.platform.PlatformType
+
+private const val DESKTOP_FONT_SCALE_FACTOR = 0.95f
 
 /**
  * Unify Text 组件
@@ -466,7 +467,7 @@ private fun adaptStyleForPlatform(
         PlatformType.DESKTOP -> {
             // Desktop 字体适配
             style.copy(
-                fontSize = style.fontSize * 0.95f // Desktop 字体稍小
+                fontSize = style.fontSize * DESKTOP_FONT_SCALE_FACTOR // Desktop 字体稍小
             )
         }
         else -> style
