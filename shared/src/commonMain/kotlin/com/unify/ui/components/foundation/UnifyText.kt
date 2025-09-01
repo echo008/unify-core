@@ -25,6 +25,11 @@ import com.unify.core.platform.PlatformManager
 import com.unify.core.platform.PlatformType
 
 private const val DESKTOP_FONT_SCALE_FACTOR = 0.95f
+private const val SECONDARY_TEXT_ALPHA = 0.7f
+private const val IOS_LETTER_SPACING_FACTOR = 0.9f
+private const val CAPTION_FONT_SIZE = 12
+private const val CAPTION_LINE_HEIGHT = 16
+private const val OVERLINE_LETTER_SPACING = 1.5f
 
 /**
  * Unify Text 组件
@@ -399,11 +404,11 @@ private fun getTextStyle(
         UnifyTextVariant.LABEL_MEDIUM -> theme.typography.labelMedium
         UnifyTextVariant.LABEL_SMALL -> theme.typography.labelSmall
         UnifyTextVariant.CAPTION -> theme.typography.bodySmall.copy(
-            fontSize = 12.sp,
-            lineHeight = 16.sp
+            fontSize = CAPTION_FONT_SIZE.sp,
+            lineHeight = CAPTION_LINE_HEIGHT.sp
         )
         UnifyTextVariant.OVERLINE -> theme.typography.labelSmall.copy(
-            letterSpacing = 1.5.sp,
+            letterSpacing = OVERLINE_LETTER_SPACING.sp,
             textDecoration = TextDecoration.None
         )
     }
@@ -420,7 +425,7 @@ private fun getSemanticColor(
     return when (semantic) {
         UnifyTextSemantic.DEFAULT -> theme.colors.onSurface
         UnifyTextSemantic.PRIMARY -> theme.colors.primary
-        UnifyTextSemantic.SECONDARY -> theme.colors.onSurface.copy(alpha = 0.7f)
+        UnifyTextSemantic.SECONDARY -> theme.colors.onSurface.copy(alpha = SECONDARY_TEXT_ALPHA)
         UnifyTextSemantic.SUCCESS -> theme.colors.success
         UnifyTextSemantic.WARNING -> theme.colors.warning
         UnifyTextSemantic.ERROR -> theme.colors.error
@@ -443,7 +448,7 @@ private fun adaptStyleForPlatform(
             // iOS 字体适配
             style.copy(
                 fontFamily = FontFamily.Default, // 可以替换为 SF Pro
-                letterSpacing = style.letterSpacing * 0.9f // iOS 字间距调整
+                letterSpacing = style.letterSpacing * IOS_LETTER_SPACING_FACTOR // iOS 字间距调整
             )
         }
         PlatformType.ANDROID -> {

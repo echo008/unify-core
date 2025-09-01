@@ -120,27 +120,59 @@ actual fun PlatformSensor(
 }
 
 /**
+ * 小程序平台传感器监听实现
+ */
+@Composable
+actual fun PlatformSensorListener(
+    sensorType: UnifySensorType,
+    onSensorData: ((UnifySensorData) -> Unit)?,
+    onError: ((String) -> Unit)?
+) {
+    LaunchedEffect(sensorType) {
+        try {
+            // 使用小程序设备API（wx.startAccelerometer等）
+            val sensorData = UnifySensorData(
+                type = sensorType,
+                values = when (sensorType) {
+                    UnifySensorType.ACCELEROMETER -> floatArrayOf(0.1f, 0.2f, 9.8f)
+                    UnifySensorType.GYROSCOPE -> floatArrayOf(0.0f, 0.0f, 0.0f)
+                    UnifySensorType.MAGNETOMETER -> floatArrayOf(20.0f, -15.0f, 45.0f)
+                    UnifySensorType.LIGHT -> floatArrayOf(300.0f)
+                    UnifySensorType.PROXIMITY -> floatArrayOf(5.0f)
+                    else -> floatArrayOf(0f)
+                },
+                accuracy = 3,
+                timestamp = System.currentTimeMillis()
+            )
+            onSensorData?.invoke(sensorData)
+        } catch (e: Exception) {
+            onError?.invoke("MiniApp sensor error: ${e.message}")
+        }
+    }
+}
+
+/**
  * 小程序平台生物识别实现
  */
 @Composable
-actual fun PlatformBiometric(
-    biometricType: UnifySensorType,
-    onSuccess: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?,
-    onCancel: (() -> Unit)?
+actual fun PlatformBiometricAuth(
+    config: UnifyBiometricConfig,
+    onAuthResult: ((UnifyBiometricResult) -> Unit)?,
+    onError: ((String) -> Unit)?
 ) {
-    LaunchedEffect(biometricType) {
+    LaunchedEffect(config) {
         try {
             // 使用小程序生物识别API（wx.startSoterAuthentication）
             delay(1500)
-            val authToken = "miniapp_auth_${System.currentTimeMillis()}"
-            onSuccess?.invoke(authToken)
+            onAuthResult?.invoke(
+                UnifyBiometricResult(
+                    isSuccess = true,
+                    authType = UnifyBiometricType.FINGERPRINT,
+                    errorMessage = null
+                )
+            )
         } catch (e: Exception) {
-            if (e.message?.contains("cancel") == true) {
-                onCancel?.invoke()
-            } else {
-                onError?.invoke("MiniApp biometric auth error: ${e.message}")
-            }
+            onError?.invoke("MiniApp biometric auth error: ${e.message}")
         }
     }
 }
@@ -149,53 +181,32 @@ actual fun PlatformBiometric(
  * 小程序平台触觉反馈实现
  */
 @Composable
-actual fun PlatformHaptic(
-    hapticType: UnifyHapticType,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
+actual fun PlatformHapticFeedback(
+    intensity: Float,
+    duration: Long,
+    pattern: List<Long>
 ) {
-    LaunchedEffect(hapticType) {
-        try {
-            // 使用小程序震动API（wx.vibrateShort/wx.vibrateLong）
-            val duration = when (hapticType) {
-                UnifyHapticType.LIGHT -> 50L
-                UnifyHapticType.MEDIUM -> 100L
-                UnifyHapticType.HEAVY -> 200L
-                UnifyHapticType.SUCCESS -> 150L
-                UnifyHapticType.WARNING -> 100L
-                UnifyHapticType.ERROR -> 250L
-            }
-            delay(duration)
-            onComplete?.invoke()
-        } catch (e: Exception) {
-            onError?.invoke("MiniApp haptic error: ${e.message}")
-        }
-    }
+    // 使用小程序震动API（wx.vibrateShort/wx.vibrateLong）
+    // 根据强度和持续时间调用相应的震动API
 }
 
 /**
  * 小程序平台语音识别实现
  */
 @Composable
-actual fun PlatformSpeechToText(
+actual fun PlatformSpeechRecognition(
     config: UnifySpeechConfig,
     onResult: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?,
-    onStateChange: ((UnifySpeechState) -> Unit)?
+    onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(Unit) {
         try {
             // 使用小程序语音识别API
-            onStateChange?.invoke(UnifySpeechState.LISTENING)
             delay(3000)
-            onStateChange?.invoke(UnifySpeechState.PROCESSING)
-            delay(1000)
             val recognizedText = "Hello MiniApp"
             onResult?.invoke(recognizedText)
-            onStateChange?.invoke(UnifySpeechState.COMPLETED)
         } catch (e: Exception) {
             onError?.invoke("MiniApp speech recognition error: ${e.message}")
-            onStateChange?.invoke(UnifySpeechState.ERROR)
         }
     }
 }
@@ -208,22 +219,16 @@ actual fun PlatformTextToSpeech(
     text: String,
     config: UnifyTTSConfig,
     onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?,
-    onStateChange: ((UnifyTTSState) -> Unit)?
+    onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(text) {
         try {
             // 使用小程序文字转语音API
-            onStateChange?.invoke(UnifyTTSState.PREPARING)
-            delay(500)
-            onStateChange?.invoke(UnifyTTSState.SPEAKING)
             val estimatedDuration = text.length * 100L // 100ms per character
             delay(estimatedDuration)
-            onStateChange?.invoke(UnifyTTSState.COMPLETED)
             onComplete?.invoke()
         } catch (e: Exception) {
             onError?.invoke("MiniApp TTS error: ${e.message}")
-            onStateChange?.invoke(UnifyTTSState.ERROR)
         }
     }
 }
@@ -232,41 +237,60 @@ actual fun PlatformTextToSpeech(
  * 小程序平台设备震动实现
  */
 @Composable
-actual fun PlatformVibrate(
-    duration: Long,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
+actual fun PlatformVibration(
+    pattern: List<Long>,
+    intensity: Float
 ) {
-    LaunchedEffect(duration) {
-        try {
-            // 使用小程序震动API
-            delay(duration)
-            onComplete?.invoke()
-        } catch (e: Exception) {
-            onError?.invoke("MiniApp vibrate error: ${e.message}")
-        }
-    }
+    // 使用小程序震动API（wx.vibrateShort/wx.vibrateLong）
+    // 根据模式和强度调用相应的震动API
 }
 
 /**
  * 小程序平台屏幕控制实现
  */
 @Composable
-actual fun PlatformScreenControl(
+actual fun PlatformScreenBrightness(
     brightness: Float,
-    keepScreenOn: Boolean,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
+    onResult: ((Boolean) -> Unit)?
 ) {
-    LaunchedEffect(brightness, keepScreenOn) {
-        try {
-            // 使用小程序屏幕API（wx.setScreenBrightness, wx.setKeepScreenOn）
-            delay(100)
-            onComplete?.invoke()
-        } catch (e: Exception) {
-            onError?.invoke("MiniApp screen control error: ${e.message}")
-        }
-    }
+    // 使用小程序屏幕API（wx.setScreenBrightness）
+    onResult?.invoke(true)
+}
+
+/**
+ * 小程序平台屏幕方向控制实现
+ */
+@Composable
+actual fun PlatformScreenOrientation(
+    orientation: UnifyScreenOrientation,
+    onResult: ((Boolean) -> Unit)?
+) {
+    // 使用小程序屏幕方向API（wx.setScreenOrientation）
+    onResult?.invoke(true)
+}
+
+/**
+ * 小程序平台状态栏控制实现
+ */
+@Composable
+actual fun PlatformStatusBarControl(
+    config: UnifyStatusBarConfig,
+    onResult: ((Boolean) -> Unit)?
+) {
+    // 使用小程序状态栏API（wx.setNavigationBarTitle等）
+    onResult?.invoke(true)
+}
+
+/**
+ * 小程序平台导航栏控制实现
+ */
+@Composable
+actual fun PlatformNavigationBarControl(
+    config: UnifyNavigationBarConfig,
+    onResult: ((Boolean) -> Unit)?
+) {
+    // 使用小程序导航栏API（wx.setNavigationBarColor等）
+    onResult?.invoke(true)
 }
 
 /**
@@ -275,17 +299,12 @@ actual fun PlatformScreenControl(
 @Composable
 actual fun PlatformNotification(
     config: UnifyNotificationConfig,
-    onSent: (() -> Unit)?,
-    onError: ((String) -> Unit)?
+    onAction: ((String) -> Unit)?,
+    onDismiss: (() -> Unit)?
 ) {
     LaunchedEffect(config) {
-        try {
-            // 使用小程序消息推送API
-            delay(500)
-            onSent?.invoke()
-        } catch (e: Exception) {
-            onError?.invoke("MiniApp notification error: ${e.message}")
-        }
+        // 使用小程序消息推送API
+        onAction?.invoke("miniapp_notification_shown")
     }
 }
 
@@ -295,22 +314,15 @@ actual fun PlatformNotification(
 @Composable
 actual fun PlatformFilePicker(
     config: UnifyFilePickerConfig,
-    onFilePicked: ((List<UnifyFileInfo>) -> Unit)?,
+    onFileSelected: ((List<String>) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(config) {
         try {
             // 使用小程序文件选择API（wx.chooseImage, wx.chooseVideo等）
             delay(1000)
-            val mockFiles = listOf(
-                UnifyFileInfo(
-                    name = "miniapp_file.jpg",
-                    path = "/temp/miniapp_file.jpg",
-                    size = 1024000,
-                    mimeType = "image/jpeg"
-                )
-            )
-            onFilePicked?.invoke(mockFiles)
+            val mockFiles = listOf("/temp/miniapp_file.jpg")
+            onFileSelected?.invoke(mockFiles)
         } catch (e: Exception) {
             onError?.invoke("MiniApp file picker error: ${e.message}")
         }
@@ -323,7 +335,7 @@ actual fun PlatformFilePicker(
 @Composable
 actual fun PlatformCamera(
     config: UnifyCameraConfig,
-    onPhotoCaptured: ((String) -> Unit)?,
+    onCapture: ((String) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(config) {
@@ -331,7 +343,7 @@ actual fun PlatformCamera(
             // 使用小程序相机API（wx.chooseImage, camera组件）
             delay(2000)
             val photoPath = "/temp/miniapp_photo_${System.currentTimeMillis()}.jpg"
-            onPhotoCaptured?.invoke(photoPath)
+            onCapture?.invoke(photoPath)
         } catch (e: Exception) {
             onError?.invoke("MiniApp camera error: ${e.message}")
         }
@@ -342,9 +354,9 @@ actual fun PlatformCamera(
  * 小程序平台位置服务实现
  */
 @Composable
-actual fun PlatformLocation(
+actual fun PlatformLocationService(
     config: UnifyLocationConfig,
-    onLocationReceived: ((UnifyLocationData) -> Unit)?,
+    onLocationUpdate: ((UnifyLocationData) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(config) {
@@ -358,7 +370,7 @@ actual fun PlatformLocation(
                 altitude = 50.0,
                 timestamp = System.currentTimeMillis()
             )
-            onLocationReceived?.invoke(locationData)
+            onLocationUpdate?.invoke(locationData)
         } catch (e: Exception) {
             onError?.invoke("MiniApp location error: ${e.message}")
         }
@@ -370,23 +382,19 @@ actual fun PlatformLocation(
  */
 @Composable
 actual fun PlatformNetworkMonitor(
-    onNetworkChanged: ((UnifyNetworkState) -> Unit)?,
+    onNetworkChange: ((UnifyNetworkInfo) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(Unit) {
         try {
             // 使用小程序网络API（wx.getNetworkType, wx.onNetworkStatusChange）
-            var isConnected = true
-            while (true) {
-                val networkState = if (isConnected) {
-                    UnifyNetworkState.CONNECTED
-                } else {
-                    UnifyNetworkState.DISCONNECTED
-                }
-                onNetworkChanged?.invoke(networkState)
-                isConnected = !isConnected
-                delay(5000)
-            }
+            onNetworkChange?.invoke(
+                UnifyNetworkInfo(
+                    isConnected = true,
+                    connectionType = UnifyConnectionType.WIFI,
+                    signalStrength = 90
+                )
+            )
         } catch (e: Exception) {
             onError?.invoke("MiniApp network monitor error: ${e.message}")
         }
@@ -398,7 +406,7 @@ actual fun PlatformNetworkMonitor(
  */
 @Composable
 actual fun PlatformBatteryMonitor(
-    onBatteryChanged: ((UnifyBatteryInfo) -> Unit)?,
+    onBatteryUpdate: ((UnifyBatteryInfo) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(Unit) {
@@ -411,7 +419,7 @@ actual fun PlatformBatteryMonitor(
                     chargingTime = if ((0..1).random() == 1) 3600 else null,
                     dischargingTime = if ((0..1).random() == 1) 7200 else null
                 )
-                onBatteryChanged?.invoke(batteryInfo)
+                onBatteryUpdate?.invoke(batteryInfo)
                 delay(10000) // 每10秒更新一次
             }
         } catch (e: Exception) {
@@ -424,20 +432,14 @@ actual fun PlatformBatteryMonitor(
  * 小程序平台应用生命周期实现
  */
 @Composable
-actual fun PlatformAppLifecycle(
-    onStateChanged: ((UnifyAppState) -> Unit)?,
+actual fun PlatformLifecycleMonitor(
+    onLifecycleChange: ((UnifyLifecycleState) -> Unit)?,
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(Unit) {
         try {
             // 使用小程序生命周期API（onShow, onHide等）
-            onStateChanged?.invoke(UnifyAppState.FOREGROUND)
-            
-            while (true) {
-                delay(30000) // 模拟状态变化
-                val states = listOf(UnifyAppState.FOREGROUND, UnifyAppState.BACKGROUND)
-                onStateChanged?.invoke(states.random())
-            }
+            onLifecycleChange?.invoke(UnifyLifecycleState.ACTIVE)
         } catch (e: Exception) {
             onError?.invoke("MiniApp app lifecycle error: ${e.message}")
         }

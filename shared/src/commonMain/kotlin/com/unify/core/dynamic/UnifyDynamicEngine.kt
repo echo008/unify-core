@@ -12,6 +12,13 @@ import kotlin.reflect.KClass
  * 支持运行时动态加载组件、配置和业务逻辑
  */
 object UnifyDynamicEngine {
+    
+    // 动态引擎常量
+    private const val CACHE_EXPIRY_TIME = 3600000L // 1小时
+    private const val MAX_RETRY_ATTEMPTS = 3
+    private const val RETRY_DELAY_MS = 1000L
+    private const val COMPONENT_TIMEOUT_MS = 5000L
+    private const val MAX_CACHE_SIZE = 100
     private val _isInitialized = MutableStateFlow(false)
     val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
     

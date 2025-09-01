@@ -7,7 +7,11 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.w3c.dom.*
+import org.w3c.dom.Window
+import org.w3c.dom.Navigator
+import org.w3c.dom.Screen
+import org.w3c.dom.Document
+import org.w3c.dom.Element
 import org.w3c.dom.events.Event
 import kotlin.coroutines.resume
 

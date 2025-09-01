@@ -1,10 +1,17 @@
 package com.unify.ui.components.media
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.await
-import org.w3c.dom.*
+import org.w3c.dom.HTMLVideoElement
+import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.CanvasRenderingContext2D
 import org.w3c.dom.events.Event
 import org.w3c.dom.mediacapture.MediaStream
 import org.w3c.dom.mediacapture.MediaStreamConstraints

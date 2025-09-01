@@ -7,6 +7,28 @@ import kotlin.math.roundToInt
  */
 object TestCoverageAnalyzer {
     
+    // 测试覆盖率常量
+    private const val DYNAMIC_ENGINE_TOTAL_LINES = 850
+    private const val DYNAMIC_ENGINE_COVERED_LINES = 823
+    private const val DYNAMIC_ENGINE_TOTAL_METHODS = 45
+    private const val DYNAMIC_ENGINE_COVERED_METHODS = 44
+    private const val DYNAMIC_ENGINE_TOTAL_BRANCHES = 120
+    private const val DYNAMIC_ENGINE_COVERED_BRANCHES = 115
+    
+    private const val AI_COMPONENTS_TOTAL_LINES = 420
+    private const val AI_COMPONENTS_COVERED_LINES = 410
+    private const val AI_COMPONENTS_TOTAL_METHODS = 28
+    private const val AI_COMPONENTS_COVERED_METHODS = 28
+    private const val AI_COMPONENTS_TOTAL_BRANCHES = 65
+    private const val AI_COMPONENTS_COVERED_BRANCHES = 63
+    
+    private const val UI_COMPONENTS_TOTAL_LINES = 1250
+    private const val UI_COMPONENTS_COVERED_LINES = 1200
+    private const val UI_COMPONENTS_TOTAL_METHODS = 85
+    private const val UI_COMPONENTS_COVERED_METHODS = 82
+    private const val UI_COMPONENTS_TOTAL_BRANCHES = 180
+    private const val UI_COMPONENTS_COVERED_BRANCHES = 172
+    
     private val moduleMetrics = mutableMapOf<String, ModuleCoverage>()
     private val overallMetrics = OverallCoverage()
     
@@ -17,12 +39,12 @@ object TestCoverageAnalyzer {
         // 核心模块覆盖率统计
         moduleMetrics["dynamic_engine"] = ModuleCoverage(
             moduleName = "UnifyDynamicEngine",
-            totalLines = 850,
-            coveredLines = 823,
-            totalMethods = 45,
-            coveredMethods = 44,
-            totalBranches = 120,
-            coveredBranches = 115,
+            totalLines = DYNAMIC_ENGINE_TOTAL_LINES,
+            coveredLines = DYNAMIC_ENGINE_COVERED_LINES,
+            totalMethods = DYNAMIC_ENGINE_TOTAL_METHODS,
+            coveredMethods = DYNAMIC_ENGINE_COVERED_METHODS,
+            totalBranches = DYNAMIC_ENGINE_TOTAL_BRANCHES,
+            coveredBranches = DYNAMIC_ENGINE_COVERED_BRANCHES,
             testFiles = listOf(
                 "ComprehensiveTestSuite.kt",
                 "DynamicEngineTest.kt"
@@ -31,12 +53,12 @@ object TestCoverageAnalyzer {
         
         moduleMetrics["ai_components"] = ModuleCoverage(
             moduleName = "UnifyAIComponents",
-            totalLines = 420,
-            coveredLines = 410,
-            totalMethods = 28,
-            coveredMethods = 28,
-            totalBranches = 65,
-            coveredBranches = 63,
+            totalLines = AI_COMPONENTS_TOTAL_LINES,
+            coveredLines = AI_COMPONENTS_COVERED_LINES,
+            totalMethods = AI_COMPONENTS_TOTAL_METHODS,
+            coveredMethods = AI_COMPONENTS_COVERED_METHODS,
+            totalBranches = AI_COMPONENTS_TOTAL_BRANCHES,
+            coveredBranches = AI_COMPONENTS_COVERED_BRANCHES,
             testFiles = listOf(
                 "UnifyAIComponentsTest.kt"
             )
@@ -44,12 +66,12 @@ object TestCoverageAnalyzer {
         
         moduleMetrics["ui_components"] = ModuleCoverage(
             moduleName = "UnifyUIComponents",
-            totalLines = 1250,
-            coveredLines = 1200,
-            totalMethods = 85,
-            coveredMethods = 82,
-            totalBranches = 180,
-            coveredBranches = 172,
+            totalLines = UI_COMPONENTS_TOTAL_LINES,
+            coveredLines = UI_COMPONENTS_COVERED_LINES,
+            totalMethods = UI_COMPONENTS_TOTAL_METHODS,
+            coveredMethods = UI_COMPONENTS_COVERED_METHODS,
+            totalBranches = UI_COMPONENTS_TOTAL_BRANCHES,
+            coveredBranches = UI_COMPONENTS_COVERED_BRANCHES,
             testFiles = listOf(
                 "UnifyUIComponentsTest.kt",
                 "ResponsiveDesignTest.kt",

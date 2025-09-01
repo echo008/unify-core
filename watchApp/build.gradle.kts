@@ -69,7 +69,7 @@ tasks.register("buildWatchApp") {
     dependsOn("watchJar")
     
     doLast {
-        println("Watch应用构建完成")
-        println("支持平台: Wear OS, watchOS, HarmonyOS穿戴")
+        logger.info("Watch应用构建完成")
+        logger.info("支持平台: Wear OS, watchOS, HarmonyOS穿戴")
     }
 }

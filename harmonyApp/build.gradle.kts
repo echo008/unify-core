@@ -47,8 +47,8 @@ tasks.register("buildHarmonyApp") {
     dependsOn("harmonyJar")
     
     doLast {
-        println("HarmonyOS应用构建完成")
-        println("输出路径: build/libs/")
+        logger.info("HarmonyOS应用构建完成")
+        logger.info("输出路径: build/libs/")
     }
 }
 
@@ -58,6 +58,6 @@ tasks.register("packageHarmonyApp") {
     dependsOn("buildHarmonyApp")
     
     doLast {
-        println("HarmonyOS HAP包构建完成")
+        logger.info("HarmonyOS HAP包构建完成")
     }
 }

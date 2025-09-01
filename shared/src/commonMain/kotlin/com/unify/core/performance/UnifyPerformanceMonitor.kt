@@ -15,6 +15,13 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 object UnifyPerformanceMonitor {
     
+    // 性能监控常量
+    private const val FRAME_HISTORY_SIZE = 100
+    private const val MEMORY_SNAPSHOTS_SIZE = 50
+    private const val MIN_FPS_THRESHOLD = 30
+    private const val MILLISECONDS_PER_SECOND = 1000.0
+    private const val BYTES_TO_MB_DIVISOR = 1024.0 * 1024.0
+    
     private val _metrics = MutableStateFlow<Map<String, PerformanceMetric>>(emptyMap())
     val metrics: StateFlow<Map<String, PerformanceMetric>> = _metrics.asStateFlow()
     
@@ -80,16 +87,16 @@ object UnifyPerformanceMonitor {
      */
     fun recordFrameTime(frameTime: Long) {
         frameTimeHistory.add(frameTime)
-        if (frameTimeHistory.size > 100) {
+        if (frameTimeHistory.size > FRAME_HISTORY_SIZE) {
             frameTimeHistory.removeAt(0)
         }
         
         val averageFrameTime = frameTimeHistory.average()
-        val fps = 1000.0 / averageFrameTime
+        val fps = MILLISECONDS_PER_SECOND / averageFrameTime
         recordMetric("frame_rate", fps, "fps")
         
         // 检测性能问题
-        if (fps < 30) {
+        if (fps < MIN_FPS_THRESHOLD) {
             recordMetric("performance_warning", 1.0, "count", 
                 mapOf("type" to "low_fps", "fps" to fps.toString()))
         }
@@ -100,11 +107,11 @@ object UnifyPerformanceMonitor {
      * 记录内存使用
      */
     fun recordMemoryUsage(bytes: Long) {
-        val mb = bytes / (1024.0 * 1024.0)
+        val mb = bytes / BYTES_TO_MB_DIVISOR
         recordMetric("memory_usage", mb, "MB")
         
         memorySnapshots.add(MemorySnapshot(getCurrentTimeMillis(), bytes))
-        if (memorySnapshots.size > 50) {
+        if (memorySnapshots.size > MEMORY_SNAPSHOTS_SIZE) {
             memorySnapshots.removeAt(0)
         }
     }
