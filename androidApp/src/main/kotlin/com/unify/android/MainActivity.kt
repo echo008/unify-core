@@ -8,7 +8,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.unify.helloworld.HelloWorldApp
-import com.unify.helloworld.getPlatformName
 
 /**
  * Android应用主Activity

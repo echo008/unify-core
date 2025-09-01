@@ -176,28 +176,32 @@ fun TaskListScreen(
     onNavigateBack: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val viewModel = remember { TaskViewModel(scope) }
+    val viewModel = TaskViewModel(scope)
+    // 简化状态管理
+    var state by remember { mutableStateOf(viewModel.initialState) }
+    var isLoading by remember { mutableStateOf(false) }
+    val onIntent: (TaskIntent) -> Unit = { intent ->
+        scope.launch {
+            isLoading = true
+            viewModel.processIntent(intent)
+            isLoading = false
+        }
+    }
+    
+    LaunchedEffect(Unit) {
+        viewModel.stateFlow.collect { newState ->
+            state = newState
+        }
+    }
     
     PerformanceTracker("TaskListScreen") {
-        UnifyMVIContainer(
-            stateManager = viewModel,
-            onEffect = { effect ->
-                when (effect) {
-                    is TaskEffect.ShowMessage -> {
-                        // 处理消息显示
-                        UnifyPerformanceMonitor.recordMetric("demo_message_shown", 1.0, "count",
-                            mapOf("message_type" to "task_effect"))
-                    }
-                }
-            }
-        ) { state, isLoading, onIntent ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
-                // 顶部栏
-                Row(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            // 顶部栏
+            Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -229,8 +233,9 @@ fun TaskListScreen(
                     )
                     UnifyButton(
                         onClick = {
-                            if (newTaskText.isNotBlank()) {
-                                onIntent(TaskIntent.AddTask(newTaskText))
+                            val text = newTaskText.trim()
+                            if (text.isNotBlank()) {
+                                onIntent(TaskIntent.AddTask(text))
                                 newTaskText = ""
                             }
                         },
@@ -259,7 +264,6 @@ fun TaskListScreen(
                         )
                     }
                 }
-            }
         }
     }
 }
