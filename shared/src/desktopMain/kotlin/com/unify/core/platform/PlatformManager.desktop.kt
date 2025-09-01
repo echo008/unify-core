@@ -5,7 +5,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
-import java.awt.*
+import java.awt.Toolkit
+import java.awt.GraphicsEnvironment
+import java.awt.SystemTray
+import java.awt.Desktop
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
 import java.io.File

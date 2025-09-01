@@ -1,6 +1,6 @@
 package com.unify.ui.components.miniapp
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 
 /**
  * 小程序平台类型枚举

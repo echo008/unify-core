@@ -17,6 +17,109 @@ fi
 cd miniApp
 
 echo "📦 小程序项目结构检查..."
+
+# 检查必需文件是否存在
+if [ ! -f "app.json" ]; then
+    echo "⚠️ 警告: app.json 不存在，创建默认配置..."
+    cat > app.json << 'EOF'
+{
+  "pages": [
+    "pages/index/index"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "Unify KMP",
+    "navigationBarTextStyle": "black"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}
+EOF
+fi
+
+# 检查页面目录结构
+if [ ! -d "pages/index" ]; then
+    mkdir -p pages/index
+fi
+
+# 创建页面文件（如果不存在）
+if [ ! -f "pages/index/index.wxml" ]; then
+    echo "⚠️ 创建默认页面文件..."
+    cat > pages/index/index.wxml << 'EOF'
+<view class="container">
+  <text class="title">Unify KMP 跨平台框架</text>
+  <text class="subtitle">一套代码，多端复用</text>
+  <button bindtap="onTap" class="btn">点击测试</button>
+</view>
+EOF
+fi
+
+if [ ! -f "pages/index/index.js" ]; then
+    cat > pages/index/index.js << 'EOF'
+Page({
+  data: {
+    message: 'Hello Unify KMP!'
+  },
+  onLoad: function() {
+    console.log('Unify KMP 小程序加载完成');
+  },
+  onTap: function() {
+    wx.showToast({
+      title: 'Unify KMP 运行正常',
+      icon: 'success'
+    });
+  }
+});
+EOF
+fi
+
+if [ ! -f "pages/index/index.wxss" ]; then
+    cat > pages/index/index.wxss << 'EOF'
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  padding: 40rpx;
+}
+
+.title {
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 20rpx;
+}
+
+.subtitle {
+  font-size: 32rpx;
+  color: #666;
+  margin-bottom: 60rpx;
+}
+
+.btn {
+  background-color: #007aff;
+  color: white;
+  border-radius: 10rpx;
+  padding: 20rpx 40rpx;
+}
+EOF
+fi
+
+if [ ! -f "app.js" ]; then
+    cat > app.js << 'EOF'
+App({
+  onLaunch: function() {
+    console.log('Unify KMP 小程序启动');
+  },
+  globalData: {
+    version: '1.0.0'
+  }
+});
+EOF
+fi
+
 echo "✅ 页面文件: pages/index/index.wxml"
 echo "✅ 逻辑文件: pages/index/index.js"
 echo "✅ 样式文件: pages/index/index.wxss"

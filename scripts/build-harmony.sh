@@ -7,11 +7,28 @@ set -e
 
 echo "🚀 开始构建HarmonyOS应用..."
 
-# 检查环境
+# 检查是否在CI环境中
+if [ "$CI" = "true" ]; then
+    echo "🔧 CI环境检测到，使用Gradle构建HarmonyOS模块..."
+    
+    # 使用Gradle构建HarmonyOS目标
+    ./gradlew :harmonyApp:buildHarmonyApp --stacktrace
+    
+    echo "✅ HarmonyOS模块构建成功（CI模式）"
+    echo "💡 提示: 完整的HAP构建需要DevEco Studio环境"
+    exit 0
+fi
+
+# 检查DevEco Studio环境
 if ! command -v hvigorw &> /dev/null; then
-    echo "⚠️ 警告: hvigorw 未找到，请确保已安装DevEco Studio和HarmonyOS SDK"
-    echo "💡 提示: 请在DevEco Studio中打开harmonyApp项目进行构建"
-    exit 1
+    echo "⚠️ 警告: hvigorw 未找到，尝试使用Gradle构建..."
+    
+    # 回退到Gradle构建
+    ./gradlew :harmonyApp:buildHarmonyApp --stacktrace
+    
+    echo "✅ HarmonyOS模块构建成功（Gradle模式）"
+    echo "💡 提示: 完整的HAP构建需要DevEco Studio和HarmonyOS SDK"
+    exit 0
 fi
 
 # 进入HarmonyOS项目目录

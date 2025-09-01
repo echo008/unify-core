@@ -1,10 +1,22 @@
 package com.unify.ui.components.platform
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import com.unify.ui.components.media.*
-import com.unify.ui.components.scanner.*
-import com.unify.ui.components.sensor.*
+import com.unify.ui.components.media.UnifyLivePlayerConfig
+import com.unify.ui.components.media.UnifyLivePlayerState
+import com.unify.ui.components.media.UnifyLivePusherConfig
+import com.unify.ui.components.media.UnifyLivePusherState
+import com.unify.ui.components.media.UnifyWebRTCConfig
+import com.unify.ui.components.scanner.UnifyScannerConfig
+import com.unify.ui.components.scanner.UnifyScannerResult
+import com.unify.ui.components.scanner.UnifyScannerState
+import com.unify.ui.components.sensor.UnifySensorConfig
+import com.unify.ui.components.sensor.UnifySensorData
+import com.unify.ui.components.sensor.UnifySensorType
 
 /**
  * HarmonyOS 平台直播播放器实现
@@ -97,19 +109,34 @@ actual fun PlatformSensorListener(
             // 使用HarmonyOS传感器框架
             // 支持分布式传感器数据共享
             
+            // 传感器数据常量
+            val ACCEL_X = 0.1f
+            val ACCEL_Y = 0.2f
+            val ACCEL_Z = 9.8f
+            val GYRO_ZERO = 0.0f
+            val MAG_X = 20.0f
+            val MAG_Y = -15.0f
+            val MAG_Z = 45.0f
+            val LIGHT_LUX = 300.0f
+            val PROXIMITY_CM = 5.0f
+            val HEART_RATE_BPM = 72.0f
+            val STEP_COUNT = 8500.0f
+            val DEFAULT_VALUE = 0f
+            val HIGH_ACCURACY = 3
+            
             val sensorData = UnifySensorData(
                 type = sensorType,
                 values = when (sensorType) {
-                    UnifySensorType.ACCELEROMETER -> floatArrayOf(0.1f, 0.2f, 9.8f)
-                    UnifySensorType.GYROSCOPE -> floatArrayOf(0.0f, 0.0f, 0.0f)
-                    UnifySensorType.MAGNETOMETER -> floatArrayOf(20.0f, -15.0f, 45.0f)
-                    UnifySensorType.LIGHT -> floatArrayOf(300.0f)
-                    UnifySensorType.PROXIMITY -> floatArrayOf(5.0f)
-                    UnifySensorType.HEART_RATE -> floatArrayOf(72.0f)
-                    UnifySensorType.STEP_COUNTER -> floatArrayOf(8500.0f)
-                    else -> floatArrayOf(0f)
+                    UnifySensorType.ACCELEROMETER -> floatArrayOf(ACCEL_X, ACCEL_Y, ACCEL_Z)
+                    UnifySensorType.GYROSCOPE -> floatArrayOf(GYRO_ZERO, GYRO_ZERO, GYRO_ZERO)
+                    UnifySensorType.MAGNETOMETER -> floatArrayOf(MAG_X, MAG_Y, MAG_Z)
+                    UnifySensorType.LIGHT -> floatArrayOf(LIGHT_LUX)
+                    UnifySensorType.PROXIMITY -> floatArrayOf(PROXIMITY_CM)
+                    UnifySensorType.HEART_RATE -> floatArrayOf(HEART_RATE_BPM)
+                    UnifySensorType.STEP_COUNTER -> floatArrayOf(STEP_COUNT)
+                    else -> floatArrayOf(DEFAULT_VALUE)
                 },
-                accuracy = 3,
+                accuracy = HIGH_ACCURACY,
                 timestamp = System.currentTimeMillis()
             )
             
@@ -328,13 +355,18 @@ actual fun PlatformLocationService(
     onError: ((String) -> Unit)?
 ) {
     LaunchedEffect(config) {
+        // 位置数据常量（北京坐标示例）
+        val BEIJING_LATITUDE = 39.9042
+        val BEIJING_LONGITUDE = 116.4074
+        val HIGH_ACCURACY = 3.0
+        
         // 使用HarmonyOS位置服务
         // 支持分布式位置共享
         onLocationUpdate?.invoke(
             UnifyLocationData(
-                latitude = 39.9042,
-                longitude = 116.4074,
-                accuracy = 3.0,
+                latitude = BEIJING_LATITUDE,
+                longitude = BEIJING_LONGITUDE,
+                accuracy = HIGH_ACCURACY,
                 timestamp = System.currentTimeMillis()
             )
         )

@@ -45,11 +45,16 @@ class WebUnifyStorage(
     private val config: UnifyDataManagerConfig
 ) : UnifyStorage {
     
-    private val storage: Storage = localStorage
-    private val sessionStore: Storage = sessionStorage
+    private val storage = window.localStorage
+    private val sessionStore = window.sessionStorage
     private val json = Json { 
         ignoreUnknownKeys = true
         encodeDefaults = true
+    }
+    
+    companion object {
+        // 缓存清理常量
+        private const val CACHE_CLEANUP_PERCENTAGE = 0.2
     }
     
     private val keyPrefix = "unify_"
@@ -229,7 +234,7 @@ class WebUnifyStorage(
         
         // 删除最旧的20%数据
         val sortedData = dataWithTimestamp.sortedBy { it.second }
-        val deleteCount = (sortedData.size * 0.2).toInt()
+        val deleteCount = (sortedData.size * CACHE_CLEANUP_PERCENTAGE).toInt()
         
         sortedData.take(deleteCount).forEach { (key, _) ->
             storage.removeItem(key)
@@ -296,8 +301,14 @@ class WebUnifyCacheManager(
     private var policy: UnifyCachePolicy
 ) : UnifyCacheManager {
     
-    private val cache = mutableMapOf<String, WebCacheEntry>()
+    private val cache = mutableMapOf<String, WebCacheEntry<*>>()
     private val stats = WebCacheStats()
+    private val sessionStorage = window.sessionStorage
+    
+    companion object {
+        // 缓存过期时间常量
+        private const val NEVER_EXPIRE = 0.0
+    }
     
     suspend fun initialize() {
         // 从sessionStorage恢复缓存
@@ -313,10 +324,11 @@ class WebUnifyCacheManager(
     
     override suspend fun <T> cache(key: String, value: T, ttl: Long) {
         val actualTtl = if (ttl > 0) ttl else policy.defaultTtl
+        
         val expireTime = if (actualTtl > 0) {
             Date.now() + actualTtl
         } else {
-            0.0 // 永不过期
+            NEVER_EXPIRE // 永不过期
         }
         
         val entry = WebCacheEntry(
@@ -368,7 +380,7 @@ class WebUnifyCacheManager(
     
     override suspend fun isCacheValid(key: String): Boolean {
         val entry = cache[key] ?: return false
-        return entry.expireTime == 0.0 || Date.now() <= entry.expireTime
+        return entry.expireTime == NEVER_EXPIRE || Date.now() <= entry.expireTime
     }
     
     override suspend fun getCacheStats(): UnifyCacheStats {
@@ -380,7 +392,7 @@ class WebUnifyCacheManager(
             maxSize = policy.maxSize,
             hitRate = if (stats.hitCount + stats.missCount > 0) {
                 stats.hitCount.toDouble() / (stats.hitCount + stats.missCount)
-            } else 0.0
+            } else NEVER_EXPIRE
         )
     }
     

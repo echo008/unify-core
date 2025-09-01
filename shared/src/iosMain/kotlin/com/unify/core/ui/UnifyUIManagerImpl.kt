@@ -9,7 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import platform.Foundation.NSBundle
 import platform.Foundation.NSUserDefaults
-import platform.UIKit.*
+import platform.UIKit.UIDevice
+import platform.UIKit.UIScreen
+import platform.UIKit.UIApplication
+import platform.UIKit.UIView
+import platform.UIKit.UIViewController
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 import java.util.UUID

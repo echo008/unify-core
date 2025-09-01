@@ -4,14 +4,23 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
-import platform.Foundation.*
-import platform.UIKit.*
-import platform.CoreMotion.*
-import platform.CoreLocation.*
-import platform.AVFoundation.*
-import platform.LocalAuthentication.*
-import platform.SystemConfiguration.*
-import platform.CoreBluetooth.*
+import platform.Foundation.NSBundle
+import platform.Foundation.NSProcessInfo
+import platform.Foundation.NSUserDefaults
+import platform.UIKit.UIDevice
+import platform.UIKit.UIScreen
+import platform.UIKit.UIApplication
+import platform.CoreMotion.CMMotionManager
+import platform.CoreMotion.CMAccelerometerData
+import platform.CoreLocation.CLLocationManager
+import platform.CoreLocation.CLLocation
+import platform.AVFoundation.AVAudioSession
+import platform.AVFoundation.AVCaptureDevice
+import platform.LocalAuthentication.LAContext
+import platform.LocalAuthentication.LAPolicy
+import platform.SystemConfiguration.SCNetworkReachability
+import platform.CoreBluetooth.CBCentralManager
+import platform.CoreBluetooth.CBPeripheral
 
 // iOS平台的统一设备管理器实现
 actual class UnifyDeviceManagerImpl : UnifyDeviceManager {

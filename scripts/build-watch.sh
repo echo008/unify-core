@@ -12,7 +12,7 @@ echo "🤖 构建Wear OS应用..."
 if [ -d "wearApp" ]; then
     cd wearApp
     echo "📦 构建Wear OS APK..."
-    ../gradlew assembleDebug assembleRelease --stacktrace --parallel --build-cache
+    ./gradlew assembleDebug assembleRelease --stacktrace --parallel --build-cache
     
     # 检查构建结果
     if [ -f "build/outputs/apk/debug/wearApp-debug.apk" ]; then
@@ -41,8 +41,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         
         # 构建watchOS Framework
         echo "📦 构建watchOS Framework..."
-        ../gradlew shared:linkDebugFrameworkWatchosArm64 --stacktrace --parallel --build-cache
-        ../gradlew shared:linkReleaseFrameworkWatchosArm64 --stacktrace --parallel --build-cache
+        cd ..
+        ./gradlew shared:linkDebugFrameworkWatchosArm64 --stacktrace --parallel --build-cache
+        ./gradlew shared:linkReleaseFrameworkWatchosArm64 --stacktrace --parallel --build-cache
+        cd watchApp
         
         # 检查构建结果
         if [ -d "../shared/build/bin/watchosArm64/debugFramework" ]; then

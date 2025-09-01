@@ -13,25 +13,43 @@ import androidx.compose.ui.unit.sp
  */
 actual class UnifyPlatformText {
     companion object {
+        // HarmonyOS字体缩放常量
         private const val HARMONY_FONT_SCALE_FACTOR = 1.0f
+        
+        // HarmonyOS字体大小常量
+        private const val DISPLAY_LARGE_SIZE = 57f
+        private const val DISPLAY_MEDIUM_SIZE = 45f
+        private const val DISPLAY_SMALL_SIZE = 36f
+        private const val HEADLINE_LARGE_SIZE = 32f
+        private const val HEADLINE_MEDIUM_SIZE = 28f
+        private const val HEADLINE_SMALL_SIZE = 24f
+        private const val TITLE_LARGE_SIZE = 22f
+        private const val TITLE_MEDIUM_SIZE = 16f
+        private const val TITLE_SMALL_SIZE = 14f
+        private const val LABEL_LARGE_SIZE = 14f
+        private const val LABEL_MEDIUM_SIZE = 12f
+        private const val LABEL_SMALL_SIZE = 11f
+        private const val BODY_LARGE_SIZE = 16f
+        private const val BODY_MEDIUM_SIZE = 14f
+        private const val BODY_SMALL_SIZE = 12f
         
         fun getHarmonyFontSize(variant: UnifyTextVariant): Float {
             return when (variant) {
-                UnifyTextVariant.DisplayLarge -> 57f  // HarmonyOS Display Large
-                UnifyTextVariant.DisplayMedium -> 45f // HarmonyOS Display Medium
-                UnifyTextVariant.DisplaySmall -> 36f  // HarmonyOS Display Small
-                UnifyTextVariant.HeadlineLarge -> 32f // HarmonyOS Headline Large
-                UnifyTextVariant.HeadlineMedium -> 28f // HarmonyOS Headline Medium
-                UnifyTextVariant.HeadlineSmall -> 24f // HarmonyOS Headline Small
-                UnifyTextVariant.TitleLarge -> 22f
-                UnifyTextVariant.TitleMedium -> 16f
-                UnifyTextVariant.TitleSmall -> 14f
-                UnifyTextVariant.LabelLarge -> 14f
-                UnifyTextVariant.LabelMedium -> 12f
-                UnifyTextVariant.LabelSmall -> 11f
-                UnifyTextVariant.Body1 -> 16f        // HarmonyOS Body Large
-                UnifyTextVariant.Body2 -> 14f        // HarmonyOS Body Medium
-                UnifyTextVariant.Caption -> 12f      // HarmonyOS Body Small
+                UnifyTextVariant.DisplayLarge -> DISPLAY_LARGE_SIZE
+                UnifyTextVariant.DisplayMedium -> DISPLAY_MEDIUM_SIZE
+                UnifyTextVariant.DisplaySmall -> DISPLAY_SMALL_SIZE
+                UnifyTextVariant.HeadlineLarge -> HEADLINE_LARGE_SIZE
+                UnifyTextVariant.HeadlineMedium -> HEADLINE_MEDIUM_SIZE
+                UnifyTextVariant.HeadlineSmall -> HEADLINE_SMALL_SIZE
+                UnifyTextVariant.TitleLarge -> TITLE_LARGE_SIZE
+                UnifyTextVariant.TitleMedium -> TITLE_MEDIUM_SIZE
+                UnifyTextVariant.TitleSmall -> TITLE_SMALL_SIZE
+                UnifyTextVariant.LabelLarge -> LABEL_LARGE_SIZE
+                UnifyTextVariant.LabelMedium -> LABEL_MEDIUM_SIZE
+                UnifyTextVariant.LabelSmall -> LABEL_SMALL_SIZE
+                UnifyTextVariant.Body1 -> BODY_LARGE_SIZE
+                UnifyTextVariant.Body2 -> BODY_MEDIUM_SIZE
+                UnifyTextVariant.Caption -> BODY_SMALL_SIZE
             }
         }
         

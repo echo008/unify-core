@@ -225,43 +225,78 @@ class HarmonyDeviceInfo : UnifyDeviceInfo {
     private fun getHarmonyBrand(): String = "Huawei"
     private fun isHarmonyEmulator(): Boolean = false
     private fun isHarmonyRooted(): Boolean = false
-    private fun getHarmonyOSVersion(): String = "4.0"
-    private fun getHarmonyAPILevel(): Int = 10
+    // HarmonyOS版本常量
+    private const val HARMONY_OS_VERSION = "4.0"
+    private const val HARMONY_API_LEVEL = 10
+    
+    private fun getHarmonyOSVersion(): String = HARMONY_OS_VERSION
+    private fun getHarmonyAPILevel(): Int = HARMONY_API_LEVEL
     private fun getHarmonyLocale(): String = "zh_CN"
     private fun getHarmonyTimezone(): String = "Asia/Shanghai"
     private fun getHarmonyUptime(): Long = 0L
     private fun getHarmonyCPUArchitecture(): String = "arm64"
-    private fun getHarmonyCPUCores(): Int = 8
-    private fun getHarmonyTotalMemory(): Long = 8L * 1024 * 1024 * 1024
-    private fun getHarmonyAvailableMemory(): Long = 4L * 1024 * 1024 * 1024
-    private fun getHarmonyScreenWidth(): Int = 1080
-    private fun getHarmonyScreenHeight(): Int = 2340
-    private fun getHarmonyScreenDensity(): Float = 3.0f
-    private fun getHarmonyScreenDPI(): Int = 480
-    private fun getHarmonyRefreshRate(): Float = 90.0f
+    // 硬件规格常量
+    private const val HARMONY_CPU_CORES = 8
+    private const val HARMONY_TOTAL_MEMORY_GB = 8L
+    private const val HARMONY_AVAILABLE_MEMORY_GB = 4L
+    private const val BYTES_PER_GB = 1024 * 1024 * 1024L
+    
+    private fun getHarmonyCPUCores(): Int = HARMONY_CPU_CORES
+    private fun getHarmonyTotalMemory(): Long = HARMONY_TOTAL_MEMORY_GB * BYTES_PER_GB
+    private fun getHarmonyAvailableMemory(): Long = HARMONY_AVAILABLE_MEMORY_GB * BYTES_PER_GB
+    // 屏幕参数常量
+    private const val HARMONY_SCREEN_WIDTH = 1080
+    private const val HARMONY_SCREEN_HEIGHT = 2340
+    private const val HARMONY_SCREEN_DENSITY = 3.0f
+    private const val HARMONY_SCREEN_DPI = 480
+    private const val HARMONY_REFRESH_RATE = 90.0f
+    
+    private fun getHarmonyScreenWidth(): Int = HARMONY_SCREEN_WIDTH
+    private fun getHarmonyScreenHeight(): Int = HARMONY_SCREEN_HEIGHT
+    private fun getHarmonyScreenDensity(): Float = HARMONY_SCREEN_DENSITY
+    private fun getHarmonyScreenDPI(): Int = HARMONY_SCREEN_DPI
+    private fun getHarmonyRefreshRate(): Float = HARMONY_REFRESH_RATE
     private fun getHarmonyOrientation(): String = "portrait"
-    private fun getHarmonyBrightness(): Float = 0.8f
-    private fun getHarmonyBatteryLevel(): Int = 85
+    // 电池和显示常量
+    private const val HARMONY_DEFAULT_BRIGHTNESS = 0.8f
+    private const val HARMONY_BATTERY_LEVEL = 85
+    private const val HARMONY_BATTERY_TEMPERATURE = 30
+    private const val HARMONY_BATTERY_VOLTAGE = 4000
+    private const val HARMONY_BATTERY_CAPACITY = 4500
+    private const val HARMONY_BATTERY_CYCLE_COUNT = 100
+    
+    private fun getHarmonyBrightness(): Float = HARMONY_DEFAULT_BRIGHTNESS
+    private fun getHarmonyBatteryLevel(): Int = HARMONY_BATTERY_LEVEL
     private fun isHarmonyCharging(): Boolean = false
     private fun getHarmonyChargingType(): String = "not_charging"
-    private fun getHarmonyBatteryTemperature(): Int = 30
-    private fun getHarmonyBatteryVoltage(): Int = 4000
-    private fun getHarmonyBatteryCapacity(): Int = 4500
-    private fun getHarmonyBatteryCycleCount(): Int = 100
+    private fun getHarmonyBatteryTemperature(): Int = HARMONY_BATTERY_TEMPERATURE
+    private fun getHarmonyBatteryVoltage(): Int = HARMONY_BATTERY_VOLTAGE
+    private fun getHarmonyBatteryCapacity(): Int = HARMONY_BATTERY_CAPACITY
+    private fun getHarmonyBatteryCycleCount(): Int = HARMONY_BATTERY_CYCLE_COUNT
     private fun isHarmonyNetworkConnected(): Boolean = true
     private fun getHarmonyConnectionType(): String = "wifi"
     private fun getHarmonyNetworkName(): String = "HarmonyWiFi"
-    private fun getHarmonySignalStrength(): Int = -50
+    // 网络信号常量
+    private const val HARMONY_SIGNAL_STRENGTH = -50
+    
+    private fun getHarmonySignalStrength(): Int = HARMONY_SIGNAL_STRENGTH
     private fun getHarmonyIPAddress(): String = "192.168.1.100"
     private fun getHarmonyMacAddress(): String = "00:11:22:33:44:55"
     private fun isHarmonyRoaming(): Boolean = false
     private fun isHarmonyMetered(): Boolean = false
-    private fun getHarmonyTotalStorage(): Long = 128L * 1024 * 1024 * 1024
-    private fun getHarmonyAvailableStorage(): Long = 64L * 1024 * 1024 * 1024
-    private fun getHarmonyUsedStorage(): Long = 64L * 1024 * 1024 * 1024
+    // 存储容量常量
+    private const val HARMONY_INTERNAL_STORAGE_GB = 128L
+    private const val HARMONY_AVAILABLE_STORAGE_GB = 64L
+    private const val HARMONY_USED_STORAGE_GB = 64L
+    private const val HARMONY_EXTERNAL_TOTAL_GB = 256L
+    private const val HARMONY_EXTERNAL_AVAILABLE_GB = 128L
+    
+    private fun getHarmonyTotalStorage(): Long = HARMONY_INTERNAL_STORAGE_GB * BYTES_PER_GB
+    private fun getHarmonyAvailableStorage(): Long = HARMONY_AVAILABLE_STORAGE_GB * BYTES_PER_GB
+    private fun getHarmonyUsedStorage(): Long = HARMONY_USED_STORAGE_GB * BYTES_PER_GB
     private fun hasHarmonyExternalStorage(): Boolean = true
-    private fun getHarmonyExternalTotalStorage(): Long = 256L * 1024 * 1024 * 1024
-    private fun getHarmonyExternalAvailableStorage(): Long = 128L * 1024 * 1024 * 1024
+    private fun getHarmonyExternalTotalStorage(): Long = HARMONY_EXTERNAL_TOTAL_GB * BYTES_PER_GB
+    private fun getHarmonyExternalAvailableStorage(): Long = HARMONY_EXTERNAL_AVAILABLE_GB * BYTES_PER_GB
     private fun hasHarmonyCamera(): Boolean = true
     private fun hasHarmonyMicrophone(): Boolean = true
     private fun hasHarmonyGPS(): Boolean = true

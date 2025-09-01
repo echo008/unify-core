@@ -254,14 +254,18 @@ class WebDeviceInfo : UnifyDeviceInfo {
     
     override suspend fun getDisplayInfo(): UnifyDisplayInfo {
         val screen = window.screen
+        // 显示相关常量
+        val DEFAULT_REFRESH_RATE = 60.0f
+        val DEFAULT_BRIGHTNESS = 1.0f
+        
         return UnifyDisplayInfo(
             width = screen.width,
             height = screen.height,
             density = window.devicePixelRatio.toFloat(),
             densityDpi = (window.devicePixelRatio * 96).toInt(),
-            refreshRate = 60.0f, // 默认刷新率
+            refreshRate = DEFAULT_REFRESH_RATE, // 默认刷新率
             orientation = getScreenOrientation(),
-            brightness = 1.0f // Web无法获取屏幕亮度
+            brightness = DEFAULT_BRIGHTNESS // Web无法获取屏幕亮度
         )
     }
     
@@ -358,23 +362,29 @@ class WebSensorManager : UnifySensorManager {
     override suspend fun getAvailableSensors(): List<UnifySensorInfo> {
         val sensors = mutableListOf<UnifySensorInfo>()
         
+        // 传感器参数常量
+        val ACCELEROMETER_MAX_RANGE = 20.0f
+        val GYROSCOPE_MAX_RANGE = 360.0f
+        val SENSOR_RESOLUTION = 0.1f
+        val SENSOR_POWER = 0.1f
+        
         if (window.asDynamic().DeviceMotionEvent != null) {
             sensors.add(UnifySensorInfo(
                 type = UnifySensorType.ACCELEROMETER,
                 name = "Web Accelerometer",
                 vendor = "Browser",
-                maxRange = 20.0f,
-                resolution = 0.1f,
-                power = 0.1f
+                maxRange = ACCELEROMETER_MAX_RANGE,
+                resolution = SENSOR_RESOLUTION,
+                power = SENSOR_POWER
             ))
             
             sensors.add(UnifySensorInfo(
                 type = UnifySensorType.GYROSCOPE,
                 name = "Web Gyroscope",
                 vendor = "Browser",
-                maxRange = 360.0f,
-                resolution = 0.1f,
-                power = 0.1f
+                maxRange = GYROSCOPE_MAX_RANGE,
+                resolution = SENSOR_RESOLUTION,
+                power = SENSOR_POWER
             ))
         }
         
@@ -383,9 +393,9 @@ class WebSensorManager : UnifySensorManager {
                 type = UnifySensorType.ORIENTATION,
                 name = "Web Orientation",
                 vendor = "Browser",
-                maxRange = 360.0f,
-                resolution = 0.1f,
-                power = 0.1f
+                maxRange = GYROSCOPE_MAX_RANGE,
+                resolution = SENSOR_RESOLUTION,
+                power = SENSOR_POWER
             ))
         }
         
@@ -480,7 +490,8 @@ class WebSystemFeatures : UnifySystemFeatures {
     }
     
     override suspend fun getVolume(streamType: UnifyAudioStream): Float {
-        return 1.0f // Web无法获取系统音量
+        val DEFAULT_VOLUME = 1.0f
+        return DEFAULT_VOLUME // Web无法获取系统音量
     }
     
     override suspend fun setBrightness(brightness: Float) {
@@ -488,7 +499,8 @@ class WebSystemFeatures : UnifySystemFeatures {
     }
     
     override suspend fun getBrightness(): Float {
-        return 1.0f // Web无法获取屏幕亮度
+        val DEFAULT_BRIGHTNESS = 1.0f
+        return DEFAULT_BRIGHTNESS // Web无法获取屏幕亮度
     }
     
     override suspend fun setScreenOrientation(orientation: UnifyScreenOrientation) {
@@ -636,13 +648,18 @@ class WebHardwareManager : UnifyHardwareManager {
         return try {
             val geolocation = window.navigator.asDynamic().geolocation
             if (geolocation != null) {
+                // 默认位置常量
+                val DEFAULT_LATITUDE = 0.0
+                val DEFAULT_LONGITUDE = 0.0
+                val DEFAULT_ACCURACY = 0.0f
+                
                 // Geolocation API实现
                 UnifyLocationResult(
                     location = UnifyLocationData(
-                        latitude = 0.0,
-                        longitude = 0.0,
+                        latitude = DEFAULT_LATITUDE,
+                        longitude = DEFAULT_LONGITUDE,
                         altitude = null,
-                        accuracy = 0.0f,
+                        accuracy = DEFAULT_ACCURACY,
                         timestamp = js("Date.now()") as Long,
                         provider = "Web"
                     ),

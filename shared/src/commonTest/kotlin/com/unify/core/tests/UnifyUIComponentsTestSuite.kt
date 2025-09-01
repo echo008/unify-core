@@ -1,18 +1,39 @@
 package com.unify.core.tests
 
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.BeforeTest
+import kotlin.test.AfterTest
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import kotlin.test.assertNotNull
 import kotlinx.coroutines.test.runTest
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.*
+import com.unify.ui.components.UnifyButton
+import com.unify.ui.components.UnifyText
+import com.unify.ui.components.UnifyImage
+import com.unify.ui.components.UnifyIcon
+import com.unify.ui.components.UnifySurface
 import com.unify.ui.theme.UnifyTheme
-import com.unify.ui.components.ai.*
-import com.unify.ui.components.advanced.*
-import com.unify.ui.components.navigation.*
+import com.unify.ui.components.ai.UnifyAIChat
+import com.unify.ui.components.ai.UnifyAIAssistant
+import com.unify.ui.components.ai.UnifyAIRecommendation
+import com.unify.ui.components.advanced.UnifyChart
+import com.unify.ui.components.advanced.UnifyCalendar
+import com.unify.ui.components.advanced.UnifyPicker
+import com.unify.ui.components.navigation.UnifyNavigationBar
+import com.unify.ui.components.navigation.UnifyTabBar
+import com.unify.ui.components.navigation.UnifyDrawer
 
 /**
  * Unify UI组件测试套件

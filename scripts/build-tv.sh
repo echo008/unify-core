@@ -12,7 +12,7 @@ echo "🤖 构建Android TV应用..."
 if [ -d "tvApp" ]; then
     cd tvApp
     echo "📦 构建Android TV APK..."
-    ../gradlew assembleDebug assembleRelease --stacktrace --parallel --build-cache
+    ./gradlew assembleDebug assembleRelease --stacktrace --parallel --build-cache
     
     # 检查构建结果
     if [ -f "build/outputs/apk/debug/tvApp-debug.apk" ]; then
@@ -41,8 +41,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         
         # 构建tvOS Framework
         echo "📦 构建tvOS Framework..."
-        ../gradlew shared:linkDebugFrameworkTvosArm64 --stacktrace --parallel --build-cache
-        ../gradlew shared:linkReleaseFrameworkTvosArm64 --stacktrace --parallel --build-cache
+        cd ..
+        ./gradlew shared:linkDebugFrameworkTvosArm64 --stacktrace --parallel --build-cache
+        ./gradlew shared:linkReleaseFrameworkTvosArm64 --stacktrace --parallel --build-cache
+        cd tvosApp
         
         # 检查构建结果
         if [ -d "../shared/build/bin/tvosArm64/debugFramework" ]; then
