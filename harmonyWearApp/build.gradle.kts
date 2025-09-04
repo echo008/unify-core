@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 kotlin {
@@ -47,7 +48,7 @@ tasks.register("buildHarmonyWearApp") {
     dependsOn("harmonyWearJar")
     
     doLast {
-        println("HarmonyOS穿戴应用构建完成")
-        println("支持设备: HarmonyOS Watch, 华为手表等")
+        logger.info("HarmonyOS穿戴应用构建完成")
+        logger.info("支持设备: HarmonyOS Watch, 华为手表等")
     }
 }

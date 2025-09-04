@@ -2,326 +2,228 @@ package com.unify.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import kotlinx.browser.document
-import kotlinx.browser.window
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.w3c.dom.HTMLElement
-import org.w3c.dom.events.Event
-import java.util.UUID
+import kotlinx.browser.document
+import kotlinx.browser.window
+import org.w3c.dom.MediaQueryList
+import org.w3c.dom.get
 
 /**
- * Web平台的UI管理器实现
+ * Web/JS平台UnifyUIManager实现
  */
-actual class UnifyUIManagerImpl : UnifyUIManager {
+class UnifyUIManagerImpl : UnifyUIManager {
+    // 主题状态管理
+    private val _currentTheme = MutableStateFlow(createDefaultTheme())
+    private val _fontScale = MutableStateFlow(1.0f)
     
-    private val _currentTheme = MutableStateFlow(UnifyTheme())
-    override val currentTheme: StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    // 动画和无障碍设置
+    private var animationsEnabled = true
+    private var accessibilityEnabled = false
     
-    private val _screenSizeClass = MutableStateFlow(ScreenSizeClass.COMPACT)
-    override val screenSizeClass: StateFlow<ScreenSizeClass> = _screenSizeClass.asStateFlow()
-    
-    private val _orientation = MutableStateFlow(Orientation.PORTRAIT)
-    override val orientation: StateFlow<Orientation> = _orientation.asStateFlow()
-    
-    private val loadingHandles = mutableMapOf<String, LoadingHandle>()
-    private val bottomSheetHandles = mutableMapOf<String, BottomSheetHandle>()
+    // 媒体查询监听器
+    private val darkModeMediaQuery: MediaQueryList = window.matchMedia("(prefers-color-scheme: dark)")
     
     init {
-        updateScreenInfo()
-        observeWindowResize()
-        detectInitialTheme()
+        // 监听系统主题变化
+        darkModeMediaQuery.addListener { 
+            if (_currentTheme.value.name == "Auto") {
+                _currentTheme.value = createDefaultTheme()
+            }
+        }
     }
     
     override fun setTheme(theme: UnifyTheme) {
         _currentTheme.value = theme
-        updateDocumentTheme(theme)
+        applyThemeToDocument(theme)
     }
     
+    override fun getTheme(): UnifyTheme = _currentTheme.value
+    
+    override fun observeTheme(): StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    
     override fun toggleDarkMode() {
-        val current = _currentTheme.value
-        val newTheme = current.copy(isDark = !current.isDark)
+        val currentTheme = _currentTheme.value
+        val newTheme = if (currentTheme.isDark) {
+            createLightTheme()
+        } else {
+            createDarkTheme()
+        }
         setTheme(newTheme)
     }
     
-    override suspend fun showToast(message: String, duration: ToastDuration) {
-        // 创建Toast元素
-        val toast = document.createElement("div") as HTMLElement
-        toast.className = "unify-toast"
-        toast.textContent = message
-        
-        // 设置样式
-        toast.style.apply {
-            position = "fixed"
-            top = "20px"
-            right = "20px"
-            backgroundColor = "rgba(0, 0, 0, 0.8)"
-            color = "white"
-            padding = "12px 16px"
-            borderRadius = "8px"
-            zIndex = "10000"
-            fontSize = "14px"
-            fontFamily = "system-ui, -apple-system, sans-serif"
-            boxShadow = "0 4px 12px rgba(0, 0, 0, 0.15)"
-            transform = "translateX(100%)"
-            transition = "transform 0.3s ease"
-        }
-        
-        document.body?.appendChild(toast)
-        
-        // 动画显示
-        window.setTimeout({
-            toast.style.transform = "translateX(0)"
-        }, 10)
-        
-        // 自动隐藏
-        val delayTime = when (duration) {
-            ToastDuration.SHORT -> 2000
-            ToastDuration.LONG -> 4000
-        }
-        
-        window.setTimeout({
-            toast.style.transform = "translateX(100%)"
-            window.setTimeout({
-                document.body?.removeChild(toast)
-            }, 300)
-        }, delayTime)
+    override fun isDarkMode(): Boolean = _currentTheme.value.isDark
+    
+    override fun getPrimaryColor(): Color = _currentTheme.value.primaryColor
+    
+    override fun getSecondaryColor(): Color = _currentTheme.value.secondaryColor
+    
+    override fun getBackgroundColor(): Color = _currentTheme.value.backgroundColor
+    
+    override fun getSurfaceColor(): Color = _currentTheme.value.surfaceColor
+    
+    override fun getErrorColor(): Color = _currentTheme.value.errorColor
+    
+    override fun setFontScale(scale: Float) {
+        _fontScale.value = scale.coerceIn(0.5f, 3.0f)
+        applyFontScaleToDocument(scale)
     }
     
-    override suspend fun showLoading(message: String?): LoadingHandle {
-        val handle = LoadingHandle(
-            id = UUID.randomUUID().toString(),
-            message = message
-        )
-        loadingHandles[handle.id] = handle
+    override fun getFontScale(): Float = _fontScale.value
+    
+    override fun observeFontScale(): StateFlow<Float> = _fontScale.asStateFlow()
+    
+    override fun getScreenWidth(): Int = window.innerWidth
+    
+    override fun getScreenHeight(): Int = window.innerHeight
+    
+    override fun getScreenDensity(): Float = window.devicePixelRatio.toFloat()
+    
+    override fun isTablet(): Boolean {
+        val userAgent = window.navigator.userAgent.lowercase()
+        val isTabletUserAgent = userAgent.contains("tablet") || 
+                               userAgent.contains("ipad") ||
+                               (userAgent.contains("android") && !userAgent.contains("mobile"))
         
-        // 创建加载遮罩
-        val overlay = document.createElement("div") as HTMLElement
-        overlay.id = "loading-${handle.id}"
-        overlay.className = "unify-loading-overlay"
+        // 也可以根据屏幕尺寸判断
+        val isLargeScreen = window.innerWidth >= 768 && window.innerHeight >= 1024
         
-        overlay.style.apply {
-            position = "fixed"
-            top = "0"
-            left = "0"
-            width = "100%"
-            height = "100%"
-            backgroundColor = "rgba(0, 0, 0, 0.5)"
-            display = "flex"
-            alignItems = "center"
-            justifyContent = "center"
-            zIndex = "9999"
-            flexDirection = "column"
-        }
-        
-        // 创建加载指示器
-        val spinner = document.createElement("div") as HTMLElement
-        spinner.className = "unify-spinner"
-        spinner.style.apply {
-            width = "40px"
-            height = "40px"
-            border = "4px solid #f3f3f3"
-            borderTop = "4px solid #3498db"
-            borderRadius = "50%"
-            animation = "spin 1s linear infinite"
-        }
-        
-        // 添加CSS动画
-        if (document.getElementById("unify-spinner-style") == null) {
-            val style = document.createElement("style")
-            style.id = "unify-spinner-style"
-            style.textContent = """
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-            """.trimIndent()
-            document.head?.appendChild(style)
-        }
-        
-        overlay.appendChild(spinner)
-        
-        // 添加消息
-        if (message != null) {
-            val messageElement = document.createElement("div") as HTMLElement
-            messageElement.textContent = message
-            messageElement.style.apply {
-                color = "white"
-                marginTop = "16px"
-                fontSize = "16px"
-                fontFamily = "system-ui, -apple-system, sans-serif"
-            }
-            overlay.appendChild(messageElement)
-        }
-        
-        document.body?.appendChild(overlay)
-        
-        return handle
+        return isTabletUserAgent || isLargeScreen
     }
     
-    override suspend fun hideLoading(handle: LoadingHandle) {
-        loadingHandles.remove(handle.id)
-        val overlay = document.getElementById("loading-${handle.id}")
-        overlay?.let { document.body?.removeChild(it) }
-    }
+    override fun isLandscape(): Boolean = window.innerWidth > window.innerHeight
     
-    override suspend fun showBottomSheet(content: @Composable () -> Unit): BottomSheetHandle {
-        val handle = BottomSheetHandle(id = UUID.randomUUID().toString())
-        bottomSheetHandles[handle.id] = handle
+    override fun setAnimationsEnabled(enabled: Boolean) {
+        animationsEnabled = enabled
         
-        // Web底部弹窗实现（使用CSS模态框）
-        
-        return handle
-    }
-    
-    override fun getSafeAreaInsets(): SafeAreaInsets {
-        // Web平台通常没有安全区域概念，返回0
-        return SafeAreaInsets(0.dp, 0.dp, 0.dp, 0.dp)
-    }
-    
-    override fun getStatusBarHeight(): Dp {
-        // Web平台没有状态栏
-        return 0.dp
-    }
-    
-    override fun getNavigationBarHeight(): Dp {
-        // Web平台没有导航栏
-        return 0.dp
-    }
-    
-    override fun setStatusBarStyle(style: StatusBarStyle) {
-        // Web平台不支持状态栏样式
-    }
-    
-    override fun setNavigationBarStyle(style: NavigationBarStyle) {
-        // Web平台不支持导航栏样式
-    }
-    
-    override fun requestFullscreen(enable: Boolean) {
-        if (enable) {
-            document.documentElement?.requestFullscreen()
+        // 设置CSS动画
+        val style = document.createElement("style")
+        style.textContent = if (enabled) {
+            "* { transition: all 0.3s ease !important; }"
         } else {
-            if (document.fullscreenElement != null) {
-                document.exitFullscreen()
+            "* { transition: none !important; animation: none !important; }"
+        }
+        document.head?.appendChild(style)
+    }
+    
+    override fun areAnimationsEnabled(): Boolean = animationsEnabled
+    
+    override fun getAnimationDuration(): Long {
+        return if (animationsEnabled) 300L else 0L
+    }
+    
+    override fun setAccessibilityEnabled(enabled: Boolean) {
+        accessibilityEnabled = enabled
+    }
+    
+    override fun isAccessibilityEnabled(): Boolean {
+        return accessibilityEnabled || checkSystemAccessibilitySettings()
+    }
+    
+    override fun announceForAccessibility(message: String) {
+        if (isAccessibilityEnabled()) {
+            // 创建一个隐藏的aria-live区域来宣布消息
+            val liveRegion = document.createElement("div").apply {
+                setAttribute("aria-live", "polite")
+                setAttribute("aria-atomic", "true")
+                setAttribute("style", "position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;")
+                textContent = message
             }
+            
+            document.body?.appendChild(liveRegion)
+            
+            // 短暂延迟后移除元素
+            window.setTimeout({
+                document.body?.removeChild(liveRegion)
+            }, 1000)
         }
     }
     
-    override fun setOrientation(orientation: OrientationLock) {
-        // Web平台的屏幕方向API
-        try {
-            val screen = window.asDynamic().screen
-            when (orientation) {
-                OrientationLock.PORTRAIT -> screen.orientation?.lock("portrait")
-                OrientationLock.LANDSCAPE -> screen.orientation?.lock("landscape")
-                OrientationLock.AUTO -> screen.orientation?.unlock()
-            }
-        } catch (e: Exception) {
-            console.warn("Screen orientation API not supported")
-        }
+    private fun createDefaultTheme(): UnifyTheme {
+        val isDarkMode = isSystemInDarkMode()
+        return if (isDarkMode) createDarkTheme() else createLightTheme()
     }
     
-    override fun getPlatformUIConfig(): Map<String, Any> {
-        val userAgent = window.navigator.userAgent
-        val screen = window.screen
-        
-        return mapOf(
-            "platform" to "Web",
-            "ui_framework" to "Compose for Web",
-            "user_agent" to userAgent,
-            "screen_width" to screen.width,
-            "screen_height" to screen.height,
-            "device_pixel_ratio" to window.devicePixelRatio,
-            "supports_touch" to (window.asDynamic().ontouchstart !== undefined),
-            "supports_fullscreen" to (document.documentElement?.asDynamic()?.requestFullscreen !== undefined),
-            "supports_notifications" to ("Notification" in window),
-            "supports_service_worker" to ("serviceWorker" in window.navigator),
-            "supports_web_share" to ("share" in window.navigator),
-            "color_scheme" to getCurrentColorScheme()
+    private fun createLightTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Light",
+            isDark = false,
+            primaryColor = Color(0xFF1976D2),
+            secondaryColor = Color(0xFF388E3C),
+            backgroundColor = Color(0xFFFAFAFA),
+            surfaceColor = Color.White,
+            errorColor = Color(0xFFD32F2F),
+            onPrimaryColor = Color.White,
+            onSecondaryColor = Color.White,
+            onBackgroundColor = Color(0xFF212121),
+            onSurfaceColor = Color(0xFF212121),
+            onErrorColor = Color.White
         )
     }
     
-    private fun updateScreenInfo() {
-        val width = window.innerWidth
-        val height = window.innerHeight
-        
-        // 计算屏幕尺寸类别
-        val minDimension = minOf(width, height)
-        _screenSizeClass.value = when {
-            minDimension < 600 -> ScreenSizeClass.COMPACT
-            minDimension < 840 -> ScreenSizeClass.MEDIUM
-            minDimension < 1200 -> ScreenSizeClass.EXPANDED
-            minDimension < 1600 -> ScreenSizeClass.LARGE
-            else -> ScreenSizeClass.EXTRA_LARGE
-        }
-        
-        // 更新方向
-        _orientation.value = if (width > height) {
-            Orientation.LANDSCAPE
-        } else {
-            Orientation.PORTRAIT
-        }
+    private fun createDarkTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Dark",
+            isDark = true,
+            primaryColor = Color(0xFF90CAF9),
+            secondaryColor = Color(0xFF81C784),
+            backgroundColor = Color(0xFF121212),
+            surfaceColor = Color(0xFF1E1E1E),
+            errorColor = Color(0xFFEF5350),
+            onPrimaryColor = Color.Black,
+            onSecondaryColor = Color.Black,
+            onBackgroundColor = Color(0xFFE0E0E0),
+            onSurfaceColor = Color(0xFFE0E0E0),
+            onErrorColor = Color.Black
+        )
     }
     
-    private fun observeWindowResize() {
-        window.addEventListener("resize", { _: Event ->
-            updateScreenInfo()
-        })
-        
-        // 监听方向变化
-        window.addEventListener("orientationchange", { _: Event ->
-            window.setTimeout({
-                updateScreenInfo()
-            }, 100) // 延迟更新，等待方向变化完成
-        })
+    private fun isSystemInDarkMode(): Boolean {
+        return darkModeMediaQuery.matches
     }
     
-    private fun detectInitialTheme() {
-        val prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches
-        if (prefersDark) {
-            _currentTheme.value = _currentTheme.value.copy(isDark = true)
-        }
-        
-        // 监听系统主题变化
-        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change") { event ->
-            val isDark = event.asDynamic().matches as Boolean
-            _currentTheme.value = _currentTheme.value.copy(isDark = isDark)
-        }
+    private fun checkSystemAccessibilitySettings(): Boolean {
+        // 检查浏览器的无障碍设置
+        return window.matchMedia("(prefers-reduced-motion: reduce)").matches ||
+               window.matchMedia("(prefers-contrast: high)").matches
     }
     
-    private fun updateDocumentTheme(theme: UnifyTheme) {
+    private fun applyThemeToDocument(theme: UnifyTheme) {
         val root = document.documentElement
-        root?.style?.setProperty("--unify-primary-color", theme.primaryColor.toString())
-        root?.style?.setProperty("--unify-secondary-color", theme.secondaryColor.toString())
-        root?.style?.setProperty("--unify-background-color", theme.backgroundColor.toString())
-        root?.style?.setProperty("--unify-surface-color", theme.surfaceColor.toString())
-        root?.style?.setProperty("--unify-error-color", theme.errorColor.toString())
-        
-        // 设置颜色方案
-        root?.style?.setProperty("color-scheme", if (theme.isDark) "dark" else "light")
-        
-        // 更新meta标签
-        updateThemeColorMeta(theme.primaryColor)
-    }
-    
-    private fun updateThemeColorMeta(color: Color) {
-        val metaThemeColor = document.querySelector("meta[name='theme-color']") as? HTMLElement
-            ?: document.createElement("meta").also { meta ->
-                (meta as HTMLElement).setAttribute("name", "theme-color")
-                document.head?.appendChild(meta)
-            } as HTMLElement
-        
-        metaThemeColor.setAttribute("content", color.toString())
-    }
-    
-    private fun getCurrentColorScheme(): String {
-        return if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-            "dark"
-        } else {
-            "light"
+        root?.style?.apply {
+            setProperty("--primary-color", colorToHex(theme.primaryColor))
+            setProperty("--secondary-color", colorToHex(theme.secondaryColor))
+            setProperty("--background-color", colorToHex(theme.backgroundColor))
+            setProperty("--surface-color", colorToHex(theme.surfaceColor))
+            setProperty("--error-color", colorToHex(theme.errorColor))
+            setProperty("--on-primary-color", colorToHex(theme.onPrimaryColor))
+            setProperty("--on-secondary-color", colorToHex(theme.onSecondaryColor))
+            setProperty("--on-background-color", colorToHex(theme.onBackgroundColor))
+            setProperty("--on-surface-color", colorToHex(theme.onSurfaceColor))
+            setProperty("--on-error-color", colorToHex(theme.onErrorColor))
         }
+        
+        // 设置body背景色
+        document.body?.style?.backgroundColor = colorToHex(theme.backgroundColor)
+        document.body?.style?.color = colorToHex(theme.onBackgroundColor)
+    }
+    
+    private fun applyFontScaleToDocument(scale: Float) {
+        val root = document.documentElement
+        root?.style?.fontSize = "${scale * 16}px" // 16px是默认字体大小
+    }
+    
+    private fun colorToHex(color: Color): String {
+        val red = (color.red * 255).toInt()
+        val green = (color.green * 255).toInt()
+        val blue = (color.blue * 255).toInt()
+        return "#${red.toString(16).padStart(2, '0')}${green.toString(16).padStart(2, '0')}${blue.toString(16).padStart(2, '0')}"
+    }
+}
+
+actual object UnifyUIManagerFactory {
+    actual fun create(): UnifyUIManager {
+        return UnifyUIManagerImpl()
     }
 }

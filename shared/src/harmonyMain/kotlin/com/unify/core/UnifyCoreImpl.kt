@@ -1,62 +1,56 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
 
 /**
- * HarmonyOS平台的UnifyCore实现
+ * HarmonyOS平台UnifyCore实现
  */
-actual class UnifyCoreImpl : UnifyCore {
-    
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+class UnifyCoreImpl : UnifyCore {
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化各个管理器
+            initialized = true
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            // 清理资源
+            initialized = false
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "HarmonyOS",
-            "version" to getVersion(),
-            "capabilities" to listOf(
-                "touch", "camera", "location", "notifications", 
-                "biometric", "nfc", "sensors", "storage", "distributed"
-            ),
-            "ui_framework" to "ArkUI + Compose Multiplatform",
-            "harmony_features" to listOf(
-                "distributed_capability", "multi_device_collaboration", 
-                "atomic_service", "super_device", "cross_device_migration",
-                "distributed_data_management", "distributed_hardware"
-            ),
-            "device_types" to listOf(
-                "smartphone", "tablet", "smart_watch", "smart_tv", 
-                "car_machine", "smart_speaker", "smart_glasses"
-            ),
-            "harmony_version" to "HarmonyOS 4.0+",
-            "api_level" to 10
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        return PlatformInfo(
+            platformName = "HarmonyOS",
+            version = "4.0",
+            deviceModel = "Harmony Device",
+            osVersion = "HarmonyOS 4.0",
+            capabilities = listOf(
+                "Camera", "GPS", "Sensors", "Bluetooth", "NFC", "Distributed", "ArkUI"
+            )
         )
+    }
+}
+
+actual object UnifyCoreFactory {
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl()
     }
 }

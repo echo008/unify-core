@@ -1,258 +1,164 @@
 package com.unify.core.ui
 
-import android.app.Activity
 import android.content.Context
 import android.content.res.Configuration
-import android.os.Build
-import android.view.WindowInsetsController
-import android.widget.Toast
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberBottomSheetScaffoldState
+import android.content.res.Resources
+import android.util.DisplayMetrics
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.UUID
 
 /**
- * Android平台的UI管理器实现
+ * Android平台UnifyUIManager实现
  */
-actual class UnifyUIManagerImpl : UnifyUIManager {
+class UnifyUIManagerImpl(private val context: Context) : UnifyUIManager {
+    private val resources: Resources = context.resources
+    private val displayMetrics: DisplayMetrics = resources.displayMetrics
+    private val accessibilityManager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager
     
-    private val _currentTheme = MutableStateFlow(UnifyTheme())
-    override val currentTheme: StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    // 主题状态管理
+    private val _currentTheme = MutableStateFlow(createDefaultTheme())
+    private val _fontScale = MutableStateFlow(1.0f)
     
-    private val _screenSizeClass = MutableStateFlow(ScreenSizeClass.COMPACT)
-    override val screenSizeClass: StateFlow<ScreenSizeClass> = _screenSizeClass.asStateFlow()
-    
-    private val _orientation = MutableStateFlow(Orientation.PORTRAIT)
-    override val orientation: StateFlow<Orientation> = _orientation.asStateFlow()
-    
-    private var context: Context? = null
-    private val loadingHandles = mutableMapOf<String, LoadingHandle>()
-    private val bottomSheetHandles = mutableMapOf<String, BottomSheetHandle>()
-    
-    fun setContext(context: Context) {
-        this.context = context
-        updateScreenInfo()
-    }
+    // 动画设置
+    private var animationsEnabled = true
+    private var accessibilityEnabled = false
     
     override fun setTheme(theme: UnifyTheme) {
         _currentTheme.value = theme
     }
     
+    override fun getTheme(): UnifyTheme = _currentTheme.value
+    
+    override fun observeTheme(): StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    
     override fun toggleDarkMode() {
-        val current = _currentTheme.value
-        _currentTheme.value = current.copy(isDark = !current.isDark)
+        val currentTheme = _currentTheme.value
+        val newTheme = if (currentTheme.isDark) {
+            createLightTheme()
+        } else {
+            createDarkTheme()
+        }
+        setTheme(newTheme)
     }
     
-    override suspend fun showToast(message: String, duration: ToastDuration) {
-        context?.let { ctx ->
-            val androidDuration = when (duration) {
-                ToastDuration.SHORT -> Toast.LENGTH_SHORT
-                ToastDuration.LONG -> Toast.LENGTH_LONG
-            }
-            Toast.makeText(ctx, message, androidDuration).show()
+    override fun isDarkMode(): Boolean = _currentTheme.value.isDark
+    
+    override fun getPrimaryColor(): Color = _currentTheme.value.primaryColor
+    
+    override fun getSecondaryColor(): Color = _currentTheme.value.secondaryColor
+    
+    override fun getBackgroundColor(): Color = _currentTheme.value.backgroundColor
+    
+    override fun getSurfaceColor(): Color = _currentTheme.value.surfaceColor
+    
+    override fun getErrorColor(): Color = _currentTheme.value.errorColor
+    
+    override fun setFontScale(scale: Float) {
+        _fontScale.value = scale.coerceIn(0.5f, 2.0f)
+    }
+    
+    override fun getFontScale(): Float = _fontScale.value
+    
+    override fun observeFontScale(): StateFlow<Float> = _fontScale.asStateFlow()
+    
+    override fun getScreenWidth(): Int = displayMetrics.widthPixels
+    
+    override fun getScreenHeight(): Int = displayMetrics.heightPixels
+    
+    override fun getScreenDensity(): Float = displayMetrics.density
+    
+    override fun isTablet(): Boolean {
+        val configuration = resources.configuration
+        val screenLayout = configuration.screenLayout and Configuration.SCREENLAYOUT_SIZE_MASK
+        return screenLayout >= Configuration.SCREENLAYOUT_SIZE_LARGE
+    }
+    
+    override fun isLandscape(): Boolean {
+        return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    }
+    
+    override fun setAnimationsEnabled(enabled: Boolean) {
+        animationsEnabled = enabled
+    }
+    
+    override fun areAnimationsEnabled(): Boolean = animationsEnabled
+    
+    override fun getAnimationDuration(): Long {
+        return if (animationsEnabled) 300L else 0L
+    }
+    
+    override fun setAccessibilityEnabled(enabled: Boolean) {
+        accessibilityEnabled = enabled
+    }
+    
+    override fun isAccessibilityEnabled(): Boolean {
+        return accessibilityEnabled || accessibilityManager.isEnabled
+    }
+    
+    override fun announceForAccessibility(message: String) {
+        if (isAccessibilityEnabled()) {
+            // 在Android中，可以通过View.announceForAccessibility()实现
+            // 这里提供基础实现，实际使用时需要传入具体的View
         }
     }
     
-    override suspend fun showLoading(message: String?): LoadingHandle {
-        val handle = LoadingHandle(
-            id = UUID.randomUUID().toString(),
-            message = message
-        )
-        loadingHandles[handle.id] = handle
-        // Android原生加载对话框实现（使用ProgressDialog）
-        return handle
+    private fun createDefaultTheme(): UnifyTheme {
+        val isDarkMode = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        return if (isDarkMode) createDarkTheme() else createLightTheme()
     }
     
-    override suspend fun hideLoading(handle: LoadingHandle) {
-        loadingHandles.remove(handle.id)
-        // 隐藏对应的加载对话框
-    }
-    
-    @OptIn(ExperimentalMaterial3Api::class)
-    override suspend fun showBottomSheet(content: @Composable () -> Unit): BottomSheetHandle {
-        val handle = BottomSheetHandle(id = UUID.randomUUID().toString())
-        bottomSheetHandles[handle.id] = handle
-        // 底部弹窗显示逻辑（使用BottomSheetScaffold）
-        return handle
-    }
-    
-    override fun getSafeAreaInsets(): SafeAreaInsets {
-        context?.let { ctx ->
-            if (ctx is Activity) {
-                val windowInsets = WindowCompat.getInsetsController(ctx.window, ctx.window.decorView)
-                val insets = WindowInsetsCompat.toWindowInsetsCompat(
-                    ctx.window.decorView.rootWindowInsets
-                ).getInsets(WindowInsetsCompat.Type.systemBars())
-                
-                val density = ctx.resources.displayMetrics.density
-                return SafeAreaInsets(
-                    top = (insets.top / density).dp,
-                    bottom = (insets.bottom / density).dp,
-                    left = (insets.left / density).dp,
-                    right = (insets.right / density).dp
-                )
-            }
-        }
-        return SafeAreaInsets(0.dp, 0.dp, 0.dp, 0.dp)
-    }
-    
-    override fun getStatusBarHeight(): Dp {
-        context?.let { ctx ->
-            val resourceId = ctx.resources.getIdentifier("status_bar_height", "dimen", "android")
-            if (resourceId > 0) {
-                val height = ctx.resources.getDimensionPixelSize(resourceId)
-                val density = ctx.resources.displayMetrics.density
-                return (height / density).dp
-            }
-        }
-        return 24.dp // 默认值
-    }
-    
-    override fun getNavigationBarHeight(): Dp {
-        context?.let { ctx ->
-            val resourceId = ctx.resources.getIdentifier("navigation_bar_height", "dimen", "android")
-            if (resourceId > 0) {
-                val height = ctx.resources.getDimensionPixelSize(resourceId)
-                val density = ctx.resources.displayMetrics.density
-                return (height / density).dp
-            }
-        }
-        return 48.dp // 默认值
-    }
-    
-    override fun setStatusBarStyle(style: StatusBarStyle) {
-        context?.let { ctx ->
-            if (ctx is Activity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val controller = ctx.window.insetsController
-                when (style) {
-                    StatusBarStyle.LIGHT_CONTENT -> {
-                        controller?.setSystemBarsAppearance(
-                            0,
-                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                        )
-                    }
-                    StatusBarStyle.DARK_CONTENT -> {
-                        controller?.setSystemBarsAppearance(
-                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
-                            WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                        )
-                    }
-                    StatusBarStyle.AUTO -> {
-                        val isDark = _currentTheme.value.isDark
-                        if (isDark) {
-                            setStatusBarStyle(StatusBarStyle.LIGHT_CONTENT)
-                        } else {
-                            setStatusBarStyle(StatusBarStyle.DARK_CONTENT)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    override fun setNavigationBarStyle(style: NavigationBarStyle) {
-        context?.let { ctx ->
-            if (ctx is Activity && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                val controller = ctx.window.insetsController
-                when (style) {
-                    NavigationBarStyle.LIGHT -> {
-                        controller?.setSystemBarsAppearance(
-                            0,
-                            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                        )
-                    }
-                    NavigationBarStyle.DARK -> {
-                        controller?.setSystemBarsAppearance(
-                            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS,
-                            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-                        )
-                    }
-                    NavigationBarStyle.AUTO -> {
-                        val isDark = _currentTheme.value.isDark
-                        if (isDark) {
-                            setNavigationBarStyle(NavigationBarStyle.LIGHT)
-                        } else {
-                            setNavigationBarStyle(NavigationBarStyle.DARK)
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    override fun requestFullscreen(enable: Boolean) {
-        context?.let { ctx ->
-            if (ctx is Activity) {
-                if (enable) {
-                    WindowCompat.setDecorFitsSystemWindows(ctx.window, false)
-                } else {
-                    WindowCompat.setDecorFitsSystemWindows(ctx.window, true)
-                }
-            }
-        }
-    }
-    
-    override fun setOrientation(orientation: OrientationLock) {
-        context?.let { ctx ->
-            if (ctx is Activity) {
-                ctx.requestedOrientation = when (orientation) {
-                    OrientationLock.PORTRAIT -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                    OrientationLock.LANDSCAPE -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                    OrientationLock.AUTO -> android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-                }
-            }
-        }
-    }
-    
-    override fun getPlatformUIConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "Android",
-            "compose_version" to "1.7.0",
-            "material_design" to "Material 3",
-            "supports_dynamic_color" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S),
-            "supports_edge_to_edge" to true,
-            "min_sdk" to Build.VERSION_CODES.LOLLIPOP,
-            "target_sdk" to Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+    private fun createLightTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Light",
+            isDark = false,
+            primaryColor = Color(0xFF6200EE),
+            secondaryColor = Color(0xFF03DAC6),
+            backgroundColor = Color(0xFFFFFBFE),
+            surfaceColor = Color(0xFFFFFBFE),
+            errorColor = Color(0xFFB00020),
+            onPrimaryColor = Color.White,
+            onSecondaryColor = Color.Black,
+            onBackgroundColor = Color(0xFF1C1B1F),
+            onSurfaceColor = Color(0xFF1C1B1F),
+            onErrorColor = Color.White
         )
     }
     
-    private fun updateScreenInfo() {
-        context?.let { ctx ->
-            val configuration = ctx.resources.configuration
-            
-            // 更新屏幕尺寸类别
-            val screenWidthDp = configuration.screenWidthDp
-            _screenSizeClass.value = when {
-                screenWidthDp < 600 -> ScreenSizeClass.COMPACT
-                screenWidthDp < 840 -> ScreenSizeClass.MEDIUM
-                screenWidthDp < 1200 -> ScreenSizeClass.EXPANDED
-                screenWidthDp < 1600 -> ScreenSizeClass.LARGE
-                else -> ScreenSizeClass.EXTRA_LARGE
-            }
-            
-            // 更新屏幕方向
-            _orientation.value = when (configuration.orientation) {
-                Configuration.ORIENTATION_LANDSCAPE -> Orientation.LANDSCAPE
-                Configuration.ORIENTATION_PORTRAIT -> Orientation.PORTRAIT
-                else -> Orientation.PORTRAIT
-            }
-        }
+    private fun createDarkTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Dark",
+            isDark = true,
+            primaryColor = Color(0xFFBB86FC),
+            secondaryColor = Color(0xFF03DAC6),
+            backgroundColor = Color(0xFF121212),
+            surfaceColor = Color(0xFF121212),
+            errorColor = Color(0xFFCF6679),
+            onPrimaryColor = Color.Black,
+            onSecondaryColor = Color.Black,
+            onBackgroundColor = Color(0xFFE1E2E1),
+            onSurfaceColor = Color(0xFFE1E2E1),
+            onErrorColor = Color.Black
+        )
+    }
+}
+
+actual object UnifyUIManagerFactory {
+    private var context: Context? = null
+    
+    fun initialize(context: Context) {
+        this.context = context.applicationContext
+    }
+    
+    actual fun create(): UnifyUIManager {
+        return UnifyUIManagerImpl(
+            context ?: throw IllegalStateException("UnifyUIManagerFactory not initialized. Call initialize(context) first.")
+        )
     }
 }

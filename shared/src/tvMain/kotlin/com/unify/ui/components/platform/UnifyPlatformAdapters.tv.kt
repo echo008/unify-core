@@ -1,405 +1,536 @@
 package com.unify.ui.components.platform
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /**
- * TV平台UnifyPlatformAdapters完整actual实现
- * 适配Android TV、tvOS、HarmonyOS TV的大屏幕和遥控器交互
+ * TV平台UI适配器
+ * 提供智能电视特有的UI组件和交互方式
  */
-
-/**
- * TV 平台直播播放器实现
- */
-@Composable
-actual fun PlatformLivePlayer(
-    config: UnifyLivePlayerConfig,
-    onStateChange: ((UnifyLivePlayerState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    var isFocused by remember { mutableStateOf(false) }
+object TVUnifyPlatformAdapters {
     
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(300.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black)
-            .border(
-                width = if (isFocused) 3.dp else 1.dp,
-                color = if (isFocused) Color(0xFF2196F3) else Color(0xFF333333),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused }
+    /**
+     * TV遥控器导航面板
+     */
+    @Composable
+    fun TVRemoteNavigationPanel(
+        onDirectionClick: (Direction) -> Unit,
+        onCenterClick: () -> Unit,
+        onBackClick: () -> Unit,
+        onHomeClick: () -> Unit,
+        onMenuClick: () -> Unit,
+        modifier: Modifier = Modifier
     ) {
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
         ) {
-            Text(
-                text = "TV Live Player",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = config.url,
-                color = Color(0xFFB3B3B3),
-                fontSize = 14.sp
-            )
+            Column(
+                modifier = Modifier.padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // 方向键
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // 上
+                    IconButton(
+                        onClick = { onDirectionClick(Direction.UP) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.KeyboardArrowUp,
+                            contentDescription = "上",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // 左
+                        IconButton(
+                            onClick = { onDirectionClick(Direction.LEFT) },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.KeyboardArrowLeft,
+                                contentDescription = "左",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        
+                        // 确定键
+                        Button(
+                            onClick = onCenterClick,
+                            modifier = Modifier.size(56.dp),
+                            shape = RoundedCornerShape(50),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Text("OK")
+                        }
+                        
+                        // 右
+                        IconButton(
+                            onClick = { onDirectionClick(Direction.RIGHT) },
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = androidx.compose.material.icons.Icons.Default.KeyboardArrowRight,
+                                contentDescription = "右",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+                    
+                    // 下
+                    IconButton(
+                        onClick = { onDirectionClick(Direction.DOWN) },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.KeyboardArrowDown,
+                            contentDescription = "下",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+                
+                // 功能按钮
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    IconButton(
+                        onClick = onBackClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = onHomeClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Home,
+                            contentDescription = "主页"
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = onMenuClick,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Menu,
+                            contentDescription = "菜单"
+                        )
+                    }
+                }
+            }
         }
     }
     
-    LaunchedEffect(config) {
-        onStateChange?.invoke(UnifyLivePlayerState.PLAYING)
-    }
-}
-
-/**
- * TV 平台扫码器实现
- */
-@Composable
-actual fun PlatformScanner(
-    config: UnifyScanConfig,
-    onScanResult: ((UnifyScanResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    var isFocused by remember { mutableStateOf(false) }
-    
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(400.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color.Black)
-            .border(
-                width = if (isFocused) 3.dp else 1.dp,
-                color = if (isFocused) Color(0xFF2196F3) else Color(0xFF333333),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused }
+    /**
+     * TV媒体播放控制面板
+     */
+    @Composable
+    fun TVMediaControlPanel(
+        isPlaying: Boolean,
+        currentTime: String,
+        totalTime: String,
+        progress: Float,
+        volume: Float,
+        onPlayPause: () -> Unit,
+        onStop: () -> Unit,
+        onPrevious: () -> Unit,
+        onNext: () -> Unit,
+        onSeek: (Float) -> Unit,
+        onVolumeChange: (Float) -> Unit,
+        modifier: Modifier = Modifier
     ) {
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "TV Scanner",
-                color = Color.White,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
             )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(
-                onClick = {
-                    onScanResult?.invoke(
-                        UnifyScanResult(
-                            content = "TV_SCAN_RESULT",
-                            format = UnifyScanFormat.QR_CODE
-                        )
-                    )
-                },
-                modifier = Modifier.height(48.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text("开始扫描", fontSize = 16.sp)
+                // 进度条
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = currentTime,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = totalTime,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                    
+                    Slider(
+                        value = progress,
+                        onValueChange = onSeek,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+                
+                // 播放控制按钮
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = onPrevious,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.SkipPrevious,
+                            contentDescription = "上一个",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    Button(
+                        onClick = onPlayPause,
+                        modifier = Modifier.size(64.dp),
+                        shape = RoundedCornerShape(50),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isPlaying) {
+                                androidx.compose.material.icons.Icons.Default.Pause
+                            } else {
+                                androidx.compose.material.icons.Icons.Default.PlayArrow
+                            },
+                            contentDescription = if (isPlaying) "暂停" else "播放",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = onStop,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Stop,
+                            contentDescription = "停止",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    
+                    IconButton(
+                        onClick = onNext,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.SkipNext,
+                            contentDescription = "下一个",
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+                
+                // 音量控制
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.VolumeDown,
+                        contentDescription = "音量"
+                    )
+                    
+                    Slider(
+                        value = volume,
+                        onValueChange = onVolumeChange,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 16.dp)
+                    )
+                    
+                    Icon(
+                        imageVector = androidx.compose.material.icons.Icons.Default.VolumeUp,
+                        contentDescription = "音量"
+                    )
+                }
+            }
+        }
+    }
+    
+    /**
+     * TV频道选择器
+     */
+    @Composable
+    fun TVChannelSelector(
+        channels: List<TVChannel>,
+        currentChannel: TVChannel?,
+        onChannelSelected: (TVChannel) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyRow(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(channels.size) { index ->
+                val channel = channels[index]
+                val isSelected = currentChannel == channel
+                
+                Card(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(80.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    ),
+                    onClick = { onChannelSelected(channel) }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = channel.number.toString(),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                        
+                        Text(
+                            text = channel.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            }
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * TV设置面板
+     */
+    @Composable
+    fun TVSettingsPanel(
+        settings: List<TVSetting>,
+        onSettingChanged: (TVSetting, Any) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(settings.size) { index ->
+                val setting = settings[index]
+                
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = setting.icon,
+                            contentDescription = setting.title,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = setting.title,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (setting.description.isNotEmpty()) {
+                                Text(
+                                    text = setting.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                )
+                            }
+                        }
+                        
+                        // 设置控件
+                        when (setting.type) {
+                            SettingType.SWITCH -> {
+                                Switch(
+                                    checked = setting.value as Boolean,
+                                    onCheckedChange = { onSettingChanged(setting, it) }
+                                )
+                            }
+                            SettingType.SLIDER -> {
+                                Slider(
+                                    value = setting.value as Float,
+                                    onValueChange = { onSettingChanged(setting, it) },
+                                    modifier = Modifier.width(120.dp)
+                                )
+                            }
+                            SettingType.SELECTION -> {
+                                TextButton(
+                                    onClick = { /* 打开选择对话框 */ }
+                                ) {
+                                    Text(setting.value.toString())
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * TV信息显示面板
+     */
+    @Composable
+    fun TVInfoPanel(
+        title: String,
+        description: String,
+        details: Map<String, String>,
+        onClose: () -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    
+                    IconButton(
+                        onClick = onClose
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                            contentDescription = "关闭"
+                        )
+                    }
+                }
+                
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+                
+                details.forEach { (key, value) ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = key,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = value,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
         }
     }
 }
 
 /**
- * TV 平台传感器监听实现
+ * 方向枚举
  */
-@Composable
-actual fun PlatformSensorListener(
-    sensorType: UnifySensorType,
-    onSensorData: ((UnifySensorData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(sensorType) {
-        // TV平台传感器支持有限
-        onSensorData?.invoke(
-            UnifySensorData(
-                type = sensorType,
-                values = floatArrayOf(0f, 0f, 0f),
-                accuracy = 1,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
+enum class Direction {
+    UP, DOWN, LEFT, RIGHT
 }
 
 /**
- * TV 平台生物识别实现
+ * TV频道
  */
-@Composable
-actual fun PlatformBiometricAuth(
-    config: UnifyBiometricConfig,
-    onAuthResult: ((UnifyBiometricResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onError?.invoke("TV平台不支持生物识别")
-        },
-        modifier = Modifier.height(48.dp)
-    ) {
-        Text("生物识别不可用", fontSize = 16.sp)
-    }
-}
+data class TVChannel(
+    val number: Int,
+    val name: String,
+    val category: String
+)
 
 /**
- * TV 平台触觉反馈实现
+ * TV设置
  */
-actual fun PlatformHapticFeedback(
-    intensity: Float,
-    duration: Long,
-    pattern: List<Long>
-) {
-    // TV平台无触觉反馈硬件
-    // 可以考虑音频反馈替代
-}
+data class TVSetting(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val type: SettingType,
+    val value: Any
+)
 
 /**
- * TV 平台语音识别实现
+ * 设置类型
  */
-@Composable
-actual fun PlatformSpeechRecognition(
-    config: UnifySpeechConfig,
-    onResult: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onResult?.invoke("TV语音识别结果")
-        },
-        modifier = Modifier.height(48.dp)
-    ) {
-        Text("语音控制", fontSize = 16.sp)
-    }
-}
-
-/**
- * TV 平台文字转语音实现
- */
-actual fun PlatformTextToSpeech(
-    text: String,
-    config: UnifyTTSConfig,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    try {
-        onComplete?.invoke()
-    } catch (e: Exception) {
-        onError?.invoke(e.message ?: "TV TTS错误")
-    }
-}
-
-/**
- * TV 平台振动实现
- */
-actual fun PlatformVibration(
-    pattern: List<Long>,
-    intensity: Float
-) {
-    // TV平台无振动硬件，可使用音频反馈
-}
-
-/**
- * TV 平台屏幕亮度控制实现
- */
-actual fun PlatformScreenBrightness(
-    brightness: Float,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(true) // TV支持亮度控制
-}
-
-/**
- * TV 平台屏幕方向控制实现
- */
-actual fun PlatformScreenOrientation(
-    orientation: UnifyScreenOrientation,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // TV通常为横屏固定
-}
-
-/**
- * TV 平台状态栏控制实现
- */
-actual fun PlatformStatusBarControl(
-    config: UnifyStatusBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // TV无状态栏概念
-}
-
-/**
- * TV 平台导航栏控制实现
- */
-actual fun PlatformNavigationBarControl(
-    config: UnifyNavigationBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // TV无导航栏概念
-}
-
-/**
- * TV 平台通知实现
- */
-@Composable
-actual fun PlatformNotification(
-    config: UnifyNotificationConfig,
-    onAction: ((String) -> Unit)?,
-    onDismiss: (() -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // TV平台通知显示
-        onAction?.invoke("tv_notification_shown")
-    }
-}
-
-/**
- * TV 平台文件选择器实现
- */
-@Composable
-actual fun PlatformFilePicker(
-    config: UnifyFilePickerConfig,
-    onFileSelected: ((List<String>) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onError?.invoke("TV平台文件选择功能有限")
-        },
-        modifier = Modifier.height(48.dp)
-    ) {
-        Text("文件选择", fontSize = 16.sp)
-    }
-}
-
-/**
- * TV 平台相机实现
- */
-@Composable
-actual fun PlatformCamera(
-    config: UnifyCameraConfig,
-    onCapture: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onError?.invoke("TV平台不支持相机功能")
-        },
-        modifier = Modifier.height(48.dp)
-    ) {
-        Text("相机不可用", fontSize = 16.sp)
-    }
-}
-
-/**
- * TV 平台位置服务实现
- */
-@Composable
-actual fun PlatformLocationService(
-    config: UnifyLocationConfig,
-    onLocationUpdate: ((UnifyLocationData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // TV平台位置服务有限
-        onLocationUpdate?.invoke(
-            UnifyLocationData(
-                latitude = 39.9042,
-                longitude = 116.4074,
-                accuracy = 100.0,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
-}
-
-/**
- * TV 平台网络监控实现
- */
-@Composable
-actual fun PlatformNetworkMonitor(
-    onNetworkChange: ((UnifyNetworkInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        onNetworkChange?.invoke(
-            UnifyNetworkInfo(
-                isConnected = true,
-                connectionType = UnifyConnectionType.ETHERNET,
-                signalStrength = 100
-            )
-        )
-    }
-}
-
-/**
- * TV 平台电池监控实现
- */
-@Composable
-actual fun PlatformBatteryMonitor(
-    onBatteryUpdate: ((UnifyBatteryInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        // TV平台通常无电池
-        onBatteryUpdate?.invoke(
-            UnifyBatteryInfo(
-                level = 100,
-                isCharging = true,
-                batteryHealth = UnifyBatteryHealth.GOOD
-            )
-        )
-    }
-}
-
-/**
- * TV 平台生命周期监控实现
- */
-@Composable
-actual fun PlatformLifecycleMonitor(
-    onLifecycleChange: ((UnifyLifecycleState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        onLifecycleChange?.invoke(UnifyLifecycleState.ACTIVE)
-    }
+enum class SettingType {
+    SWITCH, SLIDER, SELECTION
 }

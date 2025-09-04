@@ -1,60 +1,34 @@
 package com.unify.core.platform
 
 import platform.UIKit.UIDevice
-import platform.UIKit.UIScreen
-import platform.UIKit.UIApplication
 import platform.Foundation.NSBundle
 import platform.Foundation.NSProcessInfo
-import platform.Foundation.NSUserDefaults
-import platform.SystemConfiguration.SCNetworkReachability
 import platform.CoreMotion.CMMotionManager
-import platform.AVFoundation.AVAudioSession
-import platform.CoreLocation.CLLocationManager
-import platform.UserNotifications.UNUserNotificationCenter
-import platform.LocalAuthentication.LAContext
+import platform.AVFoundation.AVCaptureDevice
 import platform.CoreBluetooth.CBCentralManager
-import platform.CoreNFC.NFCNDEFReaderSession
-import platform.CoreTelephony.CTTelephonyNetworkInfo
-import platform.Network.nw_path_monitor_create
-import kotlinx.cinterop.CValue
-import kotlinx.cinterop.useContents
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
+import platform.CoreLocation.CLLocationManager
+import com.unify.core.types.PlatformType
+import com.unify.core.types.DeviceInfo
 
 /**
- * iOS平台管理器生产级实现
- * 支持iOS 12.0+
+ * iOS平台管理器实现
  */
-actual object PlatformManager {
+class IOSPlatformManager : BasePlatformManager() {
     
-    private var motionManager: CMMotionManager? = null
-    private var locationManager: CLLocationManager? = null
+    private val device = UIDevice.currentDevice
+    private val processInfo = NSProcessInfo.processInfo
+    private val bundle = NSBundle.mainBundle
     
-    actual fun initialize() {
-        // iOS初始化逻辑
-        motionManager = CMMotionManager()
-        locationManager = CLLocationManager()
-    }
+    override fun getPlatformType(): PlatformType = PlatformType.IOS
     
-    actual fun getPlatformType(): PlatformType = PlatformType.IOS
+    override fun getPlatformName(): String = "iOS"
     
-    actual fun getPlatformName(): String = "iOS"
+    override fun getPlatformVersion(): String = device.systemVersion
     
-    actual fun getPlatformVersion(): String {
-        val device = UIDevice.currentDevice
-        return device.systemVersion
-    }
-    
-    actual fun getDeviceInfo(): DeviceInfo {
-        val device = UIDevice.currentDevice
-        val processInfo = NSProcessInfo.processInfo
-        
+    override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = "Apple",
-            model = getDeviceModel(),
+            model = device.model,
             systemName = device.systemName,
             systemVersion = device.systemVersion,
             deviceId = device.identifierForVendor?.UUIDString ?: "unknown",
@@ -62,336 +36,111 @@ actual object PlatformManager {
         )
     }
     
-    private fun getDeviceModel(): String {
-        val device = UIDevice.currentDevice
-        return when {
-            device.userInterfaceIdiom == UIUserInterfaceIdiomPhone -> "iPhone"
-            device.userInterfaceIdiom == UIUserInterfaceIdiomPad -> "iPad"
-            device.userInterfaceIdiom == UIUserInterfaceIdiomTV -> "Apple TV"
-            device.userInterfaceIdiom == UIUserInterfaceIdiomCarPlay -> "CarPlay"
-            else -> device.model
+    override fun hasCapability(capability: String): Boolean {
+        return when (capability) {
+            "camera" -> AVCaptureDevice.defaultDeviceWithMediaType("vide") != null
+            "gps" -> CLLocationManager.locationServicesEnabled()
+            "bluetooth" -> true // iOS设备都支持蓝牙
+            "wifi" -> true // iOS设备都支持WiFi
+            "nfc" -> device.model.contains("iPhone") && !isSimulator() // iPhone支持NFC
+            "fingerprint" -> true // 现代iOS设备都支持Touch ID或Face ID
+            "accelerometer" -> CMMotionManager().accelerometerAvailable
+            "gyroscope" -> CMMotionManager().gyroAvailable
+            "magnetometer" -> CMMotionManager().magnetometerAvailable
+            "microphone" -> true // iOS设备都有麦克风
+            "telephony" -> device.model.contains("iPhone")
+            "vibration" -> true // iOS设备都支持震动
+            else -> false
         }
+    }
+    
+    override fun getSupportedCapabilities(): List<String> {
+        val capabilities = mutableListOf<String>()
+        
+        if (hasCapability("camera")) capabilities.add("camera")
+        if (hasCapability("gps")) capabilities.add("gps")
+        if (hasCapability("bluetooth")) capabilities.add("bluetooth")
+        if (hasCapability("wifi")) capabilities.add("wifi")
+        if (hasCapability("nfc")) capabilities.add("nfc")
+        if (hasCapability("fingerprint")) capabilities.add("fingerprint")
+        if (hasCapability("accelerometer")) capabilities.add("accelerometer")
+        if (hasCapability("gyroscope")) capabilities.add("gyroscope")
+        if (hasCapability("magnetometer")) capabilities.add("magnetometer")
+        if (hasCapability("microphone")) capabilities.add("microphone")
+        if (hasCapability("telephony")) capabilities.add("telephony")
+        if (hasCapability("vibration")) capabilities.add("vibration")
+        
+        return capabilities
+    }
+    
+    override suspend fun performPlatformInitialization() {
+        // iOS特定初始化
+        config["system_name"] = device.systemName
+        config["system_version"] = device.systemVersion
+        config["model"] = device.model
+        config["localized_model"] = device.localizedModel
+        config["name"] = device.name
+        config["user_interface_idiom"] = device.userInterfaceIdiom.toString()
+        config["battery_monitoring_enabled"] = device.batteryMonitoringEnabled.toString()
+        config["proximity_monitoring_enabled"] = device.proximityMonitoringEnabled.toString()
+        config["multitasking_supported"] = device.multitaskingSupported.toString()
+        
+        // Bundle信息
+        config["bundle_identifier"] = bundle.bundleIdentifier ?: "unknown"
+        config["app_version"] = bundle.objectForInfoDictionaryKey("CFBundleShortVersionString")?.toString() ?: "unknown"
+        config["build_number"] = bundle.objectForInfoDictionaryKey("CFBundleVersion")?.toString() ?: "unknown"
+        
+        // 进程信息
+        config["process_name"] = processInfo.processName
+        config["host_name"] = processInfo.hostName
+        config["operating_system_version"] = processInfo.operatingSystemVersionString
+        config["processor_count"] = processInfo.processorCount.toString()
+        config["active_processor_count"] = processInfo.activeProcessorCount.toString()
+        config["physical_memory"] = processInfo.physicalMemory.toString()
+    }
+    
+    override suspend fun performPlatformCleanup() {
+        // iOS特定清理
+        config.clear()
     }
     
     private fun isSimulator(): Boolean {
-        return TARGET_OS_SIMULATOR != 0
+        return device.model.contains("Simulator") || 
+               processInfo.environment.containsKey("SIMULATOR_DEVICE_NAME")
     }
-    
-    actual fun getScreenInfo(): ScreenInfo {
-        val screen = UIScreen.mainScreen
-        val bounds = screen.bounds
-        val nativeBounds = screen.nativeBounds
-        val scale = screen.scale
-        
-        // 获取安全区域（刘海屏适配）
-        val safeAreaInsets = if (@Suppress("CAST_NEVER_SUCCEEDS") (UIDevice.currentDevice.systemVersion.toDoubleOrNull() ?: 0.0) >= 11.0) {
-            val window = UIApplication.sharedApplication.keyWindow
-            val insets = window?.safeAreaInsets
-            SafeAreaInsets(
-                top = (insets?.top?.times(scale))?.toInt() ?: 0,
-                bottom = (insets?.bottom?.times(scale))?.toInt() ?: 0,
-                left = (insets?.left?.times(scale))?.toInt() ?: 0,
-                right = (insets?.right?.times(scale))?.toInt() ?: 0
-            )
-        } else {
-            SafeAreaInsets()
-        }
-        
-        // 判断屏幕方向
-        val orientation = when (UIDevice.currentDevice.orientation) {
-            UIDeviceOrientationPortrait -> Orientation.PORTRAIT
-            UIDeviceOrientationPortraitUpsideDown -> Orientation.PORTRAIT_UPSIDE_DOWN
-            UIDeviceOrientationLandscapeLeft -> Orientation.LANDSCAPE_LEFT
-            UIDeviceOrientationLandscapeRight -> Orientation.LANDSCAPE_RIGHT
-            else -> if (bounds.useContents { width > height }) {
-                Orientation.LANDSCAPE
-            } else {
-                Orientation.PORTRAIT
-            }
-        }
-        
-        return ScreenInfo(
-            width = nativeBounds.useContents { width.toInt() },
-            height = nativeBounds.useContents { height.toInt() },
-            density = scale.toFloat(),
-            orientation = orientation,
-            refreshRate = screen.maximumFramesPerSecond.toFloat(),
-            safeAreaInsets = safeAreaInsets
-        )
-    }
-    
-    actual fun getSystemCapabilities(): SystemCapabilities {
-        val device = UIDevice.currentDevice
-        
-        return SystemCapabilities(
-            isTouchSupported = device.userInterfaceIdiom != UIUserInterfaceIdiomTV,
-            isKeyboardSupported = false, // iOS设备通常没有物理键盘
-            isMouseSupported = device.userInterfaceIdiom == UIUserInterfaceIdiomPad,
-            isCameraSupported = UIImagePickerController.isSourceTypeAvailable(UIImagePickerControllerSourceTypeCamera),
-            isMicrophoneSupported = AVAudioSession.sharedInstance().isInputAvailable,
-            isLocationSupported = CLLocationManager.locationServicesEnabled(),
-            isNotificationSupported = true,
-            isFileSystemSupported = true,
-            isBiometricSupported = isBiometricAuthenticationAvailable(),
-            isNFCSupported = isNFCAvailable(),
-            isBluetoothSupported = true, // iOS设备都支持蓝牙
-            supportedSensors = getSupportedSensors()
-        )
-    }
-    
-    private fun isBiometricAuthenticationAvailable(): Boolean {
-        val context = LAContext()
-        var error: NSError? = null
-        return context.canEvaluatePolicy(LAPolicyDeviceOwnerAuthenticationWithBiometrics, error = memScoped { alloc<ObjCObjectVar<NSError?>>().ptr })
-    }
-    
-    private fun isNFCAvailable(): Boolean {
-        // NFC支持需要检查设备和系统版本
-        return if (@Suppress("CAST_NEVER_SUCCEEDS") (UIDevice.currentDevice.systemVersion.toDoubleOrNull() ?: 0.0) >= 11.0) {
-            // 需要检查是否支持NFC
-            true // 简化实现，实际需要更细致的检查
-        } else {
-            false
-        }
-    }
-    
-    private fun getSupportedSensors(): List<SensorType> {
-        val supportedSensors = mutableListOf<SensorType>()
-        val motionManager = this.motionManager ?: return supportedSensors
-        
-        if (motionManager.isAccelerometerAvailable) {
-            supportedSensors.add(SensorType.ACCELEROMETER)
-        }
-        if (motionManager.isGyroAvailable) {
-            supportedSensors.add(SensorType.GYROSCOPE)
-        }
-        if (motionManager.isMagnetometerAvailable) {
-            supportedSensors.add(SensorType.MAGNETOMETER)
-        }
-        
-        return supportedSensors
-    }
-    
-    actual fun getNetworkStatus(): NetworkStatus {
-        return try {
-            memScoped {
-                val reachability = SCNetworkReachabilityCreateWithName(null, "www.apple.com")
-                if (reachability != null) {
-                    val flags = alloc<SCNetworkReachabilityFlagsVar>()
-                    val success = SCNetworkReachabilityGetFlags(reachability, flags.ptr)
-                    
-                    if (success && (flags.value and kSCNetworkReachabilityFlagsReachable) != 0u) {
-                        // 检查网络类型
-                        when {
-                            (flags.value and kSCNetworkReachabilityFlagsIsWWAN) != 0u -> NetworkStatus.CONNECTED_CELLULAR
-                            else -> NetworkStatus.CONNECTED_WIFI
-                        }
-                    } else {
-                        NetworkStatus.DISCONNECTED
-                    }
-                } else {
-                    NetworkStatus.UNKNOWN
-                }
-            }
-        } catch (e: Exception) {
-            NetworkStatus.UNKNOWN
-        }
-    }
-    
-    actual fun observeNetworkStatus(): Flow<NetworkStatus> = callbackFlow {
-        val reachability = SCNetworkReachabilityCreateWithName(null, "www.apple.com")
-        
-        if (reachability != null) {
-            val callback: SCNetworkReachabilityCallBack = staticCFunction { _, flags, _ ->
-                // 网络状态变化回调
-            }
-            
-            SCNetworkReachabilitySetCallback(reachability, callback, null)
-            SCNetworkReachabilityScheduleWithRunLoop(reachability, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode)
-            
-            // 发送初始状态
-            trySend(getNetworkStatus())
-            
-            awaitClose {
-                SCNetworkReachabilityUnscheduleFromRunLoop(reachability, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode)
-            }
-        } else {
-            trySend(NetworkStatus.UNKNOWN)
-            close()
-        }
-    }
-    
-    actual fun getStorageInfo(): StorageInfo {
-        val fileManager = NSFileManager.defaultManager
-        val documentsPath = NSSearchPathForDirectoriesInDomains(
-            NSDocumentDirectory,
-            NSUserDomainMask,
-            true
-        ).firstOrNull() as? String ?: "/"
-        
-        return try {
-            val attributes = fileManager.attributesOfFileSystemForPath(documentsPath, error = null)
-            val totalSpace = (attributes?.get(NSFileSystemSize) as? NSNumber)?.longLongValue ?: 0L
-            val freeSpace = (attributes?.get(NSFileSystemFreeSize) as? NSNumber)?.longLongValue ?: 0L
-            val usedSpace = totalSpace - freeSpace
-            
-            StorageInfo(
-                totalSpace = totalSpace,
-                availableSpace = freeSpace,
-                usedSpace = usedSpace,
-                isExternalStorageAvailable = false // iOS没有外部存储
-            )
-        } catch (e: Exception) {
-            StorageInfo(
-                totalSpace = 0L,
-                availableSpace = 0L,
-                usedSpace = 0L,
-                isExternalStorageAvailable = false
-            )
-        }
-    }
-    
-    actual fun getPerformanceInfo(): PerformanceInfo {
-        val processInfo = NSProcessInfo.processInfo
-        
-        // 获取内存信息
-        val physicalMemory = processInfo.physicalMemory.toLong()
-        
-        // iOS不提供直接的CPU使用率API，需要使用系统调用
-        val memoryUsage = MemoryUsage(
-            totalMemory = physicalMemory,
-            availableMemory = physicalMemory / 2, // 估算值
-            usedMemory = physicalMemory / 2, // 估算值
-            appMemoryUsage = physicalMemory / 4 // 估算值
-        )
-        
-        return PerformanceInfo(
-            cpuUsage = 0f, // iOS CPU使用率需要更复杂的实现
-            memoryUsage = memoryUsage,
-            batteryLevel = getBatteryLevel(),
-            thermalState = getThermalState()
-        )
-    }
-    
-    private fun getBatteryLevel(): Float {
-        val device = UIDevice.currentDevice
-        device.batteryMonitoringEnabled = true
-        return if (device.batteryState != UIDeviceBatteryStateUnknown) {
-            device.batteryLevel * 100f
-        } else {
-            -1f
-        }
-    }
-    
-    private fun getThermalState(): ThermalState {
-        val processInfo = NSProcessInfo.processInfo
-        return when (processInfo.thermalState) {
-            NSProcessInfoThermalStateNominal -> ThermalState.NORMAL
-            NSProcessInfoThermalStateFair -> ThermalState.FAIR
-            NSProcessInfoThermalStateSerious -> ThermalState.SERIOUS
-            NSProcessInfoThermalStateCritical -> ThermalState.CRITICAL
-            else -> ThermalState.NORMAL
-        }
-    }
-    
-    actual suspend fun showNativeDialog(config: DialogConfig): DialogResult = suspendCancellableCoroutine { continuation ->
-        val alert = UIAlertController.alertControllerWithTitle(
-            title = config.title,
-            message = config.message,
-            preferredStyle = UIAlertControllerStyleAlert
-        )
-        
-        config.buttons.forEachIndexed { index, button ->
-            val actionStyle = when (button.style) {
-                ButtonStyle.DESTRUCTIVE -> UIAlertActionStyleDestructive
-                ButtonStyle.CANCEL -> UIAlertActionStyleCancel
-                else -> UIAlertActionStyleDefault
-            }
-            
-            val action = UIAlertAction.actionWithTitle(
-                title = button.text,
-                style = actionStyle
-            ) { _ ->
-                button.action()
-                continuation.resume(DialogResult(buttonIndex = index))
-            }
-            
-            alert.addAction(action)
-        }
-        
-        // 获取当前的视图控制器
-        val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
-        rootViewController?.presentViewController(alert, animated = true, completion = null)
-        
-        continuation.invokeOnCancellation {
-            alert.dismissViewControllerAnimated(true, completion = null)
-        }
-    }
-    
-    actual suspend fun invokePlatformFeature(feature: PlatformFeature): PlatformResult {
-        return try {
-            when (feature) {
-                is PlatformFeature.Vibrate -> {
-                    // iOS振动反馈
-                    val impactFeedback = UIImpactFeedbackGenerator(UIImpactFeedbackStyleMedium)
-                    impactFeedback.impactOccurred()
-                    PlatformResult(success = true)
-                }
-                
-                is PlatformFeature.OpenUrl -> {
-                    val url = NSURL.URLWithString(feature.url)
-                    if (url != null && UIApplication.sharedApplication.canOpenURL(url)) {
-                        UIApplication.sharedApplication.openURL(url)
-                        PlatformResult(success = true)
-                    } else {
-                        PlatformResult(success = false, error = "无效的URL或无法打开")
-                    }
-                }
-                
-                is PlatformFeature.ShareContent -> {
-                    // iOS分享功能需要在UI线程中实现
-                    val activityViewController = UIActivityViewController(
-                        activityItems = listOf(NSString.create(string = feature.content)),
-                        applicationActivities = null
-                    )
-                    
-                    val rootViewController = UIApplication.sharedApplication.keyWindow?.rootViewController
-                    rootViewController?.presentViewController(activityViewController, animated = true, completion = null)
-                    
-                    PlatformResult(success = true)
-                }
-                
-                is PlatformFeature.RequestPermission -> {
-                    // iOS权限请求需要根据具体权限类型实现
-                    PlatformResult(success = false, error = "iOS权限请求需要具体实现")
-                }
-                
-                else -> PlatformResult(success = false, error = "不支持的功能: ${feature::class.simpleName}")
-            }
-        } catch (e: Exception) {
-            PlatformResult(success = false, error = e.message)
-        }
-    }
-    
-    actual fun getPlatformConfig(): PlatformConfig {
-        return PlatformConfig(
-            platformType = PlatformType.IOS,
-            supportedFeatures = setOf(
-                "vibration", "camera", "location", "notifications",
-                "biometric", "bluetooth", "file_system", "share",
-                "deep_links", "background_tasks", "app_store"
-            ),
-            limitations = setOf(
-                "no_external_storage",
-                "app_store_review_required",
-                "limited_background_processing"
-            ),
-            optimizations = mapOf(
-                "human_interface_guidelines" to true,
-                "safe_area_support" to true,
-                "dark_mode_support" to true,
-                "dynamic_type_support" to true
-            )
-        )
-    }
+}
+
+/**
+ * 平台管理器创建函数实现
+ */
+actual fun getCurrentPlatformManager(): PlatformManager = IOSPlatformManager()
+
+actual fun createAndroidPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Android平台管理器在iOS平台不可用")
+}
+
+actual fun createIOSPlatformManager(): PlatformManager = IOSPlatformManager()
+
+actual fun createWebPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Web平台管理器在iOS平台不可用")
+}
+
+actual fun createDesktopPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Desktop平台管理器在iOS平台不可用")
+}
+
+actual fun createHarmonyOSPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("HarmonyOS平台管理器在iOS平台不可用")
+}
+
+actual fun createMiniProgramPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("MiniProgram平台管理器在iOS平台不可用")
+}
+
+actual fun createWatchPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Watch平台管理器在iOS平台不可用")
+}
+
+actual fun createTVPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("TV平台管理器在iOS平台不可用")
 }

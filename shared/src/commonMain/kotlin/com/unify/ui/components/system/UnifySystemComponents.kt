@@ -1,660 +1,198 @@
 package com.unify.ui.components.system
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.*
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.DialogProperties
-import com.unify.ui.LocalUnifyTheme
-import com.unify.ui.components.foundation.*
+import kotlinx.coroutines.flow.Flow
 
 /**
- * Unify 系统组件
- * 对应微信小程序的 navigation-bar、page-meta 等系统组件
+ * Unify跨平台系统组件
+ * 支持系统信息显示、性能监控、设备管理等功能
  */
 
-/**
- * 导航栏样式
- */
-enum class UnifyNavigationBarStyle {
-    DEFAULT,    // 默认样式
-    CUSTOM      // 自定义样式
-}
-
-/**
- * 导航栏配置
- */
-data class UnifyNavigationBarConfig(
-    val title: String = "",
-    val loading: Boolean = false,
-    val frontColor: Color = Color.Black,
-    val backgroundColor: Color = Color.White,
-    val colorAnimationDuration: Long = 0L,
-    val colorAnimationTimingFunc: String = "linear",
-    val animation: UnifyNavigationBarAnimation = UnifyNavigationBarAnimation(),
-    val style: UnifyNavigationBarStyle = UnifyNavigationBarStyle.DEFAULT,
-    val homePage: String = "",
-    val showBackButton: Boolean = true,
-    val showHomeButton: Boolean = false,
-    val showMenuButton: Boolean = false,
-    val showShareButton: Boolean = false,
-    val showFavoriteButton: Boolean = false
+data class SystemInfo(
+    val deviceName: String,
+    val osVersion: String,
+    val appVersion: String,
+    val totalMemory: Long,
+    val availableMemory: Long,
+    val totalStorage: Long,
+    val availableStorage: Long,
+    val batteryLevel: Float,
+    val isCharging: Boolean,
+    val networkType: String,
+    val cpuUsage: Float
 )
 
-/**
- * 导航栏动画配置
- */
-data class UnifyNavigationBarAnimation(
-    val duration: Long = 300L,
-    val timingFunc: String = "linear" // linear, easeIn, easeOut, easeInOut
+enum class PerformanceMetric {
+    CPU_USAGE, MEMORY_USAGE, BATTERY_LEVEL, NETWORK_SPEED, FPS, TEMPERATURE
+}
+
+@Composable
+expect fun UnifySystemInfo(
+    systemInfo: SystemInfo,
+    modifier: Modifier = Modifier,
+    showBattery: Boolean = true,
+    showMemory: Boolean = true,
+    showStorage: Boolean = true,
+    showNetwork: Boolean = true,
+    refreshInterval: Long = 5000L
 )
 
-/**
- * 系统导航栏组件
- */
 @Composable
-fun UnifySystemNavigationBar(
-    config: UnifyNavigationBarConfig,
+expect fun UnifyPerformanceMonitor(
+    metrics: Set<PerformanceMetric>,
+    onMetricsUpdate: (Map<PerformanceMetric, Float>) -> Unit,
     modifier: Modifier = Modifier,
-    onBackClick: (() -> Unit)? = null,
-    onHomeClick: (() -> Unit)? = null,
-    onMenuClick: (() -> Unit)? = null,
-    onShareClick: (() -> Unit)? = null,
-    onFavoriteClick: (() -> Unit)? = null,
-    contentDescription: String? = null
-) {
-    val theme = LocalUnifyTheme.current
-    val density = LocalDensity.current
-    
-    // 动画颜色
-    val animatedBackgroundColor by animateColorAsState(
-        targetValue = config.backgroundColor,
-        animationSpec = tween(
-            durationMillis = config.colorAnimationDuration.toInt(),
-            easing = when (config.colorAnimationTimingFunc) {
-                "easeIn" -> FastOutSlowInEasing
-                "easeOut" -> LinearOutSlowInEasing
-                "easeInOut" -> FastOutLinearInEasing
-                else -> LinearEasing
-            }
-        ),
-        label = "nav_background_color"
-    )
-    
-    val animatedFrontColor by animateColorAsState(
-        targetValue = config.frontColor,
-        animationSpec = tween(
-            durationMillis = config.colorAnimationDuration.toInt(),
-            easing = when (config.colorAnimationTimingFunc) {
-                "easeIn" -> FastOutSlowInEasing
-                "easeOut" -> LinearOutSlowInEasing
-                "easeInOut" -> FastOutLinearInEasing
-                else -> LinearEasing
-            }
-        ),
-        label = "nav_front_color"
-    )
-    
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .semantics {
-                contentDescription?.let { 
-                    this.contentDescription = it 
-                }
-            },
-        color = animatedBackgroundColor,
-        shadowElevation = 4.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 左侧按钮组
-            Row {
-                if (config.showBackButton) {
-                    IconButton(
-                        onClick = { onBackClick?.invoke() }
-                    ) {
-                        UnifyIcon(
-                            icon = Icons.Default.ArrowBack,
-                            size = UnifyIconSize.MEDIUM,
-                            tint = animatedFrontColor
-                        )
-                    }
-                }
-                
-                if (config.showHomeButton) {
-                    IconButton(
-                        onClick = { onHomeClick?.invoke() }
-                    ) {
-                        UnifyIcon(
-                            icon = Icons.Default.Home,
-                            size = UnifyIconSize.MEDIUM,
-                            tint = animatedFrontColor
-                        )
-                    }
-                }
-            }
-            
-            // 标题区域
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    UnifyText(
-                        text = config.title,
-                        variant = UnifyTextVariant.TITLE_MEDIUM,
-                        color = animatedFrontColor,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
-                    
-                    if (config.loading) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                        UnifyLoading(
-                            variant = UnifyLoadingVariant.CIRCULAR,
-                            size = UnifyLoadingSize.SMALL
-                        )
-                    }
-                }
-            }
-            
-            // 右侧按钮组
-            Row {
-                if (config.showShareButton) {
-                    IconButton(
-                        onClick = { onShareClick?.invoke() }
-                    ) {
-                        UnifyIcon(
-                            icon = Icons.Default.Share,
-                            size = UnifyIconSize.MEDIUM,
-                            tint = animatedFrontColor
-                        )
-                    }
-                }
-                
-                if (config.showFavoriteButton) {
-                    IconButton(
-                        onClick = { onFavoriteClick?.invoke() }
-                    ) {
-                        UnifyIcon(
-                            icon = Icons.Default.Favorite,
-                            size = UnifyIconSize.MEDIUM,
-                            tint = animatedFrontColor
-                        )
-                    }
-                }
-                
-                if (config.showMenuButton) {
-                    IconButton(
-                        onClick = { onMenuClick?.invoke() }
-                    ) {
-                        UnifyIcon(
-                            icon = Icons.Default.MoreVert,
-                            size = UnifyIconSize.MEDIUM,
-                            tint = animatedFrontColor
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 页面元数据配置
- */
-data class UnifyPageMetaConfig(
-    val backgroundColor: Color = Color.White,
-    val textSizeAdjust: String = "auto", // auto, none, percentage
-    val backgroundColorTop: Color = Color.White,
-    val backgroundColorBottom: Color = Color.White,
-    val scrollTop: Dp = 0.dp,
-    val scrollDuration: Long = 300L,
-    val pageStyle: String = "",
-    val rootFontSize: String = "16px",
-    val rootBackgroundColor: Color = Color.White,
-    val pageOrientation: String = "auto", // auto, portrait, landscape
-    val enablePullDownRefresh: Boolean = false,
-    val onReachBottomDistance: Dp = 50.dp,
-    val backgroundTextStyle: String = "dark" // dark, light
+    showRealTimeChart: Boolean = true,
+    maxDataPoints: Int = 60,
+    updateInterval: Long = 1000L
 )
 
-/**
- * 页面元数据组件
- */
 @Composable
-fun UnifyPageMeta(
-    config: UnifyPageMetaConfig,
+expect fun UnifyBatteryIndicator(
+    batteryLevel: Float,
+    isCharging: Boolean,
     modifier: Modifier = Modifier,
-    onResize: ((width: Dp, height: Dp) -> Unit)? = null,
-    onScroll: ((scrollTop: Dp) -> Unit)? = null,
-    onReachBottom: (() -> Unit)? = null,
-    onPullDownRefresh: (() -> Unit)? = null,
-    contentDescription: String? = null
-) {
-    val density = LocalDensity.current
-    
-    // 页面元数据设置
-    LaunchedEffect(config) {
-        // 在实际实现中，这里会设置页面的全局样式
-        // 包括背景色、字体大小、页面方向等
-    }
-    
-    // 滚动到指定位置
-    LaunchedEffect(config.scrollTop) {
-        if (config.scrollTop > 0.dp) {
-            onScroll?.invoke(config.scrollTop)
-        }
-    }
-    
-    // 页面元数据不渲染可见内容，但会影响页面行为
-    Box(
-        modifier = modifier.semantics {
-            contentDescription?.let { 
-                this.contentDescription = it 
-            }
-        }
-    ) {
-        // 空内容，仅用于设置页面元数据
-    }
-}
-
-/**
- * 自定义导航栏组件
- */
-@Composable
-fun UnifyCustomNavigationBar(
-    modifier: Modifier = Modifier,
-    height: Dp = 56.dp,
-    backgroundColor: Color = LocalUnifyTheme.current.colors.surface,
-    contentColor: Color = LocalUnifyTheme.current.colors.onSurface,
-    elevation: Dp = 4.dp,
-    contentDescription: String? = null,
-    content: @Composable RowScope.() -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
-            .semantics {
-                contentDescription?.let { 
-                    this.contentDescription = it 
-                }
-            },
-        color = backgroundColor,
-        contentColor = contentColor,
-        shadowElevation = elevation
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            content = content
-        )
-    }
-}
-
-/**
- * 状态栏配置
- */
-data class UnifyStatusBarConfig(
-    val style: String = "default", // default, light-content, dark-content
-    val backgroundColor: Color = Color.Transparent,
-    val hidden: Boolean = false,
-    val animation: String = "none" // none, fade, slide
+    showPercentage: Boolean = true,
+    lowBatteryThreshold: Float = 0.2f,
+    warningColor: Color = Color.Red,
+    normalColor: Color = Color.Green,
+    chargingColor: Color = Color.Blue
 )
 
-/**
- * 状态栏组件
- */
 @Composable
-fun UnifyStatusBar(
-    config: UnifyStatusBarConfig,
+expect fun UnifyMemoryUsage(
+    totalMemory: Long,
+    usedMemory: Long,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
+    showChart: Boolean = true,
+    showDetails: Boolean = true,
+    warningThreshold: Float = 0.8f
+)
+
+@Composable
+expect fun UnifyStorageUsage(
+    totalStorage: Long,
+    usedStorage: Long,
+    modifier: Modifier = Modifier,
+    showBreakdown: Boolean = true,
+    categories: Map<String, Long> = emptyMap(),
+    warningThreshold: Float = 0.9f
+)
+
+@Composable
+expect fun UnifyNetworkStatus(
+    networkType: String,
+    isConnected: Boolean,
+    signalStrength: Float,
+    modifier: Modifier = Modifier,
+    showSpeed: Boolean = true,
+    onNetworkTest: () -> Unit = {},
+    showDetails: Boolean = true
+)
+
+@Composable
+expect fun UnifyDeviceOrientation(
+    onOrientationChange: (DeviceOrientation) -> Unit,
+    modifier: Modifier = Modifier,
+    showIndicator: Boolean = true,
+    lockOrientation: DeviceOrientation? = null
+)
+
+enum class DeviceOrientation {
+    PORTRAIT, LANDSCAPE, PORTRAIT_REVERSE, LANDSCAPE_REVERSE
+}
+
+@Composable
+expect fun UnifyVibrationControl(
+    onVibrate: (VibrationPattern) -> Unit,
+    modifier: Modifier = Modifier,
+    enableCustomPatterns: Boolean = true,
+    presetPatterns: List<VibrationPattern> = emptyList()
+)
+
+data class VibrationPattern(
+    val name: String,
+    val pattern: LongArray,
+    val repeat: Int = -1
 ) {
-    // 状态栏样式设置
-    LaunchedEffect(config) {
-        // 在实际实现中，这里会调用平台特定的API来设置状态栏样式
-        // Android: WindowInsetsController
-        // iOS: UIStatusBarStyle
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other == null || this::class != other::class) return false
+        other as VibrationPattern
+        if (name != other.name) return false
+        if (!pattern.contentEquals(other.pattern)) return false
+        if (repeat != other.repeat) return false
+        return true
     }
-    
-    if (!config.hidden) {
-        Box(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(24.dp)
-                .background(config.backgroundColor)
-                .semantics {
-                    contentDescription?.let { 
-                        this.contentDescription = it 
-                    }
-                }
-        )
+
+    override fun hashCode(): Int {
+        var result = name.hashCode()
+        result = 31 * result + pattern.contentHashCode()
+        result = 31 * result + repeat
+        return result
     }
 }
 
-/**
- * 系统弹窗组件
- */
 @Composable
-fun UnifySystemDialog(
-    title: String,
-    content: String,
-    showCancel: Boolean = true,
-    cancelText: String = "取消",
-    confirmText: String = "确定",
-    onCancel: (() -> Unit)? = null,
-    onConfirm: (() -> Unit)? = null,
-    onDismiss: (() -> Unit)? = null,
+expect fun UnifyBrightnessControl(
+    brightness: Float,
+    onBrightnessChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
-) {
-    AlertDialog(
-        onDismissRequest = { onDismiss?.invoke() },
-        title = {
-            UnifyText(
-                text = title,
-                variant = UnifyTextVariant.TITLE_LARGE,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        text = {
-            UnifyText(
-                text = content,
-                variant = UnifyTextVariant.BODY_MEDIUM,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        },
-        confirmButton = {
-            UnifyButton(
-                text = confirmText,
-                onClick = { onConfirm?.invoke() }
-            )
-        },
-        dismissButton = if (showCancel) {
-            {
-                UnifyButton(
-                    text = cancelText,
-                    variant = UnifyButtonVariant.TEXT,
-                    onClick = { onCancel?.invoke() }
-                )
-            }
-        } else null,
-        modifier = modifier.semantics {
-            contentDescription?.let { 
-                this.contentDescription = it 
-            }
-        },
-        properties = DialogProperties(
-            dismissOnBackPress = true,
-            dismissOnClickOutside = false
-        )
-    )
+    enableAutoAdjust: Boolean = true,
+    showSlider: Boolean = true
+)
+
+@Composable
+expect fun UnifyVolumeControl(
+    volume: Float,
+    onVolumeChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    volumeType: VolumeType = VolumeType.MEDIA,
+    showSlider: Boolean = true,
+    enableMute: Boolean = true
+)
+
+enum class VolumeType {
+    MEDIA, RING, NOTIFICATION, ALARM, CALL
 }
 
-/**
- * 系统加载弹窗组件
- */
 @Composable
-fun UnifySystemLoading(
-    title: String = "加载中",
-    mask: Boolean = true,
-    onCancel: (() -> Unit)? = null,
+expect fun UnifyClipboard(
+    onClipboardChange: (String) -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
-) {
-    if (mask) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .semantics {
-                    contentDescription?.let { 
-                        this.contentDescription = it 
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            UnifySystemLoadingContent(title = title)
-        }
-    } else {
-        Box(
-            modifier = modifier
-                .semantics {
-                    contentDescription?.let { 
-                        this.contentDescription = it 
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            UnifySystemLoadingContent(title = title)
-        }
-    }
-}
+    showHistory: Boolean = true,
+    maxHistorySize: Int = 10,
+    enableAutoDetect: Boolean = true
+)
 
-/**
- * 系统加载内容
- */
 @Composable
-private fun UnifySystemLoadingContent(title: String) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = LocalUnifyTheme.current.colors.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            UnifyLoading(
-                variant = UnifyLoadingVariant.CIRCULAR,
-                size = UnifyLoadingSize.LARGE
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            UnifyText(
-                text = title,
-                variant = UnifyTextVariant.BODY_MEDIUM,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-/**
- * 系统提示组件
- */
-@Composable
-fun UnifySystemToast(
-    title: String,
-    icon: ImageVector? = null,
-    image: String? = null,
-    duration: Long = 1500L,
-    mask: Boolean = false,
-    position: String = "center", // top, center, bottom
-    onComplete: (() -> Unit)? = null,
+expect fun UnifyNotificationManager(
+    notifications: List<NotificationItem>,
+    onNotificationAction: (String, NotificationAction) -> Unit,
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
-) {
-    var visible by remember { mutableStateOf(true) }
-    
-    LaunchedEffect(duration) {
-        kotlinx.coroutines.delay(duration)
-        visible = false
-        onComplete?.invoke()
-    }
-    
-    if (visible) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .then(
-                    if (mask) {
-                        Modifier.background(Color.Black.copy(alpha = 0.3f))
-                    } else {
-                        Modifier
-                    }
-                )
-                .semantics {
-                    contentDescription?.let { 
-                        this.contentDescription = it 
-                    }
-                },
-            contentAlignment = when (position) {
-                "top" -> Alignment.TopCenter
-                "bottom" -> Alignment.BottomCenter
-                else -> Alignment.Center
-            }
-        ) {
-            Card(
-                modifier = Modifier.padding(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Black.copy(alpha = 0.8f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    icon?.let { iconVector ->
-                        UnifyIcon(
-                            icon = iconVector,
-                            size = UnifyIconSize.LARGE,
-                            tint = Color.White
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    
-                    UnifyText(
-                        text = title,
-                        variant = UnifyTextVariant.BODY_MEDIUM,
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-    }
-}
+    enableGrouping: Boolean = true,
+    showBadges: Boolean = true
+)
 
-/**
- * 系统操作菜单组件
- */
-@Composable
-fun UnifySystemActionSheet(
-    itemList: List<String>,
-    onItemClick: (index: Int, item: String) -> Unit,
-    onCancel: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-    contentDescription: String? = null
-) {
-    var showSheet by remember { mutableStateOf(true) }
-    
-    if (showSheet) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.5f))
-                .clickable {
-                    showSheet = false
-                    onCancel?.invoke()
-                }
-                .semantics {
-                    contentDescription?.let { 
-                        this.contentDescription = it 
-                    }
-                },
-            contentAlignment = Alignment.BottomCenter
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-                    .clickable(enabled = false) { },
-                colors = CardDefaults.cardColors(
-                    containerColor = LocalUnifyTheme.current.colors.surface
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-            ) {
-                Column {
-                    itemList.forEachIndexed { index, item ->
-                        ListItem(
-                            headlineContent = {
-                                UnifyText(
-                                    text = item,
-                                    variant = UnifyTextVariant.BODY_LARGE,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                            },
-                            modifier = Modifier.clickable {
-                                showSheet = false
-                                onItemClick(index, item)
-                            }
-                        )
-                        
-                        if (index < itemList.lastIndex) {
-                            HorizontalDivider()
-                        }
-                    }
-                    
-                    HorizontalDivider(thickness = 8.dp, color = LocalUnifyTheme.current.colors.surfaceVariant)
-                    
-                    ListItem(
-                        headlineContent = {
-                            UnifyText(
-                                text = "取消",
-                                variant = UnifyTextVariant.BODY_LARGE,
-                                textAlign = TextAlign.Center,
-                                color = LocalUnifyTheme.current.colors.onSurface.copy(alpha = 0.6f),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        },
-                        modifier = Modifier.clickable {
-                            showSheet = false
-                            onCancel?.invoke()
-                        }
-                    )
-                }
-            }
-        }
-    }
+data class NotificationItem(
+    val id: String,
+    val title: String,
+    val content: String,
+    val timestamp: Long,
+    val priority: NotificationPriority,
+    val category: String,
+    val actions: List<NotificationAction> = emptyList()
+)
+
+data class NotificationAction(
+    val id: String,
+    val title: String,
+    val icon: String? = null
+)
+
+enum class NotificationPriority {
+    LOW, NORMAL, HIGH, URGENT
 }

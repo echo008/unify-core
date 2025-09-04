@@ -5,238 +5,25 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
-import kotlin.time.Duration
-import kotlin.time.TimeSource
+import kotlin.system.measureTimeMillis
 
 /**
- * 跨平台性能监控系统
- * 提供统一的性能指标收集、分析和报告功能
+ * Unify跨平台性能监控器
+ * 支持8大平台的统一性能监控
  */
-object PerformanceMonitor {
-    
-    private val _performanceMetrics = MutableStateFlow(PerformanceMetrics())
-    val performanceMetrics: StateFlow<PerformanceMetrics> = _performanceMetrics.asStateFlow()
-    
-    private val _performanceEvents = MutableStateFlow<List<PerformanceEvent>>(emptyList())
-    val performanceEvents: StateFlow<List<PerformanceEvent>> = _performanceEvents.asStateFlow()
-    
-    private val timeSource = TimeSource.Monotonic
-    private val activeOperations = mutableMapOf<String, TimeSource.Monotonic.ValueTimeMark>()
-    
-    /**
-     * 开始性能监控
-     */
-    fun startMonitoring() {
-        // 初始化性能监控
-    }
-    
-    /**
-     * 停止性能监控
-     */
-    fun stopMonitoring() {
-        activeOperations.clear()
-    }
-    
-    /**
-     * 开始计时操作
-     */
-    fun startOperation(operationId: String, category: PerformanceCategory = PerformanceCategory.GENERAL) {
-        activeOperations[operationId] = timeSource.markNow()
-        recordEvent(PerformanceEvent.OperationStarted(operationId, category))
-    }
-    
-    /**
-     * 结束计时操作
-     */
-    fun endOperation(operationId: String): Duration? {
-        val startTime = activeOperations.remove(operationId) ?: return null
-        val duration = startTime.elapsedNow()
-        
-        recordEvent(PerformanceEvent.OperationCompleted(operationId, duration))
-        updateMetrics(operationId, duration)
-        
-        return duration
-    }
-    
-    /**
-     * 记录内存使用情况
-     */
-    fun recordMemoryUsage(memoryUsage: MemoryUsage) {
-        val currentMetrics = _performanceMetrics.value
-        _performanceMetrics.value = currentMetrics.copy(
-            memoryUsage = memoryUsage,
-            lastUpdated = System.currentTimeMillis()
-        )
-        recordEvent(PerformanceEvent.MemoryUpdate(memoryUsage))
-    }
-    
-    /**
-     * 记录CPU使用率
-     */
-    fun recordCpuUsage(cpuUsage: Float) {
-        val currentMetrics = _performanceMetrics.value
-        _performanceMetrics.value = currentMetrics.copy(
-            cpuUsage = cpuUsage,
-            lastUpdated = System.currentTimeMillis()
-        )
-        recordEvent(PerformanceEvent.CpuUpdate(cpuUsage))
-    }
-    
-    /**
-     * 记录网络请求性能
-     */
-    fun recordNetworkRequest(request: NetworkRequestMetrics) {
-        val currentMetrics = _performanceMetrics.value
-        val updatedRequests = currentMetrics.networkRequests + request
-        
-        _performanceMetrics.value = currentMetrics.copy(
-            networkRequests = updatedRequests,
-            lastUpdated = System.currentTimeMillis()
-        )
-        recordEvent(PerformanceEvent.NetworkRequest(request))
-    }
-    
-    /**
-     * 记录UI渲染性能
-     */
-    fun recordRenderingMetrics(rendering: RenderingMetrics) {
-        val currentMetrics = _performanceMetrics.value
-        _performanceMetrics.value = currentMetrics.copy(
-            renderingMetrics = rendering,
-            lastUpdated = System.currentTimeMillis()
-        )
-        recordEvent(PerformanceEvent.RenderingUpdate(rendering))
-    }
-    
-    /**
-     * 记录启动时间
-     */
-    fun recordStartupTime(startupTime: Duration) {
-        val currentMetrics = _performanceMetrics.value
-        _performanceMetrics.value = currentMetrics.copy(
-            startupTime = startupTime,
-            lastUpdated = System.currentTimeMillis()
-        )
-        recordEvent(PerformanceEvent.StartupCompleted(startupTime))
-    }
-    
-    /**
-     * 获取性能报告
-     */
-    fun generatePerformanceReport(): PerformanceReport {
-        val metrics = _performanceMetrics.value
-        val events = _performanceEvents.value
-        
-        return PerformanceReport(
-            timestamp = System.currentTimeMillis(),
-            metrics = metrics,
-            recentEvents = events.takeLast(100),
-            summary = generateSummary(metrics, events)
-        )
-    }
-    
-    /**
-     * 清除历史数据
-     */
-    fun clearHistory() {
-        _performanceEvents.value = emptyList()
-    }
-    
-    private fun recordEvent(event: PerformanceEvent) {
-        val currentEvents = _performanceEvents.value
-        _performanceEvents.value = (currentEvents + event).takeLast(1000) // 保留最近1000个事件
-    }
-    
-    private fun updateMetrics(operationId: String, duration: Duration) {
-        val currentMetrics = _performanceMetrics.value
-        val operations = currentMetrics.operationMetrics.toMutableMap()
-        
-        val existing = operations[operationId]
-        if (existing != null) {
-            operations[operationId] = existing.copy(
-                totalCalls = existing.totalCalls + 1,
-                totalDuration = existing.totalDuration + duration,
-                averageDuration = (existing.totalDuration + duration) / (existing.totalCalls + 1),
-                maxDuration = maxOf(existing.maxDuration, duration),
-                minDuration = minOf(existing.minDuration, duration)
-            )
-        } else {
-            operations[operationId] = OperationMetrics(
-                operationId = operationId,
-                totalCalls = 1,
-                totalDuration = duration,
-                averageDuration = duration,
-                maxDuration = duration,
-                minDuration = duration
-            )
-        }
-        
-        _performanceMetrics.value = currentMetrics.copy(
-            operationMetrics = operations,
-            lastUpdated = System.currentTimeMillis()
-        )
-    }
-    
-    private fun generateSummary(metrics: PerformanceMetrics, events: List<PerformanceEvent>): PerformanceSummary {
-        val slowOperations = metrics.operationMetrics.values
-            .filter { it.averageDuration.inWholeMilliseconds > 100 }
-            .sortedByDescending { it.averageDuration }
-            .take(5)
-        
-        val memoryPressure = when {
-            metrics.memoryUsage.usedMemory.toFloat() / metrics.memoryUsage.totalMemory > 0.9 -> MemoryPressure.HIGH
-            metrics.memoryUsage.usedMemory.toFloat() / metrics.memoryUsage.totalMemory > 0.7 -> MemoryPressure.MEDIUM
-            else -> MemoryPressure.LOW
-        }
-        
-        val networkIssues = metrics.networkRequests.count { it.duration.inWholeMilliseconds > 5000 }
-        
-        return PerformanceSummary(
-            overallHealth = calculateOverallHealth(metrics),
-            slowOperations = slowOperations,
-            memoryPressure = memoryPressure,
-            networkIssues = networkIssues,
-            recommendations = generateRecommendations(metrics)
-        )
-    }
-    
-    private fun calculateOverallHealth(metrics: PerformanceMetrics): PerformanceHealth {
-        val memoryScore = 1.0f - (metrics.memoryUsage.usedMemory.toFloat() / metrics.memoryUsage.totalMemory)
-        val cpuScore = 1.0f - (metrics.cpuUsage / 100f)
-        val renderingScore = if (metrics.renderingMetrics.fps > 55) 1.0f else metrics.renderingMetrics.fps / 60f
-        
-        val overallScore = (memoryScore + cpuScore + renderingScore) / 3f
-        
-        return when {
-            overallScore > 0.8f -> PerformanceHealth.EXCELLENT
-            overallScore > 0.6f -> PerformanceHealth.GOOD
-            overallScore > 0.4f -> PerformanceHealth.FAIR
-            else -> PerformanceHealth.POOR
-        }
-    }
-    
-    private fun generateRecommendations(metrics: PerformanceMetrics): List<String> {
-        val recommendations = mutableListOf<String>()
-        
-        if (metrics.memoryUsage.usedMemory.toFloat() / metrics.memoryUsage.totalMemory > 0.8) {
-            recommendations.add("内存使用率过高，建议优化内存管理")
-        }
-        
-        if (metrics.cpuUsage > 80) {
-            recommendations.add("CPU使用率过高，建议优化计算密集型操作")
-        }
-        
-        if (metrics.renderingMetrics.fps < 50) {
-            recommendations.add("渲染帧率较低，建议优化UI渲染性能")
-        }
-        
-        val slowOperations = metrics.operationMetrics.values.filter { it.averageDuration.inWholeMilliseconds > 200 }
-        if (slowOperations.isNotEmpty()) {
-            recommendations.add("发现${slowOperations.size}个慢操作，建议进行性能优化")
-        }
-        
-        return recommendations
-    }
+interface UnifyPerformanceMonitor {
+    suspend fun startMonitoring()
+    suspend fun stopMonitoring()
+    suspend fun recordMetric(name: String, value: Double, unit: String = "")
+    suspend fun startTimer(name: String): String
+    suspend fun stopTimer(timerId: String): Long
+    suspend fun recordMemoryUsage()
+    suspend fun recordCPUUsage()
+    suspend fun recordNetworkLatency(url: String)
+    suspend fun recordFrameRate()
+    fun getMetrics(): Flow<PerformanceMetrics>
+    suspend fun exportMetrics(): String
+    suspend fun clearMetrics()
 }
 
 /**
@@ -244,159 +31,344 @@ object PerformanceMonitor {
  */
 @Serializable
 data class PerformanceMetrics(
-    val memoryUsage: MemoryUsage = MemoryUsage(0, 0, 0, 0),
-    val cpuUsage: Float = 0f,
-    val networkRequests: List<NetworkRequestMetrics> = emptyList(),
-    val renderingMetrics: RenderingMetrics = RenderingMetrics(),
-    val operationMetrics: Map<String, OperationMetrics> = emptyMap(),
-    val startupTime: Duration = Duration.ZERO,
-    val lastUpdated: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val cpuUsage: Double = 0.0,
+    val memoryUsage: MemoryMetrics = MemoryMetrics(),
+    val networkMetrics: NetworkMetrics = NetworkMetrics(),
+    val frameRate: Double = 0.0,
+    val customMetrics: Map<String, Double> = emptyMap(),
+    val timers: Map<String, Long> = emptyMap()
 )
 
 /**
- * 内存使用情况
+ * 内存指标
  */
 @Serializable
-data class MemoryUsage(
-    val totalMemory: Long,
-    val availableMemory: Long,
-    val usedMemory: Long,
-    val appMemoryUsage: Long
+data class MemoryMetrics(
+    val usedMemory: Long = 0L,
+    val totalMemory: Long = 0L,
+    val maxMemory: Long = 0L,
+    val gcCount: Long = 0L,
+    val gcTime: Long = 0L
 )
 
 /**
- * 网络请求指标
+ * 网络指标
  */
 @Serializable
-data class NetworkRequestMetrics(
-    val url: String,
-    val method: String,
-    val statusCode: Int,
-    val duration: Duration,
-    val requestSize: Long,
-    val responseSize: Long,
+data class NetworkMetrics(
+    val latency: Double = 0.0,
+    val downloadSpeed: Double = 0.0,
+    val uploadSpeed: Double = 0.0,
+    val requestCount: Long = 0L,
+    val errorCount: Long = 0L
+)
+
+/**
+ * 性能警告级别
+ */
+@Serializable
+enum class PerformanceWarningLevel {
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL
+}
+
+/**
+ * 性能警告
+ */
+@Serializable
+data class PerformanceWarning(
+    val level: PerformanceWarningLevel,
+    val message: String,
+    val metric: String,
+    val value: Double,
+    val threshold: Double,
     val timestamp: Long = System.currentTimeMillis()
 )
 
 /**
- * 渲染性能指标
+ * 性能监控配置
  */
 @Serializable
-data class RenderingMetrics(
-    val fps: Float = 60f,
-    val frameDrops: Int = 0,
-    val averageFrameTime: Duration = Duration.ZERO,
-    val maxFrameTime: Duration = Duration.ZERO
+data class PerformanceConfig(
+    val enableCPUMonitoring: Boolean = true,
+    val enableMemoryMonitoring: Boolean = true,
+    val enableNetworkMonitoring: Boolean = true,
+    val enableFrameRateMonitoring: Boolean = true,
+    val monitoringInterval: Long = 1000L,
+    val maxMetricsHistory: Int = 1000,
+    val cpuWarningThreshold: Double = 80.0,
+    val memoryWarningThreshold: Double = 90.0,
+    val frameRateWarningThreshold: Double = 30.0
 )
 
 /**
- * 操作性能指标
+ * Unify性能监控器实现
  */
-@Serializable
-data class OperationMetrics(
-    val operationId: String,
-    val totalCalls: Int,
-    val totalDuration: Duration,
-    val averageDuration: Duration,
-    val maxDuration: Duration,
-    val minDuration: Duration
-)
-
-/**
- * 性能事件
- */
-sealed class PerformanceEvent {
-    abstract val timestamp: Long
+class UnifyPerformanceMonitorImpl(
+    private val config: PerformanceConfig = PerformanceConfig()
+) : UnifyPerformanceMonitor {
     
-    data class OperationStarted(
-        val operationId: String,
-        val category: PerformanceCategory,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    private val _metrics = MutableStateFlow(PerformanceMetrics())
+    private val metrics: StateFlow<PerformanceMetrics> = _metrics.asStateFlow()
     
-    data class OperationCompleted(
-        val operationId: String,
-        val duration: Duration,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    private val metricsHistory = mutableListOf<PerformanceMetrics>()
+    private val activeTimers = mutableMapOf<String, Long>()
+    private val customMetrics = mutableMapOf<String, Double>()
+    private var isMonitoring = false
     
-    data class MemoryUpdate(
-        val memoryUsage: MemoryUsage,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    companion object {
+        private const val MILLISECONDS_PER_SECOND = 1000L
+        private const val BYTES_TO_MB_DIVISOR = 1024 * 1024
+        private const val MIN_FPS_THRESHOLD = 30.0
+        private const val MAX_CPU_THRESHOLD = 80.0
+        private const val MAX_MEMORY_THRESHOLD = 90.0
+    }
     
-    data class CpuUpdate(
-        val cpuUsage: Float,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    override suspend fun startMonitoring() {
+        if (isMonitoring) return
+        isMonitoring = true
+        
+        // 启动监控循环
+        startMonitoringLoop()
+    }
     
-    data class NetworkRequest(
-        val request: NetworkRequestMetrics,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    override suspend fun stopMonitoring() {
+        isMonitoring = false
+    }
     
-    data class RenderingUpdate(
-        val rendering: RenderingMetrics,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    override suspend fun recordMetric(name: String, value: Double, unit: String) {
+        customMetrics[name] = value
+        updateMetrics()
+    }
     
-    data class StartupCompleted(
-        val startupTime: Duration,
-        override val timestamp: Long = System.currentTimeMillis()
-    ) : PerformanceEvent()
+    override suspend fun startTimer(name: String): String {
+        val timerId = "${name}_${System.currentTimeMillis()}"
+        activeTimers[timerId] = System.currentTimeMillis()
+        return timerId
+    }
+    
+    override suspend fun stopTimer(timerId: String): Long {
+        val startTime = activeTimers.remove(timerId) ?: return 0L
+        return System.currentTimeMillis() - startTime
+    }
+    
+    override suspend fun recordMemoryUsage() {
+        val memoryMetrics = getPlatformMemoryMetrics()
+        updateMetrics(memoryMetrics = memoryMetrics)
+    }
+    
+    override suspend fun recordCPUUsage() {
+        val cpuUsage = getPlatformCPUUsage()
+        updateMetrics(cpuUsage = cpuUsage)
+    }
+    
+    override suspend fun recordNetworkLatency(url: String) {
+        val latency = measureNetworkLatency(url)
+        val networkMetrics = _metrics.value.networkMetrics.copy(latency = latency)
+        updateMetrics(networkMetrics = networkMetrics)
+    }
+    
+    override suspend fun recordFrameRate() {
+        val frameRate = getPlatformFrameRate()
+        updateMetrics(frameRate = frameRate)
+    }
+    
+    override fun getMetrics(): Flow<PerformanceMetrics> = metrics
+    
+    override suspend fun exportMetrics(): String {
+        return kotlinx.serialization.json.Json.encodeToString(metricsHistory)
+    }
+    
+    override suspend fun clearMetrics() {
+        metricsHistory.clear()
+        customMetrics.clear()
+        activeTimers.clear()
+        _metrics.value = PerformanceMetrics()
+    }
+    
+    private fun updateMetrics(
+        cpuUsage: Double? = null,
+        memoryMetrics: MemoryMetrics? = null,
+        networkMetrics: NetworkMetrics? = null,
+        frameRate: Double? = null
+    ) {
+        val currentMetrics = _metrics.value
+        val newMetrics = currentMetrics.copy(
+            timestamp = System.currentTimeMillis(),
+            cpuUsage = cpuUsage ?: currentMetrics.cpuUsage,
+            memoryUsage = memoryMetrics ?: currentMetrics.memoryUsage,
+            networkMetrics = networkMetrics ?: currentMetrics.networkMetrics,
+            frameRate = frameRate ?: currentMetrics.frameRate,
+            customMetrics = customMetrics.toMap(),
+            timers = activeTimers.mapValues { System.currentTimeMillis() - it.value }
+        )
+        
+        _metrics.value = newMetrics
+        
+        // 添加到历史记录
+        metricsHistory.add(newMetrics)
+        if (metricsHistory.size > config.maxMetricsHistory) {
+            metricsHistory.removeAt(0)
+        }
+        
+        // 检查警告
+        checkWarnings(newMetrics)
+    }
+    
+    private fun checkWarnings(metrics: PerformanceMetrics) {
+        // CPU使用率警告
+        if (config.enableCPUMonitoring && metrics.cpuUsage > config.cpuWarningThreshold) {
+            emitWarning(
+                PerformanceWarningLevel.HIGH,
+                "CPU使用率过高: ${metrics.cpuUsage}%",
+                "cpu_usage",
+                metrics.cpuUsage,
+                config.cpuWarningThreshold
+            )
+        }
+        
+        // 内存使用警告
+        if (config.enableMemoryMonitoring) {
+            val memoryUsagePercent = if (metrics.memoryUsage.totalMemory > 0) {
+                (metrics.memoryUsage.usedMemory.toDouble() / metrics.memoryUsage.totalMemory) * 100
+            } else 0.0
+            
+            if (memoryUsagePercent > config.memoryWarningThreshold) {
+                emitWarning(
+                    PerformanceWarningLevel.HIGH,
+                    "内存使用率过高: ${memoryUsagePercent}%",
+                    "memory_usage",
+                    memoryUsagePercent,
+                    config.memoryWarningThreshold
+                )
+            }
+        }
+        
+        // 帧率警告
+        if (config.enableFrameRateMonitoring && metrics.frameRate < config.frameRateWarningThreshold) {
+            emitWarning(
+                PerformanceWarningLevel.MEDIUM,
+                "帧率过低: ${metrics.frameRate} FPS",
+                "frame_rate",
+                metrics.frameRate,
+                config.frameRateWarningThreshold
+            )
+        }
+    }
+    
+    private fun emitWarning(
+        level: PerformanceWarningLevel,
+        message: String,
+        metric: String,
+        value: Double,
+        threshold: Double
+    ) {
+        val warning = PerformanceWarning(level, message, metric, value, threshold)
+        // 这里可以通过事件系统发送警告
+        println("性能警告: ${warning.message}")
+    }
+    
+    private suspend fun startMonitoringLoop() {
+        // 实际实现中应该使用协程定时器
+        // 这里简化为立即执行一次
+        if (config.enableCPUMonitoring) recordCPUUsage()
+        if (config.enableMemoryMonitoring) recordMemoryUsage()
+        if (config.enableFrameRateMonitoring) recordFrameRate()
+    }
+    
+    private suspend fun measureNetworkLatency(url: String): Double {
+        return measureTimeMillis {
+            // 实际实现中应该发送网络请求
+            // 这里模拟网络延迟
+        }.toDouble()
+    }
+    
+    // 平台特定的实现
+    private expect suspend fun getPlatformMemoryMetrics(): MemoryMetrics
+    private expect suspend fun getPlatformCPUUsage(): Double
+    private expect suspend fun getPlatformFrameRate(): Double
 }
 
 /**
- * 性能类别
+ * 性能分析器
  */
-enum class PerformanceCategory {
-    GENERAL,
-    NETWORK,
-    DATABASE,
-    UI_RENDERING,
-    COMPUTATION,
-    FILE_IO,
-    STARTUP
+class PerformanceAnalyzer(private val monitor: UnifyPerformanceMonitor) {
+    
+    suspend fun analyzePerformance(): PerformanceAnalysisResult {
+        val metricsJson = monitor.exportMetrics()
+        val metrics: List<PerformanceMetrics> = kotlinx.serialization.json.Json.decodeFromString(metricsJson)
+        
+        return PerformanceAnalysisResult(
+            averageCPU = metrics.map { it.cpuUsage }.average(),
+            peakMemory = metrics.maxOfOrNull { it.memoryUsage.usedMemory } ?: 0L,
+            averageFrameRate = metrics.map { it.frameRate }.average(),
+            totalSamples = metrics.size,
+            analysisTime = System.currentTimeMillis()
+        )
+    }
+    
+    suspend fun generateReport(): String {
+        val analysis = analyzePerformance()
+        return buildString {
+            appendLine("=== 性能分析报告 ===")
+            appendLine("平均CPU使用率: ${analysis.averageCPU}%")
+            appendLine("峰值内存使用: ${analysis.peakMemory / (1024 * 1024)} MB")
+            appendLine("平均帧率: ${analysis.averageFrameRate} FPS")
+            appendLine("样本数量: ${analysis.totalSamples}")
+            appendLine("分析时间: ${analysis.analysisTime}")
+        }
+    }
 }
 
 /**
- * 性能报告
+ * 性能分析结果
  */
 @Serializable
-data class PerformanceReport(
-    val timestamp: Long,
-    val metrics: PerformanceMetrics,
-    val recentEvents: List<PerformanceEvent>,
-    val summary: PerformanceSummary
+data class PerformanceAnalysisResult(
+    val averageCPU: Double,
+    val peakMemory: Long,
+    val averageFrameRate: Double,
+    val totalSamples: Int,
+    val analysisTime: Long
 )
 
 /**
- * 性能摘要
+ * 性能工具类
  */
-@Serializable
-data class PerformanceSummary(
-    val overallHealth: PerformanceHealth,
-    val slowOperations: List<OperationMetrics>,
-    val memoryPressure: MemoryPressure,
-    val networkIssues: Int,
-    val recommendations: List<String>
-)
-
-/**
- * 性能健康状态
- */
-enum class PerformanceHealth {
-    EXCELLENT,
-    GOOD,
-    FAIR,
-    POOR
-}
-
-/**
- * 内存压力等级
- */
-enum class MemoryPressure {
-    LOW,
-    MEDIUM,
-    HIGH
+object PerformanceUtils {
+    /**
+     * 测量代码块执行时间
+     */
+    inline fun <T> measurePerformance(block: () -> T): Pair<T, Long> {
+        val startTime = System.currentTimeMillis()
+        val result = block()
+        val duration = System.currentTimeMillis() - startTime
+        return Pair(result, duration)
+    }
+    
+    /**
+     * 格式化内存大小
+     */
+    fun formatMemorySize(bytes: Long): String {
+        val units = arrayOf("B", "KB", "MB", "GB")
+        var size = bytes.toDouble()
+        var unitIndex = 0
+        
+        while (size >= 1024 && unitIndex < units.size - 1) {
+            size /= 1024
+            unitIndex++
+        }
+        
+        return "%.2f %s".format(size, units[unitIndex])
+    }
+    
+    /**
+     * 计算百分比
+     */
+    fun calculatePercentage(value: Double, total: Double): Double {
+        return if (total > 0) (value / total) * 100 else 0.0
+    }
 }

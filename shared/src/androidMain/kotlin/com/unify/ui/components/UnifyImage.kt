@@ -1,123 +1,137 @@
 package com.unify.ui.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import coil.compose.AsyncImage
-import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-/**
- * Android平台的图片实现
- */
-actual class UnifyPlatformImage {
-    companion object {
-        fun createImageRequest(context: android.content.Context, url: String): ImageRequest {
-            return ImageRequest.Builder(context)
-                .data(url)
-                .crossfade(true)
-                .build()
-        }
-        
-        fun getImageCacheSize(): Long {
-            return 50 * 1024 * 1024L // 50MB
-        }
-        
-        fun isNetworkAvailable(context: android.content.Context): Boolean {
-            val connectivityManager = context.getSystemService(android.content.Context.CONNECTIVITY_SERVICE) 
-                as android.net.ConnectivityManager
-            val activeNetwork = connectivityManager.activeNetworkInfo
-            return activeNetwork?.isConnectedOrConnecting == true
-        }
-        
-        fun getImageFormat(url: String): String {
-            return when {
-                url.endsWith(".jpg", true) || url.endsWith(".jpeg", true) -> "JPEG"
-                url.endsWith(".png", true) -> "PNG"
-                url.endsWith(".webp", true) -> "WebP"
-                url.endsWith(".gif", true) -> "GIF"
-                url.endsWith(".svg", true) -> "SVG"
-                else -> "Unknown"
-            }
-        }
-    }
-}
-
-/**
- * Android平台的异步图片加载实现
- */
-actual suspend fun loadImageFromUrl(url: String): Painter {
-    return withContext(Dispatchers.IO) {
-        try {
-            // 使用Android原生BitmapFactory加载图片
-            val inputStream = when {
-                url.startsWith("http") -> {
-                    val connection = java.net.URL(url).openConnection()
-                    connection.inputStream
-                }
-                url.startsWith("file://") -> {
-                    java.io.FileInputStream(url.removePrefix("file://"))
-                }
-                else -> {
-                    // 从assets或resources加载
-                    null
-                }
-            }
-            
-            inputStream?.use {
-                android.graphics.BitmapFactory.decodeStream(it)
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-}
-
-/**
- * Android平台的原生图片组件适配器
- */
 @Composable
-actual fun UnifyNativeImage(
-    url: String,
+actual fun UnifyImage(
+    imageUrl: String,
     contentDescription: String?,
     modifier: Modifier,
+    alignment: Alignment,
     contentScale: ContentScale,
-    shape: UnifyImageShape,
-    placeholder: @Composable (() -> Unit)?,
-    error: @Composable (() -> Unit)?,
-    loading: @Composable (() -> Unit)?
+    alpha: Float,
+    colorFilter: ColorFilter?,
+    filterQuality: FilterQuality
 ) {
-    val context = LocalContext.current
-    
-    // 使用Coil的AsyncImage组件
     AsyncImage(
-        model = ImageRequest.Builder(context)
-            .data(url)
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(imageUrl)
             .crossfade(true)
             .build(),
         contentDescription = contentDescription,
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
+        alignment = alignment,
         contentScale = contentScale,
-        placeholder = if (placeholder != null) {
-            null // Coil会处理占位符
-        } else {
-            rememberAsyncImagePainter(model = android.R.drawable.ic_menu_gallery)
-        },
-        error = if (error != null) {
-            null // Coil会处理错误状态
-        } else {
-            rememberAsyncImagePainter(model = android.R.drawable.ic_menu_report_image)
-        }
+        alpha = alpha,
+        colorFilter = colorFilter,
+        filterQuality = filterQuality
     )
+}
+
+@Composable
+actual fun UnifyResourceImage(
+    resourcePath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    alignment: Alignment,
+    contentScale: ContentScale,
+    alpha: Float,
+    colorFilter: ColorFilter?
+) {
+    // Android资源图片实现
+    val resourceId = LocalContext.current.resources.getIdentifier(
+        resourcePath.substringBeforeLast("."),
+        "drawable",
+        LocalContext.current.packageName
+    )
+    
+    if (resourceId != 0) {
+        Image(
+            painter = painterResource(id = resourceId),
+            contentDescription = contentDescription,
+            modifier = modifier,
+            alignment = alignment,
+            contentScale = contentScale,
+            alpha = alpha,
+            colorFilter = colorFilter
+        )
+    } else {
+        UnifyImagePlaceholder(modifier = modifier)
+    }
+}
+
+@Composable
+actual fun UnifyAvatar(
+    imageUrl: String?,
+    name: String,
+    modifier: Modifier,
+    size: Dp,
+    backgroundColor: Color
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        if (!imageUrl.isNullOrEmpty()) {
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = "Avatar for $name",
+                modifier = Modifier
+                    .size(size)
+                    .clip(CircleShape),
+                contentScale = ContentScale.Crop
+            )
+        } else {
+            Text(
+                text = name.firstOrNull()?.uppercase() ?: "?",
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White
+            )
+        }
+    }
+}
+
+@Composable
+actual fun UnifyImagePlaceholder(
+    modifier: Modifier,
+    backgroundColor: Color,
+    content: (@Composable () -> Unit)?
+) {
+    Box(
+        modifier = modifier.background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        content?.invoke() ?: Text(
+            text = "📷",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Gray
+        )
+    }
 }

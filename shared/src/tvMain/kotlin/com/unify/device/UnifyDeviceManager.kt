@@ -1,643 +1,605 @@
 package com.unify.device
 
+import com.unify.device.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.flow.asStateFlow
 
-// TV平台的统一设备管理器实现
-actual class UnifyDeviceManagerImpl : UnifyDeviceManager {
+/**
+ * TV平台UnifyDeviceManager实现
+ * 基于Android TV系统API和遥控器功能
+ */
+class UnifyDeviceManagerImpl : UnifyDeviceManager {
     
-    actual override val permissions: UnifyPermissionManager = TVPermissionManager()
-    actual override val deviceInfo: UnifyDeviceInfo = TVDeviceInfo()
-    actual override val sensors: UnifySensorManager = TVSensorManager()
-    actual override val systemFeatures: UnifySystemFeatures = TVSystemFeatures()
-    actual override val hardware: UnifyHardwareManager = TVHardwareManager()
+    // 传感器数据流
+    private val sensorDataFlows = mutableMapOf<SensorType, MutableStateFlow<SensorData>>()
     
-    actual override suspend fun initialize() {
-        permissions.initialize()
-        sensors.initialize()
-        hardware.initialize()
-    }
+    // TV设备管理器
+    private val tvDeviceManager = TVDeviceManager()
     
-    actual override suspend fun cleanup() {
-        sensors.cleanup()
-        hardware.cleanup()
-    }
-}
-
-// TV权限管理器实现
-class TVPermissionManager : UnifyPermissionManager {
-    
-    private val permissionStatusFlow = MutableStateFlow<Map<UnifyPermission, UnifyPermissionStatus>>(emptyMap())
-    
-    override suspend fun initialize() {
-        refreshAllPermissionStatus()
-    }
-    
-    override suspend fun checkPermission(permission: UnifyPermission): UnifyPermissionStatus {
-        return when (permission) {
-            UnifyPermission.CAMERA -> checkTVCameraPermission()
-            UnifyPermission.MICROPHONE -> checkTVMicrophonePermission()
-            UnifyPermission.STORAGE_READ -> checkTVStoragePermission()
-            UnifyPermission.STORAGE_WRITE -> checkTVStoragePermission()
-            UnifyPermission.INTERNET -> UnifyPermissionStatus.GRANTED
-            UnifyPermission.NETWORK_STATE -> UnifyPermissionStatus.GRANTED
-            UnifyPermission.BLUETOOTH -> checkTVBluetoothPermission()
-            else -> UnifyPermissionStatus.NOT_DETERMINED
+    override suspend fun requestPermission(permission: DevicePermission): PermissionStatus {
+        return try {
+            tvDeviceManager.requestPermission(permission)
+        } catch (e: Exception) {
+            PermissionStatus.DENIED
         }
     }
     
-    override suspend fun requestPermission(permission: UnifyPermission): UnifyPermissionResult {
-        return when (permission) {
-            UnifyPermission.CAMERA -> requestTVCameraPermission()
-            UnifyPermission.MICROPHONE -> requestTVMicrophonePermission()
-            UnifyPermission.STORAGE_READ -> requestTVStoragePermission()
-            UnifyPermission.STORAGE_WRITE -> requestTVStoragePermission()
-            UnifyPermission.BLUETOOTH -> requestTVBluetoothPermission()
-            UnifyPermission.INTERNET, UnifyPermission.NETWORK_STATE -> UnifyPermissionResult.GRANTED
-            else -> UnifyPermissionResult.DENIED
+    override suspend fun checkPermission(permission: DevicePermission): PermissionStatus {
+        return try {
+            tvDeviceManager.checkPermission(permission)
+        } catch (e: Exception) {
+            PermissionStatus.DENIED
         }
     }
     
-    override suspend fun requestPermissions(permissions: List<UnifyPermission>): Map<UnifyPermission, UnifyPermissionResult> {
-        val results = mutableMapOf<UnifyPermission, UnifyPermissionResult>()
-        permissions.forEach { permission ->
-            results[permission] = requestPermission(permission)
-        }
-        return results
-    }
-    
-    override fun observePermissionChanges(): Flow<UnifyPermissionChange> = flow {
-        // TV权限变化监听实现
-    }
-    
-    override suspend fun shouldShowPermissionRationale(permission: UnifyPermission): Boolean {
-        return when (permission) {
-            UnifyPermission.CAMERA, UnifyPermission.MICROPHONE -> true
-            else -> false
+    override suspend fun requestMultiplePermissions(permissions: List<DevicePermission>): Map<DevicePermission, PermissionStatus> {
+        return permissions.associateWith { permission ->
+            requestPermission(permission)
         }
     }
     
-    private fun checkTVCameraPermission(): UnifyPermissionStatus = UnifyPermissionStatus.GRANTED
-    private fun checkTVMicrophonePermission(): UnifyPermissionStatus = UnifyPermissionStatus.GRANTED
-    private fun checkTVStoragePermission(): UnifyPermissionStatus = UnifyPermissionStatus.GRANTED
-    private fun checkTVBluetoothPermission(): UnifyPermissionStatus = UnifyPermissionStatus.GRANTED
-    
-    private suspend fun requestTVCameraPermission(): UnifyPermissionResult = UnifyPermissionResult.GRANTED
-    private suspend fun requestTVMicrophonePermission(): UnifyPermissionResult = UnifyPermissionResult.GRANTED
-    private suspend fun requestTVStoragePermission(): UnifyPermissionResult = UnifyPermissionResult.GRANTED
-    private suspend fun requestTVBluetoothPermission(): UnifyPermissionResult = UnifyPermissionResult.GRANTED
-    
-    private suspend fun refreshAllPermissionStatus() {
-        // 刷新所有权限状态
+    override suspend fun getDeviceInfo(): DeviceInfo {
+        return try {
+            tvDeviceManager.getDeviceInfo()
+        } catch (e: Exception) {
+            DeviceInfo(
+                deviceId = "tv_device",
+                deviceName = "Android TV",
+                manufacturer = "Google",
+                model = "Android TV",
+                osVersion = "Android TV 13",
+                appVersion = "1.0.0",
+                screenWidth = 1920,
+                screenHeight = 1080,
+                screenDensity = 1.0f,
+                totalMemory = 4096L,
+                availableMemory = 2048L,
+                totalStorage = 32000L,
+                availableStorage = 16000L,
+                batteryLevel = 100, // TV通常插电
+                isCharging = true,
+                networkType = "Ethernet",
+                isRooted = false
+            )
+        }
     }
-}
-
-// TV设备信息实现
-class TVDeviceInfo : UnifyDeviceInfo {
     
-    override suspend fun getDeviceInfo(): UnifyDeviceDetails {
-        return UnifyDeviceDetails(
-            deviceId = getTVDeviceId(),
-            deviceName = getTVDeviceName(),
-            manufacturer = getTVManufacturer(),
-            model = getTVModel(),
-            brand = getTVBrand(),
-            isEmulator = isTVEmulator(),
-            isRooted = isTVRooted()
+    override suspend fun getSystemInfo(): SystemInfo {
+        return try {
+            tvDeviceManager.getSystemInfo()
+        } catch (e: Exception) {
+            SystemInfo(
+                osName = "Android TV",
+                osVersion = "13.0",
+                kernelVersion = "5.10.0",
+                apiLevel = 33,
+                buildNumber = "TQ3A.230901.001",
+                securityPatchLevel = "2024-01-01",
+                bootloader = "Unknown",
+                hardware = "TV Hardware",
+                cpuAbi = "arm64-v8a",
+                supportedAbis = listOf("arm64-v8a", "armeabi-v7a"),
+                javaVmVersion = "OpenJDK 11",
+                timezone = "Asia/Shanghai",
+                language = "zh-CN",
+                country = "CN"
+            )
+        }
+    }
+    
+    override suspend fun getHardwareInfo(): HardwareInfo {
+        return try {
+            tvDeviceManager.getHardwareInfo()
+        } catch (e: Exception) {
+            HardwareInfo(
+                cpuModel = "TV Processor",
+                cpuCores = 4,
+                cpuFrequency = 1800L,
+                gpuModel = "TV GPU",
+                totalRam = 4096L,
+                availableRam = 2048L,
+                totalStorage = 32000L,
+                availableStorage = 16000L,
+                screenResolution = "1920x1080",
+                screenDpi = 160,
+                cameraResolution = "None",
+                hasFrontCamera = false,
+                hasBackCamera = false,
+                hasFlash = false,
+                hasBluetooth = true,
+                hasWifi = true,
+                hasNfc = false,
+                hasGps = false,
+                hasCellular = false,
+                sensors = listOf("RemoteControl", "HDMI", "Audio")
+            )
+        }
+    }
+    
+    override suspend fun getBatteryInfo(): BatteryInfo {
+        return BatteryInfo(
+            level = 100, // TV通常插电
+            isCharging = true,
+            chargingType = "AC",
+            health = "Good",
+            temperature = 35.0f,
+            voltage = 12000,
+            capacity = 0, // TV无电池
+            technology = "AC Power",
+            estimatedTimeRemaining = -1L // 无限制
         )
     }
     
-    override suspend fun getSystemInfo(): UnifySystemInfo {
-        return UnifySystemInfo(
-            osName = "Android TV",
-            osVersion = getTVOSVersion(),
-            osApiLevel = getTVAPILevel(),
-            locale = getTVLocale(),
-            timezone = getTVTimezone(),
-            uptime = getTVUptime()
-        )
-    }
-    
-    override suspend fun getHardwareInfo(): UnifyHardwareInfo {
-        return UnifyHardwareInfo(
-            cpuArchitecture = getTVCPUArchitecture(),
-            cpuCores = getTVCPUCores(),
-            totalMemory = getTVTotalMemory(),
-            availableMemory = getTVAvailableMemory(),
-            screenWidth = getTVScreenWidth(),
-            screenHeight = getTVScreenHeight(),
-            screenDensity = getTVScreenDensity()
-        )
-    }
-    
-    override suspend fun getBatteryInfo(): UnifyBatteryInfo {
-        return UnifyBatteryInfo(
-            level = 100, // TV通常接电源
-            isCharging = false,
-            chargingType = "ac",
-            temperature = 0,
-            voltage = 0,
-            capacity = 0,
-            cycleCount = 0
-        )
-    }
-    
-    override suspend fun getNetworkInfo(): UnifyNetworkInfo {
-        return UnifyNetworkInfo(
-            isConnected = isTVNetworkConnected(),
-            connectionType = getTVConnectionType(),
-            networkName = getTVNetworkName(),
-            signalStrength = getTVSignalStrength(),
-            ipAddress = getTVIPAddress(),
-            macAddress = getTVMacAddress(),
-            isRoaming = false,
-            isMetered = false
-        )
-    }
-    
-    override suspend fun getStorageInfo(): UnifyStorageInfo {
-        return UnifyStorageInfo(
-            totalSpace = getTVTotalStorage(),
-            availableSpace = getTVAvailableStorage(),
-            usedSpace = getTVUsedStorage(),
-            externalStorageAvailable = hasTVExternalStorage(),
-            externalTotalSpace = getTVExternalTotalStorage(),
-            externalAvailableSpace = getTVExternalAvailableStorage()
-        )
-    }
-    
-    override suspend fun getDisplayInfo(): UnifyDisplayInfo {
-        return UnifyDisplayInfo(
-            width = getTVScreenWidth(),
-            height = getTVScreenHeight(),
-            density = getTVScreenDensity(),
-            densityDpi = getTVScreenDPI(),
-            refreshRate = getTVRefreshRate(),
-            orientation = "landscape", // TV通常是横屏
-            brightness = getTVBrightness()
-        )
-    }
-    
-    override suspend fun isFeatureSupported(feature: UnifyDeviceFeature): Boolean {
-        return when (feature) {
-            UnifyDeviceFeature.CAMERA -> hasTVCamera()
-            UnifyDeviceFeature.MICROPHONE -> hasTVMicrophone()
-            UnifyDeviceFeature.GPS -> false // TV通常没有GPS
-            UnifyDeviceFeature.BLUETOOTH -> true // TV通常支持蓝牙
-            UnifyDeviceFeature.NFC -> false // TV通常没有NFC
-            UnifyDeviceFeature.BIOMETRIC -> false // TV不支持生物识别
-            UnifyDeviceFeature.ACCELEROMETER -> false // TV没有加速度计
-            UnifyDeviceFeature.GYROSCOPE -> false // TV没有陀螺仪
-            UnifyDeviceFeature.MAGNETOMETER -> false // TV没有磁力计
-            UnifyDeviceFeature.VIBRATION -> false // TV没有振动功能
+    override suspend fun getNetworkInfo(): NetworkInfo {
+        return try {
+            tvDeviceManager.getNetworkInfo()
+        } catch (e: Exception) {
+            NetworkInfo(
+                isConnected = true,
+                networkType = "Ethernet",
+                connectionType = "Wired",
+                signalStrength = 100,
+                ipAddress = "192.168.1.100",
+                macAddress = "00:11:22:33:44:55",
+                ssid = "N/A",
+                isMetered = false,
+                isRoaming = false,
+                downloadSpeed = 1000000L, // 1Gbps
+                uploadSpeed = 1000000L
+            )
         }
     }
     
-    override fun observeDeviceChanges(): Flow<UnifyDeviceChange> = flow {
-        // TV设备状态变化监听
-    }
-    
-    // TV特定实现方法
-    private fun getTVDeviceId(): String = "tv_device_001"
-    private fun getTVDeviceName(): String = "Smart TV"
-    private fun getTVManufacturer(): String = "TVMaker"
-    private fun getTVModel(): String = "Smart TV 4K"
-    private fun getTVBrand(): String = "SmartTV"
-    private fun isTVEmulator(): Boolean = false
-    private fun isTVRooted(): Boolean = false
-    private fun getTVOSVersion(): String = "11.0"
-    private fun getTVAPILevel(): Int = 30
-    private fun getTVLocale(): String = "zh_CN"
-    private fun getTVTimezone(): String = "Asia/Shanghai"
-    private fun getTVUptime(): Long = 0L
-    private fun getTVCPUArchitecture(): String = "arm64"
-    private fun getTVCPUCores(): Int = 4
-    private fun getTVTotalMemory(): Long = 4L * 1024 * 1024 * 1024
-    private fun getTVAvailableMemory(): Long = 2L * 1024 * 1024 * 1024
-    private fun getTVScreenWidth(): Int = 1920
-    private fun getTVScreenHeight(): Int = 1080
-    private fun getTVScreenDensity(): Float = 1.0f
-    private fun getTVScreenDPI(): Int = 160
-    private fun getTVRefreshRate(): Float = 60.0f
-    private fun getTVBrightness(): Float = 0.8f
-    private fun isTVNetworkConnected(): Boolean = true
-    private fun getTVConnectionType(): String = "ethernet"
-    private fun getTVNetworkName(): String = "TV Network"
-    private fun getTVSignalStrength(): Int = -40
-    private fun getTVIPAddress(): String = "192.168.1.200"
-    private fun getTVMacAddress(): String = "00:11:22:33:44:77"
-    private fun getTVTotalStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun getTVAvailableStorage(): Long = 16L * 1024 * 1024 * 1024
-    private fun getTVUsedStorage(): Long = 16L * 1024 * 1024 * 1024
-    private fun hasTVExternalStorage(): Boolean = true
-    private fun getTVExternalTotalStorage(): Long = 64L * 1024 * 1024 * 1024
-    private fun getTVExternalAvailableStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun hasTVCamera(): Boolean = false
-    private fun hasTVMicrophone(): Boolean = true
-}
-
-// TV传感器管理器实现
-class TVSensorManager : UnifySensorManager {
-    
-    override suspend fun initialize() {
-        // TV传感器初始化（通常没有传感器）
-    }
-    
-    override suspend fun cleanup() {
-        // TV传感器清理
-    }
-    
-    override suspend fun getAvailableSensors(): List<UnifySensorInfo> {
-        // TV通常没有传感器
-        return emptyList()
-    }
-    
-    override suspend fun isSensorAvailable(sensorType: UnifySensorType): Boolean {
-        // TV不支持移动设备传感器
-        return false
-    }
-    
-    override suspend fun startSensorListening(
-        sensorType: UnifySensorType,
-        samplingRate: UnifySensorSamplingRate
-    ): Flow<UnifySensorData> = flow {
-        // TV传感器监听（空实现）
-    }
-    
-    override suspend fun stopSensorListening(sensorType: UnifySensorType) {
-        // TV传感器停止监听
-    }
-}
-
-// TV系统功能实现
-class TVSystemFeatures : UnifySystemFeatures {
-    
-    override suspend fun vibrate(duration: Long) {
-        // TV没有振动功能，用音频反馈代替
-        playSystemSound(UnifySystemSound.NOTIFICATION)
-    }
-    
-    override suspend fun vibratePattern(pattern: LongArray, repeat: Int) {
-        // TV振动模式（用音频反馈代替）
-        repeat(pattern.size.coerceAtMost(3)) {
-            playSystemSound(UnifySystemSound.NOTIFICATION)
+    override suspend fun getStorageInfo(): StorageInfo {
+        return try {
+            tvDeviceManager.getStorageInfo()
+        } catch (e: Exception) {
+            StorageInfo(
+                totalInternal = 32000L,
+                availableInternal = 16000L,
+                totalExternal = 0L,
+                availableExternal = 0L,
+                cacheSize = 1024L,
+                appDataSize = 512L,
+                systemSize = 8000L,
+                isExternalAvailable = false,
+                isExternalRemovable = false,
+                isExternalEmulated = false
+            )
         }
     }
     
-    override suspend fun playSystemSound(sound: UnifySystemSound) {
-        // TV系统声音播放
-        when (sound) {
-            UnifySystemSound.NOTIFICATION -> playTVNotificationSound()
-            UnifySystemSound.ALERT -> playTVAlertSound()
-            UnifySystemSound.ERROR -> playTVErrorSound()
-            UnifySystemSound.SUCCESS -> playTVSuccessSound()
-            else -> playTVDefaultSound()
+    override suspend fun getDisplayInfo(): DisplayInfo {
+        return try {
+            tvDeviceManager.getDisplayInfo()
+        } catch (e: Exception) {
+            DisplayInfo(
+                width = 1920,
+                height = 1080,
+                density = 1.0f,
+                dpi = 160,
+                refreshRate = 60.0f,
+                orientation = "Landscape",
+                isHdr = true,
+                colorSpace = "Rec.2020",
+                brightnessLevel = 200,
+                isAutoRotationEnabled = false
+            )
         }
     }
     
-    override suspend fun setVolume(streamType: UnifyAudioStream, volume: Float) {
-        // TV音量控制实现
-        when (streamType) {
-            UnifyAudioStream.MUSIC -> setTVMusicVolume(volume)
-            UnifyAudioStream.NOTIFICATION -> setTVNotificationVolume(volume)
-            UnifyAudioStream.SYSTEM -> setTVSystemVolume(volume)
-            else -> setTVMasterVolume(volume)
+    override suspend fun getSupportedFeatures(): List<String> {
+        return listOf(
+            "RemoteControl", "HDMI", "Audio", "Video", "Bluetooth", "WiFi", 
+            "Ethernet", "USB", "4K", "HDR", "Dolby"
+        )
+    }
+    
+    override suspend fun startSensorMonitoring(sensorType: SensorType): Flow<SensorData> {
+        val flow = sensorDataFlows.getOrPut(sensorType) {
+            MutableStateFlow(SensorData(sensorType, floatArrayOf(0f, 0f, 0f), System.currentTimeMillis()))
+        }
+        
+        // TV设备通常没有传统传感器，但可以监控遥控器输入
+        try {
+            when (sensorType) {
+                SensorType.REMOTE_CONTROL -> {
+                    tvDeviceManager.startRemoteControlMonitoring { data ->
+                        flow.value = SensorData(sensorType, data, System.currentTimeMillis())
+                    }
+                }
+                else -> {
+                    // TV不支持其他传感器
+                }
+            }
+        } catch (e: Exception) {
+            // 传感器启动失败
+        }
+        
+        return flow.asStateFlow()
+    }
+    
+    override suspend fun stopSensorMonitoring(sensorType: SensorType) {
+        try {
+            when (sensorType) {
+                SensorType.REMOTE_CONTROL -> tvDeviceManager.stopRemoteControlMonitoring()
+                else -> {}
+            }
+            sensorDataFlows.remove(sensorType)
+        } catch (e: Exception) {
+            // 忽略停止传感器的错误
         }
     }
     
-    override suspend fun getVolume(streamType: UnifyAudioStream): Float {
-        return when (streamType) {
-            UnifyAudioStream.MUSIC -> getTVMusicVolume()
-            UnifyAudioStream.NOTIFICATION -> getTVNotificationVolume()
-            UnifyAudioStream.SYSTEM -> getTVSystemVolume()
-            else -> getTVMasterVolume()
+    override suspend fun vibrate(durationMillis: Long) {
+        // TV设备无振动功能
+    }
+    
+    override suspend fun vibratePattern(pattern: LongArray) {
+        // TV设备无振动功能
+    }
+    
+    override suspend fun setVolume(streamType: String, volume: Int) {
+        try {
+            tvDeviceManager.setVolume(streamType, volume)
+        } catch (e: Exception) {
+            // 音量设置失败，忽略
         }
     }
     
-    override suspend fun setBrightness(brightness: Float) {
-        // TV屏幕亮度设置
-        setTVBrightness(brightness)
+    override suspend fun getVolume(streamType: String): Int {
+        return try {
+            tvDeviceManager.getVolume(streamType)
+        } catch (e: Exception) {
+            50 // 默认音量
+        }
     }
     
-    override suspend fun getBrightness(): Float {
-        return getTVBrightness()
+    override suspend fun setBrightness(brightness: Int) {
+        try {
+            tvDeviceManager.setBrightness(brightness)
+        } catch (e: Exception) {
+            // 亮度设置失败，忽略
+        }
     }
     
-    override suspend fun setScreenOrientation(orientation: UnifyScreenOrientation) {
-        // TV屏幕方向设置（通常不支持）
+    override suspend fun getBrightness(): Int {
+        return try {
+            tvDeviceManager.getBrightness()
+        } catch (e: Exception) {
+            200 // 默认TV亮度
+        }
     }
     
-    override suspend fun showNotification(notification: UnifyNotification) {
-        // TV通知显示
-        // 可以使用Toast或屏幕显示
-        showTVToast(notification.title, notification.content)
+    override suspend fun showNotification(title: String, message: String, channelId: String) {
+        try {
+            tvDeviceManager.showTVNotification(title, message)
+        } catch (e: Exception) {
+            // 通知显示失败，忽略
+        }
     }
     
     override suspend fun copyToClipboard(text: String) {
-        // TV剪贴板复制（有限支持）
-    }
-    
-    override suspend fun getClipboardText(): String? {
-        return null // TV剪贴板读取（有限支持）
-    }
-    
-    override suspend fun shareText(text: String, title: String?) {
-        // TV文本分享（通过网络或其他设备）
-    }
-    
-    override suspend fun shareFile(filePath: String, mimeType: String) {
-        // TV文件分享（通过网络或USB）
-    }
-    
-    // TV特定音频控制方法
-    private fun playTVNotificationSound() {
-        // TV通知声音播放
-    }
-    
-    private fun playTVAlertSound() {
-        // TV警告声音播放
-    }
-    
-    private fun playTVErrorSound() {
-        // TV错误声音播放
-    }
-    
-    private fun playTVSuccessSound() {
-        // TV成功声音播放
-    }
-    
-    private fun playTVDefaultSound() {
-        // TV默认声音播放
-    }
-    
-    private fun setTVMusicVolume(volume: Float) {
-        // TV音乐音量设置
-    }
-    
-    private fun setTVNotificationVolume(volume: Float) {
-        // TV通知音量设置
-    }
-    
-    private fun setTVSystemVolume(volume: Float) {
-        // TV系统音量设置
-    }
-    
-    private fun setTVMasterVolume(volume: Float) {
-        // TV主音量设置
-    }
-    
-    private fun getTVMusicVolume(): Float = 0.8f
-    private fun getTVNotificationVolume(): Float = 0.6f
-    private fun getTVSystemVolume(): Float = 0.7f
-    private fun getTVMasterVolume(): Float = 0.8f
-    
-    private fun setTVBrightness(brightness: Float) {
-        // TV亮度设置
-    }
-    
-    private fun getTVBrightness(): Float = 0.8f
-    
-    private fun showTVToast(title: String, content: String) {
-        // TV Toast显示
-    }
-}
-
-// TV设备信息实现
-class TVDeviceInfo : UnifyDeviceInfo {
-    
-    override suspend fun getDeviceInfo(): UnifyDeviceDetails {
-        return UnifyDeviceDetails(
-            deviceId = getTVDeviceId(),
-            deviceName = getTVDeviceName(),
-            manufacturer = getTVManufacturer(),
-            model = getTVModel(),
-            brand = getTVBrand(),
-            isEmulator = isTVEmulator(),
-            isRooted = isTVRooted()
-        )
-    }
-    
-    override suspend fun getSystemInfo(): UnifySystemInfo {
-        return UnifySystemInfo(
-            osName = "Android TV",
-            osVersion = getTVOSVersion(),
-            osApiLevel = getTVAPILevel(),
-            locale = getTVLocale(),
-            timezone = getTVTimezone(),
-            uptime = getTVUptime()
-        )
-    }
-    
-    override suspend fun getHardwareInfo(): UnifyHardwareInfo {
-        return UnifyHardwareInfo(
-            cpuArchitecture = getTVCPUArchitecture(),
-            cpuCores = getTVCPUCores(),
-            totalMemory = getTVTotalMemory(),
-            availableMemory = getTVAvailableMemory(),
-            screenWidth = getTVScreenWidth(),
-            screenHeight = getTVScreenHeight(),
-            screenDensity = getTVScreenDensity()
-        )
-    }
-    
-    override suspend fun getBatteryInfo(): UnifyBatteryInfo {
-        return UnifyBatteryInfo(
-            level = 100, // TV通常接电源
-            isCharging = false,
-            chargingType = "ac",
-            temperature = 0,
-            voltage = 0,
-            capacity = 0,
-            cycleCount = 0
-        )
-    }
-    
-    override suspend fun getNetworkInfo(): UnifyNetworkInfo {
-        return UnifyNetworkInfo(
-            isConnected = isTVNetworkConnected(),
-            connectionType = getTVConnectionType(),
-            networkName = getTVNetworkName(),
-            signalStrength = getTVSignalStrength(),
-            ipAddress = getTVIPAddress(),
-            macAddress = getTVMacAddress(),
-            isRoaming = false,
-            isMetered = false
-        )
-    }
-    
-    override suspend fun getStorageInfo(): UnifyStorageInfo {
-        return UnifyStorageInfo(
-            totalSpace = getTVTotalStorage(),
-            availableSpace = getTVAvailableStorage(),
-            usedSpace = getTVUsedStorage(),
-            externalStorageAvailable = hasTVExternalStorage(),
-            externalTotalSpace = getTVExternalTotalStorage(),
-            externalAvailableSpace = getTVExternalAvailableStorage()
-        )
-    }
-    
-    override suspend fun getDisplayInfo(): UnifyDisplayInfo {
-        return UnifyDisplayInfo(
-            width = getTVScreenWidth(),
-            height = getTVScreenHeight(),
-            density = getTVScreenDensity(),
-            densityDpi = getTVScreenDPI(),
-            refreshRate = getTVRefreshRate(),
-            orientation = "landscape",
-            brightness = getTVBrightness()
-        )
-    }
-    
-    override suspend fun isFeatureSupported(feature: UnifyDeviceFeature): Boolean {
-        return when (feature) {
-            UnifyDeviceFeature.CAMERA -> hasTVCamera()
-            UnifyDeviceFeature.MICROPHONE -> hasTVMicrophone()
-            UnifyDeviceFeature.GPS -> false
-            UnifyDeviceFeature.BLUETOOTH -> true
-            UnifyDeviceFeature.NFC -> false
-            UnifyDeviceFeature.BIOMETRIC -> false
-            UnifyDeviceFeature.ACCELEROMETER -> false
-            UnifyDeviceFeature.GYROSCOPE -> false
-            UnifyDeviceFeature.MAGNETOMETER -> false
-            UnifyDeviceFeature.VIBRATION -> false
+        try {
+            tvDeviceManager.copyToClipboard(text)
+        } catch (e: Exception) {
+            // 剪贴板操作失败，忽略
         }
     }
     
-    override fun observeDeviceChanges(): Flow<UnifyDeviceChange> = flow {
-        // TV设备状态变化监听
+    override suspend fun getFromClipboard(): String {
+        return try {
+            tvDeviceManager.getFromClipboard()
+        } catch (e: Exception) {
+            "" // 默认空字符串
+        }
     }
     
-    // TV特定实现方法
-    private fun getTVDeviceId(): String = "tv_device_001"
-    private fun getTVDeviceName(): String = "Smart TV"
-    private fun getTVManufacturer(): String = "TVMaker"
-    private fun getTVModel(): String = "Smart TV 4K"
-    private fun getTVBrand(): String = "SmartTV"
-    private fun isTVEmulator(): Boolean = false
-    private fun isTVRooted(): Boolean = false
-    private fun getTVOSVersion(): String = "11.0"
-    private fun getTVAPILevel(): Int = 30
-    private fun getTVLocale(): String = "zh_CN"
-    private fun getTVTimezone(): String = "Asia/Shanghai"
-    private fun getTVUptime(): Long = 0L
-    private fun getTVCPUArchitecture(): String = "arm64"
-    private fun getTVCPUCores(): Int = 4
-    private fun getTVTotalMemory(): Long = 4L * 1024 * 1024 * 1024
-    private fun getTVAvailableMemory(): Long = 2L * 1024 * 1024 * 1024
-    private fun getTVScreenWidth(): Int = 1920
-    private fun getTVScreenHeight(): Int = 1080
-    private fun getTVScreenDensity(): Float = 1.0f
-    private fun getTVScreenDPI(): Int = 160
-    private fun getTVRefreshRate(): Float = 60.0f
-    private fun getTVBrightness(): Float = 0.8f
-    private fun isTVNetworkConnected(): Boolean = true
-    private fun getTVConnectionType(): String = "ethernet"
-    private fun getTVNetworkName(): String = "TV Network"
-    private fun getTVSignalStrength(): Int = -40
-    private fun getTVIPAddress(): String = "192.168.1.200"
-    private fun getTVMacAddress(): String = "00:11:22:33:44:77"
-    private fun getTVTotalStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun getTVAvailableStorage(): Long = 16L * 1024 * 1024 * 1024
-    private fun getTVUsedStorage(): Long = 16L * 1024 * 1024 * 1024
-    private fun hasTVExternalStorage(): Boolean = true
-    private fun getTVExternalTotalStorage(): Long = 64L * 1024 * 1024 * 1024
-    private fun getTVExternalAvailableStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun hasTVCamera(): Boolean = false
-    private fun hasTVMicrophone(): Boolean = true
-}
-
-// TV硬件管理器实现
-class TVHardwareManager : UnifyHardwareManager {
-    
-    override suspend fun initialize() {
-        // TV硬件管理器初始化
+    override suspend fun shareText(text: String, title: String) {
+        try {
+            tvDeviceManager.shareText(text, title)
+        } catch (e: Exception) {
+            // 分享失败，忽略
+        }
     }
     
-    override suspend fun cleanup() {
-        // TV硬件资源清理
+    override suspend fun setScreenOrientation(orientation: String) {
+        // TV屏幕方向固定为横屏
     }
     
-    override suspend fun isCameraAvailable(): Boolean = false
-    
-    override suspend fun takePicture(): UnifyCameraResult {
-        return UnifyCameraResult(
-            isSuccess = false,
-            filePath = null,
-            error = "Camera not available on TV"
-        )
+    override suspend fun getScreenOrientation(): String {
+        return "Landscape" // TV固定横屏
     }
     
-    override suspend fun recordVideo(maxDuration: Long): UnifyCameraResult {
-        return UnifyCameraResult(
-            isSuccess = false,
-            filePath = null,
-            error = "Video recording not available on TV"
-        )
+    override suspend fun takePicture(outputPath: String): Boolean {
+        // TV设备无摄像头
+        return false
     }
     
-    override suspend fun isMicrophoneAvailable(): Boolean = true
-    
-    override suspend fun startRecording(config: UnifyAudioConfig): Flow<UnifyAudioData> = flow {
-        // TV录音实现（语音控制）
+    override suspend fun recordVideo(outputPath: String, durationSeconds: Int): Boolean {
+        // TV设备无摄像头
+        return false
     }
     
-    override suspend fun stopRecording() {
-        // 停止录音
+    override suspend fun recordAudio(outputPath: String, durationSeconds: Int): Boolean {
+        return try {
+            tvDeviceManager.recordAudio(outputPath, durationSeconds)
+        } catch (e: Exception) {
+            false
+        }
     }
     
-    override suspend fun isLocationAvailable(): Boolean = false
-    
-    override suspend fun getCurrentLocation(accuracy: UnifyLocationAccuracy): UnifyLocationResult {
-        return UnifyLocationResult(
-            location = null,
-            error = "Location services not available on TV"
-        )
+    override suspend fun getCurrentLocation(): LocationData? {
+        // TV设备无GPS
+        return null
     }
     
-    override suspend fun startLocationUpdates(config: UnifyLocationConfig): Flow<UnifyLocationData> = flow {
-        // TV位置更新（空实现）
+    override suspend fun scanBluetooth(): List<BluetoothDevice> {
+        return try {
+            tvDeviceManager.scanBluetooth()
+        } catch (e: Exception) {
+            emptyList()
+        }
     }
     
-    override suspend fun stopLocationUpdates() {
-        // 停止位置更新
+    override suspend fun readNfc(): String? {
+        // TV设备无NFC
+        return null
     }
     
-    override suspend fun isBluetoothAvailable(): Boolean = true
-    
-    override suspend fun scanBluetoothDevices(): Flow<UnifyBluetoothDevice> = flow {
-        // TV蓝牙扫描实现（遥控器、音箱等）
+    override suspend fun authenticateBiometric(): Boolean {
+        // TV设备无生物识别
+        return false
     }
     
-    override suspend fun stopBluetoothScan() {
-        // 停止蓝牙扫描
+    // TV特有功能
+    suspend fun getHDMIInfo(): HDMIInfo? {
+        return try {
+            tvDeviceManager.getHDMIInfo()
+        } catch (e: Exception) {
+            null
+        }
     }
     
-    override suspend fun isNFCAvailable(): Boolean = false
-    
-    override suspend fun readNFCTag(): Flow<UnifyNFCData> = flow {
-        // TV NFC读取（不支持）
+    suspend fun setHDMIOutput(resolution: String, refreshRate: Float): Boolean {
+        return try {
+            tvDeviceManager.setHDMIOutput(resolution, refreshRate)
+        } catch (e: Exception) {
+            false
+        }
     }
     
-    override suspend fun stopNFCReading() {
-        // 停止NFC读取
-    }
-    
-    override suspend fun isBiometricAvailable(): Boolean = false
-    
-    override suspend fun authenticateWithBiometric(config: UnifyBiometricConfig): UnifyBiometricResult {
-        return UnifyBiometricResult(
-            isSuccess = false,
-            error = "Biometric authentication not supported on TV",
-            errorCode = -1
-        )
+    suspend fun getRemoteControlInfo(): RemoteControlInfo? {
+        return try {
+            tvDeviceManager.getRemoteControlInfo()
+        } catch (e: Exception) {
+            null
+        }
     }
 }
 
-// 工厂对象
+// TV设备管理器模拟实现
+private class TVDeviceManager {
+    
+    fun requestPermission(permission: DevicePermission): PermissionStatus {
+        // TV权限管理
+        return when (permission) {
+            DevicePermission.MICROPHONE -> PermissionStatus.GRANTED
+            DevicePermission.STORAGE -> PermissionStatus.GRANTED
+            DevicePermission.NETWORK -> PermissionStatus.GRANTED
+            else -> PermissionStatus.DENIED
+        }
+    }
+    
+    fun checkPermission(permission: DevicePermission): PermissionStatus {
+        return requestPermission(permission)
+    }
+    
+    fun getDeviceInfo(): DeviceInfo {
+        return DeviceInfo(
+            deviceId = "android_tv_001",
+            deviceName = "Android TV Box",
+            manufacturer = "Google",
+            model = "Chromecast with Google TV",
+            osVersion = "Android TV 13",
+            appVersion = "1.0.0",
+            screenWidth = 3840, // 4K
+            screenHeight = 2160,
+            screenDensity = 1.0f,
+            totalMemory = 8192L,
+            availableMemory = 4096L,
+            totalStorage = 64000L,
+            availableStorage = 32000L,
+            batteryLevel = 100,
+            isCharging = true,
+            networkType = "Ethernet",
+            isRooted = false
+        )
+    }
+    
+    fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
+            osName = "Android TV",
+            osVersion = "13.0",
+            kernelVersion = "5.15.0",
+            apiLevel = 33,
+            buildNumber = "TQ3A.230901.001.A1",
+            securityPatchLevel = "2024-01-01",
+            bootloader = "Unknown",
+            hardware = "amlogic",
+            cpuAbi = "arm64-v8a",
+            supportedAbis = listOf("arm64-v8a", "armeabi-v7a"),
+            javaVmVersion = "OpenJDK 11.0.1",
+            timezone = "Asia/Shanghai",
+            language = "zh-CN",
+            country = "CN"
+        )
+    }
+    
+    fun getHardwareInfo(): HardwareInfo {
+        return HardwareInfo(
+            cpuModel = "Amlogic S905X4",
+            cpuCores = 4,
+            cpuFrequency = 2000L,
+            gpuModel = "Mali-G31 MP2",
+            totalRam = 8192L,
+            availableRam = 4096L,
+            totalStorage = 64000L,
+            availableStorage = 32000L,
+            screenResolution = "3840x2160",
+            screenDpi = 160,
+            cameraResolution = "None",
+            hasFrontCamera = false,
+            hasBackCamera = false,
+            hasFlash = false,
+            hasBluetooth = true,
+            hasWifi = true,
+            hasNfc = false,
+            hasGps = false,
+            hasCellular = false,
+            sensors = listOf("RemoteControl", "HDMI", "Audio", "IR")
+        )
+    }
+    
+    fun getNetworkInfo(): NetworkInfo {
+        return NetworkInfo(
+            isConnected = true,
+            networkType = "Ethernet",
+            connectionType = "Gigabit",
+            signalStrength = 100,
+            ipAddress = "192.168.1.100",
+            macAddress = "00:1A:2B:3C:4D:5E",
+            ssid = "N/A",
+            isMetered = false,
+            isRoaming = false,
+            downloadSpeed = 1000000L,
+            uploadSpeed = 1000000L
+        )
+    }
+    
+    fun getStorageInfo(): StorageInfo {
+        return StorageInfo(
+            totalInternal = 64000L,
+            availableInternal = 32000L,
+            totalExternal = 0L,
+            availableExternal = 0L,
+            cacheSize = 2048L,
+            appDataSize = 1024L,
+            systemSize = 16000L,
+            isExternalAvailable = false,
+            isExternalRemovable = false,
+            isExternalEmulated = false
+        )
+    }
+    
+    fun getDisplayInfo(): DisplayInfo {
+        return DisplayInfo(
+            width = 3840,
+            height = 2160,
+            density = 1.0f,
+            dpi = 160,
+            refreshRate = 60.0f,
+            orientation = "Landscape",
+            isHdr = true,
+            colorSpace = "Rec.2020",
+            brightnessLevel = 200,
+            isAutoRotationEnabled = false
+        )
+    }
+    
+    fun startRemoteControlMonitoring(callback: (FloatArray) -> Unit) {
+        // 模拟遥控器输入监控
+    }
+    
+    fun stopRemoteControlMonitoring() {
+        // 停止遥控器监控
+    }
+    
+    fun setVolume(streamType: String, volume: Int) {
+        // TV音量控制
+    }
+    
+    fun getVolume(streamType: String): Int {
+        return 70
+    }
+    
+    fun setBrightness(brightness: Int) {
+        // TV亮度控制
+    }
+    
+    fun getBrightness(): Int {
+        return 200
+    }
+    
+    fun showTVNotification(title: String, message: String) {
+        // TV通知显示
+    }
+    
+    fun copyToClipboard(text: String) {
+        // TV剪贴板操作
+    }
+    
+    fun getFromClipboard(): String {
+        return ""
+    }
+    
+    fun shareText(text: String, title: String) {
+        // TV分享功能
+    }
+    
+    fun recordAudio(outputPath: String, durationSeconds: Int): Boolean {
+        return true
+    }
+    
+    fun scanBluetooth(): List<BluetoothDevice> {
+        return listOf(
+            BluetoothDevice("TV Remote", "00:11:22:33:44:55", -30),
+            BluetoothDevice("Bluetooth Speaker", "00:11:22:33:44:66", -50)
+        )
+    }
+    
+    fun getHDMIInfo(): HDMIInfo {
+        return HDMIInfo(
+            version = "2.1",
+            maxResolution = "4K@120Hz",
+            supportedFormats = listOf("HDR10", "Dolby Vision", "HLG"),
+            audioFormats = listOf("Dolby Atmos", "DTS:X", "PCM")
+        )
+    }
+    
+    fun setHDMIOutput(resolution: String, refreshRate: Float): Boolean {
+        return true
+    }
+    
+    fun getRemoteControlInfo(): RemoteControlInfo {
+        return RemoteControlInfo(
+            type = "IR + Bluetooth",
+            batteryLevel = 80,
+            buttons = listOf("Power", "Home", "Back", "Menu", "OK", "Volume", "Channel"),
+            hasVoiceControl = true,
+            hasTouchpad = false
+        )
+    }
+}
+
+data class HDMIInfo(
+    val version: String,
+    val maxResolution: String,
+    val supportedFormats: List<String>,
+    val audioFormats: List<String>
+)
+
+data class RemoteControlInfo(
+    val type: String,
+    val batteryLevel: Int,
+    val buttons: List<String>,
+    val hasVoiceControl: Boolean,
+    val hasTouchpad: Boolean
+)
+
 actual object UnifyDeviceManagerFactory {
-    actual fun create(config: UnifyDeviceConfig): UnifyDeviceManager {
+    actual fun create(): UnifyDeviceManager {
         return UnifyDeviceManagerImpl()
     }
 }

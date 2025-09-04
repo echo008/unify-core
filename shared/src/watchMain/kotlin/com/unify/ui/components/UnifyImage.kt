@@ -1,139 +1,96 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.unit.Dp
 
-/**
- * Watch平台的图片实现
- */
-actual class UnifyPlatformImage {
-    companion object {
-        fun getImageCacheSize(): Long {
-            return 10 * 1024 * 1024L // 10MB for Watch
-        }
-        
-        fun getSupportedFormats(): List<String> {
-            return listOf("JPEG", "PNG", "WebP")
-        }
-        
-        fun getOptimalImageSize(): Pair<Int, Int> {
-            return Pair(390, 390) // Apple Watch Series 7+ size
-        }
-        
-        fun isAlwaysOnDisplay(): Boolean {
-            // 检查是否为常亮显示
-            return false // 实际实现需要调用Watch API
-        }
-        
-        fun getBatteryLevel(): Float {
-            // 获取电池电量
-            return 1.0f // 实际实现需要调用Watch API
-        }
-        
-        fun isLowPowerMode(): Boolean {
-            // 检查是否为低电量模式
-            return getBatteryLevel() < 0.2f
-        }
-        
-        fun shouldOptimizeForBattery(): Boolean {
-            return isLowPowerMode() || isAlwaysOnDisplay()
-        }
-        
-        fun getMaxImageResolution(): Pair<Int, Int> {
-            return if (shouldOptimizeForBattery()) {
-                Pair(195, 195) // 降低分辨率节省电量
-            } else {
-                Pair(390, 390)
-            }
-        }
-    }
-}
-
-/**
- * Watch平台的异步图片加载实现
- */
-actual suspend fun loadImageFromUrl(url: String): Painter {
-    return withContext(Dispatchers.IO) {
-        try {
-            // 使用Watch优化的图片加载，考虑电池和性能
-            val imageData = when {
-                url.startsWith("http") -> {
-                    // Watch环境优先使用缓存，减少网络请求
-                    loadWatchNetworkImage(url)
-                }
-                url.startsWith("file://") -> {
-                    loadWatchLocalImage(url.removePrefix("file://"))
-                }
-                else -> {
-                    loadWatchResourceImage(url)
-                }
-            }
-            
-            imageData?.let { BitmapPainter(it) } ?: ColorPainter(Color.Gray)
-        } catch (e: Exception) {
-            ColorPainter(Color.Gray)
-        }
-    }
-}
-
-/**
- * Watch平台的原生图片组件适配器
- */
 @Composable
-actual fun UnifyNativeImage(
-    url: String,
+actual fun UnifyImage(
+    imageUrl: String,
     contentDescription: String?,
     modifier: Modifier,
+    alignment: Alignment,
     contentScale: ContentScale,
-    shape: UnifyImageShape,
-    placeholder: @Composable (() -> Unit)?,
-    error: @Composable (() -> Unit)?,
-    loading: @Composable (() -> Unit)?
+    alpha: Float,
+    colorFilter: ColorFilter?,
+    filterQuality: FilterQuality
 ) {
-    var painter by remember { mutableStateOf<Painter?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
-    
-    LaunchedEffect(url) {
-        isLoading = true
-        hasError = false
-        
-        try {
-            // 模拟Watch图片加载，考虑电池优化
-            if (UnifyPlatformImage.shouldOptimizeForBattery()) {
-                // 在低电量模式下跳过图片加载
-                hasError = true
-            } else {
-                painter = loadImageFromUrl(url)
-            }
-        } catch (e: Exception) {
-            hasError = true
-        } finally {
-            isLoading = false
+    UnifyImagePlaceholder(
+        modifier = modifier,
+        content = {
+            Text(text = "⌚", style = MaterialTheme.typography.headlineMedium)
         }
+    )
+}
+
+@Composable
+actual fun UnifyResourceImage(
+    resourcePath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    alignment: Alignment,
+    contentScale: ContentScale,
+    alpha: Float,
+    colorFilter: ColorFilter?
+) {
+    UnifyImagePlaceholder(
+        modifier = modifier,
+        content = {
+            Text(text = "💎", style = MaterialTheme.typography.headlineMedium)
+        }
+    )
+}
+
+@Composable
+actual fun UnifyAvatar(
+    imageUrl: String?,
+    name: String,
+    modifier: Modifier,
+    size: Dp,
+    backgroundColor: Color
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = name.firstOrNull()?.uppercase() ?: "?",
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.White
+        )
     }
-    
-    when {
-        isLoading -> loading?.invoke()
-        hasError -> error?.invoke()
-        painter != null -> {
-            Image(
-                painter = painter!!,
-                contentDescription = contentDescription,
-                modifier = modifier.fillMaxSize(),
-                contentScale = contentScale
-            )
-        }
-        else -> placeholder?.invoke()
+}
+
+@Composable
+actual fun UnifyImagePlaceholder(
+    modifier: Modifier,
+    backgroundColor: Color,
+    content: (@Composable () -> Unit)?
+) {
+    Box(
+        modifier = modifier.background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        content?.invoke() ?: Text(
+            text = "📷",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Gray
+        )
     }
 }

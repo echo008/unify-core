@@ -1,291 +1,342 @@
 package com.unify.core.data
 
+import com.unify.core.data.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import java.util.concurrent.ConcurrentHashMap
-import java.util.UUID
 
 /**
- * Watch平台的数据管理器实现
+ * Watch平台UnifyDataManager实现
+ * 基于WatchOS/WearOS存储系统和健康数据同步
  */
-actual class UnifyDataManagerImpl : UnifyDataManager {
+class UnifyDataManagerImpl : UnifyDataManager {
     
-    override val storage: UnifyStorage = WatchStorage()
-    override val secureStorage: UnifySecureStorage = WatchSecureStorage()
-    override val cache: UnifyCacheManager = WatchCacheManager()
-    override val state: UnifyStateManager = WatchStateManager()
-    override val database: UnifyDatabaseManager = WatchDatabaseManager()
+    // 数据变化监听
+    private val dataChangeFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    private var initialized = false
+    // 缓存管理
+    private val cache = mutableMapOf<String, CacheEntry>()
     
-    override suspend fun initialize() {
-        if (initialized) return
-        
-        cache.setMaxSize(10 * 1024 * 1024) // 10MB缓存限制（手表存储限制）
-        database.initialize("unify_watch_database", 1)
-        
-        initialized = true
-    }
-    
-    override suspend fun clearAllData() {
-        storage.clear()
-        cache.clear()
-        state.clearAllStates()
-    }
-    
-    override suspend fun backupData(): BackupResult {
-        return try {
-            val backupData = Json.encodeToString(mapOf(
-                "storage" to storage.getAllKeys(),
-                "timestamp" to System.currentTimeMillis(),
-                "platform" to "Watch"
-            )).toByteArray()
-            
-            BackupResult(
-                success = true,
-                data = backupData,
-                size = backupData.size.toLong()
-            )
-        } catch (e: Exception) {
-            BackupResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun restoreData(backupData: ByteArray): RestoreResult {
-        return try {
-            RestoreResult(
-                success = true,
-                restoredItems = 0
-            )
-        } catch (e: Exception) {
-            RestoreResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun getDataUsageStats(): DataUsageStats {
-        return DataUsageStats(
-            totalStorageUsed = 0L,
-            cacheSize = cache.getSize(),
-            databaseSize = 0L,
-            secureStorageSize = 0L
-        )
-    }
-}
-
-/**
- * Watch存储实现
- */
-class WatchStorage : UnifyStorage {
-    private val storage = ConcurrentHashMap<String, String>()
+    // Watch存储管理器
+    private val watchStorageManager = WatchStorageManager()
     
     override suspend fun putString(key: String, value: String) {
-        // 使用Watch平台存储API
-        storage[key] = value
+        watchStorageManager.putString(key, value)
+        notifyDataChange(key, value)
+        
+        // Watch数据同步到手机
+        syncToCompanionDevice(key, value)
     }
     
-    override suspend fun getString(key: String): String? = storage[key]
+    override suspend fun getString(key: String, defaultValue: String): String {
+        return watchStorageManager.getString(key, defaultValue)
+    }
     
-    override suspend fun putInt(key: String, value: Int) = putString(key, value.toString())
-    override suspend fun getInt(key: String): Int? = getString(key)?.toIntOrNull()
+    override suspend fun putInt(key: String, value: Int) {
+        watchStorageManager.putInt(key, value)
+        notifyDataChange(key, value)
+        syncToCompanionDevice(key, value)
+    }
     
-    override suspend fun putLong(key: String, value: Long) = putString(key, value.toString())
-    override suspend fun getLong(key: String): Long? = getString(key)?.toLongOrNull()
+    override suspend fun getInt(key: String, defaultValue: Int): Int {
+        return watchStorageManager.getInt(key, defaultValue)
+    }
     
-    override suspend fun putFloat(key: String, value: Float) = putString(key, value.toString())
-    override suspend fun getFloat(key: String): Float? = getString(key)?.toFloatOrNull()
+    override suspend fun putLong(key: String, value: Long) {
+        watchStorageManager.putLong(key, value)
+        notifyDataChange(key, value)
+        syncToCompanionDevice(key, value)
+    }
     
-    override suspend fun putBoolean(key: String, value: Boolean) = putString(key, value.toString())
-    override suspend fun getBoolean(key: String): Boolean? = getString(key)?.toBooleanStrictOrNull()
+    override suspend fun getLong(key: String, defaultValue: Long): Long {
+        return watchStorageManager.getLong(key, defaultValue)
+    }
     
-    override suspend fun putByteArray(key: String, value: ByteArray) = putString(key, value.toString())
-    override suspend fun getByteArray(key: String): ByteArray? = getString(key)?.toByteArray()
+    override suspend fun putFloat(key: String, value: Float) {
+        watchStorageManager.putFloat(key, value)
+        notifyDataChange(key, value)
+        syncToCompanionDevice(key, value)
+    }
+    
+    override suspend fun getFloat(key: String, defaultValue: Float): Float {
+        return watchStorageManager.getFloat(key, defaultValue)
+    }
+    
+    override suspend fun putBoolean(key: String, value: Boolean) {
+        watchStorageManager.putBoolean(key, value)
+        notifyDataChange(key, value)
+        syncToCompanionDevice(key, value)
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return watchStorageManager.getBoolean(key, defaultValue)
+    }
+    
+    override suspend fun <T> putObject(key: String, value: T) {
+        try {
+            val jsonString = Json.encodeToString(value)
+            watchStorageManager.putString(key, jsonString)
+            notifyDataChange(key, value)
+            syncToCompanionDevice(key, jsonString)
+        } catch (e: Exception) {
+            throw DataException("Failed to serialize object: ${e.message}")
+        }
+    }
+    
+    override suspend fun <T> getObject(key: String, defaultValue: T): T {
+        return try {
+            val jsonString = watchStorageManager.getString(key, "")
+            if (jsonString.isNotEmpty()) {
+                Json.decodeFromString<T>(jsonString)
+            } else {
+                defaultValue
+            }
+        } catch (e: Exception) {
+            defaultValue
+        }
+    }
     
     override suspend fun remove(key: String) {
-        storage.remove(key)
+        watchStorageManager.remove(key)
+        notifyDataChange(key, null)
+        syncRemovalToCompanionDevice(key)
     }
     
     override suspend fun clear() {
-        storage.clear()
-    }
-    
-    override suspend fun contains(key: String): Boolean = storage.containsKey(key)
-    
-    override suspend fun getAllKeys(): Set<String> = storage.keys.toSet()
-}
-
-/**
- * Watch安全存储实现
- */
-class WatchSecureStorage : WatchStorage(), UnifySecureStorage {
-    
-    override suspend fun putSecureString(key: String, value: String) {
-        putString("secure_$key", value)
-    }
-    
-    override suspend fun getSecureString(key: String): String? {
-        return getString("secure_$key")
-    }
-    
-    override suspend fun putEncrypted(key: String, value: ByteArray) {
-        putByteArray("encrypted_$key", value)
-    }
-    
-    override suspend fun getDecrypted(key: String): ByteArray? {
-        return getByteArray("encrypted_$key")
-    }
-    
-    override suspend fun setEncryptionKey(key: String) {
-        // 设置Watch加密密钥
-    }
-    
-    override suspend fun authenticateWithBiometric(): Boolean {
-        // Watch生物识别认证
-        return true
-    }
-}
-
-/**
- * Watch缓存管理器实现
- */
-class WatchCacheManager : UnifyCacheManager {
-    private val cache = ConcurrentHashMap<String, CacheItem>()
-    private var maxSize = 10 * 1024 * 1024L // 10MB限制
-    
-    data class CacheItem(
-        val value: Any,
-        val timestamp: Long,
-        val ttl: Long?
-    )
-    
-    override suspend fun <T> put(key: String, value: T, ttl: Long?) {
-        cache[key] = CacheItem(value as Any, System.currentTimeMillis(), ttl)
-    }
-    
-    override suspend fun <T> get(key: String, type: Class<T>): T? {
-        val item = cache[key] ?: return null
-        
-        if (item.ttl != null && System.currentTimeMillis() - item.timestamp > item.ttl) {
-            cache.remove(key)
-            return null
+        watchStorageManager.clear()
+        dataChangeFlows.values.forEach { flow ->
+            flow.value = null
         }
-        
-        return item.value as? T
+        syncClearToCompanionDevice()
     }
     
-    override suspend fun remove(key: String) {
+    override suspend fun contains(key: String): Boolean {
+        return watchStorageManager.contains(key)
+    }
+    
+    override suspend fun getAllKeys(): Set<String> {
+        return watchStorageManager.getAllKeys()
+    }
+    
+    override fun <T> observeData(key: String): Flow<T?> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(watchStorageManager.getString(key, ""))
+        }
+        return flow.asStateFlow() as Flow<T?>
+    }
+    
+    override suspend fun putCache(key: String, value: Any, ttlMillis: Long) {
+        val expiryTime = System.currentTimeMillis() + ttlMillis
+        cache[key] = CacheEntry(value, expiryTime)
+    }
+    
+    override suspend fun <T> getCache(key: String): T? {
+        val entry = cache[key]
+        return if (entry != null && !entry.isExpired()) {
+            entry.value as? T
+        } else {
+            cache.remove(key)
+            null
+        }
+    }
+    
+    override suspend fun removeCache(key: String) {
         cache.remove(key)
     }
     
-    override suspend fun clear() {
+    override suspend fun clearCache() {
         cache.clear()
     }
     
-    override suspend fun isValid(key: String): Boolean {
-        val item = cache[key] ?: return false
-        return item.ttl == null || System.currentTimeMillis() - item.timestamp <= item.ttl
+    override suspend fun clearExpiredCache() {
+        val expiredKeys = cache.filter { it.value.isExpired() }.keys
+        expiredKeys.forEach { cache.remove(it) }
     }
     
-    override suspend fun getSize(): Long {
-        return cache.size.toLong() * 256 // Watch内存限制考虑
-    }
-    
-    override suspend fun setMaxSize(maxSize: Long) {
-        this.maxSize = maxSize
-    }
-    
-    override suspend fun cleanupExpired() {
-        val now = System.currentTimeMillis()
-        cache.entries.removeIf { (_, item) ->
-            item.ttl != null && now - item.timestamp > item.ttl
+    override suspend fun syncToCloud() {
+        try {
+            // Watch云同步实现
+            val syncData = watchStorageManager.getAllData()
+            watchStorageManager.syncToHealthCloud(syncData)
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
         }
     }
+    
+    override suspend fun syncFromCloud() {
+        try {
+            // Watch云同步实现
+            val cloudData = watchStorageManager.syncFromHealthCloud()
+            cloudData.forEach { (key, value) ->
+                watchStorageManager.putString(key, value.toString())
+                notifyDataChange(key, value)
+            }
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
+        }
+    }
+    
+    // Watch特有功能
+    suspend fun syncHealthData(healthData: Map<String, Any>) {
+        try {
+            watchStorageManager.syncHealthData(healthData)
+        } catch (e: Exception) {
+            throw DataException("Health data sync failed: ${e.message}")
+        }
+    }
+    
+    suspend fun getHealthData(): Map<String, Any> {
+        return try {
+            watchStorageManager.getHealthData()
+        } catch (e: Exception) {
+            emptyMap()
+        }
+    }
+    
+    private fun notifyDataChange(key: String, value: Any?) {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(value)
+        }
+        flow.value = value
+    }
+    
+    private suspend fun syncToCompanionDevice(key: String, value: Any) {
+        try {
+            watchStorageManager.syncToCompanion(key, value)
+        } catch (e: Exception) {
+            // 同步失败不影响本地存储
+            println("Companion sync failed for $key: ${e.message}")
+        }
+    }
+    
+    private suspend fun syncRemovalToCompanionDevice(key: String) {
+        try {
+            watchStorageManager.syncRemovalToCompanion(key)
+        } catch (e: Exception) {
+            println("Companion removal sync failed for $key: ${e.message}")
+        }
+    }
+    
+    private suspend fun syncClearToCompanionDevice() {
+        try {
+            watchStorageManager.syncClearToCompanion()
+        } catch (e: Exception) {
+            println("Companion clear sync failed: ${e.message}")
+        }
+    }
+    
+    private data class CacheEntry(
+        val value: Any,
+        val expiryTime: Long
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() > expiryTime
+    }
 }
 
-/**
- * Watch状态管理器实现
- */
-class WatchStateManager : UnifyStateManager {
-    private val states = ConcurrentHashMap<String, Any>()
-    private val stateFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
+// Watch存储管理器模拟实现
+private class WatchStorageManager {
+    private val storage = mutableMapOf<String, Any>()
+    private val healthData = mutableMapOf<String, Any>()
     
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value as Any
-        getOrCreateStateFlow(key).value = value
+    fun putString(key: String, value: String) {
+        storage[key] = value
+        // 实际实现中会使用WatchOS NSUserDefaults或WearOS SharedPreferences
     }
     
-    override fun <T> getState(key: String, type: Class<T>): T? {
-        return states[key] as? T
+    fun getString(key: String, defaultValue: String): String {
+        return storage[key] as? String ?: defaultValue
     }
     
-    override fun <T> observeState(key: String, type: Class<T>): Flow<T?> {
-        return getOrCreateStateFlow(key).asStateFlow() as Flow<T?>
+    fun putInt(key: String, value: Int) {
+        storage[key] = value
     }
     
-    override fun removeState(key: String) {
-        states.remove(key)
-        stateFlows.remove(key)
+    fun getInt(key: String, defaultValue: Int): Int {
+        return storage[key] as? Int ?: defaultValue
     }
     
-    override fun clearAllStates() {
-        states.clear()
-        stateFlows.clear()
+    fun putLong(key: String, value: Long) {
+        storage[key] = value
     }
     
-    override suspend fun persistState() {
-        // 持久化到Watch存储
+    fun getLong(key: String, defaultValue: Long): Long {
+        return storage[key] as? Long ?: defaultValue
     }
     
-    override suspend fun restoreState() {
-        // 从Watch存储恢复
+    fun putFloat(key: String, value: Float) {
+        storage[key] = value
     }
     
-    private fun getOrCreateStateFlow(key: String): MutableStateFlow<Any?> {
-        return stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
+    fun getFloat(key: String, defaultValue: Float): Float {
+        return storage[key] as? Float ?: defaultValue
+    }
+    
+    fun putBoolean(key: String, value: Boolean) {
+        storage[key] = value
+    }
+    
+    fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return storage[key] as? Boolean ?: defaultValue
+    }
+    
+    fun remove(key: String) {
+        storage.remove(key)
+    }
+    
+    fun clear() {
+        storage.clear()
+    }
+    
+    fun contains(key: String): Boolean {
+        return storage.containsKey(key)
+    }
+    
+    fun getAllKeys(): Set<String> {
+        return storage.keys.toSet()
+    }
+    
+    fun getAllData(): Map<String, Any> {
+        return storage.toMap()
+    }
+    
+    suspend fun syncToHealthCloud(data: Map<String, Any>) {
+        // Watch健康云同步实现
+        println("Syncing ${data.size} items to health cloud")
+    }
+    
+    suspend fun syncFromHealthCloud(): Map<String, Any> {
+        // Watch健康云同步实现
+        return emptyMap()
+    }
+    
+    suspend fun syncHealthData(data: Map<String, Any>) {
+        healthData.putAll(data)
+        // 实际实现中会使用HealthKit或Google Fit API
+    }
+    
+    suspend fun getHealthData(): Map<String, Any> {
+        return healthData.toMap()
+    }
+    
+    suspend fun syncToCompanion(key: String, value: Any) {
+        // 实际实现中会使用WatchConnectivity或Wear OS Data Layer API
+        println("Syncing $key to companion device")
+    }
+    
+    suspend fun syncRemovalToCompanion(key: String) {
+        println("Syncing removal of $key to companion device")
+    }
+    
+    suspend fun syncClearToCompanion() {
+        println("Syncing clear to companion device")
     }
 }
 
-/**
- * Watch数据库管理器实现
- */
-class WatchDatabaseManager : UnifyDatabaseManager {
-    
-    override suspend fun initialize(databaseName: String, version: Int) {
-        // 初始化Watch轻量级数据库
-    }
-    
-    override suspend fun query(sql: String, args: Array<Any>?): List<Map<String, Any?>> {
-        return emptyList()
-    }
-    
-    override suspend fun execute(sql: String, args: Array<Any>?): Int {
-        return 0
-    }
-    
-    override suspend fun beginTransaction(): TransactionHandle {
-        return TransactionHandle(
-            id = UUID.randomUUID().toString(),
-            timestamp = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun commitTransaction(handle: TransactionHandle) {
-        // 提交事务
-    }
-    
-    override suspend fun rollbackTransaction(handle: TransactionHandle) {
-        // 回滚事务
-    }
-    
-    override suspend fun close() {
-        // 关闭数据库连接
+actual object UnifyDataManagerFactory {
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl()
     }
 }

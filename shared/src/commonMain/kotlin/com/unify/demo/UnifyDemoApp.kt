@@ -3,458 +3,624 @@ package com.unify.demo
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.unify.core.architecture.UnifyApp
-import com.unify.core.ui.components.*
-import com.unify.core.mvi.*
-import com.unify.core.data.UnifyResult
-import com.unify.core.performance.UnifyPerformanceMonitor
-import com.unify.core.performance.UnifyComposeOptimizer.PerformanceTracker
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.unify.helloworld.PlatformInfo
+import com.unify.helloworld.SimplePlatformInfo
+import com.unify.helloworld.getPlatformName
+import com.unify.helloworld.getDeviceInfo
 
 /**
- * Unify-Core 完整示例应用
- * 展示所有核心功能和最佳实践
- */
-
-/**
- * 1. 示例应用主入口
+ * Unify跨平台演示应用
+ * 展示所有核心功能和组件的使用示例
  */
 @Composable
 fun UnifyDemoApp() {
-    // 初始化性能监控
-    LaunchedEffect(Unit) {
-        UnifyPerformanceMonitor.initialize()
-    }
+    var selectedTab by remember { mutableStateOf(0) }
+    val platformInfo = remember { SimplePlatformInfo().getCurrentPlatform() }
     
-    UnifyApp {
-        DemoNavigationHost()
+    Column(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // 顶部应用栏
+        DemoAppBar(platformInfo = platformInfo)
+        
+        // 标签栏
+        DemoTabRow(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it }
+        )
+        
+        // 内容区域
+        when (selectedTab) {
+            0 -> PlatformInfoDemo(platformInfo)
+            1 -> UIComponentsDemo()
+            2 -> DataManagementDemo()
+            3 -> NetworkDemo()
+            4 -> StorageDemo()
+            5 -> PerformanceDemo()
+        }
     }
 }
 
 /**
- * 2. 导航主机
+ * 演示应用顶部栏
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DemoAppBar(platformInfo: PlatformInfo) {
+    TopAppBar(
+        title = {
+            Column {
+                Text(
+                    text = "Unify Demo",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Text(
+                    text = "运行在 ${platformInfo.name}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+    )
+}
+
+/**
+ * 演示标签栏
  */
 @Composable
-fun DemoNavigationHost() {
-    var currentScreen by remember { mutableStateOf(DemoScreen.HOME) }
-    
-    when (currentScreen) {
-        DemoScreen.HOME -> HomeScreen(
-            onNavigate = { screen -> currentScreen = screen }
-        )
-        DemoScreen.TASK_LIST -> TaskListScreen(
-            onNavigateBack = { currentScreen = DemoScreen.HOME }
-        )
-        DemoScreen.PROFILE -> ProfileScreen(
-            onNavigateBack = { currentScreen = DemoScreen.HOME }
-        )
-        DemoScreen.SETTINGS -> SettingsScreen(
-            onNavigateBack = { currentScreen = DemoScreen.HOME }
-        )
-        DemoScreen.PERFORMANCE -> PerformanceScreen(
-            onNavigateBack = { currentScreen = DemoScreen.HOME }
-        )
-    }
-}
-
-/**
- * 3. 屏幕枚举
- */
-enum class DemoScreen {
-    HOME, TASK_LIST, PROFILE, SETTINGS, PERFORMANCE
-}
-
-/**
- * 4. 首页屏幕
- */
-@Composable
-fun HomeScreen(
-    onNavigate: (DemoScreen) -> Unit
+private fun DemoTabRow(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit
 ) {
-    PerformanceTracker("HomeScreen") {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 标题卡片
-            UnifyCard {
+    val tabs = listOf(
+        "平台信息" to Icons.Default.Info,
+        "UI组件" to Icons.Default.Widgets,
+        "数据管理" to Icons.Default.Storage,
+        "网络" to Icons.Default.CloudQueue,
+        "存储" to Icons.Default.Save,
+        "性能" to Icons.Default.Speed
+    )
+    
+    ScrollableTabRow(
+        selectedTabIndex = selectedTab,
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        tabs.forEachIndexed { index, (title, icon) ->
+            Tab(
+                selected = selectedTab == index,
+                onClick = { onTabSelected(index) },
+                text = { Text(title) },
+                icon = { Icon(icon, contentDescription = title) }
+            )
+        }
+    }
+}
+
+/**
+ * 平台信息演示
+ */
+@Composable
+private fun PlatformInfoDemo(platformInfo: PlatformInfo) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DemoCard(
+                title = "平台基本信息",
+                icon = Icons.Default.PhoneAndroid
+            ) {
+                InfoRow("平台名称", platformInfo.name)
+                InfoRow("版本", platformInfo.version)
+                InfoRow("架构", platformInfo.architecture)
+                InfoRow("调试模式", if (platformInfo.isDebug) "是" else "否")
+            }
+        }
+        
+        item {
+            DemoCard(
+                title = "设备详细信息",
+                icon = Icons.Default.DeviceHub
+            ) {
+                Text(
+                    text = platformInfo.deviceInfo,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+        }
+        
+        item {
+            DemoCard(
+                title = "运行时信息",
+                icon = Icons.Default.Memory
+            ) {
+                InfoRow("当前时间", System.currentTimeMillis().toString())
+                InfoRow("可用处理器", Runtime.getRuntime().availableProcessors().toString())
+                InfoRow("最大内存", "${Runtime.getRuntime().maxMemory() / 1024 / 1024} MB")
+                InfoRow("已用内存", "${(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024} MB")
+            }
+        }
+    }
+}
+
+/**
+ * UI组件演示
+ */
+@Composable
+private fun UIComponentsDemo() {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DemoCard(
+                title = "按钮组件",
+                icon = Icons.Default.TouchApp
+            ) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "🚀 Unify-Core Demo",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "生产级 Kotlin Multiplatform Compose 框架",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            
-            // 功能导航
-            UnifyCard {
-                Column {
-                    Text(
-                        text = "📱 功能演示",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = { },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("主要按钮")
+                    }
                     
-                    DemoNavigationItem(
-                        title = "待办事项",
-                        description = "MVI 架构 + 数据持久化",
-                        icon = "✅",
-                        onClick = { onNavigate(DemoScreen.TASK_LIST) }
-                    )
+                    OutlinedButton(
+                        onClick = { },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("次要按钮")
+                    }
                     
-                    DemoNavigationItem(
-                        title = "用户资料",
-                        description = "表单处理 + 数据验证",
-                        icon = "👤",
-                        onClick = { onNavigate(DemoScreen.PROFILE) }
-                    )
-                    
-                    DemoNavigationItem(
-                        title = "应用设置",
-                        description = "主题切换 + 偏好设置",
-                        icon = "⚙️",
-                        onClick = { onNavigate(DemoScreen.SETTINGS) }
-                    )
-                    
-                    DemoNavigationItem(
-                        title = "性能监控",
-                        description = "实时性能指标展示",
-                        icon = "📊",
-                        onClick = { onNavigate(DemoScreen.PERFORMANCE) }
-                    )
-                }
-            }
-            
-            // 架构特性
-            UnifyCard {
-                Column {
-                    Text(
-                        text = "🏗️ 架构特性",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    FeatureItem("🎯", "100% 纯 Compose 语法")
-                    FeatureItem("🔄", "85%+ 代码复用率")
-                    FeatureItem("📱", "多平台支持")
-                    FeatureItem("⚡", "原生性能")
-                    FeatureItem("🎨", "统一 UI 组件库")
-                    FeatureItem("🔧", "模块化架构")
-                    FeatureItem("📈", "性能监控")
-                    FeatureItem("🧪", "全面测试覆盖")
+                    TextButton(
+                        onClick = { },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("文本按钮")
+                    }
                 }
             }
         }
-    }
-}
-
-/**
- * 5. 待办事项屏幕
- */
-@Composable
-fun TaskListScreen(
-    onNavigateBack: () -> Unit
-) {
-    val scope = rememberCoroutineScope()
-    val viewModel = TaskViewModel(scope)
-    // 简化状态管理
-    var state by remember { mutableStateOf(viewModel.initialState) }
-    var isLoading by remember { mutableStateOf(false) }
-    val onIntent: (TaskIntent) -> Unit = { intent ->
-        scope.launch {
-            isLoading = true
-            viewModel.processIntent(intent)
-            isLoading = false
-        }
-    }
-    
-    LaunchedEffect(Unit) {
-        viewModel.stateFlow.collect { newState ->
-            state = newState
-        }
-    }
-    
-    PerformanceTracker("TaskListScreen") {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // 顶部栏
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+        
+        item {
+            DemoCard(
+                title = "输入组件",
+                icon = Icons.Default.Edit
+            ) {
+                var textValue by remember { mutableStateOf("") }
+                var switchValue by remember { mutableStateOf(false) }
+                var sliderValue by remember { mutableStateOf(0.5f) }
+                
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    UnifyButton(
-                        onClick = onNavigateBack,
-                        text = "← 返回"
+                    OutlinedTextField(
+                        value = textValue,
+                        onValueChange = { textValue = it },
+                        label = { Text("文本输入") },
+                        modifier = Modifier.fillMaxWidth()
                     )
-                    Text(
-                        text = "待办事项",
-                        style = MaterialTheme.typography.headlineSmall
-                    )
-                    Spacer(modifier = Modifier.width(80.dp))
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 添加待办
-                var newTaskText by remember { mutableStateOf("") }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    UnifyTextField(
-                        value = newTaskText,
-                        onValueChange = { newTaskText = it },
-                        placeholder = "输入新的任务项",
-                        modifier = Modifier.weight(1f)
-                    )
-                    UnifyButton(
-                        onClick = {
-                            val text = newTaskText.trim()
-                            if (text.isNotBlank()) {
-                                onIntent(TaskIntent.AddTask(text))
-                                newTaskText = ""
-                            }
-                        },
-                        text = "添加"
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 待办列表
-                if (isLoading) {
-                    UnifyLoadingIndicator()
-                } else if (state.tasks.isEmpty()) {
-                    UnifyEmptyState(
-                        message = "还没有任务项，添加一个吧！"
-                    )
-                } else {
-                    UnifyLazyList(
-                        items = state.tasks,
-                        key = { it.id }
-                    ) { task ->
-                        TaskItem(
-                            task = task,
-                            onToggle = { onIntent(TaskIntent.ToggleTask(task.id)) },
-                            onDelete = { onIntent(TaskIntent.DeleteTask(task.id)) }
+                    
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("开关控件")
+                        Switch(
+                            checked = switchValue,
+                            onCheckedChange = { switchValue = it }
+                        )
+                    }
+                    
+                    Column {
+                        Text("滑块控件: ${(sliderValue * 100).toInt()}%")
+                        Slider(
+                            value = sliderValue,
+                            onValueChange = { sliderValue = it },
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
                 }
+            }
+        }
+        
+        item {
+            DemoCard(
+                title = "图标展示",
+                icon = Icons.Default.Star
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    Icon(Icons.Default.Home, "首页", tint = Color.Blue)
+                    Icon(Icons.Default.Search, "搜索", tint = Color.Green)
+                    Icon(Icons.Default.Settings, "设置", tint = Color.Orange)
+                    Icon(Icons.Default.Person, "用户", tint = Color.Purple)
+                    Icon(Icons.Default.Favorite, "收藏", tint = Color.Red)
+                }
+            }
         }
     }
 }
 
 /**
- * 6. 待办事项 MVI 实现
+ * 数据管理演示
  */
-data class TaskState(
-    val tasks: List<Task> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
-
-sealed class TaskIntent {
-    data class AddTask(val text: String) : TaskIntent()
-    data class ToggleTask(val id: String) : TaskIntent()
-    data class DeleteTask(val id: String) : TaskIntent()
-    object LoadTasks : TaskIntent()
-}
-
-sealed class TaskEffect {
-    data class ShowMessage(val message: String) : TaskEffect()
-}
-
-data class Task(
-    val id: String = UUID.randomUUID().toString(),
-    val text: String,
-    val isCompleted: Boolean = false,
-    val createdAt: Long = System.currentTimeMillis()
-)
-
-class TaskViewModel(private val scope: CoroutineScope) : UnifyStateManager<TaskState, TaskIntent, TaskEffect> {
-    override val state = MutableStateFlow(TaskState())
-    override val effects = MutableSharedFlow<TaskEffect>()
+@Composable
+private fun DataManagementDemo() {
+    var dataOperationResult by remember { mutableStateOf("") }
     
-    init {
-        handleIntent(TaskIntent.LoadTasks)
-    }
-    
-    override fun handleIntent(intent: TaskIntent) {
-        when (intent) {
-            is TaskIntent.AddTask -> {
-                val newTask = Task(text = intent.text)
-                updateState { 
-                    copy(tasks = tasks + newTask) 
-                }
-            }
-            is TaskIntent.ToggleTask -> {
-                updateState {
-                    copy(
-                        tasks = tasks.map { task ->
-                            if (task.id == intent.id) {
-                                task.copy(isCompleted = !task.isCompleted)
-                            } else {
-                                task
-                            }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DemoCard(
+                title = "数据操作",
+                icon = Icons.Default.DataObject
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            dataOperationResult = "保存数据: 测试数据已保存到本地存储"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("保存数据")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            dataOperationResult = "加载数据: 从本地存储加载了测试数据"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("加载数据")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            dataOperationResult = "同步数据: 数据已同步到云端"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("同步数据")
+                    }
+                    
+                    if (dataOperationResult.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text(
+                                text = dataOperationResult,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall
+                            )
                         }
-                    )
-                }
-            }
-            is TaskIntent.DeleteTask -> {
-                updateState {
-                    copy(tasks = tasks.filter { it.id != intent.id })
-                }
-            }
-            TaskIntent.LoadTasks -> {
-                updateState { copy(isLoading = true) }
-                scope.launch {
-                    delay(500) // 模拟加载
-                    updateState { copy(isLoading = false) }
+                    }
                 }
             }
         }
     }
+}
+
+/**
+ * 网络演示
+ */
+@Composable
+private fun NetworkDemo() {
+    var networkStatus by remember { mutableStateOf("未连接") }
+    var networkResult by remember { mutableStateOf("") }
     
-    private fun updateState(update: TaskState.() -> TaskState) {
-        state.value = state.value.update()
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DemoCard(
+                title = "网络状态",
+                icon = Icons.Default.Wifi
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    InfoRow("连接状态", networkStatus)
+                    
+                    Button(
+                        onClick = {
+                            networkStatus = "已连接 - WiFi"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("检查网络状态")
+                    }
+                }
+            }
+        }
+        
+        item {
+            DemoCard(
+                title = "网络请求",
+                icon = Icons.Default.CloudDownload
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            networkResult = "GET请求成功: 获取到用户数据"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("发送GET请求")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            networkResult = "POST请求成功: 数据已提交到服务器"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("发送POST请求")
+                    }
+                    
+                    if (networkResult.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text(
+                                text = networkResult,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
+/**
+ * 存储演示
+ */
 @Composable
-fun TaskItem(
-    task: Task,
-    onToggle: () -> Unit,
-    onDelete: () -> Unit
-) {
-    UnifyCard(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
+private fun StorageDemo() {
+    var storageInfo by remember { mutableStateOf("") }
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+        item {
+            DemoCard(
+                title = "存储管理",
+                icon = Icons.Default.Folder
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            storageInfo = "本地存储: 已使用 15.2MB / 总计 128MB"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("检查存储空间")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            storageInfo = "缓存清理: 已清理 5.8MB 缓存文件"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("清理缓存")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            storageInfo = "数据备份: 备份文件已创建 (backup_${System.currentTimeMillis()}.zip)"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("创建备份")
+                    }
+                    
+                    if (storageInfo.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text(
+                                text = storageInfo,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 性能演示
+ */
+@Composable
+private fun PerformanceDemo() {
+    var performanceResult by remember { mutableStateOf("") }
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            DemoCard(
+                title = "性能测试",
+                icon = Icons.Default.Speed
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            val startTime = System.currentTimeMillis()
+                            // 模拟计算密集型任务
+                            var sum = 0L
+                            for (i in 1..1000000) {
+                                sum += i
+                            }
+                            val endTime = System.currentTimeMillis()
+                            performanceResult = "CPU测试完成: 耗时 ${endTime - startTime}ms, 结果: $sum"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("CPU性能测试")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val runtime = Runtime.getRuntime()
+                            val maxMemory = runtime.maxMemory() / 1024 / 1024
+                            val totalMemory = runtime.totalMemory() / 1024 / 1024
+                            val freeMemory = runtime.freeMemory() / 1024 / 1024
+                            val usedMemory = totalMemory - freeMemory
+                            
+                            performanceResult = "内存使用: $usedMemory MB / $maxMemory MB (${(usedMemory * 100 / maxMemory)}%)"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("内存使用检测")
+                    }
+                    
+                    Button(
+                        onClick = {
+                            val startTime = System.nanoTime()
+                            Thread.sleep(100) // 模拟IO操作
+                            val endTime = System.nanoTime()
+                            val latency = (endTime - startTime) / 1_000_000.0
+                            performanceResult = "IO延迟测试: ${String.format("%.2f", latency)} ms"
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("IO延迟测试")
+                    }
+                    
+                    if (performanceResult.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            )
+                        ) {
+                            Text(
+                                text = performanceResult,
+                                modifier = Modifier.padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * 演示卡片组件
+ */
+@Composable
+private fun DemoCard(
+    title: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             ) {
-                UnifyCheckbox(
-                    checked = task.isCompleted,
-                    onCheckedChange = { onToggle() }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
                 )
-                UnifyText(
-                    text = task.text,
-                    style = if (task.isCompleted) {
-                        UnifyTheme.typography.body1.copy(
-                            textDecoration = TextDecoration.LineThrough,
-                            color = UnifyTheme.colors.onSurface.copy(alpha = 0.6f)
-                        )
-                    } else {
-                        UnifyTheme.typography.body1
-                    }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
-            UnifyIconButton(
-                onClick = onDelete,
-                icon = "🗑️"
-            )
+            
+            content()
         }
     }
 }
 
 /**
- * 7. 待办事项组件
- * 8. 通用组件
+ * 信息行组件
  */
 @Composable
-fun DemoNavigationItem(
-    title: String,
-    description: String,
-    icon: String,
-    onClick: () -> Unit
-) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = icon,
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Text(
-                text = "→",
-                style = MaterialTheme.typography.titleLarge,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
-    }
-}
-
-@Composable
-fun FeatureItem(
-    icon: String,
-    text: String
-) {
+private fun InfoRow(label: String, value: String) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(
-            text = icon,
-            style = MaterialTheme.typography.bodyLarge
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
-        Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }

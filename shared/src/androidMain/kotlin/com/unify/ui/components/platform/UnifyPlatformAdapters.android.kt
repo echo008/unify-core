@@ -1,502 +1,389 @@
 package com.unify.ui.components.platform
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.hardware.Sensor
-import android.hardware.SensorEvent
-import android.hardware.SensorEventListener
-import android.hardware.SensorManager
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.biometric.BiometricManager
-import androidx.biometric.BiometricPrompt
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
-import androidx.fragment.app.FragmentActivity
-import com.unify.ui.components.media.UnifyLivePlayerConfig
-import com.unify.ui.components.media.UnifyLivePlayerState
-import com.unify.ui.components.media.UnifyLivePusherConfig
-import com.unify.ui.components.media.UnifyLivePusherState
-import com.unify.ui.components.media.UnifyWebRTCConfig
-import com.unify.ui.components.scanner.UnifyQRScannerConfig
-import com.unify.ui.components.scanner.UnifyQRScannerResult
-import com.unify.ui.components.sensor.UnifyMotionSensorData
-import com.unify.ui.components.sensor.UnifyEnvironmentSensorData
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
- * Android 平台直播播放器实现
+ * Android平台特定的UI适配器组件
  */
-@Composable
-actual fun PlatformLivePlayer(
-    config: UnifyLivePlayerConfig,
-    onStateChange: ((UnifyLivePlayerState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    // 使用 ExoPlayer 或 MediaPlayer 实现
-    val context = LocalContext.current
+object AndroidPlatformAdapters {
     
-    LaunchedEffect(config.src) {
-        try {
-            // 集成 ExoPlayer 进行直播播放
-            onStateChange?.invoke(UnifyLivePlayerState.LOADING)
-            kotlinx.coroutines.delay(1000)
-            onStateChange?.invoke(UnifyLivePlayerState.PLAYING)
-        } catch (e: Exception) {
-            onError?.invoke("Android live player error: ${e.message}")
-            onStateChange?.invoke(UnifyLivePlayerState.ERROR)
-        }
-    }
-}
-
-/**
- * Android 平台直播推流器实现
- */
-@Composable
-actual fun PlatformLivePusher(
-    config: UnifyLivePusherConfig,
-    onStateChange: ((UnifyLivePusherState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
-    
-    LaunchedEffect(config.url) {
-        try {
-            // 使用 Camera2 API 和推流SDK实现
-            onStateChange?.invoke(UnifyLivePusherState.CONNECTING)
-            kotlinx.coroutines.delay(2000)
-            onStateChange?.invoke(UnifyLivePusherState.PUSHING)
-        } catch (e: Exception) {
-            onError?.invoke("Android live pusher error: ${e.message}")
-            onStateChange?.invoke(UnifyLivePusherState.ERROR)
-        }
-    }
-}
-
-/**
- * Android 平台 WebRTC 实现
- */
-@Composable
-actual fun PlatformWebRTC(
-    config: UnifyWebRTCConfig,
-    onUserJoin: ((String) -> Unit)?,
-    onUserLeave: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
-    
-    LaunchedEffect(config.roomId) {
-        try {
-            // 集成 WebRTC Android SDK
-            kotlinx.coroutines.delay(2000)
-            onUserJoin?.invoke("android_user_1")
-        } catch (e: Exception) {
-            onError?.invoke("Android WebRTC error: ${e.message}")
-        }
-    }
-}
-
-/**
- * Android 平台扫码器实现
- */
-@Composable
-actual fun PlatformScanner(
-    config: UnifyScanConfig,
-    onScanResult: ((UnifyScanResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
-    val permissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (!isGranted) {
-            onError?.invoke("Camera permission denied")
+    /**
+     * Android Material Design 按钮适配器
+     */
+    @Composable
+    fun MaterialButton(
+        text: String,
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        colors: ButtonColors = ButtonDefaults.buttonColors()
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier,
+            enabled = enabled,
+            colors = colors,
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Text(
+                text = text,
+                fontSize = 16.sp
+            )
         }
     }
     
-    LaunchedEffect(Unit) {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) 
-            != PackageManager.PERMISSION_GRANTED) {
-            permissionLauncher.launch(Manifest.permission.CAMERA)
-        } else {
-            // 使用 ML Kit 或 ZXing 进行扫码
-            try {
-                kotlinx.coroutines.delay(2000)
-                onScanResult?.invoke(
-                    UnifyScanResult(
-                        type = UnifyScanType.QRCODE,
-                        result = "https://android.example.com"
-                    )
+    /**
+     * Android Material Design 卡片适配器
+     */
+    @Composable
+    fun MaterialCard(
+        modifier: Modifier = Modifier,
+        colors: CardColors = CardDefaults.cardColors(),
+        elevation: CardElevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        content: @Composable ColumnScope.() -> Unit
+    ) {
+        Card(
+            modifier = modifier,
+            colors = colors,
+            elevation = elevation,
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                content = content
+            )
+        }
+    }
+    
+    /**
+     * Android Material Design 输入框适配器
+     */
+    @Composable
+    fun MaterialTextField(
+        value: String,
+        onValueChange: (String) -> Unit,
+        label: String,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        isError: Boolean = false,
+        supportingText: String? = null
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            label = { Text(label) },
+            modifier = modifier.fillMaxWidth(),
+            enabled = enabled,
+            isError = isError,
+            supportingText = supportingText?.let { { Text(it) } },
+            shape = RoundedCornerShape(8.dp)
+        )
+    }
+    
+    /**
+     * Android Material Design 开关适配器
+     */
+    @Composable
+    fun MaterialSwitch(
+        checked: Boolean,
+        onCheckedChange: (Boolean) -> Unit,
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true,
+        colors: SwitchColors = SwitchDefaults.colors()
+    ) {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = modifier,
+            enabled = enabled,
+            colors = colors
+        )
+    }
+    
+    /**
+     * Android Material Design 进度条适配器
+     */
+    @Composable
+    fun MaterialProgressIndicator(
+        progress: Float,
+        modifier: Modifier = Modifier,
+        color: Color = MaterialTheme.colorScheme.primary,
+        trackColor: Color = MaterialTheme.colorScheme.surfaceVariant
+    ) {
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = modifier,
+            color = color,
+            trackColor = trackColor
+        )
+    }
+    
+    /**
+     * Android Material Design 圆形进度条适配器
+     */
+    @Composable
+    fun MaterialCircularProgressIndicator(
+        modifier: Modifier = Modifier,
+        color: Color = MaterialTheme.colorScheme.primary,
+        strokeWidth: androidx.compose.ui.unit.Dp = 4.dp
+    ) {
+        CircularProgressIndicator(
+            modifier = modifier,
+            color = color,
+            strokeWidth = strokeWidth
+        )
+    }
+    
+    /**
+     * Android Material Design 芯片适配器
+     */
+    @Composable
+    fun MaterialChip(
+        text: String,
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        selected: Boolean = false,
+        enabled: Boolean = true
+    ) {
+        FilterChip(
+            onClick = onClick,
+            label = { Text(text) },
+            selected = selected,
+            modifier = modifier,
+            enabled = enabled
+        )
+    }
+    
+    /**
+     * Android Material Design 浮动操作按钮适配器
+     */
+    @Composable
+    fun MaterialFloatingActionButton(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+        contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
+        content: @Composable () -> Unit
+    ) {
+        FloatingActionButton(
+            onClick = onClick,
+            modifier = modifier,
+            containerColor = containerColor,
+            contentColor = contentColor,
+            content = content
+        )
+    }
+    
+    /**
+     * Android Material Design 底部导航栏适配器
+     */
+    @Composable
+    fun MaterialBottomNavigation(
+        selectedIndex: Int,
+        onItemSelected: (Int) -> Unit,
+        items: List<BottomNavItem>,
+        modifier: Modifier = Modifier
+    ) {
+        NavigationBar(
+            modifier = modifier
+        ) {
+            items.forEachIndexed { index, item ->
+                NavigationBarItem(
+                    icon = { Icon(item.icon, contentDescription = item.label) },
+                    label = { Text(item.label) },
+                    selected = selectedIndex == index,
+                    onClick = { onItemSelected(index) }
                 )
-            } catch (e: Exception) {
-                onError?.invoke("Android scanner error: ${e.message}")
             }
         }
     }
+    
+    /**
+     * Android Material Design 顶部应用栏适配器
+     */
+    @Composable
+    fun MaterialTopAppBar(
+        title: String,
+        modifier: Modifier = Modifier,
+        navigationIcon: (@Composable () -> Unit)? = null,
+        actions: @Composable RowScope.() -> Unit = {},
+        colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors()
+    ) {
+        TopAppBar(
+            title = { Text(title) },
+            modifier = modifier,
+            navigationIcon = navigationIcon ?: {},
+            actions = actions,
+            colors = colors
+        )
+    }
+    
+    /**
+     * Android Material Design 对话框适配器
+     */
+    @Composable
+    fun MaterialDialog(
+        onDismissRequest: () -> Unit,
+        title: String,
+        content: @Composable () -> Unit,
+        confirmButton: @Composable () -> Unit,
+        dismissButton: @Composable (() -> Unit)? = null,
+        modifier: Modifier = Modifier
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismissRequest,
+            title = { Text(title) },
+            text = content,
+            confirmButton = confirmButton,
+            dismissButton = dismissButton,
+            modifier = modifier
+        )
+    }
+    
+    /**
+     * Android Material Design 底部表单适配器
+     */
+    @Composable
+    fun MaterialBottomSheet(
+        onDismissRequest: () -> Unit,
+        modifier: Modifier = Modifier,
+        dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
+        content: @Composable ColumnScope.() -> Unit
+    ) {
+        ModalBottomSheet(
+            onDismissRequest = onDismissRequest,
+            modifier = modifier,
+            dragHandle = dragHandle,
+            content = content
+        )
+    }
+    
+    /**
+     * Android 系统状态栏颜色适配器
+     */
+    @Composable
+    fun SystemBarsColorAdapter(
+        statusBarColor: Color = MaterialTheme.colorScheme.surface,
+        navigationBarColor: Color = MaterialTheme.colorScheme.surface,
+        darkIcons: Boolean = !isSystemInDarkTheme()
+    ) {
+        val context = LocalContext.current
+        
+        LaunchedEffect(statusBarColor, navigationBarColor, darkIcons) {
+            // 在实际应用中，这里会设置系统状态栏颜色
+            // 需要使用 WindowCompat.setDecorFitsSystemWindows() 等API
+        }
+    }
+    
+    /**
+     * Android 权限请求适配器
+     */
+    @Composable
+    fun PermissionRequestAdapter(
+        permission: String,
+        onPermissionResult: (Boolean) -> Unit,
+        content: @Composable (requestPermission: () -> Unit) -> Unit
+    ) {
+        val context = LocalContext.current
+        
+        content { 
+            // 在实际应用中，这里会使用 ActivityResultContracts.RequestPermission()
+            // 进行权限请求
+            onPermissionResult(true) // 简化实现
+        }
+    }
 }
 
 /**
- * Android 平台传感器实现
+ * 底部导航项数据类
  */
-@Composable
-actual fun PlatformSensor(
-    config: UnifySensorConfig,
-    onDataReceived: ((UnifySensorData) -> Unit)?,
-    onStateChange: ((UnifySensorState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
-    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+data class BottomNavItem(
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val label: String
+)
+
+/**
+ * Android平台特定的主题适配器
+ */
+object AndroidThemeAdapter {
     
-    DisposableEffect(config.sensorType) {
-        val androidSensorType = when (config.sensorType) {
-            UnifySensorType.ACCELEROMETER -> Sensor.TYPE_ACCELEROMETER
-            UnifySensorType.GYROSCOPE -> Sensor.TYPE_GYROSCOPE
-            UnifySensorType.MAGNETOMETER -> Sensor.TYPE_MAGNETIC_FIELD
-            UnifySensorType.LIGHT -> Sensor.TYPE_LIGHT
-            UnifySensorType.PROXIMITY -> Sensor.TYPE_PROXIMITY
-            UnifySensorType.PRESSURE -> Sensor.TYPE_PRESSURE
-            UnifySensorType.TEMPERATURE -> Sensor.TYPE_AMBIENT_TEMPERATURE
-            UnifySensorType.HUMIDITY -> Sensor.TYPE_RELATIVE_HUMIDITY
-            UnifySensorType.STEP_COUNTER -> Sensor.TYPE_STEP_COUNTER
-            UnifySensorType.HEART_RATE -> Sensor.TYPE_HEART_RATE
-            else -> Sensor.TYPE_ACCELEROMETER
+    /**
+     * Material Design 3 主题适配器
+     */
+    @Composable
+    fun MaterialTheme(
+        darkTheme: Boolean = isSystemInDarkTheme(),
+        dynamicColor: Boolean = true,
+        content: @Composable () -> Unit
+    ) {
+        val colorScheme = when {
+            dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S -> {
+                val context = LocalContext.current
+                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+            }
+            darkTheme -> darkColorScheme()
+            else -> lightColorScheme()
         }
         
-        val sensor = sensorManager.getDefaultSensor(androidSensorType)
-        if (sensor != null) {
-            val listener = object : SensorEventListener {
-                override fun onSensorChanged(event: SensorEvent) {
-                    val data = UnifySensorData(
-                        type = config.sensorType,
-                        values = event.values.clone(),
-                        accuracy = event.accuracy,
-                        timestamp = event.timestamp
-                    )
-                    onDataReceived?.invoke(data)
-                }
-                
-                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
-                    // 处理精度变化
-                }
-            }
-            
-            sensorManager.registerListener(
-                listener,
-                sensor,
-                SensorManager.SENSOR_DELAY_NORMAL
-            )
-            
-            onStateChange?.invoke(UnifySensorState.RUNNING)
-            
-            onDispose {
-                sensorManager.unregisterListener(listener)
-                onStateChange?.invoke(UnifySensorState.STOPPED)
-            }
-        } else {
-            onError?.invoke("Sensor not available: ${config.sensorType}")
-            onStateChange?.invoke(UnifySensorState.NOT_AVAILABLE)
-            
-            onDispose { }
-        }
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography(),
+            content = content
+        )
     }
 }
 
 /**
- * Android 平台生物识别实现
+ * Android平台特定的工具函数
  */
-@Composable
-actual fun PlatformBiometric(
-    biometricType: UnifySensorType,
-    onSuccess: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?,
-    onCancel: (() -> Unit)?
-) {
-    val context = LocalContext.current
+object AndroidPlatformUtils {
     
-    LaunchedEffect(biometricType) {
-        val activity = context as? FragmentActivity
-        if (activity != null) {
-            val biometricManager = BiometricManager.from(context)
-            
-            when (biometricManager.canAuthenticate(BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
-                BiometricManager.BIOMETRIC_SUCCESS -> {
-                    val executor = ContextCompat.getMainExecutor(context)
-                    val biometricPrompt = BiometricPrompt(activity, executor,
-                        object : BiometricPrompt.AuthenticationCallback() {
-                            override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                                super.onAuthenticationError(errorCode, errString)
-                                onError?.invoke(errString.toString())
-                            }
-                            
-                            override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                                super.onAuthenticationSucceeded(result)
-                                onSuccess?.invoke("biometric_success")
-                            }
-                            
-                            override fun onAuthenticationFailed() {
-                                super.onAuthenticationFailed()
-                                onError?.invoke("Authentication failed")
-                            }
-                        })
-                    
-                    val promptInfo = BiometricPrompt.PromptInfo.Builder()
-                        .setTitle("生物识别验证")
-                        .setSubtitle("使用您的生物特征进行验证")
-                        .setNegativeButtonText("取消")
-                        .build()
-                    
-                    biometricPrompt.authenticate(promptInfo)
-                }
-                else -> {
-                    onError?.invoke("Biometric authentication not available")
-                }
-            }
-        } else {
-            onError?.invoke("Activity context required for biometric authentication")
-        }
-    }
-}
-
-/**
- * Android 平台触觉反馈实现
- */
-actual fun PlatformHapticFeedback(
-    intensity: Float,
-    duration: Long,
-    pattern: List<Long>
-) {
-    // 通过 LocalContext 获取 Vibrator 服务
-    // 这里需要在 Composable 外部调用，或者通过 CompositionLocal 传递
-}
-
-/**
- * Android 平台语音识别实现
- */
-@Composable
-actual fun PlatformSpeechRecognition(
-    language: String,
-    onResult: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
-    
-    LaunchedEffect(language) {
-        try {
-            // 使用 Android SpeechRecognizer API
-            kotlinx.coroutines.delay(2000)
-            onResult?.invoke("Android 语音识别结果")
-        } catch (e: Exception) {
-            onError?.invoke("Speech recognition error: ${e.message}")
-        }
-    }
-}
-
-/**
- * Android 平台文字转语音实现
- */
-actual fun PlatformTextToSpeech(
-    text: String,
-    language: String,
-    rate: Float,
-    pitch: Float,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    // 使用 Android TextToSpeech API
-    try {
-        // 实现 TTS 功能
-        onComplete?.invoke()
-    } catch (e: Exception) {
-        onError?.invoke("TTS error: ${e.message}")
-    }
-}
-
-/**
- * Android 平台设备震动实现
- */
-actual fun PlatformVibration(
-    pattern: List<Long>,
-    repeat: Boolean
-) {
-    // 使用 Android Vibrator API
-}
-
-/**
- * Android 平台屏幕亮度控制实现
- */
-actual fun PlatformScreenBrightness(brightness: Float) {
-    // 使用 Android WindowManager.LayoutParams 控制亮度
-}
-
-/**
- * Android 平台屏幕方向控制实现
- */
-actual fun PlatformScreenOrientation(orientation: String) {
-    // 使用 Android Activity.setRequestedOrientation
-}
-
-/**
- * Android 平台状态栏控制实现
- */
-actual fun PlatformStatusBar(
-    hidden: Boolean,
-    style: String,
-    backgroundColor: Color?
-) {
-    // 使用 Android WindowInsetsController 控制状态栏
-}
-
-/**
- * Android 平台导航栏控制实现
- */
-actual fun PlatformNavigationBar(
-    hidden: Boolean,
-    style: String,
-    backgroundColor: Color?
-) {
-    // 使用 Android WindowInsetsController 控制导航栏
-}
-
-/**
- * Android 平台系统通知实现
- */
-actual fun PlatformNotification(
-    title: String,
-    content: String,
-    icon: String?,
-    actions: List<Pair<String, () -> Unit>>
-) {
-    // 使用 Android NotificationManager 发送通知
-}
-
-/**
- * Android 平台文件选择器实现
- */
-@Composable
-actual fun PlatformFilePicker(
-    fileTypes: List<String>,
-    multiple: Boolean,
-    onFileSelected: ((List<String>) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetMultipleContents()
-    ) { uris ->
-        onFileSelected?.invoke(uris.map { it.toString() })
+    /**
+     * 获取屏幕密度
+     */
+    @Composable
+    fun getScreenDensity(): Float {
+        val context = LocalContext.current
+        return context.resources.displayMetrics.density
     }
     
-    LaunchedEffect(fileTypes) {
-        try {
-            launcher.launch("*/*")
-        } catch (e: Exception) {
-            onError?.invoke("File picker error: ${e.message}")
-        }
+    /**
+     * 获取屏幕尺寸
+     */
+    @Composable
+    fun getScreenSize(): Pair<Int, Int> {
+        val context = LocalContext.current
+        val displayMetrics = context.resources.displayMetrics
+        return Pair(displayMetrics.widthPixels, displayMetrics.heightPixels)
     }
-}
-
-/**
- * Android 平台相机实现
- */
-@Composable
-actual fun PlatformCamera(
-    facing: String,
-    onPhotoTaken: ((ByteArray) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    val context = LocalContext.current
     
-    LaunchedEffect(facing) {
-        try {
-            // 使用 CameraX 实现相机功能
-            kotlinx.coroutines.delay(1000)
-            onPhotoTaken?.invoke(ByteArray(0)) // 模拟照片数据
-        } catch (e: Exception) {
-            onError?.invoke("Camera error: ${e.message}")
-        }
+    /**
+     * 检查是否为平板设备
+     */
+    @Composable
+    fun isTablet(): Boolean {
+        val context = LocalContext.current
+        val configuration = context.resources.configuration
+        val screenLayout = configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
+        return screenLayout >= android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
-}
-
-/**
- * Android 平台位置服务实现
- */
-actual fun PlatformLocation(
-    accuracy: String,
-    onLocationUpdate: ((Double, Double) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    // 使用 Android LocationManager 或 FusedLocationProvider
-}
-
-/**
- * Android 平台网络状态监听实现
- */
-@Composable
-actual fun PlatformNetworkMonitor(
-    onNetworkChange: ((Boolean, String) -> Unit)?
-) {
-    val context = LocalContext.current
     
-    LaunchedEffect(Unit) {
-        // 使用 Android ConnectivityManager 监听网络状态
-        try {
-            while (true) {
-                kotlinx.coroutines.delay(5000)
-                onNetworkChange?.invoke(true, "WiFi")
-            }
-        } catch (e: Exception) {
-            onNetworkChange?.invoke(false, "None")
-        }
-    }
-}
-
-/**
- * Android 平台电池状态监听实现
- */
-@Composable
-actual fun PlatformBatteryMonitor(
-    onBatteryChange: ((Int, Boolean) -> Unit)?
-) {
-    val context = LocalContext.current
-    
-    LaunchedEffect(Unit) {
-        // 使用 Android BatteryManager 监听电池状态
-        try {
-            while (true) {
-                kotlinx.coroutines.delay(10000)
-                val batteryLevel = (20..100).random()
-                val isCharging = (0..1).random() == 1
-                onBatteryChange?.invoke(batteryLevel, isCharging)
-            }
-        } catch (e: Exception) {
-            // 处理错误
-        }
-    }
-}
-
-/**
- * Android 平台应用生命周期监听实现
- */
-@Composable
-actual fun PlatformLifecycleMonitor(
-    onResume: (() -> Unit)?,
-    onPause: (() -> Unit)?,
-    onStop: (() -> Unit)?
-) {
-    // 使用 Android Lifecycle 监听应用生命周期
-    LaunchedEffect(Unit) {
-        // 集成 Lifecycle 组件
+    /**
+     * 获取系统语言
+     */
+    @Composable
+    fun getSystemLanguage(): String {
+        val context = LocalContext.current
+        return context.resources.configuration.locales[0].language
     }
 }

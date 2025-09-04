@@ -1,535 +1,782 @@
 package com.unify.core.dynamic
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.serialization.Serializable
 
 /**
- * 动态化测试运行器
- * 提供测试执行、结果展示和报告生成的完整界面
+ * 动态测试运行器 - 负责执行和管理动态组件测试
  */
-@Composable
-fun DynamicTestRunner(
-    testFramework: DynamicTestFramework,
-    modifier: Modifier = Modifier
+class DynamicTestRunner(
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 ) {
-    var isRunning by remember { mutableStateOf(false) }
-    var currentTestReport by remember { mutableStateOf<TestReport?>(null) }
-    var selectedSuite by remember { mutableStateOf<String?>(null) }
     
-    val testSuites = remember {
-        listOf(
-            testFramework.createComponentTestSuite(),
-            testFramework.createHotUpdateTestSuite(),
-            testFramework.createConfigurationTestSuite(),
-            testFramework.createStorageTestSuite(),
-            testFramework.createPerformanceTestSuite(),
-            testFramework.createSecurityTestSuite()
-        )
+    companion object {
+        const val MAX_PARALLEL_TESTS = 5
+        const val TEST_QUEUE_SIZE = 100
+        const val RESULT_CACHE_SIZE = 500
+        const val CLEANUP_INTERVAL_MS = 60000L
+        const val HEARTBEAT_INTERVAL_MS = 5000L
+        const val MAX_EXECUTION_TIME_MS = 600000L // 10分钟
+        const val RETRY_DELAY_MS = 1000L
+        const val MAX_RETRY_ATTEMPTS = 3
     }
     
-    Column(modifier = modifier.fillMaxSize()) {
-        // 顶部控制栏
-        TestControlBar(
-            isRunning = isRunning,
-            onRunAllTests = {
-                isRunning = true
-                GlobalScope.launch {
-                    try {
-                        // 注册所有测试套件
-                        testSuites.forEach { suite ->
-                            testFramework.registerTestSuite(suite)
-                        }
-                        
-                        // 运行所有测试
-                        val report = testFramework.runAllTests()
-                        currentTestReport = report
-                    } finally {
-                        isRunning = false
-                    }
-                }
-            },
-            onRunSuite = { suiteName ->
-                isRunning = true
-                selectedSuite = suiteName
-                GlobalScope.launch {
-                    try {
-                        val suite = testSuites.find { it.name == suiteName }
-                        if (suite != null) {
-                            testFramework.registerTestSuite(suite)
-                            val results = testFramework.runTestSuite(suite)
-                            currentTestReport = TestReport(
-                                totalTests = results.size,
-                                passedTests = results.count { it.status == TestStatus.PASSED },
-                                failedTests = results.count { it.status == TestStatus.FAILED },
-                                skippedTests = results.count { it.status == TestStatus.SKIPPED },
-                                executionTime = results.sumOf { it.executionTime },
-                                results = results,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        }
-                    } finally {
-                        isRunning = false
-                        selectedSuite = null
-                    }
-                }
-            }
-        )
-        
-        Divider()
-        
-        Row(modifier = Modifier.fillMaxSize()) {
-            // 左侧测试套件列表
-            TestSuiteList(
-                testSuites = testSuites,
-                selectedSuite = selectedSuite,
-                onSuiteSelected = { selectedSuite = it },
-                modifier = Modifier.weight(0.3f)
-            )
+    private val _runnerState = MutableStateFlow(TestRunnerState.IDLE)
+    val runnerState: StateFlow<TestRunnerState> = _runnerState.asStateFlow()
+    
+    private val _testQueue = MutableStateFlow<List<QueuedTest>>(emptyList())
+    val testQueue: StateFlow<List<QueuedTest>> = _testQueue.asStateFlow()
+    
+    private val _runningTests = MutableStateFlow<Map<String, RunningTest>>(emptyMap())
+    val runningTests: StateFlow<Map<String, RunningTest>> = _runningTests.asStateFlow()
+    
+    private val _completedTests = MutableStateFlow<List<CompletedTest>>(emptyList())
+    val completedTests: StateFlow<List<CompletedTest>> = _completedTests.asStateFlow()
+    
+    private val _runnerMetrics = MutableStateFlow(TestRunnerMetrics())
+    val runnerMetrics: StateFlow<TestRunnerMetrics> = _runnerMetrics.asStateFlow()
+    
+    private val testFramework = DynamicTestFramework()
+    
+    /**
+     * 初始化测试运行器
+     */
+    suspend fun initialize(): Boolean {
+        return try {
+            _runnerState.value = TestRunnerState.INITIALIZING
             
-            VerticalDivider()
+            // 初始化测试框架
+            testFramework.initialize()
             
-            // 右侧测试结果
-            TestResultsPanel(
-                testReport = currentTestReport,
-                isRunning = isRunning,
-                modifier = Modifier.weight(0.7f)
-            )
+            // 启动后台任务
+            startBackgroundTasks()
+            
+            _runnerState.value = TestRunnerState.READY
+            true
+        } catch (e: Exception) {
+            _runnerState.value = TestRunnerState.ERROR
+            false
         }
     }
-}
-
-/**
- * 测试控制栏
- */
-@Composable
-private fun TestControlBar(
-    isRunning: Boolean,
-    onRunAllTests: () -> Unit,
-    onRunSuite: (String) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
+    
+    /**
+     * 启动后台任务
+     */
+    private fun startBackgroundTasks() {
+        // 测试队列处理器
+        scope.launch {
+            while (_runnerState.value != TestRunnerState.STOPPED) {
+                processTestQueue()
+                delay(1000)
+            }
+        }
+        
+        // 清理任务
+        scope.launch {
+            while (_runnerState.value != TestRunnerState.STOPPED) {
+                performCleanup()
+                delay(CLEANUP_INTERVAL_MS)
+            }
+        }
+        
+        // 心跳监控
+        scope.launch {
+            while (_runnerState.value != TestRunnerState.STOPPED) {
+                updateHeartbeat()
+                delay(HEARTBEAT_INTERVAL_MS)
+            }
+        }
+    }
+    
+    /**
+     * 提交测试任务
+     */
+    fun submitTest(testRequest: TestRequest): String {
+        val testId = kotlin.random.Random.nextInt().toString()
+        
+        val queuedTest = QueuedTest(
+            id = testId,
+            request = testRequest,
+            priority = testRequest.priority,
+            submittedAt = System.currentTimeMillis(),
+            retryCount = 0
         )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "动态化测试运行器",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+        
+        val currentQueue = _testQueue.value.toMutableList()
+        
+        if (currentQueue.size >= TEST_QUEUE_SIZE) {
+            throw IllegalStateException("测试队列已满")
+        }
+        
+        currentQueue.add(queuedTest)
+        // 按优先级排序
+        currentQueue.sortByDescending { it.priority.ordinal }
+        _testQueue.value = currentQueue
+        
+        updateMetrics { it.copy(totalSubmitted = it.totalSubmitted + 1) }
+        
+        return testId
+    }
+    
+    /**
+     * 批量提交测试任务
+     */
+    fun submitTests(testRequests: List<TestRequest>): List<String> {
+        return testRequests.map { request ->
+            submitTest(request)
+        }
+    }
+    
+    /**
+     * 处理测试队列
+     */
+    private suspend fun processTestQueue() {
+        val queue = _testQueue.value
+        val running = _runningTests.value
+        
+        if (queue.isEmpty() || running.size >= MAX_PARALLEL_TESTS) {
+            return
+        }
+        
+        val availableSlots = MAX_PARALLEL_TESTS - running.size
+        val testsToRun = queue.take(availableSlots)
+        
+        testsToRun.forEach { queuedTest ->
+            executeTest(queuedTest)
+        }
+        
+        // 从队列中移除已开始执行的测试
+        val remainingQueue = queue.drop(testsToRun.size)
+        _testQueue.value = remainingQueue
+    }
+    
+    /**
+     * 执行测试
+     */
+    private fun executeTest(queuedTest: QueuedTest) {
+        scope.launch {
+            val runningTest = RunningTest(
+                id = queuedTest.id,
+                request = queuedTest.request,
+                startTime = System.currentTimeMillis(),
+                status = TestExecutionStatus.RUNNING,
+                progress = 0.0
             )
             
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(
-                    onClick = onRunAllTests,
-                    enabled = !isRunning
-                ) {
-                    if (isRunning) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    } else {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("运行所有测试")
+            val currentRunning = _runningTests.value.toMutableMap()
+            currentRunning[queuedTest.id] = runningTest
+            _runningTests.value = currentRunning
+            
+            updateMetrics { it.copy(totalStarted = it.totalStarted + 1) }
+            
+            try {
+                val result = when (queuedTest.request.type) {
+                    TestRequestType.COMPONENT_LOAD -> executeComponentLoadTest(queuedTest.request)
+                    TestRequestType.PERFORMANCE -> executePerformanceTest(queuedTest.request)
+                    TestRequestType.SECURITY -> executeSecurityTest(queuedTest.request)
+                    TestRequestType.INTEGRATION -> executeIntegrationTest(queuedTest.request)
+                    TestRequestType.STRESS -> executeStressTest(queuedTest.request)
+                    TestRequestType.COMPATIBILITY -> executeCompatibilityTest(queuedTest.request)
                 }
                 
-                OutlinedButton(
-                    onClick = { /* 清理测试结果 */ },
-                    enabled = !isRunning
-                ) {
-                    Icon(Icons.Default.Clear, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("清理结果")
-                }
+                completeTest(queuedTest.id, result)
+                
+            } catch (e: Exception) {
+                val errorResult = TestExecutionResult(
+                    success = false,
+                    message = "测试执行异常: ${e.message}",
+                    executionTime = System.currentTimeMillis() - runningTest.startTime,
+                    details = mapOf("error" to e.toString())
+                )
+                
+                handleTestFailure(queuedTest, errorResult)
             }
         }
     }
-}
-
-/**
- * 测试套件列表
- */
-@Composable
-private fun TestSuiteList(
-    testSuites: List<TestSuite>,
-    selectedSuite: String?,
-    onSuiteSelected: (String) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxHeight()) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+    
+    /**
+     * 执行组件加载测试
+     */
+    private suspend fun executeComponentLoadTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.1)
+        
+        // 模拟组件加载
+        delay(kotlin.random.Random.nextLong(1000, 3000))
+        updateTestProgress(request.id, 0.5)
+        
+        val componentId = request.parameters["componentId"] ?: "unknown"
+        val loadSuccess = kotlin.random.Random.nextDouble() > 0.1 // 90%成功率
+        
+        updateTestProgress(request.id, 0.8)
+        delay(500)
+        updateTestProgress(request.id, 1.0)
+        
+        return TestExecutionResult(
+            success = loadSuccess,
+            message = if (loadSuccess) "组件加载成功" else "组件加载失败",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "componentId" to componentId,
+                "loadTime" to (System.currentTimeMillis() - startTime).toString()
             )
-        ) {
-            Text(
-                text = "测试套件",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
+        )
+    }
+    
+    /**
+     * 执行性能测试
+     */
+    private suspend fun executePerformanceTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.1)
+        
+        // 模拟性能测试
+        delay(kotlin.random.Random.nextLong(2000, 5000))
+        updateTestProgress(request.id, 0.4)
+        
+        val cpuUsage = kotlin.random.Random.nextDouble(10.0, 80.0)
+        val memoryUsage = kotlin.random.Random.nextLong(50, 200)
+        val responseTime = kotlin.random.Random.nextLong(100, 1000)
+        
+        updateTestProgress(request.id, 0.7)
+        delay(1000)
+        updateTestProgress(request.id, 1.0)
+        
+        val performanceGood = cpuUsage < 70.0 && memoryUsage < 150 && responseTime < 800
+        
+        return TestExecutionResult(
+            success = performanceGood,
+            message = if (performanceGood) "性能测试通过" else "性能测试未达标",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "cpuUsage" to String.format("%.2f", cpuUsage),
+                "memoryUsage" to memoryUsage.toString(),
+                "responseTime" to responseTime.toString()
             )
+        )
+    }
+    
+    /**
+     * 执行安全测试
+     */
+    private suspend fun executeSecurityTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.2)
+        
+        // 模拟安全测试
+        delay(kotlin.random.Random.nextLong(1500, 4000))
+        updateTestProgress(request.id, 0.6)
+        
+        val vulnerabilities = kotlin.random.Random.nextInt(0, 3)
+        val signatureValid = kotlin.random.Random.nextDouble() > 0.05
+        val permissionsCorrect = kotlin.random.Random.nextDouble() > 0.1
+        
+        updateTestProgress(request.id, 0.9)
+        delay(500)
+        updateTestProgress(request.id, 1.0)
+        
+        val securityPassed = vulnerabilities == 0 && signatureValid && permissionsCorrect
+        
+        return TestExecutionResult(
+            success = securityPassed,
+            message = if (securityPassed) "安全测试通过" else "发现安全问题",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "vulnerabilities" to vulnerabilities.toString(),
+                "signatureValid" to signatureValid.toString(),
+                "permissionsCorrect" to permissionsCorrect.toString()
+            )
+        )
+    }
+    
+    /**
+     * 执行集成测试
+     */
+    private suspend fun executeIntegrationTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.1)
+        
+        // 模拟集成测试
+        delay(kotlin.random.Random.nextLong(3000, 6000))
+        updateTestProgress(request.id, 0.5)
+        
+        val componentsIntegrated = kotlin.random.Random.nextInt(2, 6)
+        val dataFlowCorrect = kotlin.random.Random.nextDouble() > 0.15
+        val eventsHandled = kotlin.random.Random.nextDouble() > 0.1
+        
+        updateTestProgress(request.id, 0.8)
+        delay(1000)
+        updateTestProgress(request.id, 1.0)
+        
+        val integrationSuccess = dataFlowCorrect && eventsHandled
+        
+        return TestExecutionResult(
+            success = integrationSuccess,
+            message = if (integrationSuccess) "集成测试通过" else "集成测试失败",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "componentsIntegrated" to componentsIntegrated.toString(),
+                "dataFlowCorrect" to dataFlowCorrect.toString(),
+                "eventsHandled" to eventsHandled.toString()
+            )
+        )
+    }
+    
+    /**
+     * 执行压力测试
+     */
+    private suspend fun executeStressTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.1)
+        
+        // 模拟压力测试
+        val testDuration = kotlin.random.Random.nextLong(5000, 10000)
+        val progressSteps = 10
+        val stepDuration = testDuration / progressSteps
+        
+        for (i in 1..progressSteps) {
+            delay(stepDuration)
+            updateTestProgress(request.id, i.toDouble() / progressSteps)
         }
         
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            contentPadding = PaddingValues(8.dp)
-        ) {
-            items(testSuites) { suite ->
-                TestSuiteCard(
-                    suite = suite,
-                    isSelected = selectedSuite == suite.name,
-                    onSelected = { onSuiteSelected(suite.name) }
-                )
-            }
+        val maxConcurrentUsers = kotlin.random.Random.nextInt(100, 1000)
+        val errorRate = kotlin.random.Random.nextDouble(0.0, 10.0)
+        val avgResponseTime = kotlin.random.Random.nextLong(200, 2000)
+        
+        val stressPassed = errorRate < 5.0 && avgResponseTime < 1500
+        
+        return TestExecutionResult(
+            success = stressPassed,
+            message = if (stressPassed) "压力测试通过" else "压力测试未通过",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "maxConcurrentUsers" to maxConcurrentUsers.toString(),
+                "errorRate" to String.format("%.2f", errorRate),
+                "avgResponseTime" to avgResponseTime.toString()
+            )
+        )
+    }
+    
+    /**
+     * 执行兼容性测试
+     */
+    private suspend fun executeCompatibilityTest(request: TestRequest): TestExecutionResult {
+        val startTime = System.currentTimeMillis()
+        
+        updateTestProgress(request.id, 0.1)
+        
+        // 模拟兼容性测试
+        delay(kotlin.random.Random.nextLong(2000, 4000))
+        updateTestProgress(request.id, 0.5)
+        
+        val platforms = listOf("Android", "iOS", "Web", "Desktop")
+        val compatiblePlatforms = platforms.filter { kotlin.random.Random.nextDouble() > 0.1 }
+        
+        updateTestProgress(request.id, 0.8)
+        delay(1000)
+        updateTestProgress(request.id, 1.0)
+        
+        val compatibilityGood = compatiblePlatforms.size >= platforms.size * 0.8
+        
+        return TestExecutionResult(
+            success = compatibilityGood,
+            message = if (compatibilityGood) "兼容性测试通过" else "兼容性问题",
+            executionTime = System.currentTimeMillis() - startTime,
+            details = mapOf(
+                "totalPlatforms" to platforms.size.toString(),
+                "compatiblePlatforms" to compatiblePlatforms.size.toString(),
+                "compatibilityRate" to String.format("%.2f", compatiblePlatforms.size.toDouble() / platforms.size * 100)
+            )
+        )
+    }
+    
+    /**
+     * 更新测试进度
+     */
+    private fun updateTestProgress(testId: String, progress: Double) {
+        val currentRunning = _runningTests.value.toMutableMap()
+        val runningTest = currentRunning[testId]
+        
+        if (runningTest != null) {
+            currentRunning[testId] = runningTest.copy(progress = progress)
+            _runningTests.value = currentRunning
         }
     }
-}
-
-/**
- * 测试套件卡片
- */
-@Composable
-private fun TestSuiteCard(
-    suite: TestSuite,
-    isSelected: Boolean,
-    onSelected: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primaryContainer
+    
+    /**
+     * 完成测试
+     */
+    private fun completeTest(testId: String, result: TestExecutionResult) {
+        val runningTest = _runningTests.value[testId] ?: return
+        
+        val completedTest = CompletedTest(
+            id = testId,
+            request = runningTest.request,
+            result = result,
+            startTime = runningTest.startTime,
+            endTime = System.currentTimeMillis()
+        )
+        
+        // 移除运行中的测试
+        val currentRunning = _runningTests.value.toMutableMap()
+        currentRunning.remove(testId)
+        _runningTests.value = currentRunning
+        
+        // 添加到完成列表
+        val currentCompleted = _completedTests.value.toMutableList()
+        currentCompleted.add(0, completedTest) // 添加到开头
+        
+        // 保持缓存大小限制
+        if (currentCompleted.size > RESULT_CACHE_SIZE) {
+            currentCompleted.removeAt(currentCompleted.size - 1)
+        }
+        
+        _completedTests.value = currentCompleted
+        
+        // 更新指标
+        updateMetrics { metrics ->
+            if (result.success) {
+                metrics.copy(totalCompleted = metrics.totalCompleted + 1)
             } else {
-                MaterialTheme.colorScheme.surface
+                metrics.copy(
+                    totalCompleted = metrics.totalCompleted + 1,
+                    totalFailed = metrics.totalFailed + 1
+                )
             }
-        ),
-        onClick = onSelected
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = suite.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = suite.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = "${suite.tests.size} 个测试",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
         }
     }
-}
-
-/**
- * 测试结果面板
- */
-@Composable
-private fun TestResultsPanel(
-    testReport: TestReport?,
-    isRunning: Boolean,
-    modifier: Modifier = Modifier
-) {
-    Column(modifier = modifier.fillMaxHeight()) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Text(
-                text = "测试结果",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(16.dp)
-            )
+    
+    /**
+     * 处理测试失败
+     */
+    private suspend fun handleTestFailure(queuedTest: QueuedTest, result: TestExecutionResult) {
+        if (queuedTest.retryCount < MAX_RETRY_ATTEMPTS) {
+            // 重试测试
+            delay(RETRY_DELAY_MS * (queuedTest.retryCount + 1))
+            
+            val retryTest = queuedTest.copy(retryCount = queuedTest.retryCount + 1)
+            val currentQueue = _testQueue.value.toMutableList()
+            currentQueue.add(0, retryTest) // 添加到队列开头
+            _testQueue.value = currentQueue
+            
+            // 移除运行中的测试
+            val currentRunning = _runningTests.value.toMutableMap()
+            currentRunning.remove(queuedTest.id)
+            _runningTests.value = currentRunning
+            
+        } else {
+            // 达到最大重试次数，标记为失败
+            completeTest(queuedTest.id, result)
+        }
+    }
+    
+    /**
+     * 取消测试
+     */
+    fun cancelTest(testId: String): Boolean {
+        // 从队列中移除
+        val currentQueue = _testQueue.value.toMutableList()
+        val queuedTest = currentQueue.find { it.id == testId }
+        if (queuedTest != null) {
+            currentQueue.remove(queuedTest)
+            _testQueue.value = currentQueue
+            return true
         }
         
-        if (isRunning) {
-            // 运行中状态
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "正在运行测试...",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-        } else if (testReport != null) {
-            // 显示测试结果
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                item {
-                    TestSummaryCard(testReport)
-                }
-                
-                items(testReport.results) { result ->
-                    TestResultCard(result)
-                }
-            }
-        } else {
-            // 空状态
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.Science,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "选择测试套件开始测试",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * 测试摘要卡片
- */
-@Composable
-private fun TestSummaryCard(report: TestReport) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "测试摘要",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+        // 从运行中移除
+        val currentRunning = _runningTests.value.toMutableMap()
+        val runningTest = currentRunning[testId]
+        if (runningTest != null) {
+            currentRunning.remove(testId)
+            _runningTests.value = currentRunning
+            
+            // 添加到完成列表，标记为取消
+            val cancelledResult = TestExecutionResult(
+                success = false,
+                message = "测试已取消",
+                executionTime = System.currentTimeMillis() - runningTest.startTime,
+                details = mapOf("cancelled" to "true")
             )
             
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                SummaryItem(
-                    label = "总计",
-                    value = report.totalTests.toString(),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                SummaryItem(
-                    label = "通过",
-                    value = report.passedTests.toString(),
-                    color = Color.Green
-                )
-                SummaryItem(
-                    label = "失败",
-                    value = report.failedTests.toString(),
-                    color = Color.Red
-                )
-                SummaryItem(
-                    label = "跳过",
-                    value = report.skippedTests.toString(),
-                    color = Color.Orange
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "成功率: ${String.format("%.1f", report.successRate)}%",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = if (report.successRate >= 90) Color.Green else if (report.successRate >= 70) Color.Orange else Color.Red
-                )
-                Text(
-                    text = "执行时间: ${report.executionTime}ms",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            LinearProgressIndicator(
-                progress = (report.passedTests.toFloat() / report.totalTests),
-                modifier = Modifier.fillMaxWidth(),
-                color = if (report.successRate >= 90) Color.Green else if (report.successRate >= 70) Color.Orange else Color.Red
-            )
+            completeTest(testId, cancelledResult)
+            return true
         }
+        
+        return false
     }
-}
-
-/**
- * 摘要项
- */
-@Composable
-private fun SummaryItem(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = color,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    
+    /**
+     * 获取测试状态
+     */
+    fun getTestStatus(testId: String): TestStatus? {
+        // 检查队列
+        _testQueue.value.find { it.id == testId }?.let {
+            return TestStatus.QUEUED
+        }
+        
+        // 检查运行中
+        _runningTests.value[testId]?.let {
+            return TestStatus.RUNNING
+        }
+        
+        // 检查完成
+        _completedTests.value.find { it.id == testId }?.let {
+            return if (it.result.success) TestStatus.COMPLETED else TestStatus.FAILED
+        }
+        
+        return null
     }
-}
-
-/**
- * 测试结果卡片
- */
-@Composable
-private fun TestResultCard(result: TestResult) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when (result.status) {
-                TestStatus.PASSED -> MaterialTheme.colorScheme.surfaceVariant
-                TestStatus.FAILED -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                TestStatus.SKIPPED -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.1f)
-            }
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = when (result.status) {
-                            TestStatus.PASSED -> Icons.Default.CheckCircle
-                            TestStatus.FAILED -> Icons.Default.Error
-                            TestStatus.SKIPPED -> Icons.Default.Warning
-                        },
-                        contentDescription = null,
-                        tint = when (result.status) {
-                            TestStatus.PASSED -> Color.Green
-                            TestStatus.FAILED -> Color.Red
-                            TestStatus.SKIPPED -> Color.Orange
-                        },
-                        modifier = Modifier.size(20.dp)
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Text(
-                        text = result.testName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                
-                Text(
-                    text = "${result.executionTime}ms",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+    
+    /**
+     * 执行清理任务
+     */
+    private fun performCleanup() {
+        val currentTime = System.currentTimeMillis()
+        
+        // 清理超时的运行测试
+        val currentRunning = _runningTests.value.toMutableMap()
+        val timedOutTests = currentRunning.values.filter { 
+            currentTime - it.startTime > MAX_EXECUTION_TIME_MS 
+        }
+        
+        timedOutTests.forEach { test ->
+            currentRunning.remove(test.id)
             
-            Text(
-                text = result.message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            val timeoutResult = TestExecutionResult(
+                success = false,
+                message = "测试超时",
+                executionTime = currentTime - test.startTime,
+                details = mapOf("timeout" to "true")
             )
             
-            if (result.error != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
-                    )
-                ) {
-                    Text(
-                        text = result.error,
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(8.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
+            completeTest(test.id, timeoutResult)
         }
+        
+        if (timedOutTests.isNotEmpty()) {
+            _runningTests.value = currentRunning
+        }
+    }
+    
+    /**
+     * 更新心跳
+     */
+    private fun updateHeartbeat() {
+        updateMetrics { it.copy(lastHeartbeat = System.currentTimeMillis()) }
+    }
+    
+    /**
+     * 更新指标
+     */
+    private fun updateMetrics(updater: (TestRunnerMetrics) -> TestRunnerMetrics) {
+        _runnerMetrics.value = updater(_runnerMetrics.value)
+    }
+    
+    /**
+     * 获取运行器统计信息
+     */
+    fun getRunnerStats(): TestRunnerStats {
+        val metrics = _runnerMetrics.value
+        val queue = _testQueue.value
+        val running = _runningTests.value
+        val completed = _completedTests.value
+        
+        return TestRunnerStats(
+            queuedTests = queue.size,
+            runningTests = running.size,
+            completedTests = completed.size,
+            totalSubmitted = metrics.totalSubmitted,
+            totalStarted = metrics.totalStarted,
+            totalCompleted = metrics.totalCompleted,
+            totalFailed = metrics.totalFailed,
+            successRate = if (metrics.totalCompleted > 0) {
+                ((metrics.totalCompleted - metrics.totalFailed).toDouble() / metrics.totalCompleted) * 100
+            } else 0.0,
+            averageExecutionTime = completed.takeIf { it.isNotEmpty() }?.map { 
+                it.endTime - it.startTime 
+            }?.average()?.toLong() ?: 0L,
+            lastHeartbeat = metrics.lastHeartbeat
+        )
+    }
+    
+    /**
+     * 停止运行器
+     */
+    suspend fun stop() {
+        _runnerState.value = TestRunnerState.STOPPING
+        
+        // 取消所有排队的测试
+        _testQueue.value = emptyList()
+        
+        // 等待运行中的测试完成或超时
+        val maxWaitTime = 30000L // 30秒
+        val startTime = System.currentTimeMillis()
+        
+        while (_runningTests.value.isNotEmpty() && 
+               System.currentTimeMillis() - startTime < maxWaitTime) {
+            delay(1000)
+        }
+        
+        // 强制停止剩余的测试
+        _runningTests.value = emptyMap()
+        
+        _runnerState.value = TestRunnerState.STOPPED
     }
 }
 
 /**
- * 垂直分割线
+ * 测试运行器状态枚举
  */
-@Composable
-private fun VerticalDivider() {
-    Box(
-        modifier = Modifier
-            .fillMaxHeight()
-            .width(1.dp)
-    ) {
-        Divider(
-            modifier = Modifier.fillMaxHeight(),
-            color = MaterialTheme.colorScheme.outline
-        )
-    }
+enum class TestRunnerState {
+    IDLE,
+    INITIALIZING,
+    READY,
+    RUNNING,
+    STOPPING,
+    STOPPED,
+    ERROR
 }
+
+/**
+ * 测试请求类型枚举
+ */
+enum class TestRequestType {
+    COMPONENT_LOAD,
+    PERFORMANCE,
+    SECURITY,
+    INTEGRATION,
+    STRESS,
+    COMPATIBILITY
+}
+
+/**
+ * 测试优先级枚举
+ */
+enum class TestPriority {
+    LOW,
+    NORMAL,
+    HIGH,
+    CRITICAL
+}
+
+/**
+ * 测试执行状态枚举
+ */
+enum class TestExecutionStatus {
+    QUEUED,
+    RUNNING,
+    COMPLETED,
+    FAILED,
+    CANCELLED
+}
+
+/**
+ * 测试状态枚举
+ */
+enum class TestStatus {
+    QUEUED,
+    RUNNING,
+    COMPLETED,
+    FAILED,
+    CANCELLED
+}
+
+/**
+ * 测试请求数据类
+ */
+@Serializable
+data class TestRequest(
+    val id: String = kotlin.random.Random.nextInt().toString(),
+    val type: TestRequestType,
+    val name: String,
+    val description: String = "",
+    val priority: TestPriority = TestPriority.NORMAL,
+    val timeout: Long = 30000L,
+    val parameters: Map<String, String> = emptyMap()
+)
+
+/**
+ * 排队测试数据类
+ */
+@Serializable
+data class QueuedTest(
+    val id: String,
+    val request: TestRequest,
+    val priority: TestPriority,
+    val submittedAt: Long,
+    val retryCount: Int
+)
+
+/**
+ * 运行中测试数据类
+ */
+@Serializable
+data class RunningTest(
+    val id: String,
+    val request: TestRequest,
+    val startTime: Long,
+    val status: TestExecutionStatus,
+    val progress: Double
+)
+
+/**
+ * 完成测试数据类
+ */
+@Serializable
+data class CompletedTest(
+    val id: String,
+    val request: TestRequest,
+    val result: TestExecutionResult,
+    val startTime: Long,
+    val endTime: Long
+)
+
+/**
+ * 测试执行结果数据类
+ */
+@Serializable
+data class TestExecutionResult(
+    val success: Boolean,
+    val message: String,
+    val executionTime: Long,
+    val details: Map<String, String> = emptyMap()
+)
+
+/**
+ * 测试运行器指标数据类
+ */
+@Serializable
+data class TestRunnerMetrics(
+    val totalSubmitted: Int = 0,
+    val totalStarted: Int = 0,
+    val totalCompleted: Int = 0,
+    val totalFailed: Int = 0,
+    val lastHeartbeat: Long = System.currentTimeMillis()
+)
+
+/**
+ * 测试运行器统计数据类
+ */
+@Serializable
+data class TestRunnerStats(
+    val queuedTests: Int,
+    val runningTests: Int,
+    val completedTests: Int,
+    val totalSubmitted: Int,
+    val totalStarted: Int,
+    val totalCompleted: Int,
+    val totalFailed: Int,
+    val successRate: Double,
+    val averageExecutionTime: Long,
+    val lastHeartbeat: Long
+)

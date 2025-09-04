@@ -1,870 +1,723 @@
 package com.unify.core.dynamic
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material.icons.filled.NetworkCheck
-import androidx.compose.material.icons.filled.Security
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
 
 /**
- * 性能指标卡片
+ * 动态管理组件 - 提供动态组件的管理功能
  */
-@Composable
-fun PerformanceMetricsCard(metrics: Map<String, Double>) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "性能指标",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                MetricItem(
-                    label = "CPU使用率",
-                    value = "${(metrics["cpu_usage"] ?: 0.0).toInt()}%",
-                    color = getMetricColor(metrics["cpu_usage"] ?: 0.0, 80.0)
-                )
-                MetricItem(
-                    label = "内存使用",
-                    value = "${(metrics["memory_usage"] ?: 0.0).toInt()}MB",
-                    color = getMetricColor(metrics["memory_usage"] ?: 0.0, 512.0)
-                )
-                MetricItem(
-                    label = "网络延迟",
-                    value = "${(metrics["network_latency"] ?: 0.0).toInt()}ms",
-                    color = getMetricColor(metrics["network_latency"] ?: 0.0, 200.0)
-                )
-                MetricItem(
-                    label = "组件数量",
-                    value = "${(metrics["component_count"] ?: 0.0).toInt()}",
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-/**
- * 指标项
- */
-@Composable
-private fun MetricItem(label: String, value: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = color,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-/**
- * 获取指标颜色
- */
-private fun getMetricColor(value: Double, threshold: Double): Color {
-    return when {
-        value < threshold * 0.7 -> Color.Green
-        value < threshold -> Color.Orange
-        else -> Color.Red
-    }
-}
-
-/**
- * 快速操作卡片
- */
-@Composable
-fun QuickActionsCard(dynamicEngine: UnifyDynamicEngine) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "快速操作",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = {
-                        GlobalScope.launch {
-                            dynamicEngine.checkForUpdates()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("检查更新")
-                }
-                
-                OutlinedButton(
-                    onClick = {
-                        GlobalScope.launch {
-                            dynamicEngine.syncConfigurations()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Sync, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("同步配置")
-                }
-                
-                OutlinedButton(
-                    onClick = {
-                        GlobalScope.launch {
-                            dynamicEngine.clearCache()
-                        }
-                    },
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.Clear, contentDescription = null)
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("清理缓存")
-                }
-            }
-        }
-    }
-}
-
-/**
- * 组件卡片
- */
-@Composable
-fun ComponentCard(
-    componentId: String,
-    factory: ComponentFactory,
-    onUnregister: () -> Unit,
-    onReload: () -> Unit
-) {
-    var showDetails by remember { mutableStateOf(false) }
+class DynamicManagementComponents {
     
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = componentId,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = factory.getMetadata().description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "版本: ${factory.getMetadata().version}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Row {
-                    IconButton(onClick = { showDetails = !showDetails }) {
-                        Icon(
-                            if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                            contentDescription = "详情"
-                        )
-                    }
-                    IconButton(onClick = onReload) {
-                        Icon(Icons.Default.Refresh, contentDescription = "重新加载")
-                    }
-                    IconButton(onClick = onUnregister) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = "卸载",
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-            }
-            
-            if (showDetails) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider()
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                val metadata = factory.getMetadata()
-                Text(
-                    text = "组件详情:",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold
-                )
-                Text("名称: ${metadata.name}")
-                Text("版本: ${metadata.version}")
-                Text("描述: ${metadata.description}")
-                Text("类型: ${metadata.type}")
-                Text("依赖: ${metadata.dependencies.joinToString(", ")}")
-            }
-        }
+    companion object {
+        const val MAX_COMPONENTS = 1000
+        const val COMPONENT_TIMEOUT_MS = 30000L
+        const val HEALTH_CHECK_INTERVAL_MS = 10000L
+        const val CLEANUP_INTERVAL_MS = 60000L
+        const val MAX_COMPONENT_SIZE_MB = 50L
+        const val DEFAULT_COMPONENT_VERSION = "1.0.0"
+        const val COMPONENT_REGISTRY_VERSION = "1.0.0"
+        const val MAX_DEPENDENCY_DEPTH = 10
+        const val COMPONENT_LOAD_TIMEOUT_MS = 15000L
     }
-}
-
-/**
- * 配置卡片
- */
-@Composable
-fun ConfigurationCard(
-    key: String,
-    value: String,
-    onUpdate: (String) -> Unit,
-    onDelete: () -> Unit
-) {
-    var isEditing by remember { mutableStateOf(false) }
-    var editValue by remember { mutableStateOf(value) }
     
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = key,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    if (isEditing) {
-                        OutlinedTextField(
-                            value = editValue,
-                            onValueChange = { editValue = it },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = false,
-                            maxLines = 3
-                        )
-                    } else {
-                        Text(
-                            text = value,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                
-                Row {
-                    if (isEditing) {
-                        IconButton(
-                            onClick = {
-                                onUpdate(editValue)
-                                isEditing = false
-                            }
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = "保存")
-                        }
-                        IconButton(
-                            onClick = {
-                                editValue = value
-                                isEditing = false
-                            }
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = "取消")
-                        }
-                    } else {
-                        IconButton(
-                            onClick = { isEditing = true }
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = "编辑")
-                        }
-                        IconButton(
-                            onClick = onDelete
-                        ) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "删除",
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 更新历史卡片
- */
-@Composable
-fun UpdateHistoryCard(
-    update: UpdateHistory,
-    onRollback: () -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "版本 ${update.version}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = update.description,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    Text(
-                        text = formatTimestamp(update.timestamp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Row {
-                    Chip(
-                        onClick = { },
-                        label = { Text(update.status) },
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = getStatusColor(update.status)
-                        )
-                    )
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    if (update.status == "SUCCESS") {
-                        OutlinedButton(
-                            onClick = onRollback
-                        ) {
-                            Icon(Icons.Default.Undo, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("回滚")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 实时指标卡片
- */
-@Composable
-fun RealTimeMetricsCard(metrics: Map<String, Double>) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "实时指标",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                metrics.forEach { (key, value) ->
-                    MetricProgressBar(
-                        label = key,
-                        value = value,
-                        maxValue = getMaxValueForMetric(key)
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * 指标进度条
- */
-@Composable
-private fun MetricProgressBar(label: String, value: Double, maxValue: Double) {
-    Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = "${value.toInt()}/${maxValue.toInt()}",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-        
-        LinearProgressIndicator(
-            progress = (value / maxValue).coerceIn(0.0, 1.0).toFloat(),
-            modifier = Modifier.fillMaxWidth(),
-            color = getMetricColor(value, maxValue * 0.8)
-        )
-    }
-}
-
-/**
- * 获取指标最大值
- */
-private fun getMaxValueForMetric(key: String): Double {
-    return when (key) {
-        "cpu_usage" -> 100.0
-        "memory_usage" -> 1024.0
-        "network_latency" -> 500.0
-        "component_count" -> 100.0
-        else -> 100.0
-    }
-}
-
-/**
- * 系统健康卡片
- */
-@Composable
-fun SystemHealthCard(status: SystemStatus) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "系统健康",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                HealthIndicator("引擎", status.engineStatus)
-                HealthIndicator("网络", status.networkStatus)
-                HealthIndicator("存储", status.storageStatus)
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text(
-                text = "最后更新: ${formatTimestamp(status.lastUpdate)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/**
- * 健康指示器
- */
-@Composable
-private fun HealthIndicator(label: String, status: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(
-            modifier = Modifier.size(40.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = when (status.uppercase()) {
-                    "RUNNING", "ONLINE", "HEALTHY" -> Icons.Default.CheckCircle
-                    "STOPPED", "OFFLINE", "ERROR" -> Icons.Default.Error
-                    else -> Icons.Default.Warning
-                },
-                contentDescription = null,
-                tint = getStatusColor(status),
-                modifier = Modifier.size(32.dp)
-            )
-        }
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall
-        )
-        Text(
-            text = status,
-            style = MaterialTheme.typography.bodySmall,
-            color = getStatusColor(status)
-        )
-    }
-}
-
-/**
- * 告警卡片
- */
-@Composable
-fun AlertsCard(dynamicEngine: UnifyDynamicEngine) {
-    val alerts by dynamicEngine.alerts.collectAsState()
+    private val _managementState = MutableStateFlow(ManagementState.IDLE)
+    val managementState: StateFlow<ManagementState> = _managementState.asStateFlow()
     
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "系统告警",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
+    private val _registeredComponents = MutableStateFlow<Map<String, ComponentRegistration>>(emptyMap())
+    val registeredComponents: StateFlow<Map<String, ComponentRegistration>> = _registeredComponents.asStateFlow()
+    
+    private val _loadedComponents = MutableStateFlow<Map<String, LoadedComponent>>(emptyMap())
+    val loadedComponents: StateFlow<Map<String, LoadedComponent>> = _loadedComponents.asStateFlow()
+    
+    private val _componentDependencies = MutableStateFlow<Map<String, List<String>>>(emptyMap())
+    val componentDependencies: StateFlow<Map<String, List<String>>> = _componentDependencies.asStateFlow()
+    
+    private val _componentMetrics = MutableStateFlow<Map<String, ComponentMetrics>>(emptyMap())
+    val componentMetrics: StateFlow<Map<String, ComponentMetrics>> = _componentMetrics.asStateFlow()
+    
+    /**
+     * 初始化动态管理组件
+     */
+    suspend fun initialize(): Boolean {
+        return try {
+            _managementState.value = ManagementState.INITIALIZING
             
-            Spacer(modifier = Modifier.height(12.dp))
+            // 注册核心组件
+            registerCoreComponents()
             
-            if (alerts.isEmpty()) {
-                Text(
-                    text = "无告警信息",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    alerts.take(5).forEach { alert ->
-                        AlertItem(alert)
-                    }
-                }
-            }
+            // 启动监控服务
+            startMonitoringServices()
+            
+            _managementState.value = ManagementState.RUNNING
+            true
+        } catch (e: Exception) {
+            _managementState.value = ManagementState.ERROR
+            false
         }
     }
-}
-
-/**
- * 告警项
- */
-@Composable
-private fun AlertItem(alert: Alert) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Icon(
-            imageVector = when (alert.level) {
-                "ERROR" -> Icons.Default.Error
-                "WARNING" -> Icons.Default.Warning
-                else -> Icons.Default.Info
-            },
-            contentDescription = null,
-            tint = when (alert.level) {
-                "ERROR" -> Color.Red
-                "WARNING" -> Color.Orange
-                else -> Color.Blue
-            },
-            modifier = Modifier.size(20.dp)
+    
+    /**
+     * 注册核心组件
+     */
+    private fun registerCoreComponents() {
+        val coreComponents = listOf(
+            ComponentRegistration(
+                id = "unify-ui-core",
+                name = "Unify UI Core",
+                version = DEFAULT_COMPONENT_VERSION,
+                type = ComponentType.UI,
+                description = "核心UI组件库",
+                author = "Unify Team",
+                size = 2048L,
+                checksum = "abc123",
+                dependencies = emptyList(),
+                permissions = listOf("UI_ACCESS"),
+                metadata = mapOf("platform" to "multiplatform")
+            ),
+            ComponentRegistration(
+                id = "unify-data-core",
+                name = "Unify Data Core",
+                version = DEFAULT_COMPONENT_VERSION,
+                type = ComponentType.DATA,
+                description = "核心数据管理组件",
+                author = "Unify Team",
+                size = 1536L,
+                checksum = "def456",
+                dependencies = emptyList(),
+                permissions = listOf("DATA_ACCESS", "STORAGE_ACCESS"),
+                metadata = mapOf("platform" to "multiplatform")
+            ),
+            ComponentRegistration(
+                id = "unify-network-core",
+                name = "Unify Network Core",
+                version = DEFAULT_COMPONENT_VERSION,
+                type = ComponentType.NETWORK,
+                description = "核心网络组件",
+                author = "Unify Team",
+                size = 1024L,
+                checksum = "ghi789",
+                dependencies = emptyList(),
+                permissions = listOf("NETWORK_ACCESS"),
+                metadata = mapOf("platform" to "multiplatform")
+            ),
+            ComponentRegistration(
+                id = "unify-ai-engine",
+                name = "Unify AI Engine",
+                version = DEFAULT_COMPONENT_VERSION,
+                type = ComponentType.AI,
+                description = "AI引擎组件",
+                author = "Unify Team",
+                size = 5120L,
+                checksum = "jkl012",
+                dependencies = listOf("unify-network-core"),
+                permissions = listOf("AI_ACCESS", "NETWORK_ACCESS"),
+                metadata = mapOf("platform" to "multiplatform", "gpu_required" to "false")
+            )
         )
         
-        Spacer(modifier = Modifier.width(8.dp))
+        val componentsMap = coreComponents.associateBy { it.id }
+        _registeredComponents.value = componentsMap
         
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = alert.message,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = formatTimestamp(alert.timestamp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-/**
- * 日志条目卡片
- */
-@Composable
-fun LogEntryCard(log: LogEntry) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when (log.level) {
-                "ERROR" -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f)
-                "WARN" -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.1f)
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
+        // 设置依赖关系
+        val dependencies = mapOf(
+            "unify-ai-engine" to listOf("unify-network-core")
         )
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.Top
-        ) {
-            Icon(
-                imageVector = when (log.level) {
-                    "ERROR" -> Icons.Default.Error
-                    "WARN" -> Icons.Default.Warning
-                    "INFO" -> Icons.Default.Info
-                    else -> Icons.Default.Circle
-                },
-                contentDescription = null,
-                tint = when (log.level) {
-                    "ERROR" -> Color.Red
-                    "WARN" -> Color.Orange
-                    "INFO" -> Color.Blue
-                    else -> Color.Gray
-                },
-                modifier = Modifier.size(16.dp)
+        _componentDependencies.value = dependencies
+    }
+    
+    /**
+     * 启动监控服务
+     */
+    private fun startMonitoringServices() {
+        kotlinx.coroutines.GlobalScope.launch {
+            while (_managementState.value == ManagementState.RUNNING) {
+                performHealthCheck()
+                delay(HEALTH_CHECK_INTERVAL_MS)
+            }
+        }
+        
+        kotlinx.coroutines.GlobalScope.launch {
+            while (_managementState.value == ManagementState.RUNNING) {
+                performCleanup()
+                delay(CLEANUP_INTERVAL_MS)
+            }
+        }
+    }
+    
+    /**
+     * 注册组件
+     */
+    fun registerComponent(registration: ComponentRegistration): ComponentRegistrationResult {
+        if (_registeredComponents.value.size >= MAX_COMPONENTS) {
+            return ComponentRegistrationResult.Error("组件注册表已满")
+        }
+        
+        if (_registeredComponents.value.containsKey(registration.id)) {
+            return ComponentRegistrationResult.Error("组件ID已存在: ${registration.id}")
+        }
+        
+        if (registration.size > MAX_COMPONENT_SIZE_MB * 1024 * 1024) {
+            return ComponentRegistrationResult.Error("组件大小超过限制: ${registration.size} bytes")
+        }
+        
+        // 验证依赖关系
+        val dependencyValidation = validateDependencies(registration.dependencies)
+        if (!dependencyValidation.isValid) {
+            return ComponentRegistrationResult.Error("依赖验证失败: ${dependencyValidation.message}")
+        }
+        
+        val currentComponents = _registeredComponents.value.toMutableMap()
+        currentComponents[registration.id] = registration
+        _registeredComponents.value = currentComponents
+        
+        // 更新依赖关系
+        if (registration.dependencies.isNotEmpty()) {
+            val currentDeps = _componentDependencies.value.toMutableMap()
+            currentDeps[registration.id] = registration.dependencies
+            _componentDependencies.value = currentDeps
+        }
+        
+        return ComponentRegistrationResult.Success("组件注册成功: ${registration.id}")
+    }
+    
+    /**
+     * 注销组件
+     */
+    fun unregisterComponent(componentId: String): ComponentRegistrationResult {
+        val component = _registeredComponents.value[componentId]
+            ?: return ComponentRegistrationResult.Error("组件不存在: $componentId")
+        
+        // 检查是否有其他组件依赖此组件
+        val dependents = findDependents(componentId)
+        if (dependents.isNotEmpty()) {
+            return ComponentRegistrationResult.Error("无法注销组件，存在依赖组件: ${dependents.joinToString()}")
+        }
+        
+        // 如果组件已加载，先卸载
+        if (_loadedComponents.value.containsKey(componentId)) {
+            val unloadResult = unloadComponent(componentId)
+            if (unloadResult !is ComponentOperationResult.Success) {
+                return ComponentRegistrationResult.Error("卸载组件失败: $componentId")
+            }
+        }
+        
+        val currentComponents = _registeredComponents.value.toMutableMap()
+        currentComponents.remove(componentId)
+        _registeredComponents.value = currentComponents
+        
+        // 清理依赖关系
+        val currentDeps = _componentDependencies.value.toMutableMap()
+        currentDeps.remove(componentId)
+        _componentDependencies.value = currentDeps
+        
+        // 清理指标
+        val currentMetrics = _componentMetrics.value.toMutableMap()
+        currentMetrics.remove(componentId)
+        _componentMetrics.value = currentMetrics
+        
+        return ComponentRegistrationResult.Success("组件注销成功: $componentId")
+    }
+    
+    /**
+     * 加载组件
+     */
+    suspend fun loadComponent(componentId: String): ComponentOperationResult {
+        val registration = _registeredComponents.value[componentId]
+            ?: return ComponentOperationResult.Error("组件未注册: $componentId")
+        
+        if (_loadedComponents.value.containsKey(componentId)) {
+            return ComponentOperationResult.Error("组件已加载: $componentId")
+        }
+        
+        return try {
+            // 加载依赖组件
+            val dependencyResult = loadDependencies(registration.dependencies)
+            if (dependencyResult !is ComponentOperationResult.Success) {
+                return dependencyResult
+            }
+            
+            // 模拟组件加载过程
+            delay(kotlin.random.Random.nextLong(1000, 3000))
+            
+            val loadedComponent = LoadedComponent(
+                id = componentId,
+                registration = registration,
+                loadTime = System.currentTimeMillis(),
+                status = ComponentStatus.RUNNING,
+                instanceId = kotlin.random.Random.nextInt().toString(),
+                memoryUsage = kotlin.random.Random.nextLong(10, 100) * 1024 * 1024, // MB转换为bytes
+                cpuUsage = kotlin.random.Random.nextDouble(1.0, 20.0)
             )
             
-            Spacer(modifier = Modifier.width(8.dp))
+            val currentLoaded = _loadedComponents.value.toMutableMap()
+            currentLoaded[componentId] = loadedComponent
+            _loadedComponents.value = currentLoaded
             
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = log.level,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = formatTimestamp(log.timestamp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                
-                Text(
-                    text = log.message,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                if (log.source.isNotEmpty()) {
-                    Text(
-                        text = "来源: ${log.source}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            // 初始化组件指标
+            val metrics = ComponentMetrics(
+                componentId = componentId,
+                loadCount = 1,
+                errorCount = 0,
+                lastAccess = System.currentTimeMillis(),
+                totalExecutionTime = 0L,
+                averageResponseTime = 0L
+            )
+            
+            val currentMetrics = _componentMetrics.value.toMutableMap()
+            currentMetrics[componentId] = metrics
+            _componentMetrics.value = currentMetrics
+            
+            ComponentOperationResult.Success("组件加载成功: $componentId")
+            
+        } catch (e: Exception) {
+            ComponentOperationResult.Error("组件加载失败: ${e.message}")
         }
     }
-}
-
-/**
- * 添加组件对话框
- */
-@Composable
-fun AddComponentDialog(
-    onDismiss: () -> Unit,
-    onAdd: (ComponentData) -> Unit
-) {
-    var componentName by remember { mutableStateOf("") }
-    var componentVersion by remember { mutableStateOf("1.0.0") }
-    var componentDescription by remember { mutableStateOf("") }
-    var componentCode by remember { mutableStateOf("") }
     
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.width(400.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "添加组件",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = componentName,
-                    onValueChange = { componentName = it },
-                    label = { Text("组件名称") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = componentVersion,
-                    onValueChange = { componentVersion = it },
-                    label = { Text("版本") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = componentDescription,
-                    onValueChange = { componentDescription = it },
-                    label = { Text("描述") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = componentCode,
-                    onValueChange = { componentCode = it },
-                    label = { Text("组件代码") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    maxLines = 6
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("取消")
-                    }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Button(
-                        onClick = {
-                            val componentData = ComponentData(
-                                metadata = ComponentMetadata(
-                                    name = componentName,
-                                    version = componentVersion,
-                                    description = componentDescription
-                                ),
-                                code = componentCode
-                            )
-                            onAdd(componentData)
-                        },
-                        enabled = componentName.isNotEmpty() && componentCode.isNotEmpty()
-                    ) {
-                        Text("添加")
-                    }
-                }
-            }
+    /**
+     * 卸载组件
+     */
+    suspend fun unloadComponent(componentId: String): ComponentOperationResult {
+        val loadedComponent = _loadedComponents.value[componentId]
+            ?: return ComponentOperationResult.Error("组件未加载: $componentId")
+        
+        // 检查是否有其他已加载的组件依赖此组件
+        val loadedDependents = findLoadedDependents(componentId)
+        if (loadedDependents.isNotEmpty()) {
+            return ComponentOperationResult.Error("无法卸载组件，存在已加载的依赖组件: ${loadedDependents.joinToString()}")
+        }
+        
+        return try {
+            // 模拟组件卸载过程
+            delay(kotlin.random.Random.nextLong(500, 1500))
+            
+            val currentLoaded = _loadedComponents.value.toMutableMap()
+            currentLoaded.remove(componentId)
+            _loadedComponents.value = currentLoaded
+            
+            ComponentOperationResult.Success("组件卸载成功: $componentId")
+            
+        } catch (e: Exception) {
+            ComponentOperationResult.Error("组件卸载失败: ${e.message}")
         }
     }
-}
-
-/**
- * 添加配置对话框
- */
-@Composable
-fun AddConfigurationDialog(
-    onDismiss: () -> Unit,
-    onAdd: (String, String) -> Unit
-) {
-    var key by remember { mutableStateOf("") }
-    var value by remember { mutableStateOf("") }
     
-    Dialog(onDismissRequest = onDismiss) {
-        Card(modifier = Modifier.width(400.dp)) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "添加配置",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                OutlinedTextField(
-                    value = key,
-                    onValueChange = { key = it },
-                    label = { Text("配置键") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { value = it },
-                    label = { Text("配置值") },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    maxLines = 4
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("取消")
-                    }
-                    
-                    Spacer(modifier = Modifier.width(8.dp))
-                    
-                    Button(
-                        onClick = { onAdd(key, value) },
-                        enabled = key.isNotEmpty() && value.isNotEmpty()
-                    ) {
-                        Text("添加")
-                    }
+    /**
+     * 重新加载组件
+     */
+    suspend fun reloadComponent(componentId: String): ComponentOperationResult {
+        val unloadResult = unloadComponent(componentId)
+        if (unloadResult !is ComponentOperationResult.Success) {
+            return unloadResult
+        }
+        
+        delay(1000) // 等待卸载完成
+        
+        return loadComponent(componentId)
+    }
+    
+    /**
+     * 更新组件
+     */
+    suspend fun updateComponent(componentId: String, newRegistration: ComponentRegistration): ComponentOperationResult {
+        val currentRegistration = _registeredComponents.value[componentId]
+            ?: return ComponentOperationResult.Error("组件不存在: $componentId")
+        
+        val isLoaded = _loadedComponents.value.containsKey(componentId)
+        
+        return try {
+            // 如果组件已加载，先卸载
+            if (isLoaded) {
+                val unloadResult = unloadComponent(componentId)
+                if (unloadResult !is ComponentOperationResult.Success) {
+                    return unloadResult
+                }
+            }
+            
+            // 更新注册信息
+            val currentComponents = _registeredComponents.value.toMutableMap()
+            currentComponents[componentId] = newRegistration
+            _registeredComponents.value = currentComponents
+            
+            // 如果之前已加载，重新加载
+            if (isLoaded) {
+                val loadResult = loadComponent(componentId)
+                if (loadResult !is ComponentOperationResult.Success) {
+                    return loadResult
+                }
+            }
+            
+            ComponentOperationResult.Success("组件更新成功: $componentId")
+            
+        } catch (e: Exception) {
+            ComponentOperationResult.Error("组件更新失败: ${e.message}")
+        }
+    }
+    
+    /**
+     * 验证依赖关系
+     */
+    private fun validateDependencies(dependencies: List<String>): DependencyValidationResult {
+        dependencies.forEach { depId ->
+            if (!_registeredComponents.value.containsKey(depId)) {
+                return DependencyValidationResult(false, "依赖组件不存在: $depId")
+            }
+        }
+        
+        // 检查循环依赖
+        dependencies.forEach { depId ->
+            if (hasCircularDependency(depId, dependencies)) {
+                return DependencyValidationResult(false, "检测到循环依赖: $depId")
+            }
+        }
+        
+        return DependencyValidationResult(true, "依赖验证通过")
+    }
+    
+    /**
+     * 检查循环依赖
+     */
+    private fun hasCircularDependency(componentId: String, targetDeps: List<String>): Boolean {
+        val visited = mutableSetOf<String>()
+        
+        fun checkCircular(currentId: String): Boolean {
+            if (visited.contains(currentId)) {
+                return true
+            }
+            
+            if (targetDeps.contains(currentId)) {
+                return true
+            }
+            
+            visited.add(currentId)
+            
+            val deps = _componentDependencies.value[currentId] ?: emptyList()
+            return deps.any { checkCircular(it) }
+        }
+        
+        return checkCircular(componentId)
+    }
+    
+    /**
+     * 加载依赖组件
+     */
+    private suspend fun loadDependencies(dependencies: List<String>): ComponentOperationResult {
+        dependencies.forEach { depId ->
+            if (!_loadedComponents.value.containsKey(depId)) {
+                val loadResult = loadComponent(depId)
+                if (loadResult !is ComponentOperationResult.Success) {
+                    return ComponentOperationResult.Error("加载依赖组件失败: $depId")
                 }
             }
         }
+        
+        return ComponentOperationResult.Success("依赖组件加载完成")
+    }
+    
+    /**
+     * 查找依赖此组件的组件
+     */
+    private fun findDependents(componentId: String): List<String> {
+        return _componentDependencies.value.entries
+            .filter { it.value.contains(componentId) }
+            .map { it.key }
+    }
+    
+    /**
+     * 查找已加载的依赖组件
+     */
+    private fun findLoadedDependents(componentId: String): List<String> {
+        val dependents = findDependents(componentId)
+        return dependents.filter { _loadedComponents.value.containsKey(it) }
+    }
+    
+    /**
+     * 执行健康检查
+     */
+    private suspend fun performHealthCheck() {
+        val currentLoaded = _loadedComponents.value.toMutableMap()
+        val currentMetrics = _componentMetrics.value.toMutableMap()
+        
+        currentLoaded.forEach { (componentId, component) ->
+            try {
+                // 模拟健康检查
+                delay(50)
+                
+                val isHealthy = kotlin.random.Random.nextDouble() > 0.05 // 95%健康率
+                val newStatus = if (isHealthy) ComponentStatus.RUNNING else ComponentStatus.ERROR
+                
+                if (component.status != newStatus) {
+                    currentLoaded[componentId] = component.copy(status = newStatus)
+                }
+                
+                // 更新指标
+                val metrics = currentMetrics[componentId]
+                if (metrics != null) {
+                    currentMetrics[componentId] = metrics.copy(
+                        lastAccess = System.currentTimeMillis(),
+                        errorCount = if (isHealthy) metrics.errorCount else metrics.errorCount + 1
+                    )
+                }
+                
+            } catch (e: Exception) {
+                currentLoaded[componentId] = component.copy(status = ComponentStatus.ERROR)
+            }
+        }
+        
+        _loadedComponents.value = currentLoaded
+        _componentMetrics.value = currentMetrics
+    }
+    
+    /**
+     * 执行清理任务
+     */
+    private fun performCleanup() {
+        // 清理长时间未使用的组件指标
+        val currentTime = System.currentTimeMillis()
+        val currentMetrics = _componentMetrics.value.toMutableMap()
+        
+        val expiredMetrics = currentMetrics.entries.filter { (_, metrics) ->
+            currentTime - metrics.lastAccess > 3600000L // 1小时未访问
+        }
+        
+        expiredMetrics.forEach { (componentId, _) ->
+            if (!_loadedComponents.value.containsKey(componentId)) {
+                currentMetrics.remove(componentId)
+            }
+        }
+        
+        if (expiredMetrics.isNotEmpty()) {
+            _componentMetrics.value = currentMetrics
+        }
+    }
+    
+    /**
+     * 获取组件信息
+     */
+    fun getComponentInfo(componentId: String): ComponentInfo? {
+        val registration = _registeredComponents.value[componentId] ?: return null
+        val loaded = _loadedComponents.value[componentId]
+        val metrics = _componentMetrics.value[componentId]
+        
+        return ComponentInfo(
+            registration = registration,
+            loaded = loaded,
+            metrics = metrics,
+            dependencies = _componentDependencies.value[componentId] ?: emptyList(),
+            dependents = findDependents(componentId)
+        )
+    }
+    
+    /**
+     * 获取所有组件状态
+     */
+    fun getAllComponentsStatus(): Map<String, ComponentStatusInfo> {
+        return _registeredComponents.value.mapValues { (componentId, registration) ->
+            val loaded = _loadedComponents.value[componentId]
+            val metrics = _componentMetrics.value[componentId]
+            
+            ComponentStatusInfo(
+                id = componentId,
+                name = registration.name,
+                version = registration.version,
+                type = registration.type,
+                isLoaded = loaded != null,
+                status = loaded?.status ?: ComponentStatus.UNLOADED,
+                loadTime = loaded?.loadTime,
+                memoryUsage = loaded?.memoryUsage ?: 0L,
+                cpuUsage = loaded?.cpuUsage ?: 0.0,
+                errorCount = metrics?.errorCount ?: 0,
+                lastAccess = metrics?.lastAccess
+            )
+        }
+    }
+    
+    /**
+     * 获取管理统计信息
+     */
+    fun getManagementStats(): ManagementStats {
+        val registered = _registeredComponents.value
+        val loaded = _loadedComponents.value
+        val metrics = _componentMetrics.value
+        
+        return ManagementStats(
+            totalRegistered = registered.size,
+            totalLoaded = loaded.size,
+            runningComponents = loaded.values.count { it.status == ComponentStatus.RUNNING },
+            errorComponents = loaded.values.count { it.status == ComponentStatus.ERROR },
+            totalMemoryUsage = loaded.values.sumOf { it.memoryUsage },
+            averageCpuUsage = loaded.values.takeIf { it.isNotEmpty() }?.map { it.cpuUsage }?.average() ?: 0.0,
+            totalErrors = metrics.values.sumOf { it.errorCount },
+            componentsByType = registered.values.groupBy { it.type }.mapValues { it.value.size }
+        )
+    }
+    
+    /**
+     * 关闭管理组件
+     */
+    suspend fun shutdown() {
+        _managementState.value = ManagementState.SHUTTING_DOWN
+        
+        // 卸载所有组件
+        val loadedComponentIds = _loadedComponents.value.keys.toList()
+        loadedComponentIds.forEach { componentId ->
+            unloadComponent(componentId)
+        }
+        
+        _managementState.value = ManagementState.STOPPED
     }
 }
 
 /**
- * 告警数据类
+ * 管理状态枚举
+ */
+enum class ManagementState {
+    IDLE,
+    INITIALIZING,
+    RUNNING,
+    SHUTTING_DOWN,
+    STOPPED,
+    ERROR
+}
+
+/**
+ * 组件类型枚举
+ */
+enum class ComponentType {
+    UI,
+    DATA,
+    NETWORK,
+    AI,
+    SECURITY,
+    PERFORMANCE,
+    PLATFORM,
+    CUSTOM
+}
+
+/**
+ * 组件状态枚举
+ */
+enum class ComponentStatus {
+    UNLOADED,
+    LOADING,
+    RUNNING,
+    ERROR,
+    STOPPING
+}
+
+/**
+ * 组件注册信息
  */
 @Serializable
-data class Alert(
-    val level: String,
-    val message: String,
-    val timestamp: Long,
-    val source: String = ""
+data class ComponentRegistration(
+    val id: String,
+    val name: String,
+    val version: String,
+    val type: ComponentType,
+    val description: String,
+    val author: String,
+    val size: Long,
+    val checksum: String,
+    val dependencies: List<String>,
+    val permissions: List<String>,
+    val metadata: Map<String, String>
 )
 
 /**
- * 工具函数
+ * 已加载组件信息
  */
-private fun formatTimestamp(timestamp: Long): String {
-    // 简化的时间格式化，实际应用中可使用更完善的时间库
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    
-    return when {
-        diff < 60000 -> "刚刚"
-        diff < 3600000 -> "${diff / 60000}分钟前"
-        diff < 86400000 -> "${diff / 3600000}小时前"
-        else -> "${diff / 86400000}天前"
-    }
+@Serializable
+data class LoadedComponent(
+    val id: String,
+    val registration: ComponentRegistration,
+    val loadTime: Long,
+    val status: ComponentStatus,
+    val instanceId: String,
+    val memoryUsage: Long,
+    val cpuUsage: Double
+)
+
+/**
+ * 组件指标信息
+ */
+@Serializable
+data class ComponentMetrics(
+    val componentId: String,
+    val loadCount: Int,
+    val errorCount: Int,
+    val lastAccess: Long,
+    val totalExecutionTime: Long,
+    val averageResponseTime: Long
+)
+
+/**
+ * 组件信息
+ */
+@Serializable
+data class ComponentInfo(
+    val registration: ComponentRegistration,
+    val loaded: LoadedComponent?,
+    val metrics: ComponentMetrics?,
+    val dependencies: List<String>,
+    val dependents: List<String>
+)
+
+/**
+ * 组件状态信息
+ */
+@Serializable
+data class ComponentStatusInfo(
+    val id: String,
+    val name: String,
+    val version: String,
+    val type: ComponentType,
+    val isLoaded: Boolean,
+    val status: ComponentStatus,
+    val loadTime: Long?,
+    val memoryUsage: Long,
+    val cpuUsage: Double,
+    val errorCount: Int,
+    val lastAccess: Long?
+)
+
+/**
+ * 管理统计信息
+ */
+@Serializable
+data class ManagementStats(
+    val totalRegistered: Int,
+    val totalLoaded: Int,
+    val runningComponents: Int,
+    val errorComponents: Int,
+    val totalMemoryUsage: Long,
+    val averageCpuUsage: Double,
+    val totalErrors: Int,
+    val componentsByType: Map<ComponentType, Int>
+)
+
+/**
+ * 依赖验证结果
+ */
+data class DependencyValidationResult(
+    val isValid: Boolean,
+    val message: String
+)
+
+/**
+ * 组件注册结果密封类
+ */
+sealed class ComponentRegistrationResult {
+    data class Success(val message: String) : ComponentRegistrationResult()
+    data class Error(val message: String) : ComponentRegistrationResult()
+}
+
+/**
+ * 组件操作结果密封类
+ */
+sealed class ComponentOperationResult {
+    data class Success(val message: String) : ComponentOperationResult()
+    data class Error(val message: String) : ComponentOperationResult()
 }

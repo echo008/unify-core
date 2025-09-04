@@ -1,261 +1,569 @@
 package com.unify.ui
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.staticCompositionLocalOf
-import com.unify.ui.theme.UnifyTheme
-import com.unify.ui.theme.UnifyColors
-import com.unify.ui.theme.UnifyTypography
-import com.unify.ui.theme.UnifyShapes
-import com.unify.ui.theme.UnifyDimensions
-import com.unify.ui.platform.UnifyPlatformTheme
-import com.unify.core.platform.PlatformManager
-import com.unify.core.platform.PlatformType
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.providers.*
+import com.unify.core.ui.UnifyUIManager
+import com.unify.ui.components.*
 
 /**
- * Unify UI 组件库核心入口
- * 基于 KuiklyUI 设计理念，实现跨平台统一 UI 组件库
- * 
- * 核心特性：
- * - 跨平台统一设计语言
- * - 平台原生体验适配
- * - 响应式布局支持
- * - 无障碍访问支持
- * - 主题系统完整支持
+ * Unify UI 核心入口
+ * 提供统一的UI组件库和主题系统
  */
 
 /**
- * 全局 Composition Local 定义
+ * Unify应用程序根组件
  */
-val LocalUnifyTheme = staticCompositionLocalOf<UnifyTheme> {
-    error("UnifyTheme not provided")
-}
-
-val LocalUnifyPlatformTheme = staticCompositionLocalOf<UnifyPlatformTheme> {
-    error("UnifyPlatformTheme not provided")
+@Composable
+fun UnifyApp(
+    theme: UnifyTheme = UnifyTheme.Default,
+    configuration: UnifyConfiguration = UnifyConfiguration.Default,
+    content: @Composable () -> Unit
+) {
+    val uiManager = currentUIManager()
+    
+    MaterialTheme(
+        colorScheme = theme.colorScheme.toMaterialColorScheme(),
+        typography = theme.typography.toMaterialTypography(),
+        shapes = theme.shapes.toMaterialShapes()
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            content()
+        }
+    }
 }
 
 /**
- * Unify UI 主题提供者
- * 根据当前平台自动适配相应的设计规范
+ * Unify主题提供器
  */
 @Composable
 fun UnifyThemeProvider(
-    theme: UnifyTheme = UnifyTheme.defaultTheme(),
-    platformAdaptation: Boolean = true,
+    theme: UnifyTheme = UnifyTheme.Default,
     content: @Composable () -> Unit
 ) {
-    val platformTheme = if (platformAdaptation) {
-        createPlatformTheme(theme)
-    } else {
-        UnifyPlatformTheme.default()
-    }
-    
     CompositionLocalProvider(
-        LocalUnifyTheme provides theme,
-        LocalUnifyPlatformTheme provides platformTheme
+        LocalUnifyTheme provides theme
     ) {
         content()
     }
 }
 
 /**
- * 根据当前平台创建适配的主题
+ * Unify屏幕组件
  */
-private fun createPlatformTheme(baseTheme: UnifyTheme): UnifyPlatformTheme {
-    return when (PlatformManager.getPlatformType()) {
-        PlatformType.ANDROID -> UnifyPlatformTheme.material(baseTheme)
-        PlatformType.IOS -> UnifyPlatformTheme.cupertino(baseTheme)
-        PlatformType.HARMONY -> UnifyPlatformTheme.harmony(baseTheme)
-        PlatformType.WEB -> UnifyPlatformTheme.web(baseTheme)
-        PlatformType.DESKTOP -> UnifyPlatformTheme.desktop(baseTheme)
-        else -> UnifyPlatformTheme.default()
-    }
-}
-
-/**
- * Unify UI 组件库版本信息
- */
-object UnifyUI {
-    const val VERSION = "1.0.0"
-    const val BUILD_DATE = "2024-08-30"
-    
-    /**
-     * 初始化 Unify UI 组件库
-     */
-    fun initialize() {
-        // 初始化平台管理器
-        PlatformManager.initialize()
-        
-        // 初始化主题系统
-        initializeThemeSystem()
-        
-        // 初始化无障碍支持
-        initializeAccessibility()
-        
-        // 初始化平台适配
-        initializePlatformAdaptation()
-    }
-    
-    private fun initializeThemeSystem() {
-        // 主题系统初始化逻辑
-    }
-    
-    private fun initializeAccessibility() {
-        // 无障碍支持初始化
-    }
-    
-    private fun initializePlatformAdaptation() {
-        // 平台适配初始化
-    }
-    
-    /**
-     * 获取当前平台信息
-     */
-    fun getPlatformInfo(): PlatformInfo {
-        val platformType = PlatformManager.getPlatformType()
-        val deviceInfo = PlatformManager.getDeviceInfo()
-        val screenInfo = PlatformManager.getScreenInfo()
-        
-        return PlatformInfo(
-            type = platformType,
-            deviceModel = deviceInfo.model,
-            systemVersion = deviceInfo.systemVersion,
-            screenWidth = screenInfo.width,
-            screenHeight = screenInfo.height,
-            density = screenInfo.density
-        )
-    }
-}
-
-/**
- * 平台信息数据类
- */
-data class PlatformInfo(
-    val type: PlatformType,
-    val deviceModel: String,
-    val systemVersion: String,
-    val screenWidth: Int,
-    val screenHeight: Int,
-    val density: Float
-)
-
-/**
- * Unify UI 设计原则
- */
-object UnifyDesignPrinciples {
-    
-    /**
-     * 设计原则枚举
-     */
-    enum class Principle {
-        CONSISTENCY,      // 一致性
-        ACCESSIBILITY,    // 可访问性
-        RESPONSIVENESS,   // 响应性
-        PERFORMANCE,      // 性能
-        PLATFORM_NATIVE,  // 平台原生
-        USER_CENTERED     // 用户中心
-    }
-    
-    /**
-     * 获取设计原则描述
-     */
-    fun getPrincipleDescription(principle: Principle): String {
-        return when (principle) {
-            Principle.CONSISTENCY -> "在所有平台保持一致的用户体验"
-            Principle.ACCESSIBILITY -> "支持所有用户的无障碍访问需求"
-            Principle.RESPONSIVENESS -> "适配不同屏幕尺寸和设备类型"
-            Principle.PERFORMANCE -> "优化性能，提供流畅的用户体验"
-            Principle.PLATFORM_NATIVE -> "遵循各平台的设计规范和交互习惯"
-            Principle.USER_CENTERED -> "以用户需求为中心的设计决策"
+@Composable
+fun UnifyScreen(
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    subtitle: String? = null,
+    backgroundColor: Color = currentUnifyTheme().colorScheme.background.toColor(),
+    padding: PaddingValues = PaddingValues(16.dp),
+    topBar: @Composable (() -> Unit)? = null,
+    bottomBar: @Composable (() -> Unit)? = null,
+    floatingActionButton: @Composable (() -> Unit)? = null,
+    content: @Composable (PaddingValues) -> Unit
+) {
+    Scaffold(
+        modifier = modifier,
+        topBar = topBar ?: {
+            if (title != null) {
+                UnifyTopAppBar(
+                    title = title,
+                    subtitle = subtitle
+                )
+            }
+        },
+        bottomBar = bottomBar ?: {},
+        floatingActionButton = floatingActionButton ?: {},
+        containerColor = backgroundColor
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(padding)
+        ) {
+            content(paddingValues)
         }
     }
 }
 
 /**
- * Unify UI 组件分类
+ * Unify顶部应用栏
  */
-object UnifyComponentCategories {
-    
-    /**
-     * 基础组件
-     */
-    object Foundation {
-        const val BUTTON = "Button"
-        const val TEXT = "Text"
-        const val IMAGE = "Image"
-        const val ICON = "Icon"
-        const val SURFACE = "Surface"
-        const val DIVIDER = "Divider"
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun UnifyTopAppBar(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null,
+    navigationIcon: @Composable (() -> Unit)? = null,
+    actions: @Composable (RowScope.() -> Unit) = {},
+    backgroundColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    contentColor: Color = currentUnifyTheme().colorScheme.onPrimary.toColor()
+) {
+    TopAppBar(
+        title = {
+            Column {
+                Text(
+                    text = title,
+                    color = contentColor,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                subtitle?.let {
+                    Text(
+                        text = it,
+                        color = contentColor.copy(alpha = 0.7f),
+                        fontSize = 14.sp
+                    )
+                }
+            }
+        },
+        modifier = modifier,
+        navigationIcon = navigationIcon ?: {},
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = backgroundColor,
+            titleContentColor = contentColor,
+            navigationIconContentColor = contentColor,
+            actionIconContentColor = contentColor
+        )
+    )
+}
+
+/**
+ * Unify底部导航栏
+ */
+@Composable
+fun UnifyBottomNavigation(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
+    contentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    content: @Composable RowScope.() -> Unit
+) {
+    NavigationBar(
+        modifier = modifier,
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        content = content
+    )
+}
+
+/**
+ * Unify底部导航项
+ */
+@Composable
+fun RowScope.UnifyBottomNavigationItem(
+    selected: Boolean,
+    onClick: () -> Unit,
+    icon: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    label: @Composable (() -> Unit)? = null,
+    alwaysShowLabel: Boolean = true
+) {
+    NavigationBarItem(
+        selected = selected,
+        onClick = onClick,
+        icon = icon,
+        modifier = modifier,
+        enabled = enabled,
+        label = label,
+        alwaysShowLabel = alwaysShowLabel
+    )
+}
+
+/**
+ * Unify侧边抽屉
+ */
+@Composable
+fun UnifyDrawer(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
+    contentColor: Color = currentUnifyTheme().colorScheme.onSurface.toColor(),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    ModalDrawerSheet(
+        modifier = modifier,
+        drawerContainerColor = backgroundColor,
+        drawerContentColor = contentColor,
+        content = content
+    )
+}
+
+/**
+ * Unify抽屉项
+ */
+@Composable
+fun UnifyDrawerItem(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable (() -> Unit)? = null,
+    selected: Boolean = false,
+    enabled: Boolean = true
+) {
+    NavigationDrawerItem(
+        label = { Text(label) },
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        icon = icon,
+        colors = NavigationDrawerItemDefaults.colors(
+            selectedContainerColor = currentUnifyTheme().colorScheme.primary.toColor().copy(alpha = 0.12f),
+            selectedTextColor = currentUnifyTheme().colorScheme.primary.toColor(),
+            selectedIconColor = currentUnifyTheme().colorScheme.primary.toColor()
+        )
+    )
+}
+
+/**
+ * Unify标签页
+ */
+@Composable
+fun UnifyTabRow(
+    selectedTabIndex: Int,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
+    contentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = { tabPositions ->
+        if (selectedTabIndex < tabPositions.size) {
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                color = contentColor
+            )
+        }
+    },
+    divider: @Composable () -> Unit = {
+        HorizontalDivider(color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.12f))
+    },
+    tabs: @Composable () -> Unit
+) {
+    TabRow(
+        selectedTabIndex = selectedTabIndex,
+        modifier = modifier,
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        indicator = indicator,
+        divider = divider,
+        tabs = tabs
+    )
+}
+
+/**
+ * Unify标签项
+ */
+@Composable
+fun UnifyTab(
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    text: @Composable (() -> Unit)? = null,
+    icon: @Composable (() -> Unit)? = null,
+    selectedContentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    unselectedContentColor: Color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.6f)
+) {
+    Tab(
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        text = text,
+        icon = icon,
+        selectedContentColor = selectedContentColor,
+        unselectedContentColor = unselectedContentColor
+    )
+}
+
+/**
+ * Unify滚动标签页
+ */
+@Composable
+fun UnifyScrollableTabRow(
+    selectedTabIndex: Int,
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
+    contentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    edgePadding: androidx.compose.ui.unit.Dp = 52.dp,
+    indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = { tabPositions ->
+        if (selectedTabIndex < tabPositions.size) {
+            TabRowDefaults.SecondaryIndicator(
+                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                color = contentColor
+            )
+        }
+    },
+    divider: @Composable () -> Unit = {
+        HorizontalDivider(color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.12f))
+    },
+    tabs: @Composable () -> Unit
+) {
+    ScrollableTabRow(
+        selectedTabIndex = selectedTabIndex,
+        modifier = modifier,
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        edgePadding = edgePadding,
+        indicator = indicator,
+        divider = divider,
+        tabs = tabs
+    )
+}
+
+/**
+ * Unify分页器
+ */
+@Composable
+fun UnifyPager(
+    pageCount: Int,
+    modifier: Modifier = Modifier,
+    state: PagerState = rememberPagerState { pageCount },
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    pageSize: PageSize = PageSize.Fill,
+    beyondBoundsPageCount: Int = 0,
+    pageSpacing: androidx.compose.ui.unit.Dp = 0.dp,
+    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    userScrollEnabled: Boolean = true,
+    reverseLayout: Boolean = false,
+    key: ((index: Int) -> Any)? = null,
+    pageNestedScrollConnection: NestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
+        Orientation.Horizontal
+    ),
+    pageContent: @Composable PagerScope.(page: Int) -> Unit
+) {
+    HorizontalPager(
+        pageCount = pageCount,
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        pageSize = pageSize,
+        beyondBoundsPageCount = beyondBoundsPageCount,
+        pageSpacing = pageSpacing,
+        verticalAlignment = verticalAlignment,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        reverseLayout = reverseLayout,
+        key = key,
+        pageNestedScrollConnection = pageNestedScrollConnection,
+        pageContent = pageContent
+    )
+}
+
+/**
+ * Unify垂直分页器
+ */
+@Composable
+fun UnifyVerticalPager(
+    pageCount: Int,
+    modifier: Modifier = Modifier,
+    state: PagerState = rememberPagerState { pageCount },
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    pageSize: PageSize = PageSize.Fill,
+    beyondBoundsPageCount: Int = 0,
+    pageSpacing: androidx.compose.ui.unit.Dp = 0.dp,
+    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
+    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
+    userScrollEnabled: Boolean = true,
+    reverseLayout: Boolean = false,
+    key: ((index: Int) -> Any)? = null,
+    pageNestedScrollConnection: NestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
+        Orientation.Vertical
+    ),
+    pageContent: @Composable PagerScope.(page: Int) -> Unit
+) {
+    VerticalPager(
+        pageCount = pageCount,
+        modifier = modifier,
+        state = state,
+        contentPadding = contentPadding,
+        pageSize = pageSize,
+        beyondBoundsPageCount = beyondBoundsPageCount,
+        pageSpacing = pageSpacing,
+        horizontalAlignment = horizontalAlignment,
+        flingBehavior = flingBehavior,
+        userScrollEnabled = userScrollEnabled,
+        reverseLayout = reverseLayout,
+        key = key,
+        pageNestedScrollConnection = pageNestedScrollConnection,
+        pageContent = pageContent
+    )
+}
+
+/**
+ * Unify分页指示器
+ */
+@Composable
+fun UnifyPagerIndicator(
+    pagerState: PagerState,
+    modifier: Modifier = Modifier,
+    pageCount: Int = pagerState.pageCount,
+    activeColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
+    inactiveColor: Color = activeColor.copy(alpha = 0.3f),
+    indicatorWidth: androidx.compose.ui.unit.Dp = 8.dp,
+    indicatorHeight: androidx.compose.ui.unit.Dp = 8.dp,
+    spacing: androidx.compose.ui.unit.Dp = 8.dp
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(spacing),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        repeat(pageCount) { index ->
+            val color = if (pagerState.currentPage == index) activeColor else inactiveColor
+            Box(
+                modifier = Modifier
+                    .size(width = indicatorWidth, height = indicatorHeight)
+                    .background(color, CircleShape)
+            )
+        }
     }
-    
-    /**
-     * 布局组件
-     */
-    object Layout {
-        const val ROW = "Row"
-        const val COLUMN = "Column"
-        const val BOX = "Box"
-        const val STACK = "Stack"
-        const val GRID = "Grid"
-        const val SPACER = "Spacer"
-    }
-    
-    /**
-     * 输入组件
-     */
-    object Input {
-        const val TEXT_FIELD = "TextField"
-        const val CHECKBOX = "Checkbox"
-        const val RADIO = "Radio"
-        const val SWITCH = "Switch"
-        const val SLIDER = "Slider"
-        const val DATE_PICKER = "DatePicker"
-    }
-    
-    /**
-     * 导航组件
-     */
-    object Navigation {
-        const val NAVIGATION_BAR = "NavigationBar"
-        const val TAB_BAR = "TabBar"
-        const val DRAWER = "Drawer"
-        const val APP_BAR = "AppBar"
-        const val BREADCRUMB = "Breadcrumb"
-    }
-    
-    /**
-     * 反馈组件
-     */
-    object Feedback {
-        const val DIALOG = "Dialog"
-        const val TOAST = "Toast"
-        const val LOADING = "Loading"
-        const val PROGRESS = "Progress"
-        const val ALERT = "Alert"
-        const val SNACKBAR = "Snackbar"
-    }
-    
-    /**
-     * 列表组件
-     */
-    object List {
-        const val LAZY_COLUMN = "LazyColumn"
-        const val LAZY_ROW = "LazyRow"
-        const val LAZY_GRID = "LazyGrid"
-        const val RECYCLER_VIEW = "RecyclerView"
-        const val PAGER = "Pager"
-    }
-    
-    /**
-     * 高级组件
-     */
-    object Advanced {
-        const val CHART = "Chart"
-        const val CALENDAR = "Calendar"
-        const val PICKER = "Picker"
-        const val CAMERA = "Camera"
-        const val MAP = "Map"
-        const val VIDEO = "Video"
-    }
+}
+
+// 扩展函数：将Unify颜色转换为Material颜色
+private fun Long.toColor(): Color = Color(this)
+
+private fun UnifyColorScheme.toMaterialColorScheme(): ColorScheme {
+    return lightColorScheme(
+        primary = Color(primary),
+        onPrimary = Color(onPrimary),
+        primaryContainer = Color(primaryVariant),
+        onPrimaryContainer = Color(onPrimary),
+        secondary = Color(secondary),
+        onSecondary = Color(onSecondary),
+        secondaryContainer = Color(secondaryVariant),
+        onSecondaryContainer = Color(onSecondary),
+        tertiary = Color(secondary),
+        onTertiary = Color(onSecondary),
+        tertiaryContainer = Color(secondaryVariant),
+        onTertiaryContainer = Color(onSecondary),
+        error = Color(error),
+        onError = Color(onError),
+        errorContainer = Color(error).copy(alpha = 0.12f),
+        onErrorContainer = Color(error),
+        background = Color(background),
+        onBackground = Color(onBackground),
+        surface = Color(surface),
+        onSurface = Color(onSurface),
+        surfaceVariant = Color(surface),
+        onSurfaceVariant = Color(onSurface),
+        outline = Color(onSurface).copy(alpha = 0.12f),
+        outlineVariant = Color(onSurface).copy(alpha = 0.06f),
+        scrim = Color.Black,
+        inverseSurface = Color(onSurface),
+        inverseOnSurface = Color(surface),
+        inversePrimary = Color(primary).copy(alpha = 0.8f),
+        surfaceDim = Color(surface).copy(alpha = 0.87f),
+        surfaceBright = Color(surface),
+        surfaceContainerLowest = Color(surface),
+        surfaceContainerLow = Color(surface),
+        surfaceContainer = Color(surface),
+        surfaceContainerHigh = Color(surface),
+        surfaceContainerHighest = Color(surface)
+    )
+}
+
+private fun UnifyTypography.toMaterialTypography(): Typography {
+    return Typography(
+        displayLarge = androidx.compose.ui.text.TextStyle(
+            fontSize = h1.fontSize.sp,
+            lineHeight = h1.lineHeight.sp,
+            fontWeight = FontWeight(h1.fontWeight),
+            letterSpacing = h1.letterSpacing.sp
+        ),
+        displayMedium = androidx.compose.ui.text.TextStyle(
+            fontSize = h2.fontSize.sp,
+            lineHeight = h2.lineHeight.sp,
+            fontWeight = FontWeight(h2.fontWeight),
+            letterSpacing = h2.letterSpacing.sp
+        ),
+        displaySmall = androidx.compose.ui.text.TextStyle(
+            fontSize = h3.fontSize.sp,
+            lineHeight = h3.lineHeight.sp,
+            fontWeight = FontWeight(h3.fontWeight),
+            letterSpacing = h3.letterSpacing.sp
+        ),
+        headlineLarge = androidx.compose.ui.text.TextStyle(
+            fontSize = h4.fontSize.sp,
+            lineHeight = h4.lineHeight.sp,
+            fontWeight = FontWeight(h4.fontWeight),
+            letterSpacing = h4.letterSpacing.sp
+        ),
+        headlineMedium = androidx.compose.ui.text.TextStyle(
+            fontSize = h5.fontSize.sp,
+            lineHeight = h5.lineHeight.sp,
+            fontWeight = FontWeight(h5.fontWeight),
+            letterSpacing = h5.letterSpacing.sp
+        ),
+        headlineSmall = androidx.compose.ui.text.TextStyle(
+            fontSize = h6.fontSize.sp,
+            lineHeight = h6.lineHeight.sp,
+            fontWeight = FontWeight(h6.fontWeight),
+            letterSpacing = h6.letterSpacing.sp
+        ),
+        titleLarge = androidx.compose.ui.text.TextStyle(
+            fontSize = subtitle1.fontSize.sp,
+            lineHeight = subtitle1.lineHeight.sp,
+            fontWeight = FontWeight(subtitle1.fontWeight),
+            letterSpacing = subtitle1.letterSpacing.sp
+        ),
+        titleMedium = androidx.compose.ui.text.TextStyle(
+            fontSize = subtitle2.fontSize.sp,
+            lineHeight = subtitle2.lineHeight.sp,
+            fontWeight = FontWeight(subtitle2.fontWeight),
+            letterSpacing = subtitle2.letterSpacing.sp
+        ),
+        bodyLarge = androidx.compose.ui.text.TextStyle(
+            fontSize = body1.fontSize.sp,
+            lineHeight = body1.lineHeight.sp,
+            fontWeight = FontWeight(body1.fontWeight),
+            letterSpacing = body1.letterSpacing.sp
+        ),
+        bodyMedium = androidx.compose.ui.text.TextStyle(
+            fontSize = body2.fontSize.sp,
+            lineHeight = body2.lineHeight.sp,
+            fontWeight = FontWeight(body2.fontWeight),
+            letterSpacing = body2.letterSpacing.sp
+        ),
+        labelLarge = androidx.compose.ui.text.TextStyle(
+            fontSize = button.fontSize.sp,
+            lineHeight = button.lineHeight.sp,
+            fontWeight = FontWeight(button.fontWeight),
+            letterSpacing = button.letterSpacing.sp
+        ),
+        labelMedium = androidx.compose.ui.text.TextStyle(
+            fontSize = caption.fontSize.sp,
+            lineHeight = caption.lineHeight.sp,
+            fontWeight = FontWeight(caption.fontWeight),
+            letterSpacing = caption.letterSpacing.sp
+        ),
+        labelSmall = androidx.compose.ui.text.TextStyle(
+            fontSize = overline.fontSize.sp,
+            lineHeight = overline.lineHeight.sp,
+            fontWeight = FontWeight(overline.fontWeight),
+            letterSpacing = overline.letterSpacing.sp
+        )
+    )
+}
+
+private fun UnifyShapes.toMaterialShapes(): Shapes {
+    return Shapes(
+        extraSmall = RoundedCornerShape(small.dp),
+        small = RoundedCornerShape(small.dp),
+        medium = RoundedCornerShape(medium.dp),
+        large = RoundedCornerShape(large.dp),
+        extraLarge = RoundedCornerShape(large.dp)
+    )
 }

@@ -1,106 +1,112 @@
 package com.unify.ui.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.vectorResource
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 
-/**
- * Android平台的图标实现
- */
-actual class UnifyPlatformIcon {
-    companion object {
-        fun getSystemIconResource(icon: UnifyIconType): Int? {
-            return when (icon) {
-                UnifyIconType.Add -> android.R.drawable.ic_input_add
-                UnifyIconType.Delete -> android.R.drawable.ic_menu_delete
-                UnifyIconType.Search -> android.R.drawable.ic_menu_search
-                UnifyIconType.Settings -> android.R.drawable.ic_menu_preferences
-                UnifyIconType.Info -> android.R.drawable.ic_menu_info_details
-                UnifyIconType.Share -> android.R.drawable.ic_menu_share
-                UnifyIconType.Camera -> android.R.drawable.ic_menu_camera
-                UnifyIconType.Gallery -> android.R.drawable.ic_menu_gallery
-                else -> null
-            }
-        }
-        
-        fun isVectorDrawable(resourceId: Int): Boolean {
-            // 检查是否为矢量图标
-            return true // 实际实现需要检查资源类型
-        }
-        
-        fun getIconDensity(): String {
-            val context = android.app.ActivityThread.currentApplication()
-            val density = context.resources.displayMetrics.density
-            return when {
-                density >= 4.0f -> "xxxhdpi"
-                density >= 3.0f -> "xxhdpi"
-                density >= 2.0f -> "xhdpi"
-                density >= 1.5f -> "hdpi"
-                density >= 1.0f -> "mdpi"
-                else -> "ldpi"
-            }
-        }
-        
-        fun supportsAdaptiveIcons(): Boolean {
-            return android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O
-        }
-        
-        fun getThemeIconTint(context: android.content.Context): Int {
-            val typedArray = context.theme.obtainStyledAttributes(intArrayOf(android.R.attr.textColorPrimary))
-            val color = typedArray.getColor(0, 0)
-            typedArray.recycle()
-            return color
-        }
-    }
-}
-
-/**
- * Android平台的原生图标组件适配器
- */
 @Composable
-actual fun UnifyNativeIcon(
-    icon: UnifyIconType,
+actual fun UnifyIcon(
+    iconName: String,
     contentDescription: String?,
     modifier: Modifier,
     tint: Color,
-    size: UnifyIconSize
+    size: Dp
 ) {
     val context = LocalContext.current
-    val resourceId = UnifyPlatformIcon.getSystemIconResource(icon)
+    val resourceId = context.resources.getIdentifier(
+        iconName,
+        "drawable",
+        context.packageName
+    )
     
-    if (resourceId != null) {
-        try {
-            val imageVector = ImageVector.vectorResource(id = resourceId)
-            Icon(
-                imageVector = imageVector,
-                contentDescription = contentDescription,
-                modifier = modifier.size(size.dp),
-                tint = tint
-            )
-        } catch (e: Exception) {
-            // 回退到Material图标
-            UnifyIcon(
-                icon = icon,
-                contentDescription = contentDescription,
-                modifier = modifier,
-                tint = tint,
-                size = size
-            )
-        }
-    } else {
-        // 使用Material图标
-        UnifyIcon(
-            icon = icon,
+    if (resourceId != 0) {
+        Icon(
+            painter = painterResource(id = resourceId),
             contentDescription = contentDescription,
             modifier = modifier,
-            tint = tint,
-            size = size
+            tint = tint
+        )
+    } else {
+        // 使用默认图标
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            tint = tint
         )
     }
+}
+
+@Composable
+actual fun UnifyVectorIcon(
+    vectorPath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
+) {
+    // Android矢量图标实现 - 简化版本
+    Icon(
+        imageVector = Icons.Default.Star,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
+}
+
+@Composable
+actual fun UnifySystemIcon(
+    systemIconType: SystemIconType,
+    contentDescription: String?,
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
+) {
+    val imageVector = when (systemIconType) {
+        SystemIconType.HOME -> Icons.Default.Home
+        SystemIconType.BACK -> Icons.Default.ArrowBack
+        SystemIconType.MENU -> Icons.Default.Menu
+        SystemIconType.SEARCH -> Icons.Default.Search
+        SystemIconType.SETTINGS -> Icons.Default.Settings
+        SystemIconType.PROFILE -> Icons.Default.Person
+        SystemIconType.FAVORITE -> Icons.Default.Favorite
+        SystemIconType.SHARE -> Icons.Default.Share
+        SystemIconType.DELETE -> Icons.Default.Delete
+        SystemIconType.EDIT -> Icons.Default.Edit
+        SystemIconType.ADD -> Icons.Default.Add
+        SystemIconType.CLOSE -> Icons.Default.Close
+        SystemIconType.CHECK -> Icons.Default.Check
+        SystemIconType.ARROW_UP -> Icons.Default.KeyboardArrowUp
+        SystemIconType.ARROW_DOWN -> Icons.Default.KeyboardArrowDown
+        SystemIconType.ARROW_LEFT -> Icons.Default.KeyboardArrowLeft
+        SystemIconType.ARROW_RIGHT -> Icons.Default.KeyboardArrowRight
+        SystemIconType.REFRESH -> Icons.Default.Refresh
+        SystemIconType.DOWNLOAD -> Icons.Default.Download
+        SystemIconType.UPLOAD -> Icons.Default.Upload
+        SystemIconType.CAMERA -> Icons.Default.CameraAlt
+        SystemIconType.GALLERY -> Icons.Default.PhotoLibrary
+        SystemIconType.PHONE -> Icons.Default.Phone
+        SystemIconType.EMAIL -> Icons.Default.Email
+        SystemIconType.LOCATION -> Icons.Default.LocationOn
+        SystemIconType.CALENDAR -> Icons.Default.CalendarToday
+        SystemIconType.CLOCK -> Icons.Default.Schedule
+        SystemIconType.NOTIFICATION -> Icons.Default.Notifications
+        SystemIconType.VOLUME_UP -> Icons.Default.VolumeUp
+        SystemIconType.VOLUME_DOWN -> Icons.Default.VolumeDown
+        SystemIconType.VOLUME_OFF -> Icons.Default.VolumeOff
+    }
+    
+    Icon(
+        imageVector = imageVector,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
 }

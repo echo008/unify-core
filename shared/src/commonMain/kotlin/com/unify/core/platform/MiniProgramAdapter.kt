@@ -1,435 +1,340 @@
 package com.unify.core.platform
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * 小程序平台适配层
- * 支持微信、支付宝、抖音、百度等小程序平台
+ * 小程序适配器 - 统一小程序平台差异处理
+ * 提供跨平台的小程序功能适配和API标准化
  */
-
-/**
- * 1. 小程序平台类型
- */
-enum class MiniProgramPlatform {
-    WECHAT,      // 微信小程序
-    ALIPAY,      // 支付宝小程序
-    BYTEDANCE,   // 抖音小程序
-    BAIDU,       // 百度小程序
-    QQ,          // QQ小程序
-    KUAISHOU     // 快手小程序
-}
-
-/**
- * 2. 小程序管理器
- */
-expect class MiniProgramManager {
-    companion object {
-        fun getCurrentPlatform(): MiniProgramPlatform
-        fun getPlatformInfo(): MiniProgramInfo
-        fun isSupported(feature: MiniProgramFeature): Boolean
-    }
-}
-
-/**
- * 3. 小程序信息
- */
-@Serializable
-data class MiniProgramInfo(
-    val platform: MiniProgramPlatform,
-    val version: String,
-    val appId: String,
-    val scene: Int,
-    val path: String,
-    val query: Map<String, String> = emptyMap()
-)
-
-/**
- * 4. 小程序功能特性
- */
-enum class MiniProgramFeature {
-    USER_INFO,
-    PAYMENT,
-    LOCATION,
-    CAMERA,
-    BLUETOOTH,
-    NFC,
-    BIOMETRIC,
-    SHARE,
-    SUBSCRIBE_MESSAGE,
-    LIVE_STREAM
-}
-
-/**
- * 5. 小程序 UI 适配器
- */
-object MiniProgramUIAdapter {
+class MiniProgramAdapter {
+    private val bridge = MiniAppBridgeFactory.getInstance()
+    private val _platformState = MutableStateFlow(MiniProgramPlatformState())
+    
+    val platformState: StateFlow<MiniProgramPlatformState> = _platformState
     
     /**
-     * 将 Compose UI 转换为小程序页面结构
+     * 初始化小程序适配器
      */
-    fun convertToMiniProgram(
-        composable: @Composable () -> Unit,
-        platform: MiniProgramPlatform
-    ): MiniProgramPage {
-        return when (platform) {
-            MiniProgramPlatform.WECHAT -> convertToWechatPage(composable)
-            MiniProgramPlatform.ALIPAY -> convertToAlipayPage(composable)
-            MiniProgramPlatform.BYTEDANCE -> convertToByteDancePage(composable)
-            else -> convertToGenericPage(composable)
+    suspend fun initialize(): MiniProgramInitResult {
+        return try {
+            val appInfo = bridge.getAppInfo()
+            val platformType = bridge.getPlatformType()
+            
+            _platformState.value = _platformState.value.copy(
+                isInitialized = true,
+                platformType = platformType,
+                appInfo = appInfo
+            )
+            
+            MiniProgramInitResult.Success(appInfo)
+        } catch (e: Exception) {
+            _platformState.value = _platformState.value.copy(
+                isInitialized = false,
+                error = e.message
+            )
+            MiniProgramInitResult.Error(e.message ?: "初始化失败")
         }
     }
     
-    private fun convertToWechatPage(composable: @Composable () -> Unit): MiniProgramPage {
-        return MiniProgramPage(
-            wxml = """
-                <view class="container">
-                  <view class="unify-content">
-                    <!-- 转换后的微信小程序结构 -->
-                  </view>
-                </view>
-            """.trimIndent(),
-            wxss = """
-                .container {
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  height: 100vh;
-                }
-                .unify-content {
-                  width: 100%;
-                  padding: 20rpx;
-                }
-            """.trimIndent(),
-            js = """
-                Page({
-                  data: {
-                    // 页面数据
-                  },
-                  onLoad: function(options) {
-                    // 页面加载
-                  },
-                  onReady: function() {
-                    // 页面渲染完成
-                  }
-                })
-            """.trimIndent()
-        )
+    /**
+     * 获取平台能力支持情况
+     */
+    fun getPlatformCapabilities(): MiniProgramCapabilities {
+        val platformType = _platformState.value.platformType
+        return when (platformType) {
+            MiniAppPlatformType.WECHAT -> MiniProgramCapabilities(
+                supportLogin = true,
+                supportPayment = true,
+                supportShare = true,
+                supportLocation = true,
+                supportCamera = true,
+                supportBluetooth = true,
+                supportNFC = false,
+                supportBiometric = false,
+                supportPush = true,
+                supportLivePlayer = true,
+                supportCanvas = true,
+                supportWebGL = false
+            )
+            MiniAppPlatformType.ALIPAY -> MiniProgramCapabilities(
+                supportLogin = true,
+                supportPayment = true,
+                supportShare = true,
+                supportLocation = true,
+                supportCamera = true,
+                supportBluetooth = false,
+                supportNFC = true,
+                supportBiometric = true,
+                supportPush = true,
+                supportLivePlayer = false,
+                supportCanvas = true,
+                supportWebGL = false
+            )
+            MiniAppPlatformType.BYTEDANCE -> MiniProgramCapabilities(
+                supportLogin = true,
+                supportPayment = false,
+                supportShare = true,
+                supportLocation = true,
+                supportCamera = true,
+                supportBluetooth = false,
+                supportNFC = false,
+                supportBiometric = false,
+                supportPush = true,
+                supportLivePlayer = true,
+                supportCanvas = true,
+                supportWebGL = true
+            )
+            MiniAppPlatformType.BAIDU -> MiniProgramCapabilities(
+                supportLogin = true,
+                supportPayment = true,
+                supportShare = true,
+                supportLocation = true,
+                supportCamera = true,
+                supportBluetooth = false,
+                supportNFC = false,
+                supportBiometric = false,
+                supportPush = true,
+                supportLivePlayer = false,
+                supportCanvas = true,
+                supportWebGL = false
+            )
+            else -> MiniProgramCapabilities()
+        }
     }
     
-    private fun convertToAlipayPage(composable: @Composable () -> Unit): MiniProgramPage {
-        return MiniProgramPage(
-            axml = """
-                <view class="container">
-                  <view class="unify-content">
-                    <!-- 转换后的支付宝小程序结构 -->
-                  </view>
-                </view>
-            """.trimIndent(),
-            acss = """
-                .container {
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                  justify-content: center;
-                  height: 100vh;
+    /**
+     * 统一登录接口
+     */
+    suspend fun login(): MiniProgramLoginResult {
+        val capabilities = getPlatformCapabilities()
+        if (!capabilities.supportLogin) {
+            return MiniProgramLoginResult.NotSupported
+        }
+        
+        return try {
+            val result = bridge.callAPI("login", emptyMap())
+            if (result.success) {
+                val code = result.data?.get("code") as? String
+                if (code != null) {
+                    MiniProgramLoginResult.Success(code)
+                } else {
+                    MiniProgramLoginResult.Error("登录失败：未获取到授权码")
                 }
-            """.trimIndent(),
-            js = """
-                Page({
-                  data: {},
-                  onLoad(query) {
-                    // 页面加载
-                  }
-                })
-            """.trimIndent()
-        )
+            } else {
+                MiniProgramLoginResult.Error(result.errorMsg ?: "登录失败")
+            }
+        } catch (e: Exception) {
+            MiniProgramLoginResult.Error(e.message ?: "登录异常")
+        }
     }
     
-    private fun convertToByteDancePage(composable: @Composable () -> Unit): MiniProgramPage {
-        return MiniProgramPage(
-            ttml = """
-                <view class="container">
-                  <view class="unify-content">
-                    <!-- 转换后的抖音小程序结构 -->
-                  </view>
-                </view>
-            """.trimIndent(),
-            ttss = """
-                .container {
-                  display: flex;
-                  flex-direction: column;
-                  height: 100vh;
-                }
-            """.trimIndent(),
-            js = """
-                Page({
-                  data: {},
-                  onLoad(options) {
-                    // 页面加载
-                  }
-                })
-            """.trimIndent()
-        )
+    /**
+     * 统一支付接口
+     */
+    suspend fun requestPayment(paymentInfo: MiniProgramPaymentInfo): MiniProgramPaymentResult {
+        val capabilities = getPlatformCapabilities()
+        if (!capabilities.supportPayment) {
+            return MiniProgramPaymentResult.NotSupported
+        }
+        
+        return try {
+            val params = mapOf(
+                "timeStamp" to paymentInfo.timeStamp,
+                "nonceStr" to paymentInfo.nonceStr,
+                "package" to paymentInfo.packageValue,
+                "signType" to paymentInfo.signType,
+                "paySign" to paymentInfo.paySign
+            )
+            
+            val result = bridge.callAPI("requestPayment", params)
+            if (result.success) {
+                MiniProgramPaymentResult.Success
+            } else {
+                MiniProgramPaymentResult.Error(result.errorMsg ?: "支付失败")
+            }
+        } catch (e: Exception) {
+            MiniProgramPaymentResult.Error(e.message ?: "支付异常")
+        }
     }
     
-    private fun convertToGenericPage(composable: @Composable () -> Unit): MiniProgramPage {
-        return MiniProgramPage(
-            wxml = "<view>通用小程序页面</view>",
-            wxss = ".container { padding: 20rpx; }",
-            js = "Page({ data: {} })"
-        )
+    /**
+     * 统一分享接口
+     */
+    suspend fun share(shareInfo: MiniProgramShareInfo): MiniProgramShareResult {
+        val capabilities = getPlatformCapabilities()
+        if (!capabilities.supportShare) {
+            return MiniProgramShareResult.NotSupported
+        }
+        
+        return try {
+            val params = mapOf(
+                "title" to shareInfo.title,
+                "desc" to shareInfo.desc,
+                "path" to shareInfo.path,
+                "imageUrl" to shareInfo.imageUrl
+            )
+            
+            val result = bridge.callAPI("share", params)
+            if (result.success) {
+                MiniProgramShareResult.Success
+            } else {
+                MiniProgramShareResult.Error(result.errorMsg ?: "分享失败")
+            }
+        } catch (e: Exception) {
+            MiniProgramShareResult.Error(e.message ?: "分享异常")
+        }
+    }
+    
+    /**
+     * 获取位置信息
+     */
+    suspend fun getLocation(type: String = "wgs84"): MiniProgramLocationResult {
+        val capabilities = getPlatformCapabilities()
+        if (!capabilities.supportLocation) {
+            return MiniProgramLocationResult.NotSupported
+        }
+        
+        return try {
+            val params = mapOf("type" to type)
+            val result = bridge.callAPI("getLocation", params)
+            
+            if (result.success && result.data != null) {
+                val latitude = result.data["latitude"] as? Double ?: 0.0
+                val longitude = result.data["longitude"] as? Double ?: 0.0
+                val speed = result.data["speed"] as? Double ?: 0.0
+                val accuracy = result.data["accuracy"] as? Double ?: 0.0
+                
+                val location = MiniProgramLocation(
+                    latitude = latitude,
+                    longitude = longitude,
+                    speed = speed,
+                    accuracy = accuracy
+                )
+                MiniProgramLocationResult.Success(location)
+            } else {
+                MiniProgramLocationResult.Error(result.errorMsg ?: "获取位置失败")
+            }
+        } catch (e: Exception) {
+            MiniProgramLocationResult.Error(e.message ?: "获取位置异常")
+        }
+    }
+    
+    /**
+     * 监听小程序生命周期
+     */
+    fun observeLifecycle(): Flow<MiniAppLifecycleEvent> {
+        return bridge.observeLifecycle()
     }
 }
 
 /**
- * 6. 小程序页面结构
+ * 小程序平台状态
  */
-data class MiniProgramPage(
-    val wxml: String? = null,    // 微信小程序
-    val wxss: String? = null,
-    val axml: String? = null,    // 支付宝小程序
-    val acss: String? = null,
-    val ttml: String? = null,    // 抖音小程序
-    val ttss: String? = null,
-    val js: String,
-    val json: String? = null
+@Serializable
+data class MiniProgramPlatformState(
+    val isInitialized: Boolean = false,
+    val platformType: MiniAppPlatformType = MiniAppPlatformType.UNKNOWN,
+    val appInfo: MiniAppInfo? = null,
+    val error: String? = null
 )
 
 /**
- * 7. 小程序 API 适配器
+ * 小程序初始化结果
  */
-expect class MiniProgramAPIAdapter {
-    // 用户信息
-    suspend fun getUserInfo(): MiniProgramUserInfo?
-    suspend fun login(): MiniProgramLoginResult?
-    
-    // 支付
-    suspend fun requestPayment(paymentInfo: MiniProgramPayment): Boolean
-    
-    // 位置
-    suspend fun getLocation(): MiniProgramLocation?
-    
-    // 分享
-    suspend fun shareToFriends(shareInfo: MiniProgramShareInfo): Boolean
-    suspend fun shareToTimeline(shareInfo: MiniProgramShareInfo): Boolean
-    
-    // 存储
-    suspend fun setStorage(key: String, value: String): Boolean
-    suspend fun getStorage(key: String): String?
-    suspend fun removeStorage(key: String): Boolean
-    
-    // 网络
-    suspend fun request(url: String, method: String, data: String?): MiniProgramResponse
-    
-    // 导航
-    suspend fun navigateTo(url: String): Boolean
-    suspend fun redirectTo(url: String): Boolean
-    suspend fun navigateBack(delta: Int = 1): Boolean
+sealed class MiniProgramInitResult {
+    data class Success(val appInfo: MiniAppInfo) : MiniProgramInitResult()
+    data class Error(val message: String) : MiniProgramInitResult()
 }
 
 /**
- * 8. 小程序数据类型
+ * 小程序平台能力
  */
 @Serializable
-data class MiniProgramUserInfo(
-    val nickName: String,
-    val avatarUrl: String,
-    val gender: Int,
-    val city: String,
-    val province: String,
-    val country: String
+data class MiniProgramCapabilities(
+    val supportLogin: Boolean = false,
+    val supportPayment: Boolean = false,
+    val supportShare: Boolean = false,
+    val supportLocation: Boolean = false,
+    val supportCamera: Boolean = false,
+    val supportBluetooth: Boolean = false,
+    val supportNFC: Boolean = false,
+    val supportBiometric: Boolean = false,
+    val supportPush: Boolean = false,
+    val supportLivePlayer: Boolean = false,
+    val supportCanvas: Boolean = false,
+    val supportWebGL: Boolean = false
 )
 
-@Serializable
-data class MiniProgramLoginResult(
-    val code: String,
-    val errMsg: String
-)
+/**
+ * 小程序登录结果
+ */
+sealed class MiniProgramLoginResult {
+    data class Success(val code: String) : MiniProgramLoginResult()
+    data class Error(val message: String) : MiniProgramLoginResult()
+    object NotSupported : MiniProgramLoginResult()
+}
 
+/**
+ * 小程序支付信息
+ */
 @Serializable
-data class MiniProgramPayment(
+data class MiniProgramPaymentInfo(
     val timeStamp: String,
     val nonceStr: String,
-    val package: String,
+    val packageValue: String,
     val signType: String,
     val paySign: String
 )
 
+/**
+ * 小程序支付结果
+ */
+sealed class MiniProgramPaymentResult {
+    object Success : MiniProgramPaymentResult()
+    data class Error(val message: String) : MiniProgramPaymentResult()
+    object NotSupported : MiniProgramPaymentResult()
+}
+
+/**
+ * 小程序分享信息
+ */
+@Serializable
+data class MiniProgramShareInfo(
+    val title: String,
+    val desc: String,
+    val path: String,
+    val imageUrl: String
+)
+
+/**
+ * 小程序分享结果
+ */
+sealed class MiniProgramShareResult {
+    object Success : MiniProgramShareResult()
+    data class Error(val message: String) : MiniProgramShareResult()
+    object NotSupported : MiniProgramShareResult()
+}
+
+/**
+ * 小程序位置信息
+ */
 @Serializable
 data class MiniProgramLocation(
     val latitude: Double,
     val longitude: Double,
     val speed: Double,
-    val accuracy: Double,
-    val altitude: Double,
-    val verticalAccuracy: Double,
-    val horizontalAccuracy: Double
-)
-
-@Serializable
-data class MiniProgramShareInfo(
-    val title: String,
-    val desc: String? = null,
-    val path: String,
-    val imageUrl: String? = null
-)
-
-@Serializable
-data class MiniProgramResponse(
-    val data: String,
-    val statusCode: Int,
-    val header: Map<String, String>
+    val accuracy: Double
 )
 
 /**
- * 9. 小程序生命周期适配
+ * 小程序位置结果
  */
-interface MiniProgramLifecycleAdapter {
-    fun onLaunch(options: Map<String, Any>)
-    fun onShow(options: Map<String, Any>)
-    fun onHide()
-    fun onError(error: String)
-    fun onPageNotFound(res: Map<String, Any>)
+sealed class MiniProgramLocationResult {
+    data class Success(val location: MiniProgramLocation) : MiniProgramLocationResult()
+    data class Error(val message: String) : MiniProgramLocationResult()
+    object NotSupported : MiniProgramLocationResult()
 }
-
-/**
- * 10. 小程序组件适配
- */
-object MiniProgramComponentAdapter {
-    
-    /**
-     * 按钮组件适配
-     */
-    fun adaptButton(
-        text: String,
-        onClick: () -> Unit,
-        platform: MiniProgramPlatform
-    ): String {
-        return when (platform) {
-            MiniProgramPlatform.WECHAT -> """
-                <button bindtap="handleClick" class="unify-button">$text</button>
-            """.trimIndent()
-            MiniProgramPlatform.ALIPAY -> """
-                <button onTap="handleClick" class="unify-button">$text</button>
-            """.trimIndent()
-            else -> """
-                <button bindtap="handleClick">$text</button>
-            """.trimIndent()
-        }
-    }
-    
-    /**
-     * 输入框组件适配
-     */
-    fun adaptInput(
-        placeholder: String,
-        value: String,
-        onInput: (String) -> Unit,
-        platform: MiniProgramPlatform
-    ): String {
-        return when (platform) {
-            MiniProgramPlatform.WECHAT -> """
-                <input placeholder="$placeholder" value="$value" bindinput="handleInput" />
-            """.trimIndent()
-            MiniProgramPlatform.ALIPAY -> """
-                <input placeholder="$placeholder" value="$value" onInput="handleInput" />
-            """.trimIndent()
-            else -> """
-                <input placeholder="$placeholder" value="$value" />
-            """.trimIndent()
-        }
-    }
-    
-    /**
-     * 列表组件适配
-     */
-    fun adaptList(
-        items: List<String>,
-        platform: MiniProgramPlatform
-    ): String {
-        return when (platform) {
-            MiniProgramPlatform.WECHAT -> """
-                <scroll-view scroll-y="true">
-                  <view wx:for="{{items}}" wx:key="index" class="list-item">
-                    {{item}}
-                  </view>
-                </scroll-view>
-            """.trimIndent()
-            MiniProgramPlatform.ALIPAY -> """
-                <scroll-view scroll-y="{{true}}">
-                  <view a:for="{{items}}" a:key="index" class="list-item">
-                    {{item}}
-                  </view>
-                </scroll-view>
-            """.trimIndent()
-            else -> """
-                <scroll-view>
-                  <view class="list-item">列表项</view>
-                </scroll-view>
-            """.trimIndent()
-        }
-    }
-}
-
-/**
- * 11. 小程序路由管理
- */
-class MiniProgramRouter {
-    private val routes = mutableMapOf<String, MiniProgramPage>()
-    
-    fun registerRoute(path: String, page: MiniProgramPage) {
-        routes[path] = page
-    }
-    
-    fun getPage(path: String): MiniProgramPage? {
-        return routes[path]
-    }
-    
-    fun getAllRoutes(): Map<String, MiniProgramPage> {
-        return routes.toMap()
-    }
-}
-
-/**
- * 12. 小程序配置
- */
-data class MiniProgramConfig(
-    val platform: MiniProgramPlatform,
-    val appId: String,
-    val version: String,
-    val pages: List<String>,
-    val window: MiniProgramWindow,
-    val tabBar: MiniProgramTabBar? = null
-)
-
-@Serializable
-data class MiniProgramWindow(
-    val navigationBarTitleText: String,
-    val navigationBarBackgroundColor: String = "#000000",
-    val navigationBarTextStyle: String = "white",
-    val backgroundColor: String = "#ffffff",
-    val backgroundTextStyle: String = "dark",
-    val enablePullDownRefresh: Boolean = false
-)
-
-@Serializable
-data class MiniProgramTabBar(
-    val color: String,
-    val selectedColor: String,
-    val backgroundColor: String,
-    val list: List<MiniProgramTabBarItem>
-)
-
-@Serializable
-data class MiniProgramTabBarItem(
-    val pagePath: String,
-    val text: String,
-    val iconPath: String? = null,
-    val selectedIconPath: String? = null
-)

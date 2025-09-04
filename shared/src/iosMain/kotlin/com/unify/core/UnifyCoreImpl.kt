@@ -1,57 +1,58 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
+import platform.UIKit.UIDevice
 
 /**
- * iOS平台的UnifyCore实现
+ * iOS平台UnifyCore实现
  */
-actual class UnifyCoreImpl : UnifyCore {
-    
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+class UnifyCoreImpl : UnifyCore {
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化各个管理器
+            initialized = true
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            // 清理资源
+            initialized = false
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "iOS",
-            "version" to getVersion(),
-            "capabilities" to listOf(
-                "touch", "camera", "location", "notifications", 
-                "biometric", "nfc", "sensors", "storage", "siri"
-            ),
-            "ui_framework" to "SwiftUI + Compose Multiplatform",
-            "native_features" to listOf(
-                "app_clips", "widgets", "shortcuts", "handoff", 
-                "continuity_camera", "airdrop", "carplay"
-            ),
-            "ios_version_support" to "iOS 12.0+",
-            "device_support" to listOf("iPhone", "iPad", "Apple Watch", "Apple TV")
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        val device = UIDevice.currentDevice
+        return PlatformInfo(
+            platformName = "iOS",
+            version = device.systemVersion,
+            deviceModel = device.model,
+            osVersion = device.systemVersion,
+            capabilities = listOf(
+                "Camera", "GPS", "Sensors", "Bluetooth", "NFC", "FaceID", "TouchID"
+            )
         )
+    }
+}
+
+actual object UnifyCoreFactory {
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl()
     }
 }

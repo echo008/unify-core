@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 kotlin {
@@ -70,8 +71,8 @@ tasks.register("buildIosApp") {
     dependsOn("linkDebugFrameworkIosX64", "linkReleaseFrameworkIosX64")
     
     doLast {
-        println("iOS应用框架构建完成")
-        println("输出路径: build/bin/")
+        logger.info("iOS应用框架构建完成")
+        logger.info("输出路径: build/bin/")
     }
 }
 
@@ -81,6 +82,6 @@ tasks.register("packageIosApp") {
     dependsOn("buildIosApp")
     
     doLast {
-        println("iOS应用打包完成")
+        logger.info("iOS应用打包完成")
     }
 }

@@ -2,135 +2,229 @@ package com.unify.core.ui
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.awt.Dimension
 import java.awt.Toolkit
-import java.util.UUID
-import javax.swing.JOptionPane
 
 /**
- * Desktop平台的UI管理器实现
+ * Desktop平台UnifyUIManager实现
  */
-actual class UnifyUIManagerImpl : UnifyUIManager {
+class UnifyUIManagerImpl : UnifyUIManager {
+    private val toolkit = Toolkit.getDefaultToolkit()
+    private val screenSize = toolkit.screenSize
     
-    private val _currentTheme = MutableStateFlow(UnifyTheme())
-    override val currentTheme: StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    // 主题状态管理
+    private val _currentTheme = MutableStateFlow(createDefaultTheme())
+    private val _fontScale = MutableStateFlow(1.0f)
     
-    private val _screenSizeClass = MutableStateFlow(ScreenSizeClass.LARGE)
-    override val screenSizeClass: StateFlow<ScreenSizeClass> = _screenSizeClass.asStateFlow()
-    
-    private val _orientation = MutableStateFlow(Orientation.LANDSCAPE)
-    override val orientation: StateFlow<Orientation> = _orientation.asStateFlow()
-    
-    private val loadingHandles = mutableMapOf<String, LoadingHandle>()
-    private val bottomSheetHandles = mutableMapOf<String, BottomSheetHandle>()
-    
-    init {
-        updateScreenInfo()
-    }
+    // 动画和无障碍设置
+    private var animationsEnabled = true
+    private var accessibilityEnabled = false
     
     override fun setTheme(theme: UnifyTheme) {
         _currentTheme.value = theme
     }
     
+    override fun getTheme(): UnifyTheme = _currentTheme.value
+    
+    override fun observeTheme(): StateFlow<UnifyTheme> = _currentTheme.asStateFlow()
+    
     override fun toggleDarkMode() {
-        val current = _currentTheme.value
-        _currentTheme.value = current.copy(isDark = !current.isDark)
-    }
-    
-    override suspend fun showToast(message: String, duration: ToastDuration) {
-        // 使用系统通知或对话框显示Toast
-        JOptionPane.showMessageDialog(null, message, "通知", JOptionPane.INFORMATION_MESSAGE)
-    }
-    
-    override suspend fun showLoading(message: String?): LoadingHandle {
-        val handle = LoadingHandle(
-            id = UUID.randomUUID().toString(),
-            message = message
-        )
-        loadingHandles[handle.id] = handle
-        // Desktop原生加载对话框实现（使用JDialog）
-        return handle
-    }
-    
-    override suspend fun hideLoading(handle: LoadingHandle) {
-        loadingHandles.remove(handle.id)
-        // 隐藏对应的加载对话框
-    }
-    
-    override suspend fun showBottomSheet(content: @Composable () -> Unit): BottomSheetHandle {
-        val handle = BottomSheetHandle(id = UUID.randomUUID().toString())
-        bottomSheetHandles[handle.id] = handle
-        // Desktop底部弹窗显示逻辑（使用JPanel）
-        return handle
-    }
-    
-    override fun getSafeAreaInsets(): SafeAreaInsets {
-        // Desktop通常没有安全区域概念
-        return SafeAreaInsets(0.dp, 0.dp, 0.dp, 0.dp)
-    }
-    
-    override fun getStatusBarHeight(): Dp {
-        // Desktop没有状态栏
-        return 0.dp
-    }
-    
-    override fun getNavigationBarHeight(): Dp {
-        // Desktop没有导航栏
-        return 0.dp
-    }
-    
-    override fun setStatusBarStyle(style: StatusBarStyle) {
-        // Desktop没有状态栏，无需实现
-    }
-    
-    override fun setNavigationBarStyle(style: NavigationBarStyle) {
-        // Desktop没有导航栏，无需实现
-    }
-    
-    override fun requestFullscreen(enable: Boolean) {
-        // Desktop全屏模式切换实现
-    }
-    
-    override fun setOrientation(orientation: OrientationLock) {
-        // Desktop通常不需要锁定方向
-    }
-    
-    override fun getPlatformUIConfig(): Map<String, Any> {
-        val toolkit = Toolkit.getDefaultToolkit()
-        val screenSize = toolkit.screenSize
-        
-        return mapOf(
-            "platform" to "Desktop",
-            "compose_version" to "1.7.0",
-            "ui_framework" to "Compose Desktop",
-            "screen_width" to screenSize.width,
-            "screen_height" to screenSize.height,
-            "supports_window_management" to true,
-            "supports_system_tray" to true,
-            "supports_file_dialogs" to true
-        )
-    }
-    
-    private fun updateScreenInfo() {
-        val toolkit = Toolkit.getDefaultToolkit()
-        val screenSize = toolkit.screenSize
-        
-        // 根据屏幕尺寸确定屏幕类别
-        _screenSizeClass.value = when {
-            screenSize.width < 1200 -> ScreenSizeClass.MEDIUM
-            screenSize.width < 1600 -> ScreenSizeClass.LARGE
-            else -> ScreenSizeClass.EXTRA_LARGE
-        }
-        
-        // Desktop通常是横屏
-        _orientation.value = if (screenSize.width > screenSize.height) {
-            Orientation.LANDSCAPE
+        val currentTheme = _currentTheme.value
+        val newTheme = if (currentTheme.isDark) {
+            createLightTheme()
         } else {
-            Orientation.PORTRAIT
+            createDarkTheme()
         }
+        setTheme(newTheme)
+    }
+    
+    override fun isDarkMode(): Boolean = _currentTheme.value.isDark
+    
+    override fun getPrimaryColor(): Color = _currentTheme.value.primaryColor
+    
+    override fun getSecondaryColor(): Color = _currentTheme.value.secondaryColor
+    
+    override fun getBackgroundColor(): Color = _currentTheme.value.backgroundColor
+    
+    override fun getSurfaceColor(): Color = _currentTheme.value.surfaceColor
+    
+    override fun getErrorColor(): Color = _currentTheme.value.errorColor
+    
+    override fun setFontScale(scale: Float) {
+        _fontScale.value = scale.coerceIn(0.5f, 3.0f)
+    }
+    
+    override fun getFontScale(): Float = _fontScale.value
+    
+    override fun observeFontScale(): StateFlow<Float> = _fontScale.asStateFlow()
+    
+    override fun getScreenWidth(): Int = screenSize.width
+    
+    override fun getScreenHeight(): Int = screenSize.height
+    
+    override fun getScreenDensity(): Float {
+        // Desktop通常使用96 DPI作为基准
+        val dpi = toolkit.screenResolution
+        return dpi / 96f
+    }
+    
+    override fun isTablet(): Boolean {
+        // Desktop环境下，根据屏幕尺寸判断是否为大屏设备
+        val diagonal = kotlin.math.sqrt(
+            (screenSize.width * screenSize.width + screenSize.height * screenSize.height).toDouble()
+        )
+        return diagonal > 1200 // 简化判断逻辑
+    }
+    
+    override fun isLandscape(): Boolean = screenSize.width > screenSize.height
+    
+    override fun setAnimationsEnabled(enabled: Boolean) {
+        animationsEnabled = enabled
+    }
+    
+    override fun areAnimationsEnabled(): Boolean = animationsEnabled
+    
+    override fun getAnimationDuration(): Long {
+        return if (animationsEnabled) 250L else 0L
+    }
+    
+    override fun setAccessibilityEnabled(enabled: Boolean) {
+        accessibilityEnabled = enabled
+    }
+    
+    override fun isAccessibilityEnabled(): Boolean = accessibilityEnabled
+    
+    override fun announceForAccessibility(message: String) {
+        if (isAccessibilityEnabled()) {
+            // 在Desktop环境中，可以通过系统通知或日志输出
+            println("Accessibility: $message")
+        }
+    }
+    
+    private fun createDefaultTheme(): UnifyTheme {
+        // 检查系统是否为暗色模式
+        val isDarkMode = isSystemInDarkMode()
+        return if (isDarkMode) createDarkTheme() else createLightTheme()
+    }
+    
+    private fun createLightTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Light",
+            isDark = false,
+            primaryColor = Color(0xFF1976D2),
+            secondaryColor = Color(0xFF388E3C),
+            backgroundColor = Color(0xFFFAFAFA),
+            surfaceColor = Color.White,
+            errorColor = Color(0xFFD32F2F),
+            onPrimaryColor = Color.White,
+            onSecondaryColor = Color.White,
+            onBackgroundColor = Color(0xFF212121),
+            onSurfaceColor = Color(0xFF212121),
+            onErrorColor = Color.White
+        )
+    }
+    
+    private fun createDarkTheme(): UnifyTheme {
+        return UnifyTheme(
+            name = "Dark",
+            isDark = true,
+            primaryColor = Color(0xFF90CAF9),
+            secondaryColor = Color(0xFF81C784),
+            backgroundColor = Color(0xFF121212),
+            surfaceColor = Color(0xFF1E1E1E),
+            errorColor = Color(0xFFEF5350),
+            onPrimaryColor = Color.Black,
+            onSecondaryColor = Color.Black,
+            onBackgroundColor = Color(0xFFE0E0E0),
+            onSurfaceColor = Color(0xFFE0E0E0),
+            onErrorColor = Color.Black
+        )
+    }
+    
+    private fun isSystemInDarkMode(): Boolean {
+        return try {
+            // 在不同操作系统上检查暗色模式
+            val osName = System.getProperty("os.name").lowercase()
+            when {
+                osName.contains("windows") -> isWindowsDarkMode()
+                osName.contains("mac") -> isMacDarkMode()
+                osName.contains("linux") -> isLinuxDarkMode()
+                else -> false
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun isWindowsDarkMode(): Boolean {
+        return try {
+            // Windows注册表检查
+            val process = ProcessBuilder(
+                "reg", "query", 
+                "HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                "/v", "AppsUseLightTheme"
+            ).start()
+            
+            val output = process.inputStream.bufferedReader().readText()
+            process.waitFor()
+            
+            output.contains("0x0")
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun isMacDarkMode(): Boolean {
+        return try {
+            // macOS系统偏好检查
+            val process = ProcessBuilder(
+                "defaults", "read", "-g", "AppleInterfaceStyle"
+            ).start()
+            
+            val output = process.inputStream.bufferedReader().readText().trim()
+            process.waitFor()
+            
+            output.equals("Dark", ignoreCase = true)
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun isLinuxDarkMode(): Boolean {
+        return try {
+            // GNOME桌面环境检查
+            val process = ProcessBuilder(
+                "gsettings", "get", "org.gnome.desktop.interface", "gtk-theme"
+            ).start()
+            
+            val output = process.inputStream.bufferedReader().readText().lowercase()
+            process.waitFor()
+            
+            output.contains("dark")
+        } catch (e: Exception) {
+            // 如果GNOME不可用，尝试检查KDE
+            try {
+                val kdeProcess = ProcessBuilder(
+                    "kreadconfig5", "--file", "kdeglobals", "--group", "Colors:Window", "--key", "BackgroundNormal"
+                ).start()
+                
+                val kdeOutput = kdeProcess.inputStream.bufferedReader().readText()
+                kdeProcess.waitFor()
+                
+                // 简化判断：如果背景色较暗则认为是暗色模式
+                kdeOutput.isNotEmpty()
+            } catch (e2: Exception) {
+                false
+            }
+        }
+    }
+}
+
+actual object UnifyUIManagerFactory {
+    actual fun create(): UnifyUIManager {
+        return UnifyUIManagerImpl()
     }
 }

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 kotlin {
@@ -47,7 +48,7 @@ tasks.register("buildHarmonyTVApp") {
     dependsOn("harmonyTVJar")
     
     doLast {
-        println("HarmonyOS TV应用构建完成")
-        println("支持设备: HarmonyOS TV, 华为智慧屏等")
+        logger.info("HarmonyOS TV应用构建完成")
+        logger.info("支持设备: HarmonyOS TV, 华为智慧屏等")
     }
 }

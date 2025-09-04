@@ -1,64 +1,57 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
 
 /**
- * TV平台的UnifyCore实现
+ * TV平台UnifyCore实现
+ * 基于Android TV/Google TV系统
  */
-actual class UnifyCoreImpl : UnifyCore {
-    
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+class UnifyCoreImpl : UnifyCore {
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化TV特定功能
+            initialized = true
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            // 清理TV资源
+            initialized = false
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "TV",
-            "version" to getVersion(),
-            "capabilities" to listOf(
-                "remote_control", "voice_control", "hdmi", "4k_display", 
-                "hdr", "dolby_vision", "surround_sound", "cast", "airplay"
-            ),
-            "ui_framework" to "Android TV/tvOS + Compose Multiplatform",
-            "tv_features" to listOf(
-                "lean_back_experience", "d_pad_navigation", "voice_search",
-                "content_discovery", "picture_in_picture", "multi_user",
-                "parental_controls", "live_tv", "dvr", "streaming"
-            ),
-            "supported_platforms" to listOf(
-                "Android TV", "Google TV", "Apple TV", "Samsung Tizen", 
-                "LG webOS", "Roku TV", "Fire TV", "Chromecast"
-            ),
-            "screen_resolutions" to listOf("1080p", "4K", "8K"),
-            "audio_formats" to listOf("Dolby Atmos", "DTS:X", "PCM", "AAC"),
-            "video_formats" to listOf("H.264", "H.265", "VP9", "AV1"),
-            "input_methods" to listOf("remote", "voice", "mobile_app", "game_controller")
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        return PlatformInfo(
+            platformName = "AndroidTV",
+            version = "13.0",
+            deviceModel = "Android TV Device",
+            osVersion = "Android TV 13",
+            capabilities = listOf(
+                "RemoteControl", "HDMI", "Audio", "Video", "Network", "USB", "Bluetooth"
+            )
         )
+    }
+}
+
+actual object UnifyCoreFactory {
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl()
     }
 }

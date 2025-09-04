@@ -1,65 +1,56 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
 
 /**
- * 小程序平台的UnifyCore实现
+ * 小程序平台UnifyCore实现
  */
-actual class UnifyCoreImpl : UnifyCore {
-    
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+class UnifyCoreImpl : UnifyCore {
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化各个管理器
+            initialized = true
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            // 清理资源
+            initialized = false
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "MiniApp",
-            "version" to getVersion(),
-            "capabilities" to listOf(
-                "touch", "camera", "location", "storage", 
-                "payment", "share", "login", "canvas"
-            ),
-            "ui_framework" to "Mini Program Framework + Compose Bridge",
-            "supported_platforms" to listOf(
-                "wechat", "alipay", "baidu", "toutiao", 
-                "qq", "taobao", "kuaishou", "douyin"
-            ),
-            "miniapp_features" to listOf(
-                "native_components", "api_bridge", "lifecycle_management",
-                "permission_system", "payment_integration", "social_sharing"
-            ),
-            "limitations" to listOf(
-                "limited_storage", "restricted_api", "size_constraints",
-                "performance_limits", "network_restrictions"
-            ),
-            "max_package_size" to "2MB",
-            "api_compatibility" to "Mini Program API 2.0+"
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        return PlatformInfo(
+            platformName = "MiniApp",
+            version = "1.0.0",
+            deviceModel = "MiniApp Runtime",
+            osVersion = "MiniApp 1.0",
+            capabilities = listOf(
+                "Camera", "GPS", "Payment", "Share", "Login", "Storage"
+            )
         )
+    }
+}
+
+actual object UnifyCoreFactory {
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl()
     }
 }

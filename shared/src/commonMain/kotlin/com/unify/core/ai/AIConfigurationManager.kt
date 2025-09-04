@@ -2,383 +2,218 @@ package com.unify.core.ai
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 /**
- * AI配置管理器
- * 管理AI模型配置、学习数据和优化策略
+ * AI配置管理器 - 管理AI模型配置和参数
  */
 class AIConfigurationManager {
     
     companion object {
-        private const val BASE_ACCURACY = 0.7f
-        private const val MAX_ACCURACY = 0.95f
-        private const val ACCURACY_FACTOR = 0.001f
-        private const val THRESHOLD_INCREMENT = 0.05f
-        private const val RENDER_TIME_THRESHOLD = 100L
-        private const val DEFAULT_THRESHOLD = 0.8f
-    }
-    private val _configurations = MutableStateFlow<Map<String, AIConfiguration>>(emptyMap())
-    val configurations: StateFlow<Map<String, AIConfiguration>> = _configurations
-    
-    private val learningData = mutableMapOf<String, LearningDataSet>()
-    private val optimizationStrategies = mutableMapOf<String, OptimizationStrategy>()
-    
-    /**
-     * 初始化配置管理器
-     */
-    suspend fun initialize() {
-        loadDefaultConfigurations()
-        loadLearningData()
-        setupOptimizationStrategies()
+        // 配置常量
+        const val BASE_ACCURACY = 0.7f
+        const val MAX_ACCURACY = 0.95f
+        const val MIN_ACCURACY = 0.5f
+        const val DEFAULT_MAX_TOKENS = 2048
+        const val DEFAULT_TEMPERATURE = 0.7f
+        const val DEFAULT_TOP_P = 0.9f
+        const val DEFAULT_FREQUENCY_PENALTY = 0.0f
+        const val DEFAULT_PRESENCE_PENALTY = 0.0f
+        const val MAX_CONTEXT_LENGTH = 8192
+        const val MIN_CONTEXT_LENGTH = 512
+        const val DEFAULT_TIMEOUT_MS = 30000L
+        const val MAX_RETRY_ATTEMPTS = 3
+        const val CACHE_EXPIRY_MS = 3600000L // 1小时
     }
     
-    /**
-     * 获取AI配置
-     */
-    fun getConfiguration(modelType: String): AIConfiguration? {
-        return _configurations.value[modelType]
-    }
+    private val _configuration = MutableStateFlow(AIConfiguration())
+    val configuration: StateFlow<AIConfiguration> = _configuration.asStateFlow()
+    
+    private val _modelConfigurations = MutableStateFlow<Map<AIModelType, ModelConfiguration>>(
+        mapOf(
+            AIModelType.TEXT_GENERATION to ModelConfiguration(
+                modelId = "gpt-3.5-turbo",
+                maxTokens = DEFAULT_MAX_TOKENS,
+                temperature = DEFAULT_TEMPERATURE,
+                topP = DEFAULT_TOP_P,
+                frequencyPenalty = DEFAULT_FREQUENCY_PENALTY,
+                presencePenalty = DEFAULT_PRESENCE_PENALTY
+            ),
+            AIModelType.IMAGE_GENERATION to ModelConfiguration(
+                modelId = "dall-e-3",
+                maxTokens = 1024,
+                temperature = 0.8f,
+                topP = 0.95f
+            ),
+            AIModelType.SPEECH_TO_TEXT to ModelConfiguration(
+                modelId = "whisper-1",
+                maxTokens = 512,
+                temperature = 0.0f
+            ),
+            AIModelType.TEXT_TO_SPEECH to ModelConfiguration(
+                modelId = "tts-1",
+                maxTokens = 256,
+                temperature = 0.0f
+            ),
+            AIModelType.EMBEDDING to ModelConfiguration(
+                modelId = "text-embedding-ada-002",
+                maxTokens = 8191
+            ),
+            AIModelType.MODERATION to ModelConfiguration(
+                modelId = "text-moderation-latest",
+                maxTokens = 32768
+            ),
+            AIModelType.CODE_GENERATION to ModelConfiguration(
+                modelId = "code-davinci-002",
+                maxTokens = 4096,
+                temperature = 0.2f
+            ),
+            AIModelType.TRANSLATION to ModelConfiguration(
+                modelId = "gpt-3.5-turbo",
+                maxTokens = 2048,
+                temperature = 0.3f
+            ),
+            AIModelType.SUMMARIZATION to ModelConfiguration(
+                modelId = "gpt-3.5-turbo",
+                maxTokens = 1024,
+                temperature = 0.5f
+            ),
+            AIModelType.QUESTION_ANSWERING to ModelConfiguration(
+                modelId = "gpt-3.5-turbo",
+                maxTokens = 1024,
+                temperature = 0.1f
+            )
+        )
+    )
+    val modelConfigurations: StateFlow<Map<AIModelType, ModelConfiguration>> = _modelConfigurations.asStateFlow()
     
     /**
      * 更新AI配置
      */
-    suspend fun updateConfiguration(modelType: String, config: AIConfiguration) {
-        val currentConfigs = _configurations.value.toMutableMap()
+    fun updateConfiguration(config: AIConfiguration) {
+        _configuration.value = config.copy(
+            accuracy = config.accuracy.coerceIn(MIN_ACCURACY, MAX_ACCURACY),
+            maxTokens = config.maxTokens.coerceIn(1, DEFAULT_MAX_TOKENS),
+            temperature = config.temperature.coerceIn(0.0f, 2.0f),
+            topP = config.topP.coerceIn(0.0f, 1.0f),
+            contextLength = config.contextLength.coerceIn(MIN_CONTEXT_LENGTH, MAX_CONTEXT_LENGTH),
+            timeoutMs = config.timeoutMs.coerceAtLeast(1000L),
+            maxRetryAttempts = config.maxRetryAttempts.coerceIn(0, 10)
+        )
+    }
+    
+    /**
+     * 更新特定模型配置
+     */
+    fun updateModelConfiguration(modelType: AIModelType, config: ModelConfiguration) {
+        val currentConfigs = _modelConfigurations.value.toMutableMap()
         currentConfigs[modelType] = config
-        _configurations.value = currentConfigs
-        
-        // 保存配置
-        saveConfiguration(modelType, config)
+        _modelConfigurations.value = currentConfigs
     }
     
     /**
-     * 智能调优配置
+     * 获取特定模型配置
      */
-    suspend fun autoTuneConfiguration(modelType: String, metrics: PerformanceMetrics): AIConfiguration {
-        val currentConfig = getConfiguration(modelType) ?: getDefaultConfiguration(modelType)
-        val strategy = optimizationStrategies[modelType] ?: DefaultOptimizationStrategy()
-        
-        val optimizedConfig = strategy.optimize(currentConfig, metrics)
-        updateConfiguration(modelType, optimizedConfig)
-        
-        return optimizedConfig
+    fun getModelConfiguration(modelType: AIModelType): ModelConfiguration? {
+        return _modelConfigurations.value[modelType]
     }
     
     /**
-     * 添加学习数据
+     * 重置为默认配置
      */
-    suspend fun addLearningData(modelType: String, data: LearningData) {
-        val dataSet = learningData.getOrPut(modelType) { LearningDataSet(modelType) }
-        dataSet.addData(data)
-        
-        // 触发模型重训练
-        if (dataSet.shouldRetrain()) {
-            retrainModel(modelType, dataSet)
-        }
+    fun resetToDefaults() {
+        _configuration.value = AIConfiguration()
     }
     
     /**
-     * 获取模型统计信息
+     * 验证配置有效性
      */
-    fun getModelStatistics(modelType: String): ModelStatistics {
-        val config = getConfiguration(modelType)
-        val dataSet = learningData[modelType]
+    fun validateConfiguration(config: AIConfiguration): ValidationResult {
+        val errors = mutableListOf<String>()
         
-        return ModelStatistics(
-            modelType = modelType,
-            accuracy = config?.accuracy ?: 0.0f,
-            trainingDataSize = dataSet?.size ?: 0,
-            lastTrainingTime = dataSet?.lastTrainingTime ?: 0L,
-            performanceScore = calculatePerformanceScore(modelType)
-        )
-    }
-    
-    private suspend fun loadDefaultConfigurations() {
-        val configs = mapOf(
-            "component_recommendation" to AIConfiguration(
-                modelType = "component_recommendation",
-                version = "1.0.0",
-                parameters = mapOf(
-                    "threshold" to 0.8f,
-                    "maxRecommendations" to 5,
-                    "contextWeight" to 0.7f
-                ),
-                accuracy = 0.85f,
-                enabled = true
-            ),
-            "code_generation" to AIConfiguration(
-                modelType = "code_generation",
-                version = "1.0.0",
-                parameters = mapOf(
-                    "maxTokens" to 1000,
-                    "temperature" to 0.3f,
-                    "topP" to 0.9f
-                ),
-                accuracy = 0.82f,
-                enabled = true
-            ),
-            "error_diagnosis" to AIConfiguration(
-                modelType = "error_diagnosis",
-                version = "1.0.0",
-                parameters = mapOf(
-                    "analysisDepth" to 3,
-                    "confidenceThreshold" to 0.7f,
-                    "maxSuggestions" to 3
-                ),
-                accuracy = 0.90f,
-                enabled = true
-            ),
-            "performance_optimization" to AIConfiguration(
-                modelType = "performance_optimization",
-                version = "1.0.0",
-                parameters = mapOf(
-                    "optimizationLevel" to 2,
-                    "safetyMargin" to 0.1f,
-                    "maxOptimizations" to 5
-                ),
-                accuracy = 0.78f,
-                enabled = true
-            ),
-            "test_generation" to AIConfiguration(
-                modelType = "test_generation",
-                version = "1.0.0",
-                parameters = mapOf(
-                    "coverageTarget" to 0.9f,
-                    "testTypes" to listOf("unit", "integration"),
-                    "mockingLevel" to 2
-                ),
-                accuracy = 0.88f,
-                enabled = true
-            )
-        )
-        
-        _configurations.value = configs
-    }
-    
-    private suspend fun loadLearningData() {
-        // 加载历史学习数据
-        learningData["component_recommendation"] = LearningDataSet("component_recommendation").apply {
-            addSampleData()
+        if (config.accuracy < MIN_ACCURACY || config.accuracy > MAX_ACCURACY) {
+            errors.add("准确度必须在 $MIN_ACCURACY 到 $MAX_ACCURACY 之间")
         }
-        learningData["code_generation"] = LearningDataSet("code_generation").apply {
-            addSampleData()
-        }
-    }
-    
-    private fun setupOptimizationStrategies() {
-        optimizationStrategies["component_recommendation"] = ComponentRecommendationOptimizer()
-        optimizationStrategies["code_generation"] = CodeGenerationOptimizer()
-        optimizationStrategies["error_diagnosis"] = ErrorDiagnosisOptimizer()
-        optimizationStrategies["performance_optimization"] = PerformanceOptimizationOptimizer()
-        optimizationStrategies["test_generation"] = TestGenerationOptimizer()
-    }
-    
-    private fun getDefaultConfiguration(modelType: String): AIConfiguration {
-        return AIConfiguration(
-            modelType = modelType,
-            version = "1.0.0",
-            parameters = emptyMap(),
-            accuracy = 0.5f,
-            enabled = true
-        )
-    }
-    
-    private suspend fun saveConfiguration(modelType: String, config: AIConfiguration) {
-        // 保存配置到持久化存储
-    }
-    
-    private suspend fun retrainModel(modelType: String, dataSet: LearningDataSet) {
-        // 重新训练模型
-        val newAccuracy = simulateTraining(dataSet)
-        val currentConfig = getConfiguration(modelType)
         
-        currentConfig?.let { config ->
-            val updatedConfig = config.copy(accuracy = newAccuracy)
-            updateConfiguration(modelType, updatedConfig)
+        if (config.maxTokens <= 0 || config.maxTokens > DEFAULT_MAX_TOKENS) {
+            errors.add("最大令牌数必须在 1 到 $DEFAULT_MAX_TOKENS 之间")
         }
-    }
-    
-    private fun simulateTraining(dataSet: LearningDataSet): Float {
-        // 模拟训练过程，返回新的准确率
-        return (dataSet.size * ACCURACY_FACTOR + BASE_ACCURACY).coerceAtMost(MAX_ACCURACY)
-    }
-    
-    private fun calculatePerformanceScore(modelType: String): Float {
-        val config = getConfiguration(modelType)
-        val dataSet = learningData[modelType]
         
-        return when {
-            config == null -> 0.0f
-            dataSet == null -> config.accuracy * 0.5f
-            else -> (config.accuracy * 0.7f + (dataSet.quality * 0.3f)).coerceAtMost(1.0f)
+        if (config.temperature < 0.0f || config.temperature > 2.0f) {
+            errors.add("温度参数必须在 0.0 到 2.0 之间")
+        }
+        
+        if (config.topP < 0.0f || config.topP > 1.0f) {
+            errors.add("Top-P 参数必须在 0.0 到 1.0 之间")
+        }
+        
+        if (config.contextLength < MIN_CONTEXT_LENGTH || config.contextLength > MAX_CONTEXT_LENGTH) {
+            errors.add("上下文长度必须在 $MIN_CONTEXT_LENGTH 到 $MAX_CONTEXT_LENGTH 之间")
+        }
+        
+        return if (errors.isEmpty()) {
+            ValidationResult.Success
+        } else {
+            ValidationResult.Error(errors)
         }
     }
 }
 
+/**
+ * AI配置数据类
+ */
 @Serializable
 data class AIConfiguration(
-    val modelType: String,
-    val version: String,
-    val parameters: Map<String, Any>,
-    val accuracy: Float,
-    val enabled: Boolean,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val accuracy: Float = BASE_ACCURACY,
+    val maxTokens: Int = DEFAULT_MAX_TOKENS,
+    val temperature: Float = DEFAULT_TEMPERATURE,
+    val topP: Float = DEFAULT_TOP_P,
+    val frequencyPenalty: Float = DEFAULT_FREQUENCY_PENALTY,
+    val presencePenalty: Float = DEFAULT_PRESENCE_PENALTY,
+    val contextLength: Int = MAX_CONTEXT_LENGTH,
+    val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
+    val maxRetryAttempts: Int = MAX_RETRY_ATTEMPTS,
+    val enableCaching: Boolean = true,
+    val cacheExpiryMs: Long = CACHE_EXPIRY_MS,
+    val enableLogging: Boolean = true,
+    val enableMetrics: Boolean = true
 )
 
+/**
+ * 模型配置数据类
+ */
 @Serializable
-data class LearningData(
-    val input: String,
-    val expectedOutput: String,
-    val actualOutput: String,
-    val feedback: Float, // -1.0 to 1.0
-    val context: Map<String, String> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis()
+data class ModelConfiguration(
+    val modelId: String,
+    val maxTokens: Int = DEFAULT_MAX_TOKENS,
+    val temperature: Float = DEFAULT_TEMPERATURE,
+    val topP: Float = DEFAULT_TOP_P,
+    val frequencyPenalty: Float = DEFAULT_FREQUENCY_PENALTY,
+    val presencePenalty: Float = DEFAULT_PRESENCE_PENALTY,
+    val customParameters: Map<String, String> = emptyMap()
 )
 
-class LearningDataSet(val modelType: String) {
-    private val data = mutableListOf<LearningData>()
-    var lastTrainingTime: Long = 0L
-        private set
-    
-    val size: Int get() = data.size
-    val quality: Float get() = if (data.isEmpty()) 0.0f else data.map { it.feedback }.average().toFloat()
-    
-    fun addData(learningData: LearningData) {
-        data.add(learningData)
-        
-        // 保持数据集大小在合理范围内
-        if (data.size > 10000) {
-            data.removeAt(0)
-        }
-    }
-    
-    fun shouldRetrain(): Boolean {
-        val timeSinceLastTraining = System.currentTimeMillis() - lastTrainingTime
-        val hasEnoughNewData = data.size >= 100
-        val hasBeenLongEnough = timeSinceLastTraining > 24 * 60 * 60 * 1000 // 24小时
-        
-        return hasEnoughNewData && hasBeenLongEnough
-    }
-    
-    fun addSampleData() {
-        // 添加示例学习数据
-        repeat(50) { i ->
-            addData(
-                LearningData(
-                    input = "示例输入 $i",
-                    expectedOutput = "期望输出 $i",
-                    actualOutput = "实际输出 $i",
-                    feedback = (0.7f + (i % 3) * 0.1f)
-                )
-            )
-        }
-    }
-    
-    fun markRetrained() {
-        lastTrainingTime = System.currentTimeMillis()
-    }
+/**
+ * AI模型类型枚举
+ */
+enum class AIModelType {
+    TEXT_GENERATION,
+    IMAGE_GENERATION,
+    SPEECH_TO_TEXT,
+    TEXT_TO_SPEECH,
+    EMBEDDING,
+    MODERATION,
+    CODE_GENERATION,
+    TRANSLATION,
+    SUMMARIZATION,
+    QUESTION_ANSWERING
 }
 
-@Serializable
-data class ModelStatistics(
-    val modelType: String,
-    val accuracy: Float,
-    val trainingDataSize: Int,
-    val lastTrainingTime: Long,
-    val performanceScore: Float
-)
-
-// 优化策略接口和实现
-interface OptimizationStrategy {
-    suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration
-}
-
-class DefaultOptimizationStrategy : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        return config // 默认不做优化
-    }
-}
-
-class ComponentRecommendationOptimizer : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        val newParams = config.parameters.toMutableMap()
-        
-        // 根据性能指标调整参数
-        if (metrics.renderTime > RENDER_TIME_THRESHOLD) {
-            newParams["threshold"] = ((newParams["threshold"] as? Float ?: DEFAULT_THRESHOLD) + THRESHOLD_INCREMENT).coerceAtMost(MAX_ACCURACY)
-        }
-        
-        return config.copy(
-            parameters = newParams,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-}
-
-class CodeGenerationOptimizer : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        val newParams = config.parameters.toMutableMap()
-        
-        // 根据内存使用调整token数量
-        if (metrics.memoryUsage > 500 * 1024 * 1024) { // 500MB
-            newParams["maxTokens"] = ((newParams["maxTokens"] as? Int ?: 1000) * 0.8).toInt()
-        }
-        
-        return config.copy(
-            parameters = newParams,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-}
-
-class ErrorDiagnosisOptimizer : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        val newParams = config.parameters.toMutableMap()
-        
-        // 根据CPU使用率调整分析深度
-        if (metrics.cpuUsage > 80.0f) {
-            newParams["analysisDepth"] = ((newParams["analysisDepth"] as? Int ?: 3) - 1).coerceAtLeast(1)
-        }
-        
-        return config.copy(
-            parameters = newParams,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-}
-
-class PerformanceOptimizationOptimizer : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        val newParams = config.parameters.toMutableMap()
-        
-        // 根据整体性能调整优化级别
-        val overallPerformance = (metrics.renderTime + metrics.memoryUsage / 1024 / 1024 + metrics.cpuUsage * 10).toFloat()
-        if (overallPerformance > 1000) {
-            newParams["optimizationLevel"] = ((newParams["optimizationLevel"] as? Int ?: 2) + 1).coerceAtMost(5)
-        }
-        
-        return config.copy(
-            parameters = newParams,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
-}
-
-class TestGenerationOptimizer : OptimizationStrategy {
-    override suspend fun optimize(config: AIConfiguration, metrics: PerformanceMetrics): AIConfiguration {
-        val newParams = config.parameters.toMutableMap()
-        
-        // 根据性能调整覆盖率目标
-        if (metrics.renderTime < 50 && metrics.memoryUsage < 100 * 1024 * 1024) {
-            newParams["coverageTarget"] = ((newParams["coverageTarget"] as? Float ?: 0.9f) + 0.05f).coerceAtMost(0.98f)
-        }
-        
-        return config.copy(
-            parameters = newParams,
-            updatedAt = System.currentTimeMillis()
-        )
-    }
+/**
+ * 验证结果密封类
+ */
+sealed class ValidationResult {
+    object Success : ValidationResult()
+    data class Error(val errors: List<String>) : ValidationResult()
 }

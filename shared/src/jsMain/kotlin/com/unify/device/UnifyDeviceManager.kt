@@ -2,732 +2,536 @@ package com.unify.device
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.Serializable
-import org.w3c.dom.Window
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.browser.window
+import kotlinx.browser.document
 import org.w3c.dom.Navigator
 import org.w3c.dom.Screen
-import org.w3c.dom.Document
 import org.w3c.dom.events.Event
-import kotlinx.browser.document
-import kotlinx.browser.window
+import org.w3c.dom.get
+import kotlin.coroutines.resume
 
-// Web平台的统一设备管理器实现
-actual class UnifyDeviceManagerImpl : UnifyDeviceManager {
+/**
+ * Web/JS平台UnifyDeviceManager实现
+ */
+class UnifyDeviceManagerImpl : UnifyDeviceManager {
+    private val navigator: Navigator = window.navigator
+    private val screen: Screen = window.screen
     
-    actual override val permissions: UnifyPermissionManager = WebPermissionManager()
-    actual override val deviceInfo: UnifyDeviceInfo = WebDeviceInfo()
-    actual override val sensors: UnifySensorManager = WebSensorManager()
-    actual override val systemFeatures: UnifySystemFeatures = WebSystemFeatures()
-    actual override val hardware: UnifyHardwareManager = WebHardwareManager()
+    // 状态流管理
+    private val _networkStatus = MutableStateFlow(getCurrentNetworkStatus())
+    private val _batteryStatus = MutableStateFlow(getCurrentBatteryStatus())
+    private val _locationUpdates = MutableStateFlow<LocationInfo?>(null)
     
-    actual override suspend fun initialize() {
-        permissions.initialize()
-        sensors.initialize()
-        hardware.initialize()
+    // 传感器监听器管理（Web环境下支持有限）
+    private val sensorListeners = mutableMapOf<SensorType, SensorListener>()
+    
+    init {
+        // 监听网络状态变化
+        window.addEventListener("online") { _networkStatus.value = NetworkStatus.CONNECTED }
+        window.addEventListener("offline") { _networkStatus.value = NetworkStatus.DISCONNECTED }
+        
+        // 监听电池状态变化（如果支持）
+        setupBatteryMonitoring()
     }
     
-    actual override suspend fun cleanup() {
-        sensors.cleanup()
-        hardware.cleanup()
+    override fun getDeviceInfo(): DeviceInfo {
+        return DeviceInfo(
+            deviceId = getDeviceId(),
+            deviceName = getDeviceName(),
+            model = getDeviceModel(),
+            manufacturer = getManufacturer(),
+            osName = getOSName(),
+            osVersion = getOSVersion(),
+            screenWidth = screen.width,
+            screenHeight = screen.height,
+            screenDensity = window.devicePixelRatio.toFloat(),
+            totalMemory = getMemoryInfo().totalJSHeapSize,
+            availableMemory = getMemoryInfo().usedJSHeapSize
+        )
     }
-}
-
-// Web权限管理器实现
-class WebPermissionManager : UnifyPermissionManager {
     
-    private val permissionStatusFlow = MutableStateFlow<Map<UnifyPermission, UnifyPermissionStatus>>(emptyMap())
+    override fun getPlatformName(): String = "Web"
     
-    override suspend fun initialize() {
-        refreshAllPermissionStatus()
+    override fun getDeviceModel(): String {
+        val userAgent = navigator.userAgent.lowercase()
+        return when {
+            userAgent.contains("iphone") -> "iPhone"
+            userAgent.contains("ipad") -> "iPad"
+            userAgent.contains("android") -> "Android Device"
+            userAgent.contains("windows") -> "Windows PC"
+            userAgent.contains("macintosh") -> "Mac"
+            userAgent.contains("linux") -> "Linux PC"
+            else -> "Unknown Device"
+        }
     }
     
-    override suspend fun checkPermission(permission: UnifyPermission): UnifyPermissionStatus {
+    override fun getOSVersion(): String = "${getOSName()} ${extractOSVersion()}"
+    
+    override fun getAppVersion(): String {
+        // 从package.json或manifest获取版本信息
+        return "1.0.0" // 简化实现
+    }
+    
+    override suspend fun requestPermission(permission: DevicePermission): PermissionStatus {
         return when (permission) {
-            UnifyPermission.CAMERA -> checkWebPermission("camera")
-            UnifyPermission.MICROPHONE -> checkWebPermission("microphone")
-            UnifyPermission.LOCATION_FINE, UnifyPermission.LOCATION_COARSE -> checkWebPermission("geolocation")
-            UnifyPermission.NOTIFICATIONS -> checkWebPermission("notifications")
-            UnifyPermission.CLIPBOARD -> checkWebPermission("clipboard-read")
-            else -> UnifyPermissionStatus.NOT_DETERMINED
+            DevicePermission.CAMERA -> requestCameraPermission()
+            DevicePermission.MICROPHONE -> requestMicrophonePermission()
+            DevicePermission.LOCATION -> requestLocationPermission()
+            DevicePermission.NOTIFICATIONS -> requestNotificationPermission()
+            else -> PermissionStatus.GRANTED
         }
     }
     
-    override suspend fun requestPermission(permission: UnifyPermission): UnifyPermissionResult {
+    override suspend fun requestPermissions(permissions: List<DevicePermission>): Map<DevicePermission, PermissionStatus> {
+        return permissions.associateWith { requestPermission(it) }
+    }
+    
+    override fun checkPermission(permission: DevicePermission): PermissionStatus {
         return when (permission) {
-            UnifyPermission.CAMERA -> requestWebPermission("camera")
-            UnifyPermission.MICROPHONE -> requestWebPermission("microphone")
-            UnifyPermission.LOCATION_FINE, UnifyPermission.LOCATION_COARSE -> requestWebPermission("geolocation")
-            UnifyPermission.NOTIFICATIONS -> requestNotificationPermission()
-            else -> UnifyPermissionResult.DENIED
+            DevicePermission.CAMERA -> checkCameraPermission()
+            DevicePermission.MICROPHONE -> checkMicrophonePermission()
+            DevicePermission.LOCATION -> checkLocationPermission()
+            DevicePermission.NOTIFICATIONS -> checkNotificationPermission()
+            else -> PermissionStatus.GRANTED
         }
     }
     
-    override suspend fun requestPermissions(permissions: List<UnifyPermission>): Map<UnifyPermission, UnifyPermissionResult> {
-        val results = mutableMapOf<UnifyPermission, UnifyPermissionResult>()
-        permissions.forEach { permission ->
-            results[permission] = requestPermission(permission)
+    override fun observePermissionStatus(permission: DevicePermission): Flow<PermissionStatus> {
+        return MutableStateFlow(checkPermission(permission)).asStateFlow()
+    }
+    
+    override fun getSupportedSensors(): List<SensorType> {
+        val supportedSensors = mutableListOf<SensorType>()
+        
+        // 检查设备运动API支持
+        if (js("typeof DeviceMotionEvent !== 'undefined'") as Boolean) {
+            supportedSensors.addAll(listOf(
+                SensorType.ACCELEROMETER,
+                SensorType.GYROSCOPE
+            ))
         }
-        return results
-    }
-    
-    override fun observePermissionChanges(): Flow<UnifyPermissionChange> = flow {
-        // Web权限变化监听实现
-    }
-    
-    override suspend fun shouldShowPermissionRationale(permission: UnifyPermission): Boolean {
-        return false // Web不需要显示权限说明
-    }
-    
-    private fun checkWebPermission(permissionName: String): UnifyPermissionStatus {
-        return try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.permissions != null) {
-                // 使用Permissions API检查权限状态
-                UnifyPermissionStatus.NOT_DETERMINED // 占位符实现
-            } else {
-                UnifyPermissionStatus.NOT_DETERMINED
-            }
-        } catch (e: Exception) {
-            UnifyPermissionStatus.NOT_DETERMINED
+        
+        // 检查设备方向API支持
+        if (js("typeof DeviceOrientationEvent !== 'undefined'") as Boolean) {
+            supportedSensors.addAll(listOf(
+                SensorType.ORIENTATION,
+                SensorType.MAGNETOMETER
+            ))
         }
+        
+        return supportedSensors
     }
     
-    private suspend fun requestWebPermission(permissionName: String): UnifyPermissionResult {
-        return try {
-            when (permissionName) {
-                "camera", "microphone" -> {
-                    // 通过getUserMedia请求媒体权限
-                    val constraints = js("{}")
-                    if (permissionName == "camera") {
-                        constraints.video = true
-                    } else {
-                        constraints.audio = true
-                    }
-                    
-                    val navigator = window.navigator.asDynamic()
-                    if (navigator.mediaDevices?.getUserMedia != null) {
-                        // 实际的getUserMedia调用需要在真实环境中实现
-                        UnifyPermissionResult.GRANTED
-                    } else {
-                        UnifyPermissionResult.DENIED
+    override fun startSensorMonitoring(sensorType: SensorType, listener: SensorListener) {
+        sensorListeners[sensorType] = listener
+        
+        when (sensorType) {
+            SensorType.ACCELEROMETER, SensorType.GYROSCOPE -> {
+                window.addEventListener("devicemotion") { event ->
+                    val motionEvent = event.asDynamic()
+                    when (sensorType) {
+                        SensorType.ACCELEROMETER -> {
+                            val acceleration = motionEvent.acceleration
+                            if (acceleration != null) {
+                                val values = floatArrayOf(
+                                    (acceleration.x as? Double)?.toFloat() ?: 0f,
+                                    (acceleration.y as? Double)?.toFloat() ?: 0f,
+                                    (acceleration.z as? Double)?.toFloat() ?: 0f
+                                )
+                                listener.onSensorChanged(sensorType, values, js("Date.now()") as Long)
+                            }
+                        }
+                        SensorType.GYROSCOPE -> {
+                            val rotationRate = motionEvent.rotationRate
+                            if (rotationRate != null) {
+                                val values = floatArrayOf(
+                                    (rotationRate.alpha as? Double)?.toFloat() ?: 0f,
+                                    (rotationRate.beta as? Double)?.toFloat() ?: 0f,
+                                    (rotationRate.gamma as? Double)?.toFloat() ?: 0f
+                                )
+                                listener.onSensorChanged(sensorType, values, js("Date.now()") as Long)
+                            }
+                        }
+                        else -> {}
                     }
                 }
-                "geolocation" -> {
-                    // 通过Geolocation API请求位置权限
-                    if (window.navigator.asDynamic().geolocation != null) {
-                        UnifyPermissionResult.GRANTED
-                    } else {
-                        UnifyPermissionResult.DENIED
-                    }
+            }
+            SensorType.ORIENTATION -> {
+                window.addEventListener("deviceorientation") { event ->
+                    val orientationEvent = event.asDynamic()
+                    val values = floatArrayOf(
+                        (orientationEvent.alpha as? Double)?.toFloat() ?: 0f,
+                        (orientationEvent.beta as? Double)?.toFloat() ?: 0f,
+                        (orientationEvent.gamma as? Double)?.toFloat() ?: 0f
+                    )
+                    listener.onSensorChanged(sensorType, values, js("Date.now()") as Long)
                 }
-                else -> UnifyPermissionResult.DENIED
             }
-        } catch (e: Exception) {
-            UnifyPermissionResult.DENIED
-        }
-    }
-    
-    private suspend fun requestNotificationPermission(): UnifyPermissionResult {
-        return try {
-            val notification = window.asDynamic().Notification
-            if (notification != null) {
-                // 请求通知权限
-                UnifyPermissionResult.GRANTED // 占位符实现
-            } else {
-                UnifyPermissionResult.DENIED
+            else -> {
+                // 其他传感器暂不支持
             }
-        } catch (e: Exception) {
-            UnifyPermissionResult.DENIED
         }
     }
     
-    private suspend fun refreshAllPermissionStatus() {
-        // 刷新所有权限状态
-    }
-}
-
-// Web设备信息实现
-class WebDeviceInfo : UnifyDeviceInfo {
-    
-    override suspend fun getDeviceInfo(): UnifyDeviceDetails {
-        val navigator = window.navigator
-        return UnifyDeviceDetails(
-            deviceId = generateWebDeviceId(),
-            deviceName = getBrowserName(),
-            manufacturer = "Unknown",
-            model = navigator.platform,
-            brand = "Web",
-            isEmulator = false,
-            isRooted = false
-        )
+    override fun stopSensorMonitoring(sensorType: SensorType) {
+        sensorListeners.remove(sensorType)
+        // 在实际实现中，应该移除对应的事件监听器
     }
     
-    override suspend fun getSystemInfo(): UnifySystemInfo {
-        val navigator = window.navigator
-        return UnifySystemInfo(
-            osName = getOperatingSystem(),
-            osVersion = navigator.appVersion,
-            osApiLevel = 0,
-            locale = navigator.language,
-            timezone = js("Intl.DateTimeFormat().resolvedOptions().timeZone") as String,
-            uptime = 0 // Web无法获取系统运行时间
-        )
-    }
-    
-    override suspend fun getHardwareInfo(): UnifyHardwareInfo {
-        val navigator = window.navigator.asDynamic()
-        return UnifyHardwareInfo(
-            cpuArchitecture = navigator.platform ?: "unknown",
-            cpuCores = navigator.hardwareConcurrency?.toInt() ?: 1,
-            totalMemory = (navigator.deviceMemory?.toLong() ?: 0L) * 1024 * 1024 * 1024, // GB to bytes
-            availableMemory = getAvailableMemory(),
-            screenWidth = window.screen.width,
-            screenHeight = window.screen.height,
-            screenDensity = window.devicePixelRatio.toFloat()
-        )
-    }
-    
-    override suspend fun getBatteryInfo(): UnifyBatteryInfo {
-        return try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.getBattery != null) {
-                // Battery API实现
-                UnifyBatteryInfo(
-                    level = 100, // 占位符值
-                    isCharging = false,
-                    chargingType = "unknown",
-                    temperature = 0,
-                    voltage = 0,
-                    capacity = 0,
-                    cycleCount = 0
-                )
-            } else {
-                // 默认电池信息
-                UnifyBatteryInfo(100, false, "unknown", 0, 0, 0, 0)
-            }
-        } catch (e: Exception) {
-            UnifyBatteryInfo(100, false, "unknown", 0, 0, 0, 0)
-        }
-    }
-    
-    override suspend fun getNetworkInfo(): UnifyNetworkInfo {
-        val navigator = window.navigator.asDynamic()
-        val connection = navigator.connection
-        
-        return UnifyNetworkInfo(
-            isConnected = navigator.onLine ?: true,
-            connectionType = if (connection != null) {
-                connection.effectiveType ?: "unknown"
-            } else "unknown",
-            networkName = "",
-            signalStrength = 0,
-            ipAddress = "",
-            macAddress = "",
-            isRoaming = false,
-            isMetered = if (connection != null) {
-                connection.saveData ?: false
-            } else false
-        )
-    }
-    
-    override suspend fun getStorageInfo(): UnifyStorageInfo {
-        return try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.storage?.estimate != null) {
-                // Storage API实现
-                UnifyStorageInfo(
-                    totalSpace = 0, // 占位符值
-                    availableSpace = 0,
-                    usedSpace = 0,
-                    externalStorageAvailable = false,
-                    externalTotalSpace = 0,
-                    externalAvailableSpace = 0
-                )
-            } else {
-                UnifyStorageInfo(0, 0, 0, false, 0, 0)
-            }
-        } catch (e: Exception) {
-            UnifyStorageInfo(0, 0, 0, false, 0, 0)
-        }
-    }
-    
-    override suspend fun getDisplayInfo(): UnifyDisplayInfo {
-        val screen = window.screen
-        // 显示相关常量
-        val DEFAULT_REFRESH_RATE = 60.0f
-        val DEFAULT_BRIGHTNESS = 1.0f
-        
-        return UnifyDisplayInfo(
-            width = screen.width,
-            height = screen.height,
-            density = window.devicePixelRatio.toFloat(),
-            densityDpi = (window.devicePixelRatio * 96).toInt(),
-            refreshRate = DEFAULT_REFRESH_RATE, // 默认刷新率
-            orientation = getScreenOrientation(),
-            brightness = DEFAULT_BRIGHTNESS // Web无法获取屏幕亮度
-        )
-    }
-    
-    override suspend fun isFeatureSupported(feature: UnifyDeviceFeature): Boolean {
-        val navigator = window.navigator.asDynamic()
-        return when (feature) {
-            UnifyDeviceFeature.CAMERA -> navigator.mediaDevices?.getUserMedia != null
-            UnifyDeviceFeature.MICROPHONE -> navigator.mediaDevices?.getUserMedia != null
-            UnifyDeviceFeature.GPS -> navigator.geolocation != null
-            UnifyDeviceFeature.BLUETOOTH -> navigator.bluetooth != null
-            UnifyDeviceFeature.NFC -> false // Web NFC支持有限
-            UnifyDeviceFeature.BIOMETRIC -> false // Web不支持生物识别
-            UnifyDeviceFeature.ACCELEROMETER -> hasDeviceMotionSupport()
-            UnifyDeviceFeature.GYROSCOPE -> hasDeviceMotionSupport()
-            UnifyDeviceFeature.MAGNETOMETER -> false // Web不支持磁力计
-            UnifyDeviceFeature.VIBRATION -> navigator.vibrate != null
-        }
-    }
-    
-    override fun observeDeviceChanges(): Flow<UnifyDeviceChange> = flow {
-        // Web设备状态变化监听
-    }
-    
-    private fun generateWebDeviceId(): String {
-        // 生成Web设备唯一标识
-        return "web_${window.navigator.userAgent.hashCode()}"
-    }
-    
-    private fun getBrowserName(): String {
-        val userAgent = window.navigator.userAgent
-        return when {
-            userAgent.contains("Chrome") -> "Chrome"
-            userAgent.contains("Firefox") -> "Firefox"
-            userAgent.contains("Safari") -> "Safari"
-            userAgent.contains("Edge") -> "Edge"
-            else -> "Unknown Browser"
-        }
-    }
-    
-    private fun getOperatingSystem(): String {
-        val platform = window.navigator.platform
-        return when {
-            platform.contains("Win") -> "Windows"
-            platform.contains("Mac") -> "macOS"
-            platform.contains("Linux") -> "Linux"
-            platform.contains("Android") -> "Android"
-            platform.contains("iPhone") || platform.contains("iPad") -> "iOS"
-            else -> "Unknown OS"
-        }
-    }
-    
-    private fun getAvailableMemory(): Long {
-        val navigator = window.navigator.asDynamic()
-        return if (navigator.deviceMemory != null) {
-            (navigator.deviceMemory.toLong() * 1024 * 1024 * 1024) / 2 // 估算可用内存
-        } else {
-            0L
-        }
-    }
-    
-    private fun getScreenOrientation(): String {
-        val screen = window.screen.asDynamic()
-        return if (screen.orientation != null) {
-            screen.orientation.type ?: "portrait-primary"
-        } else {
-            if (window.screen.width > window.screen.height) "landscape-primary" else "portrait-primary"
-        }
-    }
-    
-    private fun hasDeviceMotionSupport(): Boolean {
-        return window.asDynamic().DeviceMotionEvent != null
-    }
-}
-
-// Web传感器管理器实现
-class WebSensorManager : UnifySensorManager {
-    
-    private var deviceMotionListener: ((Event) -> Unit)? = null
-    private var deviceOrientationListener: ((Event) -> Unit)? = null
-    
-    override suspend fun initialize() {
-        // Web传感器初始化
-    }
-    
-    override suspend fun cleanup() {
-        deviceMotionListener?.let { listener ->
-            window.removeEventListener("devicemotion", listener)
-        }
-        deviceOrientationListener?.let { listener ->
-            window.removeEventListener("deviceorientation", listener)
-        }
-    }
-    
-    override suspend fun getAvailableSensors(): List<UnifySensorInfo> {
-        val sensors = mutableListOf<UnifySensorInfo>()
-        
-        // 传感器参数常量
-        val ACCELEROMETER_MAX_RANGE = 20.0f
-        val GYROSCOPE_MAX_RANGE = 360.0f
-        val SENSOR_RESOLUTION = 0.1f
-        val SENSOR_POWER = 0.1f
-        
-        if (window.asDynamic().DeviceMotionEvent != null) {
-            sensors.add(UnifySensorInfo(
-                type = UnifySensorType.ACCELEROMETER,
-                name = "Web Accelerometer",
-                vendor = "Browser",
-                maxRange = ACCELEROMETER_MAX_RANGE,
-                resolution = SENSOR_RESOLUTION,
-                power = SENSOR_POWER
-            ))
-            
-            sensors.add(UnifySensorInfo(
-                type = UnifySensorType.GYROSCOPE,
-                name = "Web Gyroscope",
-                vendor = "Browser",
-                maxRange = GYROSCOPE_MAX_RANGE,
-                resolution = SENSOR_RESOLUTION,
-                power = SENSOR_POWER
-            ))
-        }
-        
-        if (window.asDynamic().DeviceOrientationEvent != null) {
-            sensors.add(UnifySensorInfo(
-                type = UnifySensorType.ORIENTATION,
-                name = "Web Orientation",
-                vendor = "Browser",
-                maxRange = GYROSCOPE_MAX_RANGE,
-                resolution = SENSOR_RESOLUTION,
-                power = SENSOR_POWER
-            ))
-        }
-        
-        return sensors
-    }
-    
-    override suspend fun isSensorAvailable(sensorType: UnifySensorType): Boolean {
+    override fun isSensorAvailable(sensorType: SensorType): Boolean {
         return when (sensorType) {
-            UnifySensorType.ACCELEROMETER, UnifySensorType.GYROSCOPE -> {
-                window.asDynamic().DeviceMotionEvent != null
-            }
-            UnifySensorType.ORIENTATION -> {
-                window.asDynamic().DeviceOrientationEvent != null
-            }
+            SensorType.ACCELEROMETER, SensorType.GYROSCOPE -> 
+                js("typeof DeviceMotionEvent !== 'undefined'") as Boolean
+            SensorType.ORIENTATION, SensorType.MAGNETOMETER -> 
+                js("typeof DeviceOrientationEvent !== 'undefined'") as Boolean
             else -> false
         }
     }
     
-    override suspend fun startSensorListening(
-        sensorType: UnifySensorType,
-        samplingRate: UnifySensorSamplingRate
-    ): Flow<UnifySensorData> = flow {
-        when (sensorType) {
-            UnifySensorType.ACCELEROMETER, UnifySensorType.GYROSCOPE -> {
-                deviceMotionListener = { event ->
-                    val motionEvent = event.asDynamic()
-                    if (sensorType == UnifySensorType.ACCELEROMETER && motionEvent.accelerationIncludingGravity != null) {
-                        val accel = motionEvent.accelerationIncludingGravity
-                        // emit加速度计数据
-                    } else if (sensorType == UnifySensorType.GYROSCOPE && motionEvent.rotationRate != null) {
-                        val rotation = motionEvent.rotationRate
-                        // emit陀螺仪数据
-                    }
-                }
-                window.addEventListener("devicemotion", deviceMotionListener!!)
-            }
-            UnifySensorType.ORIENTATION -> {
-                deviceOrientationListener = { event ->
-                    val orientationEvent = event.asDynamic()
-                    // emit方向传感器数据
-                }
-                window.addEventListener("deviceorientation", deviceOrientationListener!!)
-            }
-            else -> {
-                // 其他传感器不支持
-            }
+    override fun vibrate(durationMillis: Long) {
+        if (js("'vibrate' in navigator") as Boolean) {
+            navigator.asDynamic().vibrate(durationMillis.toInt())
         }
     }
     
-    override suspend fun stopSensorListening(sensorType: UnifySensorType) {
-        when (sensorType) {
-            UnifySensorType.ACCELEROMETER, UnifySensorType.GYROSCOPE -> {
-                deviceMotionListener?.let { listener ->
-                    window.removeEventListener("devicemotion", listener)
-                    deviceMotionListener = null
-                }
-            }
-            UnifySensorType.ORIENTATION -> {
-                deviceOrientationListener?.let { listener ->
-                    window.removeEventListener("deviceorientation", listener)
-                    deviceOrientationListener = null
-                }
-            }
-            else -> {}
-        }
-    }
-}
-
-// Web系统功能实现
-class WebSystemFeatures : UnifySystemFeatures {
-    
-    override suspend fun vibrate(duration: Long) {
-        val navigator = window.navigator.asDynamic()
-        if (navigator.vibrate != null) {
-            navigator.vibrate(duration.toInt())
-        }
+    override fun setScreenBrightness(brightness: Float) {
+        // Web环境下无法直接控制屏幕亮度
+        console.warn("Screen brightness control not available in web environment")
     }
     
-    override suspend fun vibratePattern(pattern: LongArray, repeat: Int) {
-        val navigator = window.navigator.asDynamic()
-        if (navigator.vibrate != null) {
-            navigator.vibrate(pattern.map { it.toInt() }.toTypedArray())
-        }
+    override fun getScreenBrightness(): Float {
+        // Web环境下无法获取屏幕亮度
+        return 0.8f // 返回默认值
     }
     
-    override suspend fun playSystemSound(sound: UnifySystemSound) {
-        // Web系统声音播放实现（有限）
+    override fun setVolume(volume: Float) {
+        // Web环境下无法直接控制系统音量
+        console.warn("System volume control not available in web environment")
     }
     
-    override suspend fun setVolume(streamType: UnifyAudioStream, volume: Float) {
-        // Web无法直接控制系统音量
+    override fun getVolume(): Float {
+        // Web环境下无法获取系统音量
+        return 0.7f // 返回默认值
     }
     
-    override suspend fun getVolume(streamType: UnifyAudioStream): Float {
-        val DEFAULT_VOLUME = 1.0f
-        return DEFAULT_VOLUME // Web无法获取系统音量
-    }
-    
-    override suspend fun setBrightness(brightness: Float) {
-        // Web无法控制屏幕亮度
-    }
-    
-    override suspend fun getBrightness(): Float {
-        val DEFAULT_BRIGHTNESS = 1.0f
-        return DEFAULT_BRIGHTNESS // Web无法获取屏幕亮度
-    }
-    
-    override suspend fun setScreenOrientation(orientation: UnifyScreenOrientation) {
-        val screen = window.screen.asDynamic()
-        if (screen.orientation?.lock != null) {
-            val orientationString = when (orientation) {
-                UnifyScreenOrientation.PORTRAIT -> "portrait-primary"
-                UnifyScreenOrientation.LANDSCAPE -> "landscape-primary"
-                UnifyScreenOrientation.PORTRAIT_REVERSE -> "portrait-secondary"
-                UnifyScreenOrientation.LANDSCAPE_REVERSE -> "landscape-secondary"
-                else -> "any"
-            }
-            // screen.orientation.lock(orientationString)
-        }
-    }
-    
-    override suspend fun showNotification(notification: UnifyNotification) {
-        try {
-            val notificationConstructor = window.asDynamic().Notification
-            if (notificationConstructor != null) {
-                val options = js("{}")
-                options.body = notification.content
-                options.icon = notification.iconUrl
-                // new Notification(notification.title, options)
-            }
-        } catch (e: Exception) {
-            console.log("Notification not supported: ${e.message}")
-        }
-    }
-    
-    override suspend fun copyToClipboard(text: String) {
-        try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.clipboard?.writeText != null) {
-                // navigator.clipboard.writeText(text)
+    override fun showNotification(title: String, message: String, id: String) {
+        if (js("'Notification' in window") as Boolean) {
+            if (js("Notification.permission === 'granted'") as Boolean) {
+                js("new Notification(title, { body: message, tag: id })")
             } else {
-                // 降级到传统方法
-                val textArea = document.createElement("textarea") as HTMLTextAreaElement
-                textArea.value = text
-                document.body?.appendChild(textArea)
-                textArea.select()
-                document.execCommand("copy")
-                document.body?.removeChild(textArea)
+                console.warn("Notification permission not granted")
             }
-        } catch (e: Exception) {
-            console.log("Clipboard operation failed: ${e.message}")
+        } else {
+            console.warn("Notifications not supported")
         }
     }
     
-    override suspend fun getClipboardText(): String? {
-        return try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.clipboard?.readText != null) {
-                // navigator.clipboard.readText()
-                null // 占位符返回
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    override suspend fun shareText(text: String, title: String?) {
-        try {
-            val navigator = window.navigator.asDynamic()
-            if (navigator.share != null) {
-                val shareData = js("{}")
-                shareData.title = title ?: ""
-                shareData.text = text
-                // navigator.share(shareData)
-            } else {
-                // 降级到复制到剪贴板
-                copyToClipboard(text)
-            }
-        } catch (e: Exception) {
-            console.log("Share operation failed: ${e.message}")
-        }
-    }
-    
-    override suspend fun shareFile(filePath: String, mimeType: String) {
-        // Web文件分享实现（有限）
-    }
-}
-
-// Web硬件管理器实现
-class WebHardwareManager : UnifyHardwareManager {
-    
-    override suspend fun initialize() {
-        // Web硬件管理器初始化
-    }
-    
-    override suspend fun cleanup() {
-        // Web硬件资源清理
-    }
-    
-    override suspend fun isCameraAvailable(): Boolean {
-        val navigator = window.navigator.asDynamic()
-        return navigator.mediaDevices?.getUserMedia != null
-    }
-    
-    override suspend fun takePicture(): UnifyCameraResult {
-        return try {
-            // Web相机拍照实现
-            UnifyCameraResult(
-                isSuccess = false,
-                filePath = null,
-                error = "Camera capture not implemented for web"
-            )
-        } catch (e: Exception) {
-            UnifyCameraResult(
-                isSuccess = false,
-                filePath = null,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun recordVideo(maxDuration: Long): UnifyCameraResult {
-        return UnifyCameraResult(
-            isSuccess = false,
-            filePath = null,
-            error = "Video recording not implemented for web"
-        )
-    }
-    
-    override suspend fun isMicrophoneAvailable(): Boolean {
-        val navigator = window.navigator.asDynamic()
-        return navigator.mediaDevices?.getUserMedia != null
-    }
-    
-    override suspend fun startRecording(config: UnifyAudioConfig): Flow<UnifyAudioData> = flow {
-        // Web录音实现
-    }
-    
-    override suspend fun stopRecording() {
-        // 停止录音
-    }
-    
-    override suspend fun isLocationAvailable(): Boolean {
-        return window.navigator.asDynamic().geolocation != null
-    }
-    
-    override suspend fun getCurrentLocation(accuracy: UnifyLocationAccuracy): UnifyLocationResult {
-        return try {
-            val geolocation = window.navigator.asDynamic().geolocation
-            if (geolocation != null) {
-                // 默认位置常量
-                val DEFAULT_LATITUDE = 0.0
-                val DEFAULT_LONGITUDE = 0.0
-                val DEFAULT_ACCURACY = 0.0f
+    override suspend fun takePicture(): String? {
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                // 使用getUserMedia API访问摄像头
+                val constraints = js("{ video: true }")
+                val getUserMedia = navigator.asDynamic().mediaDevices?.getUserMedia
                 
-                // Geolocation API实现
-                UnifyLocationResult(
-                    location = UnifyLocationData(
-                        latitude = DEFAULT_LATITUDE,
-                        longitude = DEFAULT_LONGITUDE,
-                        altitude = null,
-                        accuracy = DEFAULT_ACCURACY,
-                        timestamp = js("Date.now()") as Long,
-                        provider = "Web"
-                    ),
-                    error = null
-                )
-            } else {
-                UnifyLocationResult(
-                    location = null,
-                    error = "Geolocation not supported"
-                )
+                if (getUserMedia != null) {
+                    getUserMedia(constraints).then({ stream ->
+                        // 创建video元素并捕获图像
+                        // 这里需要更复杂的实现来实际捕获图像
+                        continuation.resume(null) // 简化实现
+                    }).catch({ error ->
+                        continuation.resume(null)
+                    })
+                } else {
+                    continuation.resume(null)
+                }
+            } catch (e: Exception) {
+                continuation.resume(null)
             }
-        } catch (e: Exception) {
-            UnifyLocationResult(
-                location = null,
-                error = e.message
-            )
         }
     }
     
-    override suspend fun startLocationUpdates(config: UnifyLocationConfig): Flow<UnifyLocationData> = flow {
-        // Web位置更新实现
+    override suspend fun recordAudio(durationMillis: Long): String? {
+        return suspendCancellableCoroutine { continuation ->
+            try {
+                // 使用MediaRecorder API录制音频
+                val constraints = js("{ audio: true }")
+                val getUserMedia = navigator.asDynamic().mediaDevices?.getUserMedia
+                
+                if (getUserMedia != null) {
+                    getUserMedia(constraints).then({ stream ->
+                        // 创建MediaRecorder并开始录制
+                        // 这里需要更复杂的实现来实际录制音频
+                        continuation.resume(null) // 简化实现
+                    }).catch({ error ->
+                        continuation.resume(null)
+                    })
+                } else {
+                    continuation.resume(null)
+                }
+            } catch (e: Exception) {
+                continuation.resume(null)
+            }
+        }
     }
     
-    override suspend fun stopLocationUpdates() {
-        // 停止位置更新
+    override suspend fun getCurrentLocation(): LocationInfo? {
+        return suspendCancellableCoroutine { continuation ->
+            if (js("'geolocation' in navigator") as Boolean) {
+                navigator.asDynamic().geolocation.getCurrentPosition(
+                    { position ->
+                        val coords = position.coords
+                        val locationInfo = LocationInfo(
+                            latitude = coords.latitude as Double,
+                            longitude = coords.longitude as Double,
+                            altitude = (coords.altitude as? Double) ?: 0.0,
+                            accuracy = coords.accuracy as Float,
+                            timestamp = js("Date.now()") as Long
+                        )
+                        continuation.resume(locationInfo)
+                    },
+                    { error ->
+                        continuation.resume(null)
+                    }
+                )
+            } else {
+                continuation.resume(null)
+            }
+        }
     }
     
-    override suspend fun isBluetoothAvailable(): Boolean {
-        val navigator = window.navigator.asDynamic()
-        return navigator.bluetooth != null
+    override fun observeLocationUpdates(): Flow<LocationInfo> = _locationUpdates.asStateFlow().filterNotNull()
+    
+    override fun isNetworkAvailable(): Boolean = navigator.onLine
+    
+    override fun getNetworkType(): NetworkType {
+        val connection = navigator.asDynamic().connection
+        return if (connection != null) {
+            when (connection.effectiveType as? String) {
+                "4g" -> NetworkType.CELLULAR
+                "3g" -> NetworkType.CELLULAR
+                "2g" -> NetworkType.CELLULAR
+                "slow-2g" -> NetworkType.CELLULAR
+                else -> NetworkType.WIFI
+            }
+        } else {
+            if (navigator.onLine) NetworkType.WIFI else NetworkType.UNKNOWN
+        }
     }
     
-    override suspend fun scanBluetoothDevices(): Flow<UnifyBluetoothDevice> = flow {
-        // Web Bluetooth实现
+    override fun observeNetworkStatus(): Flow<NetworkStatus> = _networkStatus.asStateFlow()
+    
+    override fun getBatteryLevel(): Float {
+        val battery = js("navigator.battery") 
+        return if (battery != null) {
+            (battery.asDynamic().level as? Double)?.toFloat() ?: 1.0f
+        } else {
+            1.0f // 默认满电
+        }
     }
     
-    override suspend fun stopBluetoothScan() {
-        // 停止蓝牙扫描
+    override fun isBatteryCharging(): Boolean {
+        val battery = js("navigator.battery")
+        return if (battery != null) {
+            battery.asDynamic().charging as? Boolean ?: true
+        } else {
+            true // 默认充电中
+        }
     }
     
-    override suspend fun isNFCAvailable(): Boolean {
-        return false // Web NFC支持有限
+    override fun observeBatteryStatus(): Flow<BatteryStatus> = _batteryStatus.asStateFlow()
+    
+    override fun getAvailableStorage(): Long {
+        return if (js("'storage' in navigator") as Boolean) {
+            // 使用Storage API估算可用存储空间
+            val estimate = js("navigator.storage.estimate()")
+            // 这是一个Promise，这里简化处理
+            1024L * 1024L * 1024L // 1GB 默认值
+        } else {
+            1024L * 1024L * 1024L // 1GB 默认值
+        }
     }
     
-    override suspend fun readNFCTag(): Flow<UnifyNFCData> = flow {
-        // Web NFC实现（有限）
+    override fun getTotalStorage(): Long {
+        return getAvailableStorage() * 2 // 简化实现
     }
     
-    override suspend fun stopNFCReading() {
-        // 停止NFC读取
+    override fun getUsedStorage(): Long {
+        return getTotalStorage() - getAvailableStorage()
     }
     
-    override suspend fun isBiometricAvailable(): Boolean {
-        return false // Web不支持生物识别
+    private fun getDeviceId(): String {
+        // Web环境下生成唯一标识符
+        val stored = js("localStorage.getItem('unify_device_id')") as? String
+        return if (stored != null) {
+            stored
+        } else {
+            val newId = "web_${js("Date.now()")}_${js("Math.random().toString(36).substr(2, 9)")}"
+            js("localStorage.setItem('unify_device_id', newId)")
+            newId
+        }
     }
     
-    override suspend fun authenticateWithBiometric(config: UnifyBiometricConfig): UnifyBiometricResult {
-        return UnifyBiometricResult(
-            isSuccess = false,
-            error = "Biometric authentication not supported on web",
-            errorCode = -1
+    private fun getDeviceName(): String {
+        return "${getOSName()} Browser"
+    }
+    
+    private fun getManufacturer(): String {
+        val userAgent = navigator.userAgent.lowercase()
+        return when {
+            userAgent.contains("chrome") -> "Google"
+            userAgent.contains("firefox") -> "Mozilla"
+            userAgent.contains("safari") && !userAgent.contains("chrome") -> "Apple"
+            userAgent.contains("edge") -> "Microsoft"
+            else -> "Unknown"
+        }
+    }
+    
+    private fun getOSName(): String {
+        val userAgent = navigator.userAgent.lowercase()
+        return when {
+            userAgent.contains("windows") -> "Windows"
+            userAgent.contains("macintosh") || userAgent.contains("mac os") -> "macOS"
+            userAgent.contains("linux") -> "Linux"
+            userAgent.contains("android") -> "Android"
+            userAgent.contains("iphone") || userAgent.contains("ipad") -> "iOS"
+            else -> "Unknown OS"
+        }
+    }
+    
+    private fun extractOSVersion(): String {
+        val userAgent = navigator.userAgent
+        // 简化的版本提取逻辑
+        return "Unknown Version"
+    }
+    
+    private fun getMemoryInfo(): dynamic {
+        return js("performance.memory") ?: js("{ totalJSHeapSize: 0, usedJSHeapSize: 0 }")
+    }
+    
+    private suspend fun requestCameraPermission(): PermissionStatus {
+        return suspendCancellableCoroutine { continuation ->
+            if (js("'mediaDevices' in navigator") as Boolean) {
+                val getUserMedia = navigator.asDynamic().mediaDevices.getUserMedia
+                getUserMedia(js("{ video: true }")).then({
+                    continuation.resume(PermissionStatus.GRANTED)
+                }).catch({
+                    continuation.resume(PermissionStatus.DENIED)
+                })
+            } else {
+                continuation.resume(PermissionStatus.NOT_DETERMINED)
+            }
+        }
+    }
+    
+    private suspend fun requestMicrophonePermission(): PermissionStatus {
+        return suspendCancellableCoroutine { continuation ->
+            if (js("'mediaDevices' in navigator") as Boolean) {
+                val getUserMedia = navigator.asDynamic().mediaDevices.getUserMedia
+                getUserMedia(js("{ audio: true }")).then({
+                    continuation.resume(PermissionStatus.GRANTED)
+                }).catch({
+                    continuation.resume(PermissionStatus.DENIED)
+                })
+            } else {
+                continuation.resume(PermissionStatus.NOT_DETERMINED)
+            }
+        }
+    }
+    
+    private suspend fun requestLocationPermission(): PermissionStatus {
+        return suspendCancellableCoroutine { continuation ->
+            if (js("'geolocation' in navigator") as Boolean) {
+                navigator.asDynamic().geolocation.getCurrentPosition(
+                    { continuation.resume(PermissionStatus.GRANTED) },
+                    { continuation.resume(PermissionStatus.DENIED) }
+                )
+            } else {
+                continuation.resume(PermissionStatus.NOT_DETERMINED)
+            }
+        }
+    }
+    
+    private suspend fun requestNotificationPermission(): PermissionStatus {
+        return suspendCancellableCoroutine { continuation ->
+            if (js("'Notification' in window") as Boolean) {
+                js("Notification.requestPermission()").then({ permission ->
+                    val status = when (permission as String) {
+                        "granted" -> PermissionStatus.GRANTED
+                        "denied" -> PermissionStatus.DENIED
+                        else -> PermissionStatus.NOT_DETERMINED
+                    }
+                    continuation.resume(status)
+                })
+            } else {
+                continuation.resume(PermissionStatus.NOT_DETERMINED)
+            }
+        }
+    }
+    
+    private fun checkCameraPermission(): PermissionStatus {
+        // Web环境下权限检查较复杂，简化实现
+        return PermissionStatus.NOT_DETERMINED
+    }
+    
+    private fun checkMicrophonePermission(): PermissionStatus {
+        return PermissionStatus.NOT_DETERMINED
+    }
+    
+    private fun checkLocationPermission(): PermissionStatus {
+        return PermissionStatus.NOT_DETERMINED
+    }
+    
+    private fun checkNotificationPermission(): PermissionStatus {
+        return if (js("'Notification' in window") as Boolean) {
+            when (js("Notification.permission") as String) {
+                "granted" -> PermissionStatus.GRANTED
+                "denied" -> PermissionStatus.DENIED
+                else -> PermissionStatus.NOT_DETERMINED
+            }
+        } else {
+            PermissionStatus.NOT_DETERMINED
+        }
+    }
+    
+    private fun setupBatteryMonitoring() {
+        if (js("'getBattery' in navigator") as Boolean) {
+            js("navigator.getBattery()").then({ battery ->
+                // 监听电池状态变化
+                battery.addEventListener("chargingchange") {
+                    _batteryStatus.value = getCurrentBatteryStatus()
+                }
+                battery.addEventListener("levelchange") {
+                    _batteryStatus.value = getCurrentBatteryStatus()
+                }
+            })
+        }
+    }
+    
+    private fun getCurrentNetworkStatus(): NetworkStatus {
+        return if (navigator.onLine) NetworkStatus.CONNECTED else NetworkStatus.DISCONNECTED
+    }
+    
+    private fun getCurrentBatteryStatus(): BatteryStatus {
+        return BatteryStatus(
+            level = getBatteryLevel(),
+            isCharging = isBatteryCharging(),
+            chargingType = if (isBatteryCharging()) ChargingType.AC else ChargingType.NONE,
+            temperature = 25.0f // Web环境下无法获取电池温度
         )
     }
 }
 
-// 工厂对象
+// 扩展函数用于过滤非空值
+private fun <T> Flow<T?>.filterNotNull(): Flow<T> = kotlinx.coroutines.flow.flow {
+    collect { value ->
+        if (value != null) emit(value)
+    }
+}
+
 actual object UnifyDeviceManagerFactory {
-    actual fun create(config: UnifyDeviceConfig): UnifyDeviceManager {
+    actual fun create(): UnifyDeviceManager {
         return UnifyDeviceManagerImpl()
     }
 }

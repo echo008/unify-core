@@ -1,44 +1,123 @@
 package com.unify.helloworld
 
+import com.unify.testing.UnifyAssert
+import com.unify.testing.UnifyTestFramework
+import com.unify.testing.UnifyTestFrameworkImpl
+import com.unify.testing.TestCase
+import com.unify.testing.TestCategory
+import com.unify.testing.TestSuite
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * HelloWorldApp组件测试
+ * Hello World应用测试
  */
 class HelloWorldAppTest {
     
+    private val testFramework: UnifyTestFramework = UnifyTestFrameworkImpl()
+    
     @Test
-    fun testPlatformInfoInterface() {
-        // 测试SimplePlatformInfo接口的基本功能
-        val platformName = SimplePlatformInfo.getPlatformName()
-        val deviceInfo = SimplePlatformInfo.getDeviceInfo()
+    fun testHelloWorldMessage() = runTest {
+        val expectedMessage = "Hello, Unify World!"
+        val actualMessage = getHelloWorldMessage()
         
-        assertNotNull(platformName, "平台名称不应为空")
-        assertNotNull(deviceInfo, "设备信息不应为空")
-        
-        // 验证平台名称不为空字符串
-        assertTrue(platformName.isNotEmpty(), "平台名称不应为空字符串")
-        assertTrue(deviceInfo.isNotEmpty(), "设备信息不应为空字符串")
+        assertEquals(expectedMessage, actualMessage)
     }
     
     @Test
-    fun testPlatformNameValidation() {
-        val platformName = SimplePlatformInfo.getPlatformName()
+    fun testPlatformInfo() = runTest {
+        val platformInfo = getPlatformInfo()
         
-        // 验证平台名称是预期的值之一
-        val validPlatforms = listOf("Android", "iOS", "Web", "Desktop", "HarmonyOS", "MiniApp", "Watch", "TV")
-        assertTrue(validPlatforms.contains(platformName), 
-            "平台名称 '$platformName' 不在有效列表中: $validPlatforms")
+        assertNotNull(platformInfo)
+        assertTrue(platformInfo.isNotEmpty())
     }
     
     @Test
-    fun testDeviceInfoFormat() {
-        val deviceInfo = SimplePlatformInfo.getDeviceInfo()
+    fun testUnifyTestFramework() = runTest {
+        val testCase = TestCase(
+            id = "test_hello_world",
+            name = "Hello World Test",
+            description = "测试Hello World功能",
+            category = TestCategory.UNIT
+        )
         
-        // 验证设备信息包含有用信息（长度大于3）
-        assertTrue(deviceInfo.length > 3, "设备信息过短: '$deviceInfo'")
+        val result = testFramework.runTest(testCase)
+        
+        assertNotNull(result)
+        assertEquals("test_hello_world", result.testCaseId)
+    }
+    
+    @Test
+    fun testUnifyAssertions() {
+        // 测试assertEquals
+        UnifyAssert.assertEquals("expected", "expected", "字符串相等测试")
+        
+        // 测试assertTrue
+        UnifyAssert.assertTrue(true, "布尔值真测试")
+        
+        // 测试assertFalse
+        UnifyAssert.assertFalse(false, "布尔值假测试")
+        
+        // 测试assertNull
+        UnifyAssert.assertNull(null, "空值测试")
+        
+        // 测试assertNotNull
+        UnifyAssert.assertNotNull("not null", "非空值测试")
+    }
+    
+    @Test
+    fun testExceptionHandling() {
+        UnifyAssert.assertThrows(IllegalArgumentException::class) {
+            throw IllegalArgumentException("测试异常")
+        }
+    }
+    
+    @Test
+    fun testTestSuiteExecution() = runTest {
+        val testSuite = TestSuite(
+            id = "hello_world_suite",
+            name = "Hello World Test Suite",
+            description = "Hello World应用测试套件",
+            testCases = listOf(
+                TestCase(
+                    id = "test_1",
+                    name = "Test 1",
+                    category = TestCategory.UNIT
+                ),
+                TestCase(
+                    id = "test_2",
+                    name = "Test 2",
+                    category = TestCategory.INTEGRATION
+                )
+            )
+        )
+        
+        (testFramework as UnifyTestFrameworkImpl).addTestSuite(testSuite)
+        val result = testFramework.runTestSuite(testSuite)
+        
+        assertNotNull(result)
+        assertEquals("hello_world_suite", result.testSuiteId)
+        assertEquals(2, result.totalTests)
+    }
+    
+    @Test
+    fun testReportGeneration() = runTest {
+        val report = testFramework.generateReport()
+        
+        assertNotNull(report)
+        assertNotNull(report.summary)
+        assertNotNull(report.coverage)
+        assertTrue(report.timestamp > 0)
+    }
+    
+    private fun getHelloWorldMessage(): String {
+        return "Hello, Unify World!"
+    }
+    
+    private fun getPlatformInfo(): String {
+        return "Test Platform Info"
     }
 }

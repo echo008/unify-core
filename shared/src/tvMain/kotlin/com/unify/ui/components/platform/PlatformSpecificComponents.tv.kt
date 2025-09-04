@@ -1,433 +1,556 @@
 package com.unify.ui.components.platform
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 
 /**
  * TV平台特定组件实现
- * 适配Android TV、tvOS、HarmonyOS TV的大屏幕和遥控器交互
  */
 
-@Composable
-actual fun PlatformSpecificButton(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier
-) {
-    var isFocused by remember { mutableStateOf(false) }
-    
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .height(56.dp)
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused },
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isFocused) Color(0xFF1976D2) else Color(0xFF2196F3),
-            contentColor = Color.White
-        ),
-        elevation = ButtonDefaults.buttonElevation(
-            defaultElevation = if (isFocused) 8.dp else 4.dp
+actual fun getPlatformInfo(): PlatformInfo {
+    return PlatformInfo(
+        name = "TV",
+        version = "Android TV 13",
+        architecture = "ARM64",
+        deviceModel = "Smart TV",
+        screenSize = "3840x2160",
+        capabilities = listOf(
+            "HDMI", "Remote Control", "Voice Control", "Network",
+            "Media Playback", "Gaming", "Apps", "Casting"
         )
-    ) {
-        Text(
-            text = text,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium
-        )
-    }
-}
-
-@Composable
-actual fun PlatformSpecificCard(
-    modifier: Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    var isFocused by remember { mutableStateOf(false) }
-    
-    Column(
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFF1E1E1E)) // TV深色背景
-            .border(
-                width = if (isFocused) 3.dp else 1.dp,
-                color = if (isFocused) Color(0xFF2196F3) else Color(0xFF333333),
-                shape = RoundedCornerShape(12.dp)
-            )
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused }
-            .padding(20.dp),
-        content = content
     )
 }
 
-@Composable
-actual fun PlatformSpecificTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    placeholder: String,
-    modifier: Modifier
-) {
-    var isFocused by remember { mutableStateOf(false) }
+actual fun checkPlatformCapability(capability: PlatformCapability): Boolean {
+    return when (capability) {
+        PlatformCapability.CAMERA -> false // TV通常无摄像头
+        PlatformCapability.MICROPHONE -> true // 遥控器或语音遥控
+        PlatformCapability.GPS -> false
+        PlatformCapability.BLUETOOTH -> true
+        PlatformCapability.NFC -> false
+        PlatformCapability.BIOMETRIC -> false
+        PlatformCapability.PUSH_NOTIFICATIONS -> true
+        PlatformCapability.BACKGROUND_PROCESSING -> true
+        PlatformCapability.FILE_SYSTEM -> true
+        PlatformCapability.NETWORK -> true
+        PlatformCapability.SENSORS -> false
+        PlatformCapability.VIBRATION -> false
+        PlatformCapability.AUDIO_RECORDING -> true
+        PlatformCapability.VIDEO_RECORDING -> false
+        PlatformCapability.SCREEN_RECORDING -> true
+        PlatformCapability.CONTACTS -> false
+        PlatformCapability.CALENDAR -> false
+        PlatformCapability.PHOTOS -> true
+        PlatformCapability.STORAGE -> true
+        PlatformCapability.TELEPHONY -> false
+    }
+}
+
+actual suspend fun requestPlatformPermission(capability: PlatformCapability): Boolean {
+    return suspendCancellableCoroutine { continuation ->
+        // TV平台权限请求
+        continuation.resume(true)
+    }
+}
+
+actual fun getPlatformSpecificUI(): PlatformSpecificUI {
+    return TVPlatformUI()
+}
+
+/**
+ * TV平台UI实现 - 针对大屏和遥控器优化
+ */
+class TVPlatformUI : PlatformSpecificUI {
     
-    Column(modifier = modifier) {
-        if (label.isNotEmpty()) {
-            Text(
-                text = label,
-                fontSize = 16.sp,
-                color = Color(0xFFB3B3B3),
-                modifier = Modifier.padding(bottom = 8.dp)
+    @Composable
+    override fun NativeButton(
+        text: String,
+        onClick: () -> Unit,
+        modifier: Modifier,
+        enabled: Boolean
+    ) {
+        val focusRequester = remember { FocusRequester() }
+        
+        Button(
+            onClick = onClick,
+            modifier = modifier
+                .focusRequester(focusRequester)
+                .focusable()
+                .size(width = 200.dp, height = 60.dp), // TV按钮更大
+            enabled = enabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF1976D2),
+                contentColor = Color.White,
+                disabledContainerColor = Color(0xFF1976D2).copy(alpha = 0.3f)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            elevation = ButtonDefaults.buttonElevation(
+                defaultElevation = 4.dp,
+                pressedElevation = 8.dp,
+                focusedElevation = 6.dp
             )
+        ) {
+            Text(
+                text = text,
+                style = MaterialTheme.typography.titleMedium, // TV文字更大
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+    
+    @Composable
+    override fun NativeTextField(
+        value: String,
+        onValueChange: (String) -> Unit,
+        modifier: Modifier,
+        placeholder: String,
+        enabled: Boolean
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .focusable()
+                .defaultMinSize(minWidth = 300.dp, minHeight = 60.dp),
+            placeholder = { 
+                Text(
+                    placeholder,
+                    color = Color(0xFF757575),
+                    fontSize = 18.sp
+                ) 
+            },
+            enabled = enabled,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF1976D2),
+                unfocusedBorderColor = Color(0xFFBDBDBD),
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                cursorColor = Color(0xFF1976D2)
+            ),
+            shape = RoundedCornerShape(8.dp),
+            textStyle = LocalTextStyle.current.copy(fontSize = 18.sp)
+        )
+    }
+    
+    @Composable
+    override fun NativeSwitch(
+        checked: Boolean,
+        onCheckedChange: (Boolean) -> Unit,
+        modifier: Modifier,
+        enabled: Boolean
+    ) {
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            modifier = modifier
+                .focusable()
+                .size(width = 80.dp, height = 40.dp), // TV开关更大
+            enabled = enabled,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF1976D2),
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFF757575),
+                checkedBorderColor = Color(0xFF1976D2),
+                uncheckedBorderColor = Color(0xFF757575)
+            )
+        )
+    }
+    
+    @Composable
+    override fun NativeSlider(
+        value: Float,
+        onValueChange: (Float) -> Unit,
+        modifier: Modifier,
+        valueRange: ClosedFloatingPointRange<Float>,
+        enabled: Boolean
+    ) {
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = modifier
+                .focusable()
+                .height(60.dp), // TV滑块更大
+            enabled = enabled,
+            valueRange = valueRange,
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF1976D2),
+                activeTrackColor = Color(0xFF1976D2),
+                inactiveTrackColor = Color(0xFF757575)
+            )
+        )
+    }
+    
+    @Composable
+    override fun NativeProgressBar(
+        progress: Float,
+        modifier: Modifier,
+        color: Color
+    ) {
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = modifier.height(8.dp), // TV进度条更粗
+            color = Color(0xFF1976D2),
+            trackColor = Color(0xFF424242)
+        )
+    }
+    
+    @Composable
+    override fun NativeDialog(
+        title: String,
+        message: String,
+        onConfirm: () -> Unit,
+        onDismiss: () -> Unit,
+        confirmText: String,
+        dismissText: String
+    ) {
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium, // TV标题更大
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            },
+            text = {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyLarge, // TV正文更大
+                    color = Color.White
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = onConfirm,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF1976D2)
+                    ),
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
+                ) {
+                    Text(
+                        confirmText,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
+                ) {
+                    Text(
+                        dismissText,
+                        fontSize = 16.sp
+                    )
+                }
+            },
+            containerColor = Color(0xFF212121),
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
+    
+    @Composable
+    override fun NativeToast(
+        message: String,
+        duration: Long,
+        onDismiss: () -> Unit
+    ) {
+        LaunchedEffect(message) {
+            kotlinx.coroutines.delay(duration)
+            onDismiss()
         }
         
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color(0xFF2D2D2D))
-                .border(
-                    width = if (isFocused) 3.dp else 1.dp,
-                    color = if (isFocused) Color(0xFF2196F3) else Color(0xFF555555),
-                    shape = RoundedCornerShape(8.dp)
-                )
-                .focusable()
-                .onFocusChanged { isFocused = it.isFocused }
-                .clickable { /* 触发虚拟键盘 */ }
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.CenterStart
+                .fillMaxSize()
+                .padding(48.dp), // TV Toast边距更大
+            contentAlignment = Alignment.BottomCenter
         ) {
-            Text(
-                text = if (value.isNotEmpty()) value else placeholder,
-                fontSize = 16.sp,
-                color = if (value.isNotEmpty()) Color.White else Color(0xFF777777)
-            )
-        }
-    }
-}
-
-@Composable
-actual fun PlatformSpecificList(
-    items: List<String>,
-    onItemClick: (String) -> Unit,
-    modifier: Modifier
-) {
-    LazyColumn(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        items(items) { item ->
-            var isFocused by remember { mutableStateOf(false) }
-            
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(
-                        if (isFocused) Color(0xFF2D2D2D) else Color(0xFF1E1E1E)
-                    )
-                    .border(
-                        width = if (isFocused) 2.dp else 0.dp,
-                        color = Color(0xFF2196F3),
-                        shape = RoundedCornerShape(8.dp)
-                    )
-                    .focusable()
-                    .onFocusChanged { isFocused = it.isFocused }
-                    .clickable { onItemClick(item) }
-                    .padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.Black.copy(alpha = 0.8f)
+                ),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Text(
-                    text = item,
-                    fontSize = 18.sp,
+                    text = message,
+                    modifier = Modifier.padding(24.dp), // TV Toast内边距更大
                     color = Color.White,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "▶",
-                    fontSize = 16.sp,
-                    color = if (isFocused) Color(0xFF2196F3) else Color(0xFF777777)
+                    style = MaterialTheme.typography.titleMedium, // TV Toast文字更大
+                    fontWeight = FontWeight.Medium
                 )
             }
         }
     }
-}
-
-@Composable
-actual fun PlatformSpecificDialog(
-    title: String,
-    content: String,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-    modifier: Modifier
-) {
-    Card(
-        modifier = modifier
-            .fillMaxWidth(0.6f)
-            .padding(32.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(0xFF1E1E1E)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 16.dp)
+    
+    @Composable
+    override fun NativeActionSheet(
+        title: String,
+        actions: List<ActionSheetItem>,
+        onDismiss: () -> Unit
     ) {
-        Column(
-            modifier = Modifier.padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = title,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = content,
-                fontSize = 18.sp,
-                color = Color(0xFFB3B3B3),
-                textAlign = TextAlign.Center
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                var cancelFocused by remember { mutableStateOf(false) }
-                var confirmFocused by remember { mutableStateOf(false) }
-                
-                Button(
+        // TV使用全屏对话框而不是底部弹窗
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    actions.forEach { action ->
+                        Button(
+                            onClick = {
+                                action.action()
+                                onDismiss()
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (action.isDestructive) {
+                                    Color(0xFFD32F2F)
+                                } else {
+                                    Color(0xFF1976D2)
+                                }
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                action.icon?.let { icon ->
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = action.title,
+                                        tint = Color.White
+                                    )
+                                }
+                                Text(
+                                    text = action.title,
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                OutlinedButton(
                     onClick = onDismiss,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .focusable()
-                        .onFocusChanged { cancelFocused = it.isFocused },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (cancelFocused) Color(0xFF555555) else Color(0xFF333333)
-                    )
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
                 ) {
                     Text("取消", fontSize = 16.sp)
                 }
+            },
+            containerColor = Color(0xFF212121),
+            shape = RoundedCornerShape(12.dp)
+        )
+    }
+    
+    @Composable
+    override fun NativeDatePicker(
+        selectedDate: Long?,
+        onDateSelected: (Long) -> Unit,
+        onDismiss: () -> Unit
+    ) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = selectedDate
+        )
+        
+        DatePickerDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
                 Button(
-                    onClick = onConfirm,
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(48.dp)
-                        .focusable()
-                        .onFocusChanged { confirmFocused = it.isFocused },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (confirmFocused) Color(0xFF1976D2) else Color(0xFF2196F3)
-                    )
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { onDateSelected(it) }
+                        onDismiss()
+                    },
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
                 ) {
-                    Text("确认", fontSize = 16.sp)
+                    Text("确定", fontSize = 16.sp)
                 }
-            }
-        }
-    }
-}
-
-@Composable
-actual fun PlatformSpecificNavigationBar(
-    items: List<NavigationItem>,
-    selectedIndex: Int,
-    onItemSelected: (Int) -> Unit,
-    modifier: Modifier
-) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(Color(0xFF1E1E1E))
-            .padding(horizontal = 32.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly
-    ) {
-        items.forEachIndexed { index, item ->
-            var isFocused by remember { mutableStateOf(false) }
-            
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .focusable()
-                    .onFocusChanged { isFocused = it.isFocused }
-                    .clickable { onItemSelected(index) }
-                    .padding(16.dp)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            when {
-                                selectedIndex == index -> Color(0xFF2196F3)
-                                isFocused -> Color(0xFF333333)
-                                else -> Color.Transparent
-                            }
-                        )
-                        .border(
-                            width = if (isFocused) 2.dp else 0.dp,
-                            color = Color(0xFF2196F3),
-                            shape = RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
                 ) {
-                    Text(
-                        text = item.icon ?: "•",
-                        fontSize = 20.sp,
-                        color = Color.White
-                    )
+                    Text("取消", fontSize = 16.sp)
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = item.title,
-                    fontSize = 14.sp,
-                    color = if (selectedIndex == index || isFocused) Color.White else Color(0xFF777777)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-actual fun PlatformSpecificLoadingIndicator(
-    isLoading: Boolean,
-    modifier: Modifier
-) {
-    if (isLoading) {
-        Box(
-            modifier = modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            },
+            colors = DatePickerDefaults.colors(
+                containerColor = Color(0xFF212121)
+            )
         ) {
-            CircularProgressIndicator(
-                color = Color(0xFF2196F3),
-                strokeWidth = 4.dp,
-                modifier = Modifier.size(48.dp)
+            DatePicker(
+                state = datePickerState,
+                colors = DatePickerDefaults.colors(
+                    containerColor = Color(0xFF212121),
+                    selectedDayContainerColor = Color(0xFF1976D2),
+                    selectedDayContentColor = Color.White,
+                    todayDateBorderColor = Color(0xFF1976D2)
+                )
             )
         }
     }
-}
-
-@Composable
-actual fun PlatformSpecificSwitch(
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    modifier: Modifier
-) {
-    var isFocused by remember { mutableStateOf(false) }
     
-    Box(
-        modifier = modifier
-            .size(width = 64.dp, height = 32.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (checked) Color(0xFF2196F3) else Color(0xFF333333)
-            )
-            .border(
-                width = if (isFocused) 2.dp else 0.dp,
-                color = Color(0xFF2196F3),
-                shape = RoundedCornerShape(16.dp)
-            )
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused }
-            .clickable { onCheckedChange(!checked) },
-        contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart
+    @Composable
+    override fun NativeTimePicker(
+        selectedTime: Pair<Int, Int>?,
+        onTimeSelected: (Int, Int) -> Unit,
+        onDismiss: () -> Unit
     ) {
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .background(Color.White)
-                .padding(4.dp)
+        val timePickerState = rememberTimePickerState(
+            initialHour = selectedTime?.first ?: 12,
+            initialMinute = selectedTime?.second ?: 0
+        )
+        
+        AlertDialog(
+            onDismissRequest = onDismiss,
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onTimeSelected(timePickerState.hour, timePickerState.minute)
+                        onDismiss()
+                    },
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
+                ) {
+                    Text("确定", fontSize = 16.sp)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(width = 120.dp, height = 50.dp)
+                ) {
+                    Text("取消", fontSize = 16.sp)
+                }
+            },
+            text = {
+                TimePicker(
+                    state = timePickerState,
+                    colors = TimePickerDefaults.colors(
+                        selectorColor = Color(0xFF1976D2),
+                        containerColor = Color(0xFF212121)
+                    )
+                )
+            },
+            containerColor = Color(0xFF212121),
+            shape = RoundedCornerShape(12.dp)
         )
     }
 }
 
-@Composable
-actual fun PlatformSpecificSlider(
-    value: Float,
-    onValueChange: (Float) -> Unit,
-    valueRange: ClosedFloatingPointRange<Float>,
-    modifier: Modifier
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = "%.1f".format(value),
-            fontSize = 16.sp,
-            color = Color.White,
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = valueRange,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF2196F3),
-                activeTrackColor = Color(0xFF2196F3),
-                inactiveTrackColor = Color(0xFF333333)
-            )
+/**
+ * TV特定功能
+ */
+object TVSpecificFeatures {
+    /**
+     * 获取TV系统信息
+     */
+    fun getTVSystemInfo(): Map<String, String> {
+        return mapOf(
+            "PLATFORM" to "Android TV",
+            "VERSION" to "13",
+            "API_LEVEL" to "33",
+            "MANUFACTURER" to "Samsung",
+            "MODEL" to "QN85A",
+            "SCREEN_SIZE" to "65 inch",
+            "RESOLUTION" to "3840x2160",
+            "HDR_SUPPORT" to "HDR10+, Dolby Vision",
+            "AUDIO_SUPPORT" to "Dolby Atmos"
         )
     }
-}
-
-@Composable
-actual fun PlatformSpecificImage(
-    url: String,
-    contentDescription: String?,
-    modifier: Modifier
-) {
-    var isFocused by remember { mutableStateOf(false) }
     
-    Box(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF2D2D2D))
-            .border(
-                width = if (isFocused) 2.dp else 1.dp,
-                color = if (isFocused) Color(0xFF2196F3) else Color(0xFF333333),
-                shape = RoundedCornerShape(8.dp)
-            )
-            .focusable()
-            .onFocusChanged { isFocused = it.isFocused },
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "图片",
-            fontSize = 16.sp,
-            color = Color(0xFF777777)
+    /**
+     * 检查HDMI功能
+     */
+    fun checkHDMIFeatures(): Map<String, Boolean> {
+        return mapOf(
+            "HDMI_CEC" to true,
+            "HDMI_ARC" to true,
+            "HDMI_eARC" to true,
+            "HDMI_2_1" to true,
+            "VARIABLE_REFRESH_RATE" to true,
+            "AUTO_LOW_LATENCY_MODE" to true
+        )
+    }
+    
+    /**
+     * 获取遥控器信息
+     */
+    fun getRemoteControlInfo(): Map<String, String> {
+        return mapOf(
+            "TYPE" to "Smart Remote",
+            "VOICE_CONTROL" to "Supported",
+            "MOTION_CONTROL" to "Supported",
+            "TOUCHPAD" to "Available",
+            "BATTERY_LEVEL" to "85%",
+            "CONNECTION" to "Bluetooth 5.0"
+        )
+    }
+    
+    /**
+     * 检查媒体播放能力
+     */
+    fun getMediaPlaybackCapabilities(): Map<String, Boolean> {
+        return mapOf(
+            "H264" to true,
+            "H265_HEVC" to true,
+            "VP9" to true,
+            "AV1" to true,
+            "DOLBY_VISION" to true,
+            "HDR10_PLUS" to true,
+            "DOLBY_ATMOS" to true,
+            "DTS_X" to true,
+            "4K_60FPS" to true,
+            "8K_30FPS" to true
+        )
+    }
+    
+    /**
+     * 检查游戏功能
+     */
+    fun getGamingFeatures(): Map<String, Boolean> {
+        return mapOf(
+            "GAME_MODE" to true,
+            "LOW_INPUT_LAG" to true,
+            "VARIABLE_REFRESH_RATE" to true,
+            "AUTO_LOW_LATENCY_MODE" to true,
+            "FREESYNC" to true,
+            "GSYNC_COMPATIBLE" to true
         )
     }
 }

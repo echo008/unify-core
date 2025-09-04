@@ -1,315 +1,360 @@
 package com.unify.core.data
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.util.Properties
 import java.util.concurrent.ConcurrentHashMap
-import java.util.UUID
 
 /**
- * Desktop平台的数据管理器实现
+ * Desktop平台UnifyDataManager实现
+ * 基于文件系统和Properties文件
  */
-actual class UnifyDataManagerImpl : UnifyDataManager {
+class UnifyDataManagerImpl : UnifyDataManager {
+    private val dataDir = File(System.getProperty("user.home"), ".unify-core")
+    private val propertiesFile = File(dataDir, "data.properties")
+    private val objectsDir = File(dataDir, "objects")
     
-    override val storage: UnifyStorage = DesktopStorage()
-    override val secureStorage: UnifySecureStorage = DesktopSecureStorage()
-    override val cache: UnifyCacheManager = DesktopCacheManager()
-    override val state: UnifyStateManager = DesktopStateManager()
-    override val database: UnifyDatabaseManager = DesktopDatabaseManager()
-    
-    private var initialized = false
-    
-    override suspend fun initialize() {
-        if (initialized) return
-        
-        cache.setMaxSize(100 * 1024 * 1024) // 100MB默认缓存
-        database.initialize("unify_database", 1)
-        
-        initialized = true
-    }
-    
-    override suspend fun clearAllData() {
-        storage.clear()
-        cache.clear()
-        state.clearAllStates()
-    }
-    
-    override suspend fun backupData(): BackupResult {
-        return try {
-            val backupData = Json.encodeToString(mapOf(
-                "storage" to storage.getAllKeys(),
-                "timestamp" to System.currentTimeMillis()
-            )).toByteArray()
-            
-            BackupResult(
-                success = true,
-                data = backupData,
-                size = backupData.size.toLong()
-            )
-        } catch (e: Exception) {
-            BackupResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun restoreData(backupData: ByteArray): RestoreResult {
-        return try {
-            // 实现数据恢复逻辑
-            RestoreResult(
-                success = true,
-                restoredItems = 0
-            )
-        } catch (e: Exception) {
-            RestoreResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun getDataUsageStats(): DataUsageStats {
-        return DataUsageStats(
-            totalStorageUsed = 0L,
-            cacheSize = cache.getSize(),
-            databaseSize = 0L,
-            secureStorageSize = 0L
-        )
-    }
-}
-
-/**
- * Desktop存储实现
- */
-class DesktopStorage : UnifyStorage {
     private val properties = Properties()
-    private val storageFile = File(System.getProperty("user.home"), ".unify/storage.properties")
+    private val mutex = Mutex()
+    private val json = Json { ignoreUnknownKeys = true }
+    
+    // 响应式数据流管理
+    private val dataFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
+    
+    // 缓存过期时间管理
+    private val cacheExpiryMap = ConcurrentHashMap<String, Long>()
+    
+    // 同步设置
+    private var syncEnabled = false
     
     init {
-        storageFile.parentFile?.mkdirs()
-        if (storageFile.exists()) {
-            properties.load(storageFile.inputStream())
-        }
+        initializeDataDirectory()
+        loadProperties()
     }
     
-    override suspend fun putString(key: String, value: String) = withContext(Dispatchers.IO) {
+    override suspend fun getString(key: String, defaultValue: String?): String? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        properties.getProperty(key, defaultValue)
+    }
+    
+    override suspend fun setString(key: String, value: String) = mutex.withLock {
         properties.setProperty(key, value)
         saveProperties()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun getString(key: String): String? = withContext(Dispatchers.IO) {
-        properties.getProperty(key)
+    override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        properties.getProperty(key)?.toIntOrNull() ?: defaultValue
     }
     
-    override suspend fun putInt(key: String, value: Int) = putString(key, value.toString())
-    override suspend fun getInt(key: String): Int? = getString(key)?.toIntOrNull()
-    
-    override suspend fun putLong(key: String, value: Long) = putString(key, value.toString())
-    override suspend fun getLong(key: String): Long? = getString(key)?.toLongOrNull()
-    
-    override suspend fun putFloat(key: String, value: Float) = putString(key, value.toString())
-    override suspend fun getFloat(key: String): Float? = getString(key)?.toFloatOrNull()
-    
-    override suspend fun putBoolean(key: String, value: Boolean) = putString(key, value.toString())
-    override suspend fun getBoolean(key: String): Boolean? = getString(key)?.toBooleanStrictOrNull()
-    
-    override suspend fun putByteArray(key: String, value: ByteArray) = putString(key, value.toString())
-    override suspend fun getByteArray(key: String): ByteArray? = getString(key)?.toByteArray()
-    
-    override suspend fun remove(key: String) = withContext(Dispatchers.IO) {
-        properties.remove(key)
+    override suspend fun setInt(key: String, value: Int) = mutex.withLock {
+        properties.setProperty(key, value.toString())
         saveProperties()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun clear() = withContext(Dispatchers.IO) {
-        properties.clear()
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        properties.getProperty(key)?.toBooleanStrictOrNull() ?: defaultValue
+    }
+    
+    override suspend fun setBoolean(key: String, value: Boolean) = mutex.withLock {
+        properties.setProperty(key, value.toString())
         saveProperties()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun contains(key: String): Boolean = properties.containsKey(key)
-    
-    override suspend fun getAllKeys(): Set<String> = properties.stringPropertyNames()
-    
-    private fun saveProperties() {
-        properties.store(storageFile.outputStream(), "Unify Desktop Storage")
-    }
-}
-
-/**
- * Desktop安全存储实现
- */
-class DesktopSecureStorage : DesktopStorage(), UnifySecureStorage {
-    
-    override suspend fun putSecureString(key: String, value: String) {
-        // 使用简单加密存储
-        putString("secure_$key", value)
+    override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        properties.getProperty(key)?.toLongOrNull() ?: defaultValue
     }
     
-    override suspend fun getSecureString(key: String): String? {
-        return getString("secure_$key")
+    override suspend fun setLong(key: String, value: Long) = mutex.withLock {
+        properties.setProperty(key, value.toString())
+        saveProperties()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun putEncrypted(key: String, value: ByteArray) {
-        putByteArray("encrypted_$key", value)
+    override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        properties.getProperty(key)?.toFloatOrNull() ?: defaultValue
     }
     
-    override suspend fun getDecrypted(key: String): ByteArray? {
-        return getByteArray("encrypted_$key")
+    override suspend fun setFloat(key: String, value: Float) = mutex.withLock {
+        properties.setProperty(key, value.toString())
+        saveProperties()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun setEncryptionKey(key: String) {
-        // 设置加密密钥
-    }
-    
-    override suspend fun authenticateWithBiometric(): Boolean {
-        // Desktop生物识别认证
-        return true
-    }
-}
-
-/**
- * Desktop缓存管理器实现
- */
-class DesktopCacheManager : UnifyCacheManager {
-    private val cache = ConcurrentHashMap<String, CacheItem>()
-    private var maxSize = 50 * 1024 * 1024L // 50MB
-    
-    data class CacheItem(
-        val value: Any,
-        val timestamp: Long,
-        val ttl: Long?
-    )
-    
-    override suspend fun <T> put(key: String, value: T, ttl: Long?) {
-        cache[key] = CacheItem(value as Any, System.currentTimeMillis(), ttl)
-    }
-    
-    override suspend fun <T> get(key: String, type: Class<T>): T? {
-        val item = cache[key] ?: return null
-        
-        // 检查是否过期
-        if (item.ttl != null && System.currentTimeMillis() - item.timestamp > item.ttl) {
-            cache.remove(key)
+    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
             return null
         }
         
-        return item.value as? T
-    }
-    
-    override suspend fun remove(key: String) {
-        cache.remove(key)
-    }
-    
-    override suspend fun clear() {
-        cache.clear()
-    }
-    
-    override suspend fun isValid(key: String): Boolean {
-        val item = cache[key] ?: return false
-        return item.ttl == null || System.currentTimeMillis() - item.timestamp <= item.ttl
-    }
-    
-    override suspend fun getSize(): Long {
-        return cache.size.toLong() * 1024 // 估算大小
-    }
-    
-    override suspend fun setMaxSize(maxSize: Long) {
-        this.maxSize = maxSize
-    }
-    
-    override suspend fun cleanupExpired() {
-        val now = System.currentTimeMillis()
-        cache.entries.removeIf { (_, item) ->
-            item.ttl != null && now - item.timestamp > item.ttl
+        val objectFile = File(objectsDir, "$key.json")
+        if (!objectFile.exists()) return null
+        
+        try {
+            val jsonString = objectFile.readText()
+            // 使用反射或序列化库来反序列化对象
+            // 这里简化实现，实际应用中需要更复杂的序列化处理
+            json.decodeFromString<T>(jsonString)
+        } catch (e: Exception) {
+            null
         }
     }
+    
+    override suspend fun <T> setObject(key: String, value: T) = mutex.withLock {
+        val objectFile = File(objectsDir, "$key.json")
+        try {
+            val jsonString = json.encodeToString(value)
+            objectFile.writeText(jsonString)
+            updateDataFlow(key, value)
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to serialize object for key: $key", e)
+        }
+    }
+    
+    override suspend fun clear() = mutex.withLock {
+        properties.clear()
+        saveProperties()
+        
+        // 清理对象文件
+        if (objectsDir.exists()) {
+            objectsDir.listFiles()?.forEach { it.delete() }
+        }
+        
+        cacheExpiryMap.clear()
+        dataFlows.values.forEach { it.value = null }
+    }
+    
+    override suspend fun remove(key: String) = mutex.withLock {
+        properties.remove(key)
+        saveProperties()
+        
+        // 删除对象文件
+        val objectFile = File(objectsDir, "$key.json")
+        if (objectFile.exists()) {
+            objectFile.delete()
+        }
+        
+        cacheExpiryMap.remove(key)
+        updateDataFlow(key, null)
+    }
+    
+    override suspend fun contains(key: String): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return false
+        }
+        properties.containsKey(key) || File(objectsDir, "$key.json").exists()
+    }
+    
+    override suspend fun getAllKeys(): Set<String> = mutex.withLock {
+        val propertyKeys = properties.keys.map { it.toString() }.toSet()
+        val objectKeys = if (objectsDir.exists()) {
+            objectsDir.listFiles()?.map { it.nameWithoutExtension }?.toSet() ?: emptySet()
+        } else {
+            emptySet()
+        }
+        
+        // 过滤掉过期的键
+        (propertyKeys + objectKeys).filter { !isCacheExpired(it) }.toSet()
+    }
+    
+    override fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?> {
+        return getOrCreateDataFlow(key).map { value ->
+            when {
+                value == null -> null
+                clazz.isInstance(value) -> clazz.cast(value)
+                else -> null
+            }
+        }
+    }
+    
+    override fun observeStringKey(key: String): Flow<String?> {
+        return getOrCreateDataFlow(key).map { it as? String }
+    }
+    
+    override fun observeIntKey(key: String): Flow<Int> {
+        return getOrCreateDataFlow(key).map { (it as? Int) ?: 0 }
+    }
+    
+    override fun observeBooleanKey(key: String): Flow<Boolean> {
+        return getOrCreateDataFlow(key).map { (it as? Boolean) ?: false }
+    }
+    
+    override suspend fun setCacheExpiry(key: String, expiryMillis: Long) = mutex.withLock {
+        val expiryTime = System.currentTimeMillis() + expiryMillis
+        cacheExpiryMap[key] = expiryTime
+    }
+    
+    override suspend fun isCacheExpired(key: String): Boolean {
+        val expiryTime = cacheExpiryMap[key] ?: return false
+        return System.currentTimeMillis() > expiryTime
+    }
+    
+    override suspend fun clearExpiredCache() = mutex.withLock {
+        val currentTime = System.currentTimeMillis()
+        val expiredKeys = cacheExpiryMap.filter { (_, expiryTime) ->
+            currentTime > expiryTime
+        }.keys
+        
+        expiredKeys.forEach { key ->
+            properties.remove(key)
+            File(objectsDir, "$key.json").delete()
+            cacheExpiryMap.remove(key)
+            updateDataFlow(key, null)
+        }
+        
+        if (expiredKeys.isNotEmpty()) {
+            saveProperties()
+        }
+    }
+    
+    override suspend fun syncToCloud() {
+        if (!syncEnabled) return
+        
+        try {
+            // 创建同步备份文件
+            val syncFile = File(dataDir, "cloud_sync_backup.json")
+            val syncData = mutableMapOf<String, Any>()
+            
+            // 收集所有数据
+            val allKeys = getAllKeys()
+            allKeys.forEach { key ->
+                val propertyValue = properties.getProperty(key)
+                if (propertyValue != null) {
+                    syncData[key] = propertyValue
+                }
+                
+                // 检查对象文件
+                val objectFile = File(objectsDir, "$key.json")
+                if (objectFile.exists()) {
+                    syncData["${key}_object"] = objectFile.readText()
+                }
+            }
+            
+            // 保存到本地同步文件（模拟云端存储）
+            val syncJson = json.encodeToString(syncData)
+            syncFile.writeText(syncJson)
+            
+        } catch (e: Exception) {
+            println("Cloud sync failed: ${e.message}")
+        }
+    }
+    
+    override suspend fun syncFromCloud() {
+        if (!syncEnabled) return
+        
+        try {
+            // 从本地同步文件读取（模拟从云端获取）
+            val syncFile = File(dataDir, "cloud_sync_backup.json")
+            if (!syncFile.exists()) return
+            
+            val syncJson = syncFile.readText()
+            val syncData: Map<String, String> = json.decodeFromString(syncJson)
+            
+            syncData.forEach { (key, value) ->
+                if (key.endsWith("_object")) {
+                    // 恢复对象文件
+                    val originalKey = key.removeSuffix("_object")
+                    val objectFile = File(objectsDir, "$originalKey.json")
+                    objectFile.writeText(value)
+                    updateDataFlow(originalKey, value)
+                } else {
+                    // 恢复属性值
+                    properties.setProperty(key, value)
+                    updateDataFlow(key, value)
+                }
+            }
+            
+            saveProperties()
+            
+        } catch (e: Exception) {
+            println("Cloud sync from failed: ${e.message}")
+        }
+    }
+    
+    override fun isSyncEnabled(): Boolean = syncEnabled
+    
+    override fun setSyncEnabled(enabled: Boolean) {
+        syncEnabled = enabled
+    }
+    
+    private fun initializeDataDirectory() {
+        if (!dataDir.exists()) {
+            dataDir.mkdirs()
+        }
+        if (!objectsDir.exists()) {
+            objectsDir.mkdirs()
+        }
+    }
+    
+    private fun loadProperties() {
+        if (propertiesFile.exists()) {
+            try {
+                propertiesFile.inputStream().use { input ->
+                    properties.load(input)
+                }
+            } catch (e: Exception) {
+                println("Failed to load properties: ${e.message}")
+            }
+        }
+    }
+    
+    private fun saveProperties() {
+        try {
+            propertiesFile.outputStream().use { output ->
+                properties.store(output, "UnifyCore Desktop Data")
+            }
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to save properties", e)
+        }
+    }
+    
+    private fun getOrCreateDataFlow(key: String): Flow<Any?> {
+        return dataFlows.getOrPut(key) {
+            val initialValue = properties.getProperty(key) ?: run {
+                val objectFile = File(objectsDir, "$key.json")
+                if (objectFile.exists()) objectFile.readText() else null
+            }
+            MutableStateFlow(initialValue)
+        }.asStateFlow()
+    }
+    
+    private fun updateDataFlow(key: String, value: Any?) {
+        dataFlows.getOrPut(key) { MutableStateFlow(null) }.value = value
+    }
 }
 
-/**
- * Desktop状态管理器实现
- */
-class DesktopStateManager : UnifyStateManager {
-    private val states = ConcurrentHashMap<String, Any>()
-    private val stateFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
-    
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value as Any
-        getOrCreateStateFlow(key).value = value
-    }
-    
-    override fun <T> getState(key: String, type: Class<T>): T? {
-        return states[key] as? T
-    }
-    
-    override fun <T> observeState(key: String, type: Class<T>): Flow<T?> {
-        return getOrCreateStateFlow(key).asStateFlow() as Flow<T?>
-    }
-    
-    override fun removeState(key: String) {
-        states.remove(key)
-        stateFlows.remove(key)
-    }
-    
-    override fun clearAllStates() {
-        states.clear()
-        stateFlows.clear()
-    }
-    
-    override suspend fun persistState() {
-        // 持久化状态到文件
-    }
-    
-    override suspend fun restoreState() {
-        // 从文件恢复状态
-    }
-    
-    private fun getOrCreateStateFlow(key: String): MutableStateFlow<Any?> {
-        return stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
-    }
-}
-
-/**
- * Desktop数据库管理器实现
- */
-class DesktopDatabaseManager : UnifyDatabaseManager {
-    
-    override suspend fun initialize(databaseName: String, version: Int) {
-        // 初始化SQLite数据库
-    }
-    
-    override suspend fun query(sql: String, args: Array<Any>?): List<Map<String, Any?>> {
-        // 执行SQL查询
-        return emptyList()
-    }
-    
-    override suspend fun execute(sql: String, args: Array<Any>?): Int {
-        // 执行SQL更新
-        return 0
-    }
-    
-    override suspend fun beginTransaction(): TransactionHandle {
-        return TransactionHandle(
-            id = UUID.randomUUID().toString(),
-            timestamp = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun commitTransaction(handle: TransactionHandle) {
-        // 提交事务
-    }
-    
-    override suspend fun rollbackTransaction(handle: TransactionHandle) {
-        // 回滚事务
-    }
-    
-    override suspend fun close() {
-        // 关闭数据库连接
+actual object UnifyDataManagerFactory {
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl()
     }
 }

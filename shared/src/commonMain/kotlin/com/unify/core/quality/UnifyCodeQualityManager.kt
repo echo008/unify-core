@@ -1,462 +1,579 @@
 package com.unify.core.quality
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * Unify代码质量管理器
- * 提供代码质量检查、评分和改进建议
+ * 提供跨平台的代码质量检查、分析和改进建议
  */
 class UnifyCodeQualityManager {
-    private val _qualityMetrics = MutableStateFlow<Map<String, QualityMetric>>(emptyMap())
-    val qualityMetrics: StateFlow<Map<String, QualityMetric>> = _qualityMetrics
+    private val _qualityMetrics = MutableStateFlow(CodeQualityMetrics())
+    val qualityMetrics: StateFlow<CodeQualityMetrics> = _qualityMetrics
     
-    private val _overallScore = MutableStateFlow(0.0f)
-    val overallScore: StateFlow<Float> = _overallScore
+    private val testCoverageAnalyzer = TestCoverageAnalyzer()
     
-    private val qualityRules = mutableListOf<QualityRule>()
-    private val codeAnalyzers = mutableMapOf<String, CodeAnalyzer>()
-    
-    /**
-     * 初始化质量管理器
-     */
-    fun initialize() {
-        setupDefaultRules()
-        initializeAnalyzers()
-        calculateInitialScore()
+    // 质量标准常量
+    companion object {
+        private const val EXCELLENT_QUALITY_SCORE = 90.0
+        private const val GOOD_QUALITY_SCORE = 80.0
+        private const val FAIR_QUALITY_SCORE = 70.0
+        private const val POOR_QUALITY_SCORE = 60.0
+        
+        // 复杂度阈值
+        private const val MAX_CYCLOMATIC_COMPLEXITY = 10
+        private const val MAX_METHOD_LENGTH = 50
+        private const val MAX_CLASS_LENGTH = 500
+        private const val MAX_PARAMETER_COUNT = 5
+        
+        // 代码重复阈值
+        private const val MAX_DUPLICATION_PERCENTAGE = 5.0
+        private const val MIN_DUPLICATION_LINES = 6
+        
+        // 测试覆盖率目标
+        private const val TARGET_LINE_COVERAGE = 85.0
+        private const val TARGET_BRANCH_COVERAGE = 80.0
+        private const val TARGET_METHOD_COVERAGE = 90.0
+        
+        // 技术债务阈值
+        private const val MAX_TECHNICAL_DEBT_RATIO = 5.0
+        private const val MAX_MAINTAINABILITY_INDEX = 20.0
     }
     
     /**
-     * 分析代码质量
+     * 执行全面的代码质量分析
      */
-    fun analyzeCodeQuality(codeFiles: List<CodeFile>): QualityReport {
-        val metrics = mutableMapOf<String, QualityMetric>()
-        val violations = mutableListOf<QualityViolation>()
+    suspend fun analyzeCodeQuality(codebase: CodebaseInfo): CodeQualityReport {
+        val complexityAnalysis = analyzeComplexity(codebase)
+        val duplicationAnalysis = analyzeDuplication(codebase)
+        val coverageAnalysis = analyzeCoverage(codebase)
+        val maintainabilityAnalysis = analyzeMaintainability(codebase)
+        val securityAnalysis = analyzeSecurityIssues(codebase)
+        val performanceAnalysis = analyzePerformanceIssues(codebase)
         
-        codeFiles.forEach { file ->
-            val fileMetrics = analyzeFile(file)
-            metrics.putAll(fileMetrics)
-            
-            val fileViolations = checkRuleViolations(file)
-            violations.addAll(fileViolations)
-        }
+        val overallScore = calculateOverallQualityScore(
+            complexityAnalysis,
+            duplicationAnalysis,
+            coverageAnalysis,
+            maintainabilityAnalysis,
+            securityAnalysis,
+            performanceAnalysis
+        )
         
-        val overallScore = calculateOverallScore(metrics.values.toList())
-        _qualityMetrics.value = metrics
-        _overallScore.value = overallScore
-        
-        return QualityReport(
+        val report = CodeQualityReport(
             overallScore = overallScore,
-            metrics = metrics,
-            violations = violations,
-            suggestions = generateImprovementSuggestions(violations),
+            complexityAnalysis = complexityAnalysis,
+            duplicationAnalysis = duplicationAnalysis,
+            coverageAnalysis = coverageAnalysis,
+            maintainabilityAnalysis = maintainabilityAnalysis,
+            securityAnalysis = securityAnalysis,
+            performanceAnalysis = performanceAnalysis,
+            recommendations = generateQualityRecommendations(
+                complexityAnalysis,
+                duplicationAnalysis,
+                coverageAnalysis,
+                maintainabilityAnalysis,
+                securityAnalysis,
+                performanceAnalysis
+            ),
             timestamp = System.currentTimeMillis()
         )
+        
+        _qualityMetrics.value = _qualityMetrics.value.copy(
+            latestReport = report,
+            totalFiles = codebase.files.size,
+            totalLines = codebase.files.sumOf { it.lineCount },
+            lastAnalysisTime = System.currentTimeMillis()
+        )
+        
+        return report
     }
     
     /**
-     * 分析单个文件
+     * 分析代码复杂度
      */
-    private fun analyzeFile(file: CodeFile): Map<String, QualityMetric> {
-        val metrics = mutableMapOf<String, QualityMetric>()
-        
-        // 代码复杂度分析
-        val complexity = calculateComplexity(file.content)
-        metrics["complexity_${file.name}"] = QualityMetric(
-            name = "complexity",
-            value = complexity.toDouble(),
-            threshold = 10.0,
-            category = MetricCategory.COMPLEXITY
-        )
-        
-        // 代码重复分析
-        val duplication = calculateDuplication(file.content)
-        metrics["duplication_${file.name}"] = QualityMetric(
-            name = "duplication",
-            value = duplication,
-            threshold = 5.0,
-            category = MetricCategory.DUPLICATION
-        )
-        
-        // 测试覆盖率分析
-        val coverage = calculateTestCoverage(file)
-        metrics["coverage_${file.name}"] = QualityMetric(
-            name = "coverage",
-            value = coverage,
-            threshold = 80.0,
-            category = MetricCategory.COVERAGE
-        )
-        
-        return metrics
-    }
-    
-    /**
-     * 检查规则违规
-     */
-    private fun checkRuleViolations(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        
-        qualityRules.forEach { rule ->
-            val ruleViolations = rule.check(file)
-            violations.addAll(ruleViolations)
+    private fun analyzeComplexity(codebase: CodebaseInfo): ComplexityAnalysis {
+        val fileComplexities = codebase.files.map { file ->
+            FileComplexity(
+                fileName = file.fileName,
+                cyclomaticComplexity = calculateCyclomaticComplexity(file),
+                cognitiveComplexity = calculateCognitiveComplexity(file),
+                methodCount = file.methods.size,
+                averageMethodLength = if (file.methods.isNotEmpty()) {
+                    file.methods.sumOf { it.lineCount } / file.methods.size
+                } else 0,
+                maxMethodLength = file.methods.maxOfOrNull { it.lineCount } ?: 0,
+                classCount = file.classes.size,
+                averageClassLength = if (file.classes.isNotEmpty()) {
+                    file.classes.sumOf { it.lineCount } / file.classes.size
+                } else 0
+            )
         }
         
-        return violations
+        val totalComplexity = fileComplexities.sumOf { it.cyclomaticComplexity }
+        val averageComplexity = if (fileComplexities.isNotEmpty()) {
+            totalComplexity / fileComplexities.size
+        } else 0
+        
+        val complexFiles = fileComplexities.filter { 
+            it.cyclomaticComplexity > MAX_CYCLOMATIC_COMPLEXITY ||
+            it.maxMethodLength > MAX_METHOD_LENGTH ||
+            it.averageClassLength > MAX_CLASS_LENGTH
+        }
+        
+        return ComplexityAnalysis(
+            totalComplexity = totalComplexity,
+            averageComplexity = averageComplexity,
+            maxComplexity = fileComplexities.maxOfOrNull { it.cyclomaticComplexity } ?: 0,
+            fileComplexities = fileComplexities,
+            complexFiles = complexFiles,
+            complexityScore = calculateComplexityScore(averageComplexity, complexFiles.size, fileComplexities.size)
+        )
     }
     
     /**
-     * 计算整体评分
+     * 分析代码重复
      */
-    private fun calculateOverallScore(metrics: List<QualityMetric>): Float {
-        if (metrics.isEmpty()) return 0.0f
+    private fun analyzeDuplication(codebase: CodebaseInfo): DuplicationAnalysis {
+        val duplicatedBlocks = findDuplicatedCodeBlocks(codebase)
+        val totalLines = codebase.files.sumOf { it.lineCount }
+        val duplicatedLines = duplicatedBlocks.sumOf { it.lineCount }
+        val duplicationPercentage = if (totalLines > 0) {
+            (duplicatedLines.toDouble() / totalLines) * 100
+        } else 0.0
         
-        val categoryScores = mutableMapOf<MetricCategory, Float>()
-        val categoryCounts = mutableMapOf<MetricCategory, Int>()
+        return DuplicationAnalysis(
+            duplicationPercentage = duplicationPercentage,
+            duplicatedLines = duplicatedLines,
+            totalLines = totalLines,
+            duplicatedBlocks = duplicatedBlocks,
+            duplicationScore = calculateDuplicationScore(duplicationPercentage)
+        )
+    }
+    
+    /**
+     * 分析测试覆盖率
+     */
+    private suspend fun analyzeCoverage(codebase: CodebaseInfo): CoverageAnalysis {
+        val testResults = extractTestResults(codebase)
+        val coverageReport = testCoverageAnalyzer.analyzeCoverage(testResults)
         
-        metrics.forEach { metric ->
-            val score = if (metric.value <= metric.threshold) {
-                1.0f - (metric.value / metric.threshold).toFloat()
-            } else {
-                0.0f
+        return CoverageAnalysis(
+            lineCoverage = coverageReport.overallCoverage,
+            branchCoverage = calculateBranchCoverage(testResults),
+            methodCoverage = calculateMethodCoverage(testResults),
+            classCoverage = calculateClassCoverage(testResults),
+            coverageScore = calculateCoverageScore(coverageReport.overallCoverage)
+        )
+    }
+    
+    /**
+     * 分析可维护性
+     */
+    private fun analyzeMaintainability(codebase: CodebaseInfo): MaintainabilityAnalysis {
+        val maintainabilityIndex = calculateMaintainabilityIndex(codebase)
+        val technicalDebt = calculateTechnicalDebt(codebase)
+        val codeSmells = detectCodeSmells(codebase)
+        
+        return MaintainabilityAnalysis(
+            maintainabilityIndex = maintainabilityIndex,
+            technicalDebtRatio = technicalDebt,
+            codeSmells = codeSmells,
+            maintainabilityScore = calculateMaintainabilityScore(maintainabilityIndex, technicalDebt, codeSmells.size)
+        )
+    }
+    
+    /**
+     * 分析安全问题
+     */
+    private fun analyzeSecurityIssues(codebase: CodebaseInfo): SecurityAnalysis {
+        val vulnerabilities = detectSecurityVulnerabilities(codebase)
+        val securityHotspots = detectSecurityHotspots(codebase)
+        
+        return SecurityAnalysis(
+            vulnerabilities = vulnerabilities,
+            securityHotspots = securityHotspots,
+            securityScore = calculateSecurityScore(vulnerabilities, securityHotspots)
+        )
+    }
+    
+    /**
+     * 分析性能问题
+     */
+    private fun analyzePerformanceIssues(codebase: CodebaseInfo): PerformanceAnalysis {
+        val performanceIssues = detectPerformanceIssues(codebase)
+        val memoryLeaks = detectPotentialMemoryLeaks(codebase)
+        
+        return PerformanceAnalysis(
+            performanceIssues = performanceIssues,
+            memoryLeaks = memoryLeaks,
+            performanceScore = calculatePerformanceScore(performanceIssues, memoryLeaks)
+        )
+    }
+    
+    /**
+     * 计算总体质量分数
+     */
+    private fun calculateOverallQualityScore(
+        complexity: ComplexityAnalysis,
+        duplication: DuplicationAnalysis,
+        coverage: CoverageAnalysis,
+        maintainability: MaintainabilityAnalysis,
+        security: SecurityAnalysis,
+        performance: PerformanceAnalysis
+    ): Double {
+        val weights = mapOf(
+            "complexity" to 0.20,
+            "duplication" to 0.15,
+            "coverage" to 0.25,
+            "maintainability" to 0.20,
+            "security" to 0.15,
+            "performance" to 0.05
+        )
+        
+        return complexity.complexityScore * weights["complexity"]!! +
+                duplication.duplicationScore * weights["duplication"]!! +
+                coverage.coverageScore * weights["coverage"]!! +
+                maintainability.maintainabilityScore * weights["maintainability"]!! +
+                security.securityScore * weights["security"]!! +
+                performance.performanceScore * weights["performance"]!!
+    }
+    
+    /**
+     * 生成质量改进建议
+     */
+    private fun generateQualityRecommendations(
+        complexity: ComplexityAnalysis,
+        duplication: DuplicationAnalysis,
+        coverage: CoverageAnalysis,
+        maintainability: MaintainabilityAnalysis,
+        security: SecurityAnalysis,
+        performance: PerformanceAnalysis
+    ): List<QualityRecommendation> {
+        val recommendations = mutableListOf<QualityRecommendation>()
+        
+        // 复杂度建议
+        if (complexity.averageComplexity > MAX_CYCLOMATIC_COMPLEXITY) {
+            recommendations.add(
+                QualityRecommendation(
+                    type = QualityIssueType.COMPLEXITY,
+                    severity = IssueSeverity.HIGH,
+                    message = "平均圈复杂度过高 (${complexity.averageComplexity})，建议重构复杂方法",
+                    affectedFiles = complexity.complexFiles.map { it.fileName }
+                )
+            )
+        }
+        
+        // 重复代码建议
+        if (duplication.duplicationPercentage > MAX_DUPLICATION_PERCENTAGE) {
+            recommendations.add(
+                QualityRecommendation(
+                    type = QualityIssueType.DUPLICATION,
+                    severity = IssueSeverity.MEDIUM,
+                    message = "代码重复率过高 (${String.format("%.1f", duplication.duplicationPercentage)}%)，建议提取公共方法",
+                    affectedFiles = duplication.duplicatedBlocks.map { it.fileName }
+                )
+            )
+        }
+        
+        // 测试覆盖率建议
+        if (coverage.lineCoverage < TARGET_LINE_COVERAGE) {
+            recommendations.add(
+                QualityRecommendation(
+                    type = QualityIssueType.COVERAGE,
+                    severity = IssueSeverity.HIGH,
+                    message = "测试覆盖率不足 (${String.format("%.1f", coverage.lineCoverage)}%)，需要增加测试用例",
+                    affectedFiles = emptyList()
+                )
+            )
+        }
+        
+        // 安全问题建议
+        security.vulnerabilities.forEach { vulnerability ->
+            recommendations.add(
+                QualityRecommendation(
+                    type = QualityIssueType.SECURITY,
+                    severity = vulnerability.severity,
+                    message = "发现安全漏洞: ${vulnerability.description}",
+                    affectedFiles = listOf(vulnerability.fileName)
+                )
+            )
+        }
+        
+        // 性能问题建议
+        performance.performanceIssues.forEach { issue ->
+            recommendations.add(
+                QualityRecommendation(
+                    type = QualityIssueType.PERFORMANCE,
+                    severity = issue.severity,
+                    message = "性能问题: ${issue.description}",
+                    affectedFiles = listOf(issue.fileName)
+                )
+            )
+        }
+        
+        return recommendations
+    }
+    
+    // 辅助计算方法
+    private fun calculateCyclomaticComplexity(file: FileInfo): Int {
+        return file.methods.sumOf { method ->
+            // 简化的圈复杂度计算
+            1 + method.conditionalStatements + method.loops + method.switches
+        }
+    }
+    
+    private fun calculateCognitiveComplexity(file: FileInfo): Int {
+        return file.methods.sumOf { method ->
+            // 简化的认知复杂度计算
+            method.conditionalStatements + method.loops * 2 + method.nestedBlocks
+        }
+    }
+    
+    private fun calculateComplexityScore(averageComplexity: Int, complexFiles: Int, totalFiles: Int): Double {
+        val complexityRatio = averageComplexity.toDouble() / MAX_CYCLOMATIC_COMPLEXITY
+        val complexFileRatio = if (totalFiles > 0) complexFiles.toDouble() / totalFiles else 0.0
+        return maxOf(0.0, 100.0 - (complexityRatio * 50 + complexFileRatio * 50))
+    }
+    
+    private fun calculateDuplicationScore(duplicationPercentage: Double): Double {
+        return maxOf(0.0, 100.0 - (duplicationPercentage * 10))
+    }
+    
+    private fun calculateCoverageScore(coverage: Double): Double {
+        return coverage
+    }
+    
+    private fun calculateMaintainabilityScore(maintainabilityIndex: Double, technicalDebt: Double, codeSmellsCount: Int): Double {
+        val indexScore = minOf(100.0, maintainabilityIndex * 5)
+        val debtPenalty = technicalDebt * 10
+        val smellPenalty = codeSmellsCount * 2
+        return maxOf(0.0, indexScore - debtPenalty - smellPenalty)
+    }
+    
+    private fun calculateSecurityScore(vulnerabilities: List<SecurityVulnerability>, hotspots: List<SecurityHotspot>): Double {
+        val criticalVulns = vulnerabilities.count { it.severity == IssueSeverity.CRITICAL }
+        val highVulns = vulnerabilities.count { it.severity == IssueSeverity.HIGH }
+        val mediumVulns = vulnerabilities.count { it.severity == IssueSeverity.MEDIUM }
+        
+        val penalty = criticalVulns * 30 + highVulns * 20 + mediumVulns * 10 + hotspots.size * 5
+        return maxOf(0.0, 100.0 - penalty)
+    }
+    
+    private fun calculatePerformanceScore(issues: List<PerformanceIssue>, memoryLeaks: List<MemoryLeak>): Double {
+        val penalty = issues.sumOf { 
+            when (it.severity) {
+                IssueSeverity.CRITICAL -> 25
+                IssueSeverity.HIGH -> 15
+                IssueSeverity.MEDIUM -> 10
+                IssueSeverity.LOW -> 5
             }
-            
-            categoryScores[metric.category] = (categoryScores[metric.category] ?: 0.0f) + score
-            categoryCounts[metric.category] = (categoryCounts[metric.category] ?: 0) + 1
-        }
-        
-        val averageScores = categoryScores.map { (category, totalScore) ->
-            val count = categoryCounts[category] ?: 1
-            totalScore / count
-        }
-        
-        return (averageScores.sum() / averageScores.size * 10).coerceIn(0.0f, 10.0f)
+        } + memoryLeaks.size * 20
+        return maxOf(0.0, 100.0 - penalty)
     }
     
-    /**
-     * 生成改进建议
-     */
-    private fun generateImprovementSuggestions(violations: List<QualityViolation>): List<ImprovementSuggestion> {
-        val suggestions = mutableListOf<ImprovementSuggestion>()
-        
-        val violationGroups = violations.groupBy { it.ruleId }
-        
-        violationGroups.forEach { (ruleId, ruleViolations) ->
-            when (ruleId) {
-                "high_complexity" -> suggestions.add(
-                    ImprovementSuggestion(
-                        type = "refactoring",
-                        description = "将复杂方法拆分为更小的函数",
-                        priority = SuggestionPriority.HIGH,
-                        estimatedEffort = "2-4小时",
-                        affectedFiles = ruleViolations.map { it.fileName }.distinct()
-                    )
-                )
-                "code_duplication" -> suggestions.add(
-                    ImprovementSuggestion(
-                        type = "refactoring",
-                        description = "提取重复代码到公共函数",
-                        priority = SuggestionPriority.MEDIUM,
-                        estimatedEffort = "1-2小时",
-                        affectedFiles = ruleViolations.map { it.fileName }.distinct()
-                    )
-                )
-                "low_test_coverage" -> suggestions.add(
-                    ImprovementSuggestion(
-                        type = "testing",
-                        description = "增加单元测试覆盖率",
-                        priority = SuggestionPriority.HIGH,
-                        estimatedEffort = "4-8小时",
-                        affectedFiles = ruleViolations.map { it.fileName }.distinct()
-                    )
-                )
-            }
-        }
-        
-        return suggestions
-    }
-    
-    private fun setupDefaultRules() {
-        qualityRules.addAll(listOf(
-            ComplexityRule(),
-            DuplicationRule(),
-            NamingConventionRule(),
-            TestCoverageRule(),
-            DocumentationRule()
-        ))
-    }
-    
-    private fun initializeAnalyzers() {
-        codeAnalyzers["kotlin"] = KotlinAnalyzer()
-        codeAnalyzers["compose"] = ComposeAnalyzer()
-    }
-    
-    private fun calculateInitialScore() {
-        _overallScore.value = 8.5f // 初始评分
-    }
-    
-    private fun calculateComplexity(content: String): Int {
-        // 简化的复杂度计算
-        val cyclomaticKeywords = listOf("if", "else", "when", "while", "for", "try", "catch")
-        return cyclomaticKeywords.sumOf { keyword ->
-            content.split(keyword).size - 1
-        } + 1
-    }
-    
-    private fun calculateDuplication(content: String): Double {
-        // 简化的重复度计算
-        val lines = content.lines().filter { it.trim().isNotEmpty() }
-        val uniqueLines = lines.distinct()
-        return if (lines.isEmpty()) 0.0 else ((lines.size - uniqueLines.size).toDouble() / lines.size * 100)
-    }
-    
-    private fun calculateTestCoverage(file: CodeFile): Double {
-        // 模拟测试覆盖率计算
-        return when {
-            file.name.contains("Test") -> 95.0
-            file.content.contains("@Test") -> 85.0
-            else -> 70.0
-        }
-    }
+    // 占位符实现 - 实际项目中需要具体实现
+    private fun findDuplicatedCodeBlocks(codebase: CodebaseInfo): List<DuplicatedBlock> = emptyList()
+    private fun extractTestResults(codebase: CodebaseInfo): List<TestResult> = emptyList()
+    private fun calculateBranchCoverage(testResults: List<TestResult>): Double = 85.0
+    private fun calculateMethodCoverage(testResults: List<TestResult>): Double = 90.0
+    private fun calculateClassCoverage(testResults: List<TestResult>): Double = 88.0
+    private fun calculateMaintainabilityIndex(codebase: CodebaseInfo): Double = 15.0
+    private fun calculateTechnicalDebt(codebase: CodebaseInfo): Double = 3.5
+    private fun detectCodeSmells(codebase: CodebaseInfo): List<CodeSmell> = emptyList()
+    private fun detectSecurityVulnerabilities(codebase: CodebaseInfo): List<SecurityVulnerability> = emptyList()
+    private fun detectSecurityHotspots(codebase: CodebaseInfo): List<SecurityHotspot> = emptyList()
+    private fun detectPerformanceIssues(codebase: CodebaseInfo): List<PerformanceIssue> = emptyList()
+    private fun detectPotentialMemoryLeaks(codebase: CodebaseInfo): List<MemoryLeak> = emptyList()
 }
 
+// 数据类定义
 @Serializable
-data class QualityMetric(
-    val name: String,
-    val value: Double,
-    val threshold: Double,
-    val category: MetricCategory
+data class CodeQualityMetrics(
+    val latestReport: CodeQualityReport? = null,
+    val totalFiles: Int = 0,
+    val totalLines: Int = 0,
+    val lastAnalysisTime: Long = 0
 )
 
 @Serializable
-data class QualityReport(
-    val overallScore: Float,
-    val metrics: Map<String, QualityMetric>,
-    val violations: List<QualityViolation>,
-    val suggestions: List<ImprovementSuggestion>,
+data class CodeQualityReport(
+    val overallScore: Double,
+    val complexityAnalysis: ComplexityAnalysis,
+    val duplicationAnalysis: DuplicationAnalysis,
+    val coverageAnalysis: CoverageAnalysis,
+    val maintainabilityAnalysis: MaintainabilityAnalysis,
+    val securityAnalysis: SecurityAnalysis,
+    val performanceAnalysis: PerformanceAnalysis,
+    val recommendations: List<QualityRecommendation>,
     val timestamp: Long
 )
 
 @Serializable
-data class QualityViolation(
-    val ruleId: String,
-    val severity: ViolationSeverity,
-    val message: String,
-    val fileName: String,
-    val lineNumber: Int,
-    val column: Int = 0
+data class CodebaseInfo(
+    val files: List<FileInfo>
 )
 
 @Serializable
-data class ImprovementSuggestion(
-    val type: String,
-    val description: String,
-    val priority: SuggestionPriority,
-    val estimatedEffort: String,
+data class FileInfo(
+    val fileName: String,
+    val lineCount: Int,
+    val methods: List<MethodInfo>,
+    val classes: List<ClassInfo>
+)
+
+@Serializable
+data class MethodInfo(
+    val name: String,
+    val lineCount: Int,
+    val conditionalStatements: Int,
+    val loops: Int,
+    val switches: Int,
+    val nestedBlocks: Int,
+    val parameters: Int
+)
+
+@Serializable
+data class ClassInfo(
+    val name: String,
+    val lineCount: Int,
+    val methodCount: Int
+)
+
+@Serializable
+data class ComplexityAnalysis(
+    val totalComplexity: Int,
+    val averageComplexity: Int,
+    val maxComplexity: Int,
+    val fileComplexities: List<FileComplexity>,
+    val complexFiles: List<FileComplexity>,
+    val complexityScore: Double
+)
+
+@Serializable
+data class FileComplexity(
+    val fileName: String,
+    val cyclomaticComplexity: Int,
+    val cognitiveComplexity: Int,
+    val methodCount: Int,
+    val averageMethodLength: Int,
+    val maxMethodLength: Int,
+    val classCount: Int,
+    val averageClassLength: Int
+)
+
+@Serializable
+data class DuplicationAnalysis(
+    val duplicationPercentage: Double,
+    val duplicatedLines: Int,
+    val totalLines: Int,
+    val duplicatedBlocks: List<DuplicatedBlock>,
+    val duplicationScore: Double
+)
+
+@Serializable
+data class DuplicatedBlock(
+    val fileName: String,
+    val startLine: Int,
+    val endLine: Int,
+    val lineCount: Int,
+    val duplicateFiles: List<String>
+)
+
+@Serializable
+data class CoverageAnalysis(
+    val lineCoverage: Double,
+    val branchCoverage: Double,
+    val methodCoverage: Double,
+    val classCoverage: Double,
+    val coverageScore: Double
+)
+
+@Serializable
+data class MaintainabilityAnalysis(
+    val maintainabilityIndex: Double,
+    val technicalDebtRatio: Double,
+    val codeSmells: List<CodeSmell>,
+    val maintainabilityScore: Double
+)
+
+@Serializable
+data class SecurityAnalysis(
+    val vulnerabilities: List<SecurityVulnerability>,
+    val securityHotspots: List<SecurityHotspot>,
+    val securityScore: Double
+)
+
+@Serializable
+data class PerformanceAnalysis(
+    val performanceIssues: List<PerformanceIssue>,
+    val memoryLeaks: List<MemoryLeak>,
+    val performanceScore: Double
+)
+
+@Serializable
+data class QualityRecommendation(
+    val type: QualityIssueType,
+    val severity: IssueSeverity,
+    val message: String,
     val affectedFiles: List<String>
 )
 
 @Serializable
-data class CodeFile(
-    val name: String,
-    val path: String,
-    val content: String,
-    val language: String = "kotlin"
+data class CodeSmell(
+    val type: String,
+    val fileName: String,
+    val lineNumber: Int,
+    val description: String
 )
-
-enum class MetricCategory {
-    COMPLEXITY, DUPLICATION, COVERAGE, MAINTAINABILITY, PERFORMANCE
-}
-
-enum class ViolationSeverity {
-    INFO, WARNING, ERROR, CRITICAL
-}
-
-enum class SuggestionPriority {
-    LOW, MEDIUM, HIGH, CRITICAL
-}
-
-// 质量规则接口和实现
-interface QualityRule {
-    val id: String
-    fun check(file: CodeFile): List<QualityViolation>
-}
-
-class ComplexityRule : QualityRule {
-    override val id = "high_complexity"
-    
-    override fun check(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        val lines = file.content.lines()
-        
-        lines.forEachIndexed { index, line ->
-            val complexity = calculateLineComplexity(line)
-            if (complexity > 5) {
-                violations.add(QualityViolation(
-                    ruleId = id,
-                    severity = ViolationSeverity.WARNING,
-                    message = "方法复杂度过高: $complexity",
-                    fileName = file.name,
-                    lineNumber = index + 1
-                ))
-            }
-        }
-        
-        return violations
-    }
-    
-    private fun calculateLineComplexity(line: String): Int {
-        val complexityKeywords = listOf("if", "else", "when", "while", "for")
-        return complexityKeywords.count { line.contains(it) }
-    }
-}
-
-class DuplicationRule : QualityRule {
-    override val id = "code_duplication"
-    
-    override fun check(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        val lines = file.content.lines()
-        val lineGroups = lines.groupBy { it.trim() }
-        
-        lineGroups.forEach { (line, occurrences) ->
-            if (occurrences.size > 3 && line.length > 20) {
-                violations.add(QualityViolation(
-                    ruleId = id,
-                    severity = ViolationSeverity.WARNING,
-                    message = "检测到重复代码: ${occurrences.size}次重复",
-                    fileName = file.name,
-                    lineNumber = lines.indexOf(line) + 1
-                ))
-            }
-        }
-        
-        return violations
-    }
-}
-
-class NamingConventionRule : QualityRule {
-    override val id = "naming_convention"
-    
-    override fun check(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        val lines = file.content.lines()
-        
-        lines.forEachIndexed { index, line ->
-            // 检查函数命名
-            val functionRegex = Regex("fun\\s+([a-zA-Z_][a-zA-Z0-9_]*)")
-            functionRegex.findAll(line).forEach { match ->
-                val functionName = match.groupValues[1]
-                if (!functionName.matches(Regex("^[a-z][a-zA-Z0-9]*$"))) {
-                    violations.add(QualityViolation(
-                        ruleId = id,
-                        severity = ViolationSeverity.INFO,
-                        message = "函数名不符合驼峰命名规范: $functionName",
-                        fileName = file.name,
-                        lineNumber = index + 1
-                    ))
-                }
-            }
-        }
-        
-        return violations
-    }
-}
-
-class TestCoverageRule : QualityRule {
-    override val id = "low_test_coverage"
-    
-    override fun check(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        
-        if (!file.name.contains("Test") && !file.content.contains("@Test")) {
-            val functionCount = file.content.split("fun ").size - 1
-            if (functionCount > 5) {
-                violations.add(QualityViolation(
-                    ruleId = id,
-                    severity = ViolationSeverity.WARNING,
-                    message = "文件缺少测试覆盖，包含${functionCount}个函数",
-                    fileName = file.name,
-                    lineNumber = 1
-                ))
-            }
-        }
-        
-        return violations
-    }
-}
-
-class DocumentationRule : QualityRule {
-    override val id = "missing_documentation"
-    
-    override fun check(file: CodeFile): List<QualityViolation> {
-        val violations = mutableListOf<QualityViolation>()
-        val lines = file.content.lines()
-        
-        lines.forEachIndexed { index, line ->
-            if (line.trim().startsWith("class ") || line.trim().startsWith("fun ")) {
-                val previousLine = if (index > 0) lines[index - 1].trim() else ""
-                if (!previousLine.startsWith("/**") && !previousLine.startsWith("//")) {
-                    violations.add(QualityViolation(
-                        ruleId = id,
-                        severity = ViolationSeverity.INFO,
-                        message = "缺少文档注释",
-                        fileName = file.name,
-                        lineNumber = index + 1
-                    ))
-                }
-            }
-        }
-        
-        return violations
-    }
-}
-
-// 代码分析器
-interface CodeAnalyzer {
-    fun analyze(file: CodeFile): AnalysisResult
-}
-
-class KotlinAnalyzer : CodeAnalyzer {
-    override fun analyze(file: CodeFile): AnalysisResult {
-        return AnalysisResult(
-            language = "Kotlin",
-            linesOfCode = file.content.lines().size,
-            functions = countFunctions(file.content),
-            classes = countClasses(file.content),
-            complexity = calculateComplexity(file.content)
-        )
-    }
-    
-    private fun countFunctions(content: String): Int = content.split("fun ").size - 1
-    private fun countClasses(content: String): Int = content.split("class ").size - 1
-    private fun calculateComplexity(content: String): Int = content.split("if ").size - 1
-}
-
-class ComposeAnalyzer : CodeAnalyzer {
-    override fun analyze(file: CodeFile): AnalysisResult {
-        return AnalysisResult(
-            language = "Compose",
-            linesOfCode = file.content.lines().size,
-            functions = countComposables(file.content),
-            classes = 0,
-            complexity = calculateComposeComplexity(file.content)
-        )
-    }
-    
-    private fun countComposables(content: String): Int = content.split("@Composable").size - 1
-    private fun calculateComposeComplexity(content: String): Int {
-        return listOf("LazyColumn", "LazyRow", "remember", "derivedStateOf").sumOf { keyword ->
-            content.split(keyword).size - 1
-        }
-    }
-}
 
 @Serializable
-data class AnalysisResult(
-    val language: String,
-    val linesOfCode: Int,
-    val functions: Int,
-    val classes: Int,
-    val complexity: Int
+data class SecurityVulnerability(
+    val type: String,
+    val fileName: String,
+    val lineNumber: Int,
+    val description: String,
+    val severity: IssueSeverity
 )
+
+@Serializable
+data class SecurityHotspot(
+    val fileName: String,
+    val lineNumber: Int,
+    val description: String
+)
+
+@Serializable
+data class PerformanceIssue(
+    val type: String,
+    val fileName: String,
+    val lineNumber: Int,
+    val description: String,
+    val severity: IssueSeverity
+)
+
+@Serializable
+data class MemoryLeak(
+    val fileName: String,
+    val lineNumber: Int,
+    val description: String
+)
+
+enum class QualityIssueType {
+    COMPLEXITY,
+    DUPLICATION,
+    COVERAGE,
+    MAINTAINABILITY,
+    SECURITY,
+    PERFORMANCE
+}
+
+enum class IssueSeverity {
+    CRITICAL,
+    HIGH,
+    MEDIUM,
+    LOW
+}

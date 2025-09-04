@@ -1,297 +1,218 @@
 package com.unify.core.data
 
-import kotlinx.coroutines.Dispatchers
+import com.unify.core.data.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import java.util.concurrent.ConcurrentHashMap
-import java.util.UUID
 
 /**
- * HarmonyOS平台的数据管理器实现
+ * HarmonyOS平台UnifyDataManager实现
+ * 基于HarmonyOS分布式数据管理和Preferences
  */
-actual class UnifyDataManagerImpl : UnifyDataManager {
+class UnifyDataManagerImpl : UnifyDataManager {
     
-    override val storage: UnifyStorage = HarmonyStorage()
-    override val secureStorage: UnifySecureStorage = HarmonySecureStorage()
-    override val cache: UnifyCacheManager = HarmonyCacheManager()
-    override val state: UnifyStateManager = HarmonyStateManager()
-    override val database: UnifyDatabaseManager = HarmonyDatabaseManager()
+    // 数据变化监听
+    private val dataChangeFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    private var initialized = false
+    // 缓存管理
+    private val cache = mutableMapOf<String, CacheEntry>()
     
-    override suspend fun initialize() {
-        if (initialized) return
-        
-        cache.setMaxSize(80 * 1024 * 1024) // 80MB默认缓存
-        database.initialize("unify_harmony_database", 1)
-        
-        initialized = true
-    }
+    // HarmonyOS Preferences模拟实现
+    private val preferences = mutableMapOf<String, Any>()
     
-    override suspend fun clearAllData() {
-        storage.clear()
-        cache.clear()
-        state.clearAllStates()
-    }
-    
-    override suspend fun backupData(): BackupResult {
-        return try {
-            val backupData = Json.encodeToString(mapOf(
-                "storage" to storage.getAllKeys(),
-                "timestamp" to System.currentTimeMillis(),
-                "platform" to "HarmonyOS"
-            )).toByteArray()
-            
-            BackupResult(
-                success = true,
-                data = backupData,
-                size = backupData.size.toLong()
-            )
-        } catch (e: Exception) {
-            BackupResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun restoreData(backupData: ByteArray): RestoreResult {
-        return try {
-            // 实现HarmonyOS数据恢复逻辑
-            RestoreResult(
-                success = true,
-                restoredItems = 0
-            )
-        } catch (e: Exception) {
-            RestoreResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun getDataUsageStats(): DataUsageStats {
-        return DataUsageStats(
-            totalStorageUsed = 0L,
-            cacheSize = cache.getSize(),
-            databaseSize = 0L,
-            secureStorageSize = 0L
-        )
-    }
-}
-
-/**
- * HarmonyOS存储实现
- */
-class HarmonyStorage : UnifyStorage {
-    private val storage = ConcurrentHashMap<String, String>()
+    // 分布式数据存储模拟
+    private val distributedStorage = mutableMapOf<String, Any>()
     
     override suspend fun putString(key: String, value: String) {
-        // 使用HarmonyOS Preferences API
-        storage[key] = value
+        preferences[key] = value
+        notifyDataChange(key, value)
+        
+        // HarmonyOS分布式同步
+        syncToDistributedStorage(key, value)
     }
     
-    override suspend fun getString(key: String): String? = storage[key]
+    override suspend fun getString(key: String, defaultValue: String): String {
+        return preferences[key] as? String ?: defaultValue
+    }
     
-    override suspend fun putInt(key: String, value: Int) = putString(key, value.toString())
-    override suspend fun getInt(key: String): Int? = getString(key)?.toIntOrNull()
+    override suspend fun putInt(key: String, value: Int) {
+        preferences[key] = value
+        notifyDataChange(key, value)
+        syncToDistributedStorage(key, value)
+    }
     
-    override suspend fun putLong(key: String, value: Long) = putString(key, value.toString())
-    override suspend fun getLong(key: String): Long? = getString(key)?.toLongOrNull()
+    override suspend fun getInt(key: String, defaultValue: Int): Int {
+        return preferences[key] as? Int ?: defaultValue
+    }
     
-    override suspend fun putFloat(key: String, value: Float) = putString(key, value.toString())
-    override suspend fun getFloat(key: String): Float? = getString(key)?.toFloatOrNull()
+    override suspend fun putLong(key: String, value: Long) {
+        preferences[key] = value
+        notifyDataChange(key, value)
+        syncToDistributedStorage(key, value)
+    }
     
-    override suspend fun putBoolean(key: String, value: Boolean) = putString(key, value.toString())
-    override suspend fun getBoolean(key: String): Boolean? = getString(key)?.toBooleanStrictOrNull()
+    override suspend fun getLong(key: String, defaultValue: Long): Long {
+        return preferences[key] as? Long ?: defaultValue
+    }
     
-    override suspend fun putByteArray(key: String, value: ByteArray) = putString(key, value.toString())
-    override suspend fun getByteArray(key: String): ByteArray? = getString(key)?.toByteArray()
+    override suspend fun putFloat(key: String, value: Float) {
+        preferences[key] = value
+        notifyDataChange(key, value)
+        syncToDistributedStorage(key, value)
+    }
+    
+    override suspend fun getFloat(key: String, defaultValue: Float): Float {
+        return preferences[key] as? Float ?: defaultValue
+    }
+    
+    override suspend fun putBoolean(key: String, value: Boolean) {
+        preferences[key] = value
+        notifyDataChange(key, value)
+        syncToDistributedStorage(key, value)
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return preferences[key] as? Boolean ?: defaultValue
+    }
+    
+    override suspend fun <T> putObject(key: String, value: T) {
+        try {
+            val jsonString = Json.encodeToString(value)
+            preferences[key] = jsonString
+            notifyDataChange(key, value)
+            syncToDistributedStorage(key, jsonString)
+        } catch (e: Exception) {
+            throw DataException("Failed to serialize object: ${e.message}")
+        }
+    }
+    
+    override suspend fun <T> getObject(key: String, defaultValue: T): T {
+        return try {
+            val jsonString = preferences[key] as? String
+            if (jsonString != null) {
+                Json.decodeFromString<T>(jsonString)
+            } else {
+                defaultValue
+            }
+        } catch (e: Exception) {
+            defaultValue
+        }
+    }
     
     override suspend fun remove(key: String) {
-        storage.remove(key)
+        preferences.remove(key)
+        distributedStorage.remove(key)
+        notifyDataChange(key, null)
     }
     
     override suspend fun clear() {
-        storage.clear()
-    }
-    
-    override suspend fun contains(key: String): Boolean = storage.containsKey(key)
-    
-    override suspend fun getAllKeys(): Set<String> = storage.keys.toSet()
-}
-
-/**
- * HarmonyOS安全存储实现
- */
-class HarmonySecureStorage : HarmonyStorage(), UnifySecureStorage {
-    
-    override suspend fun putSecureString(key: String, value: String) {
-        // 使用HarmonyOS安全存储API
-        putString("secure_$key", value)
-    }
-    
-    override suspend fun getSecureString(key: String): String? {
-        return getString("secure_$key")
-    }
-    
-    override suspend fun putEncrypted(key: String, value: ByteArray) {
-        putByteArray("encrypted_$key", value)
-    }
-    
-    override suspend fun getDecrypted(key: String): ByteArray? {
-        return getByteArray("encrypted_$key")
-    }
-    
-    override suspend fun setEncryptionKey(key: String) {
-        // 设置HarmonyOS加密密钥
-    }
-    
-    override suspend fun authenticateWithBiometric(): Boolean {
-        // HarmonyOS生物识别认证
-        return true
-    }
-}
-
-/**
- * HarmonyOS缓存管理器实现
- */
-class HarmonyCacheManager : UnifyCacheManager {
-    private val cache = ConcurrentHashMap<String, CacheItem>()
-    private var maxSize = 80 * 1024 * 1024L
-    
-    data class CacheItem(
-        val value: Any,
-        val timestamp: Long,
-        val ttl: Long?
-    )
-    
-    override suspend fun <T> put(key: String, value: T, ttl: Long?) {
-        cache[key] = CacheItem(value as Any, System.currentTimeMillis(), ttl)
-    }
-    
-    override suspend fun <T> get(key: String, type: Class<T>): T? {
-        val item = cache[key] ?: return null
-        
-        if (item.ttl != null && System.currentTimeMillis() - item.timestamp > item.ttl) {
-            cache.remove(key)
-            return null
+        preferences.clear()
+        distributedStorage.clear()
+        dataChangeFlows.values.forEach { flow ->
+            flow.value = null
         }
-        
-        return item.value as? T
     }
     
-    override suspend fun remove(key: String) {
+    override suspend fun contains(key: String): Boolean {
+        return preferences.containsKey(key)
+    }
+    
+    override suspend fun getAllKeys(): Set<String> {
+        return preferences.keys.toSet()
+    }
+    
+    override fun <T> observeData(key: String): Flow<T?> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(preferences[key])
+        }
+        return flow.asStateFlow() as Flow<T?>
+    }
+    
+    override suspend fun putCache(key: String, value: Any, ttlMillis: Long) {
+        val expiryTime = System.currentTimeMillis() + ttlMillis
+        cache[key] = CacheEntry(value, expiryTime)
+    }
+    
+    override suspend fun <T> getCache(key: String): T? {
+        val entry = cache[key]
+        return if (entry != null && !entry.isExpired()) {
+            entry.value as? T
+        } else {
+            cache.remove(key)
+            null
+        }
+    }
+    
+    override suspend fun removeCache(key: String) {
         cache.remove(key)
     }
     
-    override suspend fun clear() {
+    override suspend fun clearCache() {
         cache.clear()
     }
     
-    override suspend fun isValid(key: String): Boolean {
-        val item = cache[key] ?: return false
-        return item.ttl == null || System.currentTimeMillis() - item.timestamp <= item.ttl
+    override suspend fun clearExpiredCache() {
+        val expiredKeys = cache.filter { it.value.isExpired() }.keys
+        expiredKeys.forEach { cache.remove(it) }
     }
     
-    override suspend fun getSize(): Long {
-        return cache.size.toLong() * 1024
-    }
-    
-    override suspend fun setMaxSize(maxSize: Long) {
-        this.maxSize = maxSize
-    }
-    
-    override suspend fun cleanupExpired() {
-        val now = System.currentTimeMillis()
-        cache.entries.removeIf { (_, item) ->
-            item.ttl != null && now - item.timestamp > item.ttl
+    override suspend fun syncToCloud() {
+        // HarmonyOS云同步实现
+        try {
+            // 模拟华为云同步
+            val syncData = preferences.toMap()
+            // 实际实现中会调用HarmonyOS云服务API
+            println("Syncing ${syncData.size} items to Huawei Cloud")
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
         }
     }
-}
-
-/**
- * HarmonyOS状态管理器实现
- */
-class HarmonyStateManager : UnifyStateManager {
-    private val states = ConcurrentHashMap<String, Any>()
-    private val stateFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
     
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value as Any
-        getOrCreateStateFlow(key).value = value
+    override suspend fun syncFromCloud() {
+        // HarmonyOS云同步实现
+        try {
+            // 模拟从华为云同步
+            // 实际实现中会调用HarmonyOS云服务API
+            println("Syncing data from Huawei Cloud")
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
+        }
     }
     
-    override fun <T> getState(key: String, type: Class<T>): T? {
-        return states[key] as? T
+    private fun notifyDataChange(key: String, value: Any?) {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(value)
+        }
+        flow.value = value
     }
     
-    override fun <T> observeState(key: String, type: Class<T>): Flow<T?> {
-        return getOrCreateStateFlow(key).asStateFlow() as Flow<T?>
+    private suspend fun syncToDistributedStorage(key: String, value: Any) {
+        try {
+            // HarmonyOS分布式数据同步
+            distributedStorage[key] = value
+            
+            // 实际实现中会使用HarmonyOS分布式数据管理API
+            // 如DistributedKVStore等
+            println("Syncing $key to distributed storage")
+        } catch (e: Exception) {
+            // 分布式同步失败不影响本地存储
+            println("Distributed sync failed for $key: ${e.message}")
+        }
     }
     
-    override fun removeState(key: String) {
-        states.remove(key)
-        stateFlows.remove(key)
-    }
-    
-    override fun clearAllStates() {
-        states.clear()
-        stateFlows.clear()
-    }
-    
-    override suspend fun persistState() {
-        // 持久化到HarmonyOS Preferences
-    }
-    
-    override suspend fun restoreState() {
-        // 从HarmonyOS Preferences恢复
-    }
-    
-    private fun getOrCreateStateFlow(key: String): MutableStateFlow<Any?> {
-        return stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
+    private data class CacheEntry(
+        val value: Any,
+        val expiryTime: Long
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() > expiryTime
     }
 }
 
-/**
- * HarmonyOS数据库管理器实现
- */
-class HarmonyDatabaseManager : UnifyDatabaseManager {
-    
-    override suspend fun initialize(databaseName: String, version: Int) {
-        // 初始化HarmonyOS关系型数据库
-    }
-    
-    override suspend fun query(sql: String, args: Array<Any>?): List<Map<String, Any?>> {
-        // 执行SQL查询
-        return emptyList()
-    }
-    
-    override suspend fun execute(sql: String, args: Array<Any>?): Int {
-        // 执行SQL更新
-        return 0
-    }
-    
-    override suspend fun beginTransaction(): TransactionHandle {
-        return TransactionHandle(
-            id = UUID.randomUUID().toString(),
-            timestamp = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun commitTransaction(handle: TransactionHandle) {
-        // 提交事务
-    }
-    
-    override suspend fun rollbackTransaction(handle: TransactionHandle) {
-        // 回滚事务
-    }
-    
-    override suspend fun close() {
-        // 关闭数据库连接
+actual object UnifyDataManagerFactory {
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl()
     }
 }

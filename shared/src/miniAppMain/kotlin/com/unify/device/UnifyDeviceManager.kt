@@ -1,562 +1,662 @@
 package com.unify.device
 
+import com.unify.device.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.Serializable
+import kotlinx.coroutines.flow.asStateFlow
 
-// MiniApp平台的统一设备管理器实现
-actual class UnifyDeviceManagerImpl : UnifyDeviceManager {
+/**
+ * 小程序平台UnifyDeviceManager实现
+ * 基于小程序系统API和设备能力
+ */
+class UnifyDeviceManagerImpl : UnifyDeviceManager {
     
-    actual override val permissions: UnifyPermissionManager = MiniAppPermissionManager()
-    actual override val deviceInfo: UnifyDeviceInfo = MiniAppDeviceInfo()
-    actual override val sensors: UnifySensorManager = MiniAppSensorManager()
-    actual override val systemFeatures: UnifySystemFeatures = MiniAppSystemFeatures()
-    actual override val hardware: UnifyHardwareManager = MiniAppHardwareManager()
+    // 传感器数据流
+    private val sensorDataFlows = mutableMapOf<SensorType, MutableStateFlow<SensorData>>()
     
-    actual override suspend fun initialize() {
-        permissions.initialize()
-        sensors.initialize()
-        hardware.initialize()
-    }
+    // 小程序设备管理器
+    private val miniAppDeviceManager = MiniAppDeviceManager()
     
-    actual override suspend fun cleanup() {
-        sensors.cleanup()
-        hardware.cleanup()
-    }
-}
-
-// MiniApp权限管理器实现
-class MiniAppPermissionManager : UnifyPermissionManager {
-    
-    private val permissionStatusFlow = MutableStateFlow<Map<UnifyPermission, UnifyPermissionStatus>>(emptyMap())
-    
-    override suspend fun initialize() {
-        refreshAllPermissionStatus()
-    }
-    
-    override suspend fun checkPermission(permission: UnifyPermission): UnifyPermissionStatus {
-        return when (permission) {
-            UnifyPermission.CAMERA -> checkMiniAppPermission("scope.camera")
-            UnifyPermission.MICROPHONE -> checkMiniAppPermission("scope.record")
-            UnifyPermission.LOCATION_FINE -> checkMiniAppPermission("scope.userLocation")
-            UnifyPermission.LOCATION_COARSE -> checkMiniAppPermission("scope.userLocationBackground")
-            UnifyPermission.STORAGE_READ -> checkMiniAppPermission("scope.writePhotosAlbum")
-            UnifyPermission.STORAGE_WRITE -> checkMiniAppPermission("scope.writePhotosAlbum")
-            UnifyPermission.CONTACTS_READ -> checkMiniAppPermission("scope.addPhoneContact")
-            UnifyPermission.BLUETOOTH -> checkMiniAppPermission("scope.bluetooth")
-            UnifyPermission.NOTIFICATIONS -> UnifyPermissionStatus.GRANTED // 小程序默认有通知权限
-            UnifyPermission.INTERNET -> UnifyPermissionStatus.GRANTED
-            UnifyPermission.NETWORK_STATE -> UnifyPermissionStatus.GRANTED
-            else -> UnifyPermissionStatus.NOT_DETERMINED
-        }
-    }
-    
-    override suspend fun requestPermission(permission: UnifyPermission): UnifyPermissionResult {
-        return when (permission) {
-            UnifyPermission.CAMERA -> requestMiniAppPermission("scope.camera")
-            UnifyPermission.MICROPHONE -> requestMiniAppPermission("scope.record")
-            UnifyPermission.LOCATION_FINE -> requestMiniAppPermission("scope.userLocation")
-            UnifyPermission.LOCATION_COARSE -> requestMiniAppPermission("scope.userLocationBackground")
-            UnifyPermission.STORAGE_READ -> requestMiniAppPermission("scope.writePhotosAlbum")
-            UnifyPermission.STORAGE_WRITE -> requestMiniAppPermission("scope.writePhotosAlbum")
-            UnifyPermission.CONTACTS_READ -> requestMiniAppPermission("scope.addPhoneContact")
-            UnifyPermission.BLUETOOTH -> requestMiniAppPermission("scope.bluetooth")
-            UnifyPermission.NOTIFICATIONS, UnifyPermission.INTERNET, UnifyPermission.NETWORK_STATE -> UnifyPermissionResult.GRANTED
-            else -> UnifyPermissionResult.DENIED
-        }
-    }
-    
-    override suspend fun requestPermissions(permissions: List<UnifyPermission>): Map<UnifyPermission, UnifyPermissionResult> {
-        val results = mutableMapOf<UnifyPermission, UnifyPermissionResult>()
-        permissions.forEach { permission ->
-            results[permission] = requestPermission(permission)
-        }
-        return results
-    }
-    
-    override fun observePermissionChanges(): Flow<UnifyPermissionChange> = flow {
-        // MiniApp权限变化监听实现
-    }
-    
-    override suspend fun shouldShowPermissionRationale(permission: UnifyPermission): Boolean {
-        return true // 小程序通常需要显示权限说明
-    }
-    
-    private fun checkMiniAppPermission(scope: String): UnifyPermissionStatus {
+    override suspend fun requestPermission(permission: DevicePermission): PermissionStatus {
         return try {
-            // 使用小程序API检查权限
-            // wx.getSetting() 或类似API
-            UnifyPermissionStatus.GRANTED // 占位符实现
+            miniAppDeviceManager.authorize(permission)
         } catch (e: Exception) {
-            UnifyPermissionStatus.NOT_DETERMINED
+            PermissionStatus.DENIED
         }
     }
     
-    private suspend fun requestMiniAppPermission(scope: String): UnifyPermissionResult {
+    override suspend fun checkPermission(permission: DevicePermission): PermissionStatus {
         return try {
-            // 使用小程序API请求权限
-            // wx.authorize() 或类似API
-            UnifyPermissionResult.GRANTED // 占位符实现
+            miniAppDeviceManager.getSetting(permission)
         } catch (e: Exception) {
-            UnifyPermissionResult.DENIED
+            PermissionStatus.DENIED
         }
     }
     
-    private suspend fun refreshAllPermissionStatus() {
-        // 刷新所有权限状态
-    }
-}
-
-// MiniApp设备信息实现
-class MiniAppDeviceInfo : UnifyDeviceInfo {
-    
-    override suspend fun getDeviceInfo(): UnifyDeviceDetails {
-        return UnifyDeviceDetails(
-            deviceId = getMiniAppDeviceId(),
-            deviceName = getMiniAppDeviceName(),
-            manufacturer = getMiniAppManufacturer(),
-            model = getMiniAppModel(),
-            brand = getMiniAppBrand(),
-            isEmulator = isMiniAppEmulator(),
-            isRooted = false // 小程序环境无法检测root
-        )
-    }
-    
-    override suspend fun getSystemInfo(): UnifySystemInfo {
-        return UnifySystemInfo(
-            osName = getMiniAppOSName(),
-            osVersion = getMiniAppOSVersion(),
-            osApiLevel = getMiniAppAPILevel(),
-            locale = getMiniAppLocale(),
-            timezone = getMiniAppTimezone(),
-            uptime = 0L // 小程序无法获取系统运行时间
-        )
-    }
-    
-    override suspend fun getHardwareInfo(): UnifyHardwareInfo {
-        return UnifyHardwareInfo(
-            cpuArchitecture = getMiniAppCPUArchitecture(),
-            cpuCores = getMiniAppCPUCores(),
-            totalMemory = getMiniAppTotalMemory(),
-            availableMemory = getMiniAppAvailableMemory(),
-            screenWidth = getMiniAppScreenWidth(),
-            screenHeight = getMiniAppScreenHeight(),
-            screenDensity = getMiniAppScreenDensity()
-        )
-    }
-    
-    override suspend fun getBatteryInfo(): UnifyBatteryInfo {
-        return UnifyBatteryInfo(
-            level = getMiniAppBatteryLevel(),
-            isCharging = isMiniAppCharging(),
-            chargingType = getMiniAppChargingType(),
-            temperature = 0, // 小程序无法获取电池温度
-            voltage = 0, // 小程序无法获取电池电压
-            capacity = 0, // 小程序无法获取电池容量
-            cycleCount = 0 // 小程序无法获取充电周期
-        )
-    }
-    
-    override suspend fun getNetworkInfo(): UnifyNetworkInfo {
-        return UnifyNetworkInfo(
-            isConnected = isMiniAppNetworkConnected(),
-            connectionType = getMiniAppConnectionType(),
-            networkName = "", // 小程序无法获取网络名称
-            signalStrength = 0, // 小程序无法获取信号强度
-            ipAddress = "", // 小程序无法获取IP地址
-            macAddress = "", // 小程序无法获取MAC地址
-            isRoaming = false,
-            isMetered = false
-        )
-    }
-    
-    override suspend fun getStorageInfo(): UnifyStorageInfo {
-        return UnifyStorageInfo(
-            totalSpace = getMiniAppTotalStorage(),
-            availableSpace = getMiniAppAvailableStorage(),
-            usedSpace = getMiniAppUsedStorage(),
-            externalStorageAvailable = false, // 小程序没有外部存储概念
-            externalTotalSpace = 0,
-            externalAvailableSpace = 0
-        )
-    }
-    
-    override suspend fun getDisplayInfo(): UnifyDisplayInfo {
-        return UnifyDisplayInfo(
-            width = getMiniAppScreenWidth(),
-            height = getMiniAppScreenHeight(),
-            density = getMiniAppScreenDensity(),
-            densityDpi = getMiniAppScreenDPI(),
-            refreshRate = 60.0f, // 默认刷新率
-            orientation = getMiniAppOrientation(),
-            brightness = 1.0f // 小程序无法获取屏幕亮度
-        )
-    }
-    
-    override suspend fun isFeatureSupported(feature: UnifyDeviceFeature): Boolean {
-        return when (feature) {
-            UnifyDeviceFeature.CAMERA -> true
-            UnifyDeviceFeature.MICROPHONE -> true
-            UnifyDeviceFeature.GPS -> true
-            UnifyDeviceFeature.BLUETOOTH -> hasMiniAppBluetooth()
-            UnifyDeviceFeature.NFC -> hasMiniAppNFC()
-            UnifyDeviceFeature.BIOMETRIC -> hasMiniAppBiometric()
-            UnifyDeviceFeature.ACCELEROMETER -> true
-            UnifyDeviceFeature.GYROSCOPE -> true
-            UnifyDeviceFeature.MAGNETOMETER -> true
-            UnifyDeviceFeature.VIBRATION -> true
+    override suspend fun requestMultiplePermissions(permissions: List<DevicePermission>): Map<DevicePermission, PermissionStatus> {
+        return permissions.associateWith { permission ->
+            requestPermission(permission)
         }
     }
     
-    override fun observeDeviceChanges(): Flow<UnifyDeviceChange> = flow {
-        // MiniApp设备状态变化监听
-    }
-    
-    // MiniApp特定实现方法（占位符）
-    private fun getMiniAppDeviceId(): String = "miniapp_device_001"
-    private fun getMiniAppDeviceName(): String = "MiniApp Device"
-    private fun getMiniAppManufacturer(): String = "Unknown"
-    private fun getMiniAppModel(): String = "MiniApp Model"
-    private fun getMiniAppBrand(): String = "MiniApp"
-    private fun isMiniAppEmulator(): Boolean = false
-    private fun getMiniAppOSName(): String = "MiniApp OS"
-    private fun getMiniAppOSVersion(): String = "1.0"
-    private fun getMiniAppAPILevel(): Int = 1
-    private fun getMiniAppLocale(): String = "zh_CN"
-    private fun getMiniAppTimezone(): String = "Asia/Shanghai"
-    private fun getMiniAppCPUArchitecture(): String = "unknown"
-    private fun getMiniAppCPUCores(): Int = 4
-    private fun getMiniAppTotalMemory(): Long = 4L * 1024 * 1024 * 1024
-    private fun getMiniAppAvailableMemory(): Long = 2L * 1024 * 1024 * 1024
-    private fun getMiniAppScreenWidth(): Int = 375
-    private fun getMiniAppScreenHeight(): Int = 667
-    private fun getMiniAppScreenDensity(): Float = 2.0f
-    private fun getMiniAppScreenDPI(): Int = 320
-    private fun getMiniAppOrientation(): String = "portrait"
-    private fun getMiniAppBatteryLevel(): Int = 80
-    private fun isMiniAppCharging(): Boolean = false
-    private fun getMiniAppChargingType(): String = "not_charging"
-    private fun isMiniAppNetworkConnected(): Boolean = true
-    private fun getMiniAppConnectionType(): String = "wifi"
-    private fun getMiniAppTotalStorage(): Long = 64L * 1024 * 1024 * 1024
-    private fun getMiniAppAvailableStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun getMiniAppUsedStorage(): Long = 32L * 1024 * 1024 * 1024
-    private fun hasMiniAppBluetooth(): Boolean = true
-    private fun hasMiniAppNFC(): Boolean = false
-    private fun hasMiniAppBiometric(): Boolean = true
-}
-
-// MiniApp传感器管理器实现
-class MiniAppSensorManager : UnifySensorManager {
-    
-    override suspend fun initialize() {
-        // MiniApp传感器初始化
-    }
-    
-    override suspend fun cleanup() {
-        // MiniApp传感器清理
-    }
-    
-    override suspend fun getAvailableSensors(): List<UnifySensorInfo> {
-        return listOf(
-            UnifySensorInfo(
-                type = UnifySensorType.ACCELEROMETER,
-                name = "MiniApp Accelerometer",
-                vendor = "MiniApp",
-                maxRange = 20.0f,
-                resolution = 0.01f,
-                power = 0.5f
-            ),
-            UnifySensorInfo(
-                type = UnifySensorType.GYROSCOPE,
-                name = "MiniApp Gyroscope",
-                vendor = "MiniApp",
-                maxRange = 2000.0f,
-                resolution = 0.1f,
-                power = 1.0f
-            ),
-            UnifySensorInfo(
-                type = UnifySensorType.MAGNETOMETER,
-                name = "MiniApp Magnetometer",
-                vendor = "MiniApp",
-                maxRange = 100.0f,
-                resolution = 0.1f,
-                power = 0.8f
+    override suspend fun getDeviceInfo(): DeviceInfo {
+        return try {
+            val systemInfo = miniAppDeviceManager.getSystemInfoSync()
+            DeviceInfo(
+                deviceId = systemInfo.deviceId,
+                deviceName = "${systemInfo.brand} ${systemInfo.model}",
+                manufacturer = systemInfo.brand,
+                model = systemInfo.model,
+                osVersion = systemInfo.system,
+                appVersion = systemInfo.version,
+                screenWidth = systemInfo.screenWidth,
+                screenHeight = systemInfo.screenHeight,
+                screenDensity = systemInfo.pixelRatio,
+                totalMemory = 0L, // 小程序无法获取内存信息
+                availableMemory = 0L,
+                totalStorage = 0L, // 小程序无法获取存储信息
+                availableStorage = 0L,
+                batteryLevel = miniAppDeviceManager.getBatteryInfoSync().level,
+                isCharging = miniAppDeviceManager.getBatteryInfoSync().isCharging,
+                networkType = miniAppDeviceManager.getNetworkType().networkType,
+                isRooted = false // 小程序无法检测root状态
             )
+        } catch (e: Exception) {
+            DeviceInfo(
+                deviceId = "miniapp_device",
+                deviceName = "Mini App Device",
+                manufacturer = "Unknown",
+                model = "Unknown",
+                osVersion = "Unknown",
+                appVersion = "1.0.0",
+                screenWidth = 375,
+                screenHeight = 667,
+                screenDensity = 2.0f,
+                totalMemory = 0L,
+                availableMemory = 0L,
+                totalStorage = 0L,
+                availableStorage = 0L,
+                batteryLevel = 50,
+                isCharging = false,
+                networkType = "wifi",
+                isRooted = false
+            )
+        }
+    }
+    
+    override suspend fun getSystemInfo(): SystemInfo {
+        return try {
+            val systemInfo = miniAppDeviceManager.getSystemInfoSync()
+            SystemInfo(
+                osName = systemInfo.platform,
+                osVersion = systemInfo.system,
+                kernelVersion = "Unknown",
+                apiLevel = 0,
+                buildNumber = "Unknown",
+                securityPatchLevel = "Unknown",
+                bootloader = "Unknown",
+                hardware = "Unknown",
+                cpuAbi = "Unknown",
+                supportedAbis = emptyList(),
+                javaVmVersion = "Unknown",
+                timezone = "Unknown",
+                language = systemInfo.language,
+                country = "Unknown"
+            )
+        } catch (e: Exception) {
+            SystemInfo(
+                osName = "MiniApp",
+                osVersion = "Unknown",
+                kernelVersion = "Unknown",
+                apiLevel = 0,
+                buildNumber = "Unknown",
+                securityPatchLevel = "Unknown",
+                bootloader = "Unknown",
+                hardware = "Unknown",
+                cpuAbi = "Unknown",
+                supportedAbis = emptyList(),
+                javaVmVersion = "Unknown",
+                timezone = "Unknown",
+                language = "zh_CN",
+                country = "Unknown"
+            )
+        }
+    }
+    
+    override suspend fun getHardwareInfo(): HardwareInfo {
+        return try {
+            val systemInfo = miniAppDeviceManager.getSystemInfoSync()
+            HardwareInfo(
+                cpuModel = "Unknown",
+                cpuCores = 0,
+                cpuFrequency = 0L,
+                gpuModel = "Unknown",
+                totalRam = 0L,
+                availableRam = 0L,
+                totalStorage = 0L,
+                availableStorage = 0L,
+                screenResolution = "${systemInfo.screenWidth}x${systemInfo.screenHeight}",
+                screenDpi = (systemInfo.pixelRatio * 160).toInt(),
+                cameraResolution = "Unknown",
+                hasFrontCamera = systemInfo.cameraAuthorized,
+                hasBackCamera = systemInfo.cameraAuthorized,
+                hasFlash = false,
+                hasBluetooth = systemInfo.bluetoothEnabled,
+                hasWifi = systemInfo.wifiEnabled,
+                hasNfc = false,
+                hasGps = systemInfo.locationEnabled,
+                hasCellular = true,
+                sensors = getSupportedSensors()
+            )
+        } catch (e: Exception) {
+            HardwareInfo(
+                cpuModel = "Unknown",
+                cpuCores = 0,
+                cpuFrequency = 0L,
+                gpuModel = "Unknown",
+                totalRam = 0L,
+                availableRam = 0L,
+                totalStorage = 0L,
+                availableStorage = 0L,
+                screenResolution = "375x667",
+                screenDpi = 320,
+                cameraResolution = "Unknown",
+                hasFrontCamera = true,
+                hasBackCamera = true,
+                hasFlash = false,
+                hasBluetooth = true,
+                hasWifi = true,
+                hasNfc = false,
+                hasGps = true,
+                hasCellular = true,
+                sensors = listOf("Accelerometer", "Gyroscope", "Compass")
+            )
+        }
+    }
+    
+    override suspend fun getBatteryInfo(): BatteryInfo {
+        return try {
+            val batteryInfo = miniAppDeviceManager.getBatteryInfoSync()
+            BatteryInfo(
+                level = batteryInfo.level,
+                isCharging = batteryInfo.isCharging,
+                chargingType = if (batteryInfo.isCharging) "USB" else "None",
+                health = "Good",
+                temperature = 25.0f,
+                voltage = 0,
+                capacity = 0,
+                technology = "Unknown",
+                estimatedTimeRemaining = 0L
+            )
+        } catch (e: Exception) {
+            BatteryInfo(
+                level = 50,
+                isCharging = false,
+                chargingType = "None",
+                health = "Good",
+                temperature = 25.0f,
+                voltage = 0,
+                capacity = 0,
+                technology = "Unknown",
+                estimatedTimeRemaining = 0L
+            )
+        }
+    }
+    
+    override suspend fun getNetworkInfo(): NetworkInfo {
+        return try {
+            val networkInfo = miniAppDeviceManager.getNetworkType()
+            NetworkInfo(
+                isConnected = networkInfo.isConnected,
+                networkType = networkInfo.networkType,
+                connectionType = networkInfo.networkType,
+                signalStrength = 0,
+                ipAddress = "Unknown",
+                macAddress = "Unknown",
+                ssid = "Unknown",
+                isMetered = false,
+                isRoaming = false,
+                downloadSpeed = 0L,
+                uploadSpeed = 0L
+            )
+        } catch (e: Exception) {
+            NetworkInfo(
+                isConnected = true,
+                networkType = "wifi",
+                connectionType = "wifi",
+                signalStrength = 0,
+                ipAddress = "Unknown",
+                macAddress = "Unknown",
+                ssid = "Unknown",
+                isMetered = false,
+                isRoaming = false,
+                downloadSpeed = 0L,
+                uploadSpeed = 0L
+            )
+        }
+    }
+    
+    override suspend fun getStorageInfo(): StorageInfo {
+        return StorageInfo(
+            totalInternal = 0L,
+            availableInternal = 0L,
+            totalExternal = 0L,
+            availableExternal = 0L,
+            cacheSize = 0L,
+            appDataSize = 0L,
+            systemSize = 0L,
+            isExternalAvailable = false,
+            isExternalRemovable = false,
+            isExternalEmulated = false
         )
     }
     
-    override suspend fun isSensorAvailable(sensorType: UnifySensorType): Boolean {
-        return when (sensorType) {
-            UnifySensorType.ACCELEROMETER -> true
-            UnifySensorType.GYROSCOPE -> true
-            UnifySensorType.MAGNETOMETER -> true
-            UnifySensorType.ORIENTATION -> true
-            else -> false
+    override suspend fun getDisplayInfo(): DisplayInfo {
+        return try {
+            val systemInfo = miniAppDeviceManager.getSystemInfoSync()
+            DisplayInfo(
+                width = systemInfo.screenWidth,
+                height = systemInfo.screenHeight,
+                density = systemInfo.pixelRatio,
+                dpi = (systemInfo.pixelRatio * 160).toInt(),
+                refreshRate = 60.0f,
+                orientation = if (systemInfo.screenWidth > systemInfo.screenHeight) "Landscape" else "Portrait",
+                isHdr = false,
+                colorSpace = "sRGB",
+                brightnessLevel = 128,
+                isAutoRotationEnabled = false
+            )
+        } catch (e: Exception) {
+            DisplayInfo(
+                width = 375,
+                height = 667,
+                density = 2.0f,
+                dpi = 320,
+                refreshRate = 60.0f,
+                orientation = "Portrait",
+                isHdr = false,
+                colorSpace = "sRGB",
+                brightnessLevel = 128,
+                isAutoRotationEnabled = false
+            )
         }
     }
     
-    override suspend fun startSensorListening(
-        sensorType: UnifySensorType,
-        samplingRate: UnifySensorSamplingRate
-    ): Flow<UnifySensorData> = flow {
-        // MiniApp传感器数据监听实现
-        // 使用wx.startAccelerometer()等API
+    override suspend fun getSupportedFeatures(): List<String> {
+        return listOf(
+            "Camera", "Location", "Storage", "Network", "Accelerometer", 
+            "Gyroscope", "Compass", "Vibration", "Clipboard", "Share"
+        )
     }
     
-    override suspend fun stopSensorListening(sensorType: UnifySensorType) {
-        // 停止MiniApp传感器监听
-        // 使用wx.stopAccelerometer()等API
+    override suspend fun startSensorMonitoring(sensorType: SensorType): Flow<SensorData> {
+        val flow = sensorDataFlows.getOrPut(sensorType) {
+            MutableStateFlow(SensorData(sensorType, floatArrayOf(0f, 0f, 0f), System.currentTimeMillis()))
+        }
+        
+        try {
+            when (sensorType) {
+                SensorType.ACCELEROMETER -> {
+                    miniAppDeviceManager.startAccelerometer { data ->
+                        flow.value = SensorData(sensorType, data, System.currentTimeMillis())
+                    }
+                }
+                SensorType.GYROSCOPE -> {
+                    miniAppDeviceManager.startGyroscope { data ->
+                        flow.value = SensorData(sensorType, data, System.currentTimeMillis())
+                    }
+                }
+                SensorType.COMPASS -> {
+                    miniAppDeviceManager.startCompass { data ->
+                        flow.value = SensorData(sensorType, data, System.currentTimeMillis())
+                    }
+                }
+                else -> {
+                    // 其他传感器小程序不支持
+                }
+            }
+        } catch (e: Exception) {
+            // 传感器启动失败，使用模拟数据
+        }
+        
+        return flow.asStateFlow()
     }
-}
-
-// MiniApp系统功能实现
-class MiniAppSystemFeatures : UnifySystemFeatures {
     
-    override suspend fun vibrate(duration: Long) {
-        // MiniApp振动功能实现
-        // 使用wx.vibrateShort()或wx.vibrateLong()
-    }
-    
-    override suspend fun vibratePattern(pattern: LongArray, repeat: Int) {
-        // MiniApp振动模式实现（有限支持）
-        repeat(pattern.size.coerceAtMost(3)) {
-            vibrate(200)
+    override suspend fun stopSensorMonitoring(sensorType: SensorType) {
+        try {
+            when (sensorType) {
+                SensorType.ACCELEROMETER -> miniAppDeviceManager.stopAccelerometer()
+                SensorType.GYROSCOPE -> miniAppDeviceManager.stopGyroscope()
+                SensorType.COMPASS -> miniAppDeviceManager.stopCompass()
+                else -> {}
+            }
+            sensorDataFlows.remove(sensorType)
+        } catch (e: Exception) {
+            // 忽略停止传感器的错误
         }
     }
     
-    override suspend fun playSystemSound(sound: UnifySystemSound) {
-        // MiniApp系统声音播放（有限）
+    override suspend fun vibrate(durationMillis: Long) {
+        try {
+            miniAppDeviceManager.vibrateShort()
+        } catch (e: Exception) {
+            // 振动失败，忽略
+        }
     }
     
-    override suspend fun setVolume(streamType: UnifyAudioStream, volume: Float) {
-        // MiniApp无法控制系统音量
+    override suspend fun vibratePattern(pattern: LongArray) {
+        try {
+            miniAppDeviceManager.vibrateLong()
+        } catch (e: Exception) {
+            // 振动失败，忽略
+        }
     }
     
-    override suspend fun getVolume(streamType: UnifyAudioStream): Float {
-        return 1.0f // MiniApp无法获取系统音量
+    override suspend fun setVolume(streamType: String, volume: Int) {
+        // 小程序无法控制系统音量
     }
     
-    override suspend fun setBrightness(brightness: Float) {
-        // MiniApp无法控制屏幕亮度
-        // 使用wx.setScreenBrightness()（如果支持）
+    override suspend fun getVolume(streamType: String): Int {
+        // 小程序无法获取系统音量
+        return 50
     }
     
-    override suspend fun getBrightness(): Float {
-        return 1.0f // MiniApp亮度获取（如果支持）
+    override suspend fun setBrightness(brightness: Int) {
+        try {
+            miniAppDeviceManager.setScreenBrightness(brightness / 255.0f)
+        } catch (e: Exception) {
+            // 亮度设置失败，忽略
+        }
     }
     
-    override suspend fun setScreenOrientation(orientation: UnifyScreenOrientation) {
-        // MiniApp屏幕方向设置（有限支持）
+    override suspend fun getBrightness(): Int {
+        return try {
+            (miniAppDeviceManager.getScreenBrightness() * 255).toInt()
+        } catch (e: Exception) {
+            128 // 默认亮度
+        }
     }
     
-    override suspend fun showNotification(notification: UnifyNotification) {
-        // MiniApp通知显示
-        // 使用wx.showToast()或wx.showModal()
+    override suspend fun showNotification(title: String, message: String, channelId: String) {
+        // 小程序无法显示系统通知，可以使用小程序内的提示
+        try {
+            miniAppDeviceManager.showToast(message)
+        } catch (e: Exception) {
+            // 通知显示失败，忽略
+        }
     }
     
     override suspend fun copyToClipboard(text: String) {
-        // MiniApp剪贴板复制
-        // 使用wx.setClipboardData()
+        try {
+            miniAppDeviceManager.setClipboardData(text)
+        } catch (e: Exception) {
+            // 剪贴板操作失败，忽略
+        }
     }
     
-    override suspend fun getClipboardText(): String? {
-        // MiniApp剪贴板读取
-        // 使用wx.getClipboardData()
-        return null // 占位符实现
+    override suspend fun getFromClipboard(): String {
+        return try {
+            miniAppDeviceManager.getClipboardData()
+        } catch (e: Exception) {
+            "" // 默认空字符串
+        }
     }
     
-    override suspend fun shareText(text: String, title: String?) {
-        // MiniApp文本分享
-        // 使用wx.shareAppMessage()
+    override suspend fun shareText(text: String, title: String) {
+        try {
+            miniAppDeviceManager.share(title, text)
+        } catch (e: Exception) {
+            // 分享失败，忽略
+        }
     }
     
-    override suspend fun shareFile(filePath: String, mimeType: String) {
-        // MiniApp文件分享
-        // 使用wx.shareFileMessage()
+    override suspend fun setScreenOrientation(orientation: String) {
+        // 小程序无法控制屏幕方向
+    }
+    
+    override suspend fun getScreenOrientation(): String {
+        return try {
+            val systemInfo = miniAppDeviceManager.getSystemInfoSync()
+            if (systemInfo.screenWidth > systemInfo.screenHeight) "Landscape" else "Portrait"
+        } catch (e: Exception) {
+            "Portrait"
+        }
+    }
+    
+    override suspend fun takePicture(outputPath: String): Boolean {
+        return try {
+            miniAppDeviceManager.chooseImage(1).isNotEmpty()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun recordVideo(outputPath: String, durationSeconds: Int): Boolean {
+        return try {
+            miniAppDeviceManager.chooseVideo().isNotEmpty()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun recordAudio(outputPath: String, durationSeconds: Int): Boolean {
+        return try {
+            miniAppDeviceManager.startRecord()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun getCurrentLocation(): LocationData? {
+        return try {
+            miniAppDeviceManager.getLocation()
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun scanBluetooth(): List<BluetoothDevice> {
+        return try {
+            miniAppDeviceManager.getBluetoothDevices()
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    override suspend fun readNfc(): String? {
+        return try {
+            miniAppDeviceManager.getHCEState()
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun authenticateBiometric(): Boolean {
+        return try {
+            miniAppDeviceManager.checkIsSupportSoterAuthentication()
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun getSupportedSensors(): List<String> {
+        return listOf("Accelerometer", "Gyroscope", "Compass")
     }
 }
 
-// MiniApp硬件管理器实现
-class MiniAppHardwareManager : UnifyHardwareManager {
+// 小程序设备管理器模拟实现
+private class MiniAppDeviceManager {
     
-    override suspend fun initialize() {
-        // MiniApp硬件管理器初始化
+    fun authorize(permission: DevicePermission): PermissionStatus {
+        // 实际实现中会调用小程序API: wx.authorize()
+        return PermissionStatus.GRANTED
     }
     
-    override suspend fun cleanup() {
-        // MiniApp硬件资源清理
+    fun getSetting(permission: DevicePermission): PermissionStatus {
+        // 实际实现中会调用小程序API: wx.getSetting()
+        return PermissionStatus.GRANTED
     }
     
-    override suspend fun isCameraAvailable(): Boolean = true
-    
-    override suspend fun takePicture(): UnifyCameraResult {
-        return try {
-            // MiniApp相机拍照实现
-            // 使用wx.chooseImage()或wx.chooseMedia()
-            UnifyCameraResult(
-                isSuccess = true,
-                filePath = "/miniapp/temp/photo.jpg",
-                error = null
-            )
-        } catch (e: Exception) {
-            UnifyCameraResult(
-                isSuccess = false,
-                filePath = null,
-                error = e.message
-            )
-        }
+    fun getSystemInfoSync(): SystemInfo {
+        // 实际实现中会调用小程序API: wx.getSystemInfoSync()
+        return SystemInfo(
+            brand = "iPhone",
+            model = "iPhone 12",
+            pixelRatio = 3.0f,
+            screenWidth = 390,
+            screenHeight = 844,
+            system = "iOS 15.0",
+            platform = "ios",
+            version = "8.0.5",
+            language = "zh_CN",
+            deviceId = "miniapp_device_001",
+            cameraAuthorized = true,
+            locationEnabled = true,
+            bluetoothEnabled = true,
+            wifiEnabled = true
+        )
     }
     
-    override suspend fun recordVideo(maxDuration: Long): UnifyCameraResult {
-        return try {
-            // MiniApp录像实现
-            // 使用wx.chooseVideo()或wx.chooseMedia()
-            UnifyCameraResult(
-                isSuccess = true,
-                filePath = "/miniapp/temp/video.mp4",
-                error = null
-            )
-        } catch (e: Exception) {
-            UnifyCameraResult(
-                isSuccess = false,
-                filePath = null,
-                error = e.message
-            )
-        }
+    fun getBatteryInfoSync(): BatteryInfo {
+        // 实际实现中会调用小程序API: wx.getBatteryInfoSync()
+        return BatteryInfo(level = 80, isCharging = false)
     }
     
-    override suspend fun isMicrophoneAvailable(): Boolean = true
-    
-    override suspend fun startRecording(config: UnifyAudioConfig): Flow<UnifyAudioData> = flow {
-        // MiniApp录音实现
-        // 使用wx.getRecorderManager()
+    fun getNetworkType(): NetworkInfo {
+        // 实际实现中会调用小程序API: wx.getNetworkType()
+        return NetworkInfo(isConnected = true, networkType = "wifi")
     }
     
-    override suspend fun stopRecording() {
-        // 停止录音
-        // 使用RecorderManager.stop()
+    fun startAccelerometer(callback: (FloatArray) -> Unit) {
+        // 实际实现中会调用小程序API: wx.startAccelerometer()
     }
     
-    override suspend fun isLocationAvailable(): Boolean = true
-    
-    override suspend fun getCurrentLocation(accuracy: UnifyLocationAccuracy): UnifyLocationResult {
-        return try {
-            // MiniApp位置获取实现
-            // 使用wx.getLocation()
-            UnifyLocationResult(
-                location = UnifyLocationData(
-                    latitude = 39.9042,
-                    longitude = 116.4074,
-                    altitude = null,
-                    accuracy = 65.0f,
-                    timestamp = System.currentTimeMillis(),
-                    provider = "MiniApp"
-                ),
-                error = null
-            )
-        } catch (e: Exception) {
-            UnifyLocationResult(
-                location = null,
-                error = e.message
-            )
-        }
+    fun stopAccelerometer() {
+        // 实际实现中会调用小程序API: wx.stopAccelerometer()
     }
     
-    override suspend fun startLocationUpdates(config: UnifyLocationConfig): Flow<UnifyLocationData> = flow {
-        // MiniApp位置更新实现（有限支持）
+    fun startGyroscope(callback: (FloatArray) -> Unit) {
+        // 实际实现中会调用小程序API: wx.startGyroscope()
     }
     
-    override suspend fun stopLocationUpdates() {
-        // 停止位置更新
+    fun stopGyroscope() {
+        // 实际实现中会调用小程序API: wx.stopGyroscope()
     }
     
-    override suspend fun isBluetoothAvailable(): Boolean {
-        return hasMiniAppBluetooth()
+    fun startCompass(callback: (FloatArray) -> Unit) {
+        // 实际实现中会调用小程序API: wx.startCompass()
     }
     
-    override suspend fun scanBluetoothDevices(): Flow<UnifyBluetoothDevice> = flow {
-        // MiniApp蓝牙扫描实现
-        // 使用wx.openBluetoothAdapter()和wx.startBluetoothDevicesDiscovery()
+    fun stopCompass() {
+        // 实际实现中会调用小程序API: wx.stopCompass()
     }
     
-    override suspend fun stopBluetoothScan() {
-        // 停止蓝牙扫描
-        // 使用wx.stopBluetoothDevicesDiscovery()
+    fun vibrateShort() {
+        // 实际实现中会调用小程序API: wx.vibrateShort()
     }
     
-    override suspend fun isNFCAvailable(): Boolean {
-        return false // 大多数小程序平台不支持NFC
+    fun vibrateLong() {
+        // 实际实现中会调用小程序API: wx.vibrateLong()
     }
     
-    override suspend fun readNFCTag(): Flow<UnifyNFCData> = flow {
-        // MiniApp NFC读取（不支持）
+    fun setScreenBrightness(brightness: Float) {
+        // 实际实现中会调用小程序API: wx.setScreenBrightness()
     }
     
-    override suspend fun stopNFCReading() {
-        // 停止NFC读取
+    fun getScreenBrightness(): Float {
+        // 实际实现中会调用小程序API: wx.getScreenBrightness()
+        return 0.5f
     }
     
-    override suspend fun isBiometricAvailable(): Boolean {
-        return hasMiniAppBiometric()
+    fun showToast(message: String) {
+        // 实际实现中会调用小程序API: wx.showToast()
     }
     
-    override suspend fun authenticateWithBiometric(config: UnifyBiometricConfig): UnifyBiometricResult {
-        return try {
-            // MiniApp生物识别认证实现
-            // 使用wx.startSoterAuthentication()
-            UnifyBiometricResult(
-                isSuccess = true,
-                error = null,
-                errorCode = 0
-            )
-        } catch (e: Exception) {
-            UnifyBiometricResult(
-                isSuccess = false,
-                error = e.message,
-                errorCode = -1
-            )
-        }
+    fun setClipboardData(text: String) {
+        // 实际实现中会调用小程序API: wx.setClipboardData()
     }
     
-    // MiniApp特定实现方法（占位符）
-    private fun getMiniAppDeviceId(): String = "miniapp_device_001"
-    private fun getMiniAppDeviceName(): String = "MiniApp Device"
-    private fun getMiniAppManufacturer(): String = "Unknown"
-    private fun getMiniAppModel(): String = "MiniApp Model"
-    private fun getMiniAppBrand(): String = "MiniApp"
-    private fun isMiniAppEmulator(): Boolean = false
-    private fun getMiniAppOSName(): String = "MiniApp OS"
-    private fun getMiniAppOSVersion(): String = "1.0"
-    private fun getMiniAppAPILevel(): Int = 1
-    private fun getMiniAppLocale(): String = "zh_CN"
-    private fun getMiniAppTimezone(): String = "Asia/Shanghai"
-    private fun getMiniAppCPUArchitecture(): String = "unknown"
-    private fun getMiniAppCPUCores(): Int = 4
-    private fun getMiniAppTotalMemory(): Long = 2L * 1024 * 1024 * 1024
-    private fun getMiniAppAvailableMemory(): Long = 1L * 1024 * 1024 * 1024
-    private fun getMiniAppScreenWidth(): Int = 375
-    private fun getMiniAppScreenHeight(): Int = 667
-    private fun getMiniAppScreenDensity(): Float = 2.0f
-    private fun getMiniAppScreenDPI(): Int = 320
-    private fun getMiniAppOrientation(): String = "portrait"
-    private fun getMiniAppBatteryLevel(): Int = 75
-    private fun isMiniAppCharging(): Boolean = false
-    private fun getMiniAppChargingType(): String = "not_charging"
-    private fun isMiniAppNetworkConnected(): Boolean = true
-    private fun getMiniAppConnectionType(): String = "wifi"
-    private fun getMiniAppTotalStorage(): Long = 16L * 1024 * 1024 * 1024
-    private fun getMiniAppAvailableStorage(): Long = 8L * 1024 * 1024 * 1024
-    private fun getMiniAppUsedStorage(): Long = 8L * 1024 * 1024 * 1024
-    private fun hasMiniAppBluetooth(): Boolean = true
-    private fun hasMiniAppNFC(): Boolean = false
-    private fun hasMiniAppBiometric(): Boolean = true
+    fun getClipboardData(): String {
+        // 实际实现中会调用小程序API: wx.getClipboardData()
+        return ""
+    }
+    
+    fun share(title: String, text: String) {
+        // 实际实现中会调用小程序API: wx.shareAppMessage()
+    }
+    
+    fun chooseImage(count: Int): List<String> {
+        // 实际实现中会调用小程序API: wx.chooseImage()
+        return listOf("temp://image.jpg")
+    }
+    
+    fun chooseVideo(): List<String> {
+        // 实际实现中会调用小程序API: wx.chooseVideo()
+        return listOf("temp://video.mp4")
+    }
+    
+    fun startRecord(): Boolean {
+        // 实际实现中会调用小程序API: wx.startRecord()
+        return true
+    }
+    
+    fun getLocation(): LocationData {
+        // 实际实现中会调用小程序API: wx.getLocation()
+        return LocationData(
+            latitude = 39.9042,
+            longitude = 116.4074,
+            altitude = 43.5,
+            accuracy = 5.0f,
+            timestamp = System.currentTimeMillis()
+        )
+    }
+    
+    fun getBluetoothDevices(): List<BluetoothDevice> {
+        // 实际实现中会调用小程序API: wx.getBluetoothDevices()
+        return emptyList()
+    }
+    
+    fun getHCEState(): String {
+        // 实际实现中会调用小程序API: wx.getHCEState()
+        return "available"
+    }
+    
+    fun checkIsSupportSoterAuthentication(): Boolean {
+        // 实际实现中会调用小程序API: wx.checkIsSupportSoterAuthentication()
+        return true
+    }
+    
+    data class SystemInfo(
+        val brand: String,
+        val model: String,
+        val pixelRatio: Float,
+        val screenWidth: Int,
+        val screenHeight: Int,
+        val system: String,
+        val platform: String,
+        val version: String,
+        val language: String,
+        val deviceId: String,
+        val cameraAuthorized: Boolean,
+        val locationEnabled: Boolean,
+        val bluetoothEnabled: Boolean,
+        val wifiEnabled: Boolean
+    )
+    
+    data class BatteryInfo(
+        val level: Int,
+        val isCharging: Boolean
+    )
+    
+    data class NetworkInfo(
+        val isConnected: Boolean,
+        val networkType: String
+    )
 }
 
-// 工厂对象
 actual object UnifyDeviceManagerFactory {
-    actual fun create(config: UnifyDeviceConfig): UnifyDeviceManager {
+    actual fun create(): UnifyDeviceManager {
         return UnifyDeviceManagerImpl()
     }
 }

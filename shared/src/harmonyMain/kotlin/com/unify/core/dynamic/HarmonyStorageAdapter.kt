@@ -1,390 +1,184 @@
 package com.unify.core.dynamic
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.unify.core.storage.StorageAdapter
 
 /**
- * HarmonyOS平台存储适配器
- * 使用HarmonyOS的Preferences和分布式数据管理进行数据持久化
+ * HarmonyOS平台存储适配器实现
+ * 基于HarmonyOS分布式数据管理
  */
-class HarmonyStorageAdapter : StorageAdapter {
-    private val preferencesName = "unify_dynamic_prefs"
-    private val filesDir = "/data/storage/el2/base/haps/entry/files/unify_dynamic"
+actual class HarmonyStorageAdapter : StorageAdapter {
     
-    init {
-        // 初始化存储目录
-        initializeStorage()
-    }
-    
-    override suspend fun save(key: String, value: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                if (value.length > MAX_PREFERENCES_SIZE) {
-                    // 大数据存储到文件
-                    saveToFile(key, value)
-                    
-                    // 在Preferences中记录文件标记
-                    saveToPreferences(key, "file:$key")
-                    saveToPreferences("${key}_timestamp", System.currentTimeMillis().toString())
-                } else {
-                    // 小数据直接存储到Preferences
-                    saveToPreferences(key, value)
-                    saveToPreferences("${key}_timestamp", System.currentTimeMillis().toString())
-                }
-                
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_save", 1.0, "count",
-                    mapOf("key" to key, "size" to value.length.toString()))
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_save_error", 1.0, "count",
-                    mapOf("key" to key, "error" to e.message.orEmpty()))
-                throw StorageException("HarmonyOS存储保存失败: $key", e)
-            }
-        }
-    }
-    
-    override suspend fun load(key: String): String? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val value = loadFromPreferences(key)
-                
-                if (value?.startsWith("file:") == true) {
-                    // 从文件读取
-                    val fileName = value.removePrefix("file:")
-                    loadFromFile(fileName)
-                } else {
-                    value
-                }
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_load_error", 1.0, "count",
-                    mapOf("key" to key, "error" to e.message.orEmpty()))
-                null
-            }
-        }
-    }
-    
-    override suspend fun delete(key: String) {
-        withContext(Dispatchers.IO) {
-            try {
-                val value = loadFromPreferences(key)
-                
-                if (value?.startsWith("file:") == true) {
-                    // 删除文件
-                    val fileName = value.removePrefix("file:")
-                    deleteFile(fileName)
-                }
-                
-                // 删除Preferences中的记录
-                deleteFromPreferences(key)
-                deleteFromPreferences("${key}_timestamp")
-                
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_delete", 1.0, "count",
-                    mapOf("key" to key))
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_delete_error", 1.0, "count",
-                    mapOf("key" to key, "error" to e.message.orEmpty()))
-            }
-        }
-    }
-    
-    override suspend fun getAllKeys(): List<String> {
-        return withContext(Dispatchers.IO) {
-            try {
-                getAllPreferencesKeys()
-                    .filter { !it.endsWith("_timestamp") }
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_get_keys_error", 1.0, "count",
-                    mapOf("error" to e.message.orEmpty()))
-                emptyList()
-            }
-        }
-    }
-    
-    override suspend fun getLastModified(key: String): Long? {
-        return withContext(Dispatchers.IO) {
-            try {
-                val timestamp = loadFromPreferences("${key}_timestamp")
-                timestamp?.toLongOrNull()
-            } catch (e: Exception) {
-                null
-            }
-        }
-    }
-    
-    override suspend fun getTotalSize(): Long {
-        return withContext(Dispatchers.IO) {
-            try {
-                var totalSize = 0L
-                
-                // 计算Preferences大小（估算）
-                getAllPreferencesKeys().forEach { key ->
-                    val value = loadFromPreferences(key) ?: ""
-                    totalSize += (key.length + value.length) * 2 // UTF-16编码
-                }
-                
-                // 计算文件大小
-                totalSize += getFilesSize()
-                
-                totalSize
-            } catch (e: Exception) {
-                0L
-            }
-        }
-    }
-    
-    /**
-     * 初始化存储
-     */
-    private fun initializeStorage() {
-        // HarmonyOS特定的存储初始化
-        js("""
-            // 创建存储目录
-            try {
-                const fs = requireNapi('file.fs');
-                fs.mkdirSync('$filesDir', { recursive: true });
-            } catch (e) {
-                console.log('创建存储目录失败:', e);
-            }
-        """)
-    }
-    
-    /**
-     * 保存到Preferences
-     */
-    private fun saveToPreferences(key: String, value: String) {
-        js("""
-            try {
-                const preferences = requireNapi('data.preferences');
-                const context = globalThis.getContext();
-                const prefs = preferences.getPreferences(context, '$preferencesName');
-                prefs.put(key, value);
-                prefs.flush();
-            } catch (e) {
-                throw new Error('HarmonyOS Preferences保存失败: ' + e.message);
-            }
-        """)
-    }
-    
-    /**
-     * 从Preferences加载
-     */
-    private fun loadFromPreferences(key: String): String? {
+    actual override suspend fun save(key: String, data: ByteArray): Boolean {
         return try {
-            js("""
-                try {
-                    const preferences = requireNapi('data.preferences');
-                    const context = globalThis.getContext();
-                    const prefs = preferences.getPreferences(context, '$preferencesName');
-                    return prefs.get(key, null);
-                } catch (e) {
-                    return null;
-                }
-            """) as? String
+            // HarmonyOS分布式存储实现
+            val preferences = getPreferences()
+            val base64Data = data.encodeBase64()
+            preferences.putString(key, base64Data)
+            preferences.flush()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    actual override suspend fun load(key: String): ByteArray? {
+        return try {
+            val preferences = getPreferences()
+            val base64Data = preferences.getString(key, null) ?: return null
+            base64Data.decodeBase64()
         } catch (e: Exception) {
             null
         }
     }
     
-    /**
-     * 从Preferences删除
-     */
-    private fun deleteFromPreferences(key: String) {
-        js("""
-            try {
-                const preferences = requireNapi('data.preferences');
-                const context = globalThis.getContext();
-                const prefs = preferences.getPreferences(context, '$preferencesName');
-                prefs.delete(key);
-                prefs.flush();
-            } catch (e) {
-                console.log('HarmonyOS Preferences删除失败:', e);
-            }
-        """)
+    actual override suspend fun delete(key: String): Boolean {
+        return try {
+            val preferences = getPreferences()
+            preferences.delete(key)
+            preferences.flush()
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
     
-    /**
-     * 获取所有Preferences键
-     */
-    private fun getAllPreferencesKeys(): List<String> {
+    actual override suspend fun exists(key: String): Boolean {
         return try {
-            val keysArray = js("""
-                try {
-                    const preferences = requireNapi('data.preferences');
-                    const context = globalThis.getContext();
-                    const prefs = preferences.getPreferences(context, '$preferencesName');
-                    return prefs.getAll().keys();
-                } catch (e) {
-                    return [];
-                }
-            """) as Array<String>
-            keysArray.toList()
+            val preferences = getPreferences()
+            preferences.has(key)
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    actual override suspend fun clear(): Boolean {
+        return try {
+            val preferences = getPreferences()
+            preferences.clear()
+            preferences.flush()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    actual override suspend fun getAllKeys(): List<String> {
+        return try {
+            val preferences = getPreferences()
+            preferences.getAll().keys.toList()
         } catch (e: Exception) {
             emptyList()
         }
     }
     
-    /**
-     * 保存到文件
-     */
-    private fun saveToFile(fileName: String, content: String) {
-        js("""
-            try {
-                const fs = requireNapi('file.fs');
-                const filePath = '$filesDir/' + fileName;
-                fs.writeFileSync(filePath, content, { encoding: 'utf8' });
-            } catch (e) {
-                throw new Error('HarmonyOS文件保存失败: ' + e.message);
-            }
-        """)
+    actual override suspend fun saveToFile(fileName: String, data: ByteArray): Boolean {
+        return try {
+            val context = getContext()
+            val fileDir = context.getFilesDir()
+            val file = createFile(fileDir, fileName)
+            writeFileBytes(file, data)
+            true
+        } catch (e: Exception) {
+            false
+        }
     }
     
-    /**
-     * 从文件加载
-     */
-    private fun loadFromFile(fileName: String): String? {
+    actual override suspend fun loadFromFile(fileName: String): ByteArray? {
         return try {
-            js("""
-                try {
-                    const fs = requireNapi('file.fs');
-                    const filePath = '$filesDir/' + fileName;
-                    if (fs.accessSync(filePath)) {
-                        return fs.readFileSync(filePath, { encoding: 'utf8' });
-                    }
-                    return null;
-                } catch (e) {
-                    return null;
-                }
-            """) as? String
+            val context = getContext()
+            val fileDir = context.getFilesDir()
+            val file = getFile(fileDir, fileName)
+            if (fileExists(file)) {
+                readFileBytes(file)
+            } else {
+                null
+            }
         } catch (e: Exception) {
             null
         }
     }
     
-    /**
-     * 删除文件
-     */
-    private fun deleteFile(fileName: String) {
-        js("""
-            try {
-                const fs = requireNapi('file.fs');
-                const filePath = '$filesDir/' + fileName;
-                if (fs.accessSync(filePath)) {
-                    fs.unlinkSync(filePath);
-                }
-            } catch (e) {
-                console.log('HarmonyOS文件删除失败:', e);
-            }
-        """)
-    }
-    
-    /**
-     * 获取文件总大小
-     */
-    private fun getFilesSize(): Long {
+    actual override suspend fun deleteFile(fileName: String): Boolean {
         return try {
-            val size = js("""
-                try {
-                    const fs = requireNapi('file.fs');
-                    let totalSize = 0;
-                    const files = fs.readdirSync('$filesDir');
-                    files.forEach(file => {
-                        const filePath = '$filesDir/' + file;
-                        const stats = fs.statSync(filePath);
-                        if (stats.isFile()) {
-                            totalSize += stats.size;
-                        }
-                    });
-                    return totalSize;
-                } catch (e) {
-                    return 0;
-                }
-            """) as? Number
-            size?.toLong() ?: 0L
+            val context = getContext()
+            val fileDir = context.getFilesDir()
+            val file = getFile(fileDir, fileName)
+            deleteFile(file)
         } catch (e: Exception) {
-            0L
+            false
         }
     }
     
-    /**
-     * 清理过期文件
-     */
-    suspend fun cleanupExpiredFiles(maxAge: Long = 7 * 24 * 60 * 60 * 1000) {
-        withContext(Dispatchers.IO) {
-            try {
-                val currentTime = System.currentTimeMillis()
-                var cleanedCount = 0
-                
-                val cleanedFiles = js("""
-                    try {
-                        const fs = requireNapi('file.fs');
-                        let cleaned = 0;
-                        const files = fs.readdirSync('$filesDir');
-                        files.forEach(file => {
-                            const filePath = '$filesDir/' + file;
-                            const stats = fs.statSync(filePath);
-                            if (stats.isFile()) {
-                                const fileAge = $currentTime - stats.mtime.getTime();
-                                if (fileAge > $maxAge) {
-                                    fs.unlinkSync(filePath);
-                                    cleaned++;
-                                }
-                            }
-                        });
-                        return cleaned;
-                    } catch (e) {
-                        return 0;
-                    }
-                """) as? Number
-                
-                cleanedCount = cleanedFiles?.toInt() ?: 0
-                
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_cleanup", 1.0, "count",
-                    mapOf("cleaned_files" to cleanedCount.toString()))
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_storage_cleanup_error", 1.0, "count",
-                    mapOf("error" to e.message.orEmpty()))
-            }
-        }
+    // HarmonyOS API封装
+    private external fun getPreferences(): Preferences
+    private external fun getContext(): Context
+    
+    private external interface Preferences {
+        fun putString(key: String, value: String)
+        fun getString(key: String, defaultValue: String?): String?
+        fun delete(key: String)
+        fun has(key: String): Boolean
+        fun clear()
+        fun flush(): Boolean
+        fun getAll(): Map<String, Any>
     }
     
-    /**
-     * 同步到分布式数据管理
-     */
-    suspend fun syncToDistributedData(key: String, value: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            try {
-                val success = js("""
-                    try {
-                        const distributedData = requireNapi('data.distributedData');
-                        const kvManager = distributedData.createKVManager({
-                            context: globalThis.getContext(),
-                            bundleName: 'com.unify.app'
-                        });
-                        const kvStore = kvManager.getKVStore('unify_dynamic_store');
-                        kvStore.put(key, value);
-                        return true;
-                    } catch (e) {
-                        console.log('HarmonyOS分布式数据同步失败:', e);
-                        return false;
-                    }
-                """) as? Boolean
-                
-                success ?: false
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("harmony_distributed_sync_error", 1.0, "count",
-                    mapOf("key" to key, "error" to e.message.orEmpty()))
-                false
-            }
-        }
+    private external interface Context {
+        fun getFilesDir(): FileDir
     }
     
-    companion object {
-        private const val MAX_PREFERENCES_SIZE = 1024 * 1024 // 1MB
+    private external interface FileDir
+    
+    private external fun createFile(dir: FileDir, fileName: String): File
+    private external fun getFile(dir: FileDir, fileName: String): File
+    private external fun fileExists(file: File): Boolean
+    private external fun writeFileBytes(file: File, data: ByteArray)
+    private external fun readFileBytes(file: File): ByteArray
+    private external fun deleteFile(file: File): Boolean
+    
+    private external interface File
+    
+    private fun ByteArray.encodeBase64(): String {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        var result = ""
+        var i = 0
+        while (i < size) {
+            val a = this[i].toInt() and 0xFF
+            val b = if (i + 1 < size) this[i + 1].toInt() and 0xFF else 0
+            val c = if (i + 2 < size) this[i + 2].toInt() and 0xFF else 0
+            
+            val bitmap = (a shl 16) or (b shl 8) or c
+            
+            result += chars[(bitmap shr 18) and 0x3F]
+            result += chars[(bitmap shr 12) and 0x3F]
+            result += if (i + 1 < size) chars[(bitmap shr 6) and 0x3F] else '='
+            result += if (i + 2 < size) chars[bitmap and 0x3F] else '='
+            
+            i += 3
+        }
+        return result
     }
-}
-
-/**
- * 创建HarmonyOS平台存储适配器
- */
-actual fun createPlatformStorageAdapter(): StorageAdapter {
-    return HarmonyStorageAdapter()
+    
+    private fun String.decodeBase64(): ByteArray {
+        val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+        val result = mutableListOf<Byte>()
+        var i = 0
+        
+        while (i < length) {
+            val a = chars.indexOf(this[i])
+            val b = chars.indexOf(this[i + 1])
+            val c = if (this[i + 2] != '=') chars.indexOf(this[i + 2]) else 0
+            val d = if (this[i + 3] != '=') chars.indexOf(this[i + 3]) else 0
+            
+            val bitmap = (a shl 18) or (b shl 12) or (c shl 6) or d
+            
+            result.add(((bitmap shr 16) and 0xFF).toByte())
+            if (this[i + 2] != '=') result.add(((bitmap shr 8) and 0xFF).toByte())
+            if (this[i + 3] != '=') result.add((bitmap and 0xFF).toByte())
+            
+            i += 4
+        }
+        
+        return result.toByteArray()
+    }
 }

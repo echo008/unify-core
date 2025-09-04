@@ -1,606 +1,379 @@
 package com.unify.data
 
-import kotlinx.browser.localStorage
-import kotlinx.browser.sessionStorage
-import kotlinx.browser.window
+import com.unify.core.data.UnifyDataManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.browser.localStorage
+import kotlinx.browser.window
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import org.w3c.dom.Storage
 import org.w3c.dom.get
 import org.w3c.dom.set
-import kotlin.js.Date
-import kotlin.reflect.KClass
 
 /**
- * Web平台数据管理器实现
+ * Web/JS平台UnifyDataManager实现
+ * 基于localStorage和IndexedDB
  */
-class WebUnifyDataManager(
-    private val config: UnifyDataManagerConfig
-) : UnifyDataManager {
+class UnifyDataManagerImpl : UnifyDataManager {
+    private val storage: Storage = localStorage
+    private val mutex = Mutex()
+    private val json = Json { ignoreUnknownKeys = true }
     
-    override val storage: UnifyStorage = WebUnifyStorage(config)
-    override val state: UnifyStateManager = WebUnifyStateManager()
-    override val cache: UnifyCacheManager = WebUnifyCacheManager(config.cachePolicy)
-    override val sync: UnifyDataSync = WebUnifyDataSync(config.syncPolicy)
+    // 响应式数据流管理
+    private val dataFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    override suspend fun initialize() {
-        (storage as WebUnifyStorage).initialize()
-        (cache as WebUnifyCacheManager).initialize()
-        (sync as WebUnifyDataSync).initialize()
-    }
+    // 缓存过期时间管理
+    private val cacheExpiryMap = mutableMapOf<String, Long>()
     
-    override suspend fun cleanup() {
-        (cache as WebUnifyCacheManager).cleanup()
-        (sync as WebUnifyDataSync).cleanup()
-    }
-}
-
-/**
- * Web存储实现 - 基于localStorage和IndexedDB
- */
-class WebUnifyStorage(
-    private val config: UnifyDataManagerConfig
-) : UnifyStorage {
+    // 同步设置
+    private var syncEnabled = false
     
-    private val storage = window.localStorage
-    private val sessionStore = window.sessionStorage
-    private val json = Json { 
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-    
-    companion object {
-        // 缓存清理常量
-        private const val CACHE_CLEANUP_PERCENTAGE = 0.2
-    }
-    
+    // 键前缀
     private val keyPrefix = "unify_"
+    private val objectPrefix = "${keyPrefix}obj_"
+    private val expiryPrefix = "${keyPrefix}exp_"
     
-    suspend fun initialize() {
-        // 检查浏览器存储支持
-        checkStorageSupport()
-        // 清理过期数据
-        cleanExpiredData()
-    }
-    
-    override suspend fun <T> put(key: String, value: T) {
-        try {
-            val jsonString = json.encodeToString(value)
-            val finalKey = keyPrefix + key
-            
-            if (config.storageEncryption) {
-                // Web平台可以使用Web Crypto API进行加密
-                val encryptedData = encryptData(jsonString)
-                storage[finalKey] = encryptedData
-            } else {
-                storage[finalKey] = jsonString
-            }
-            
-            // 存储元数据
-            val metadata = WebStorageMetadata(
-                timestamp = Date.now(),
-                size = jsonString.length,
-                encrypted = config.storageEncryption
-            )
-            storage["${finalKey}_meta"] = json.encodeToString(metadata)
-            
-        } catch (e: Exception) {
-            // 如果localStorage满了，尝试清理或使用sessionStorage
-            if (e.message?.contains("QuotaExceededError") == true) {
-                cleanOldData()
-                // 重试一次
-                val jsonString = json.encodeToString(value)
-                storage[keyPrefix + key] = jsonString
-            } else {
-                throw e
+    init {
+        // 监听storage事件以支持跨标签页同步
+        window.addEventListener("storage") { event ->
+            val storageEvent = event as org.w3c.dom.events.StorageEvent
+            val key = storageEvent.key
+            if (key?.startsWith(keyPrefix) == true) {
+                val cleanKey = key.removePrefix(keyPrefix).removePrefix("obj_")
+                val newValue = storageEvent.newValue
+                updateDataFlow(cleanKey, newValue)
             }
         }
     }
     
-    override suspend fun <T> get(key: String, type: KClass<T>): T? {
-        return try {
-            val finalKey = keyPrefix + key
-            val jsonString = storage[finalKey] ?: return null
-            
-            val decryptedData = if (config.storageEncryption) {
-                decryptData(jsonString)
-            } else {
-                jsonString
-            }
-            
-            JSON.parse<T>(decryptedData)
+    override suspend fun getString(key: String, defaultValue: String?): String? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        storage["$keyPrefix$key"] ?: defaultValue
+    }
+    
+    override suspend fun setString(key: String, value: String) = mutex.withLock {
+        storage["$keyPrefix$key"] = value
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        storage["$keyPrefix$key"]?.toIntOrNull() ?: defaultValue
+    }
+    
+    override suspend fun setInt(key: String, value: Int) = mutex.withLock {
+        storage["$keyPrefix$key"] = value.toString()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        storage["$keyPrefix$key"]?.toBooleanStrictOrNull() ?: defaultValue
+    }
+    
+    override suspend fun setBoolean(key: String, value: Boolean) = mutex.withLock {
+        storage["$keyPrefix$key"] = value.toString()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        storage["$keyPrefix$key"]?.toLongOrNull() ?: defaultValue
+    }
+    
+    override suspend fun setLong(key: String, value: Long) = mutex.withLock {
+        storage["$keyPrefix$key"] = value.toString()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        storage["$keyPrefix$key"]?.toFloatOrNull() ?: defaultValue
+    }
+    
+    override suspend fun setFloat(key: String, value: Float) = mutex.withLock {
+        storage["$keyPrefix$key"] = value.toString()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return null
+        }
+        
+        val jsonString = storage["$objectPrefix$key"] ?: return null
+        try {
+            json.decodeFromString<T>(jsonString)
         } catch (e: Exception) {
+            console.error("Failed to deserialize object for key: $key", e)
             null
         }
     }
     
-    override suspend fun remove(key: String): Boolean {
-        return try {
-            val finalKey = keyPrefix + key
-            storage.removeItem(finalKey)
-            storage.removeItem("${finalKey}_meta")
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    override suspend fun clear() {
+    override suspend fun <T> setObject(key: String, value: T) = mutex.withLock {
         try {
-            val keysToRemove = mutableListOf<String>()
-            for (i in 0 until storage.length) {
-                val key = storage.key(i)
-                if (key?.startsWith(keyPrefix) == true) {
-                    keysToRemove.add(key)
-                }
-            }
-            keysToRemove.forEach { storage.removeItem(it) }
+            val jsonString = json.encodeToString(value)
+            storage["$objectPrefix$key"] = jsonString
+            updateDataFlow(key, value)
         } catch (e: Exception) {
-            // 忽略清理错误
+            console.error("Failed to serialize object for key: $key", e)
+            throw RuntimeException("Failed to serialize object for key: $key", e)
         }
     }
     
-    override suspend fun contains(key: String): Boolean {
-        return storage[keyPrefix + key] != null
-    }
-    
-    override suspend fun keys(): Set<String> {
-        return try {
-            val keys = mutableSetOf<String>()
-            for (i in 0 until storage.length) {
-                val key = storage.key(i)
-                if (key?.startsWith(keyPrefix) == true && !key.endsWith("_meta")) {
-                    keys.add(key.removePrefix(keyPrefix))
-                }
-            }
-            keys
-        } catch (e: Exception) {
-            emptySet()
-        }
-    }
-    
-    override suspend fun size(): Long {
-        return try {
-            var totalSize = 0L
-            for (i in 0 until storage.length) {
-                val key = storage.key(i)
-                if (key?.startsWith(keyPrefix) == true) {
-                    val value = storage[key]
-                    totalSize += (key.length + (value?.length ?: 0)) * 2 // UTF-16编码
-                }
-            }
-            totalSize
-        } catch (e: Exception) {
-            0L
-        }
-    }
-    
-    private fun checkStorageSupport() {
-        // 检查浏览器存储支持
-        if (!js("typeof(Storage) !== 'undefined'")) {
-            throw UnsupportedOperationException("Browser does not support Web Storage")
-        }
-    }
-    
-    private suspend fun cleanExpiredData() {
-        // 清理过期的数据
-        val currentTime = Date.now()
+    override suspend fun clear() = mutex.withLock {
         val keysToRemove = mutableListOf<String>()
         
+        // 收集所有以我们的前缀开头的键
         for (i in 0 until storage.length) {
             val key = storage.key(i)
-            if (key?.startsWith(keyPrefix) == true && key.endsWith("_meta")) {
-                try {
-                    val metaJson = storage[key]
-                    if (metaJson != null) {
-                        val metadata = json.decodeFromString<WebStorageMetadata>(metaJson)
-                        // 如果数据超过7天，标记为清理
-                        if (currentTime - metadata.timestamp > 7 * 24 * 60 * 60 * 1000) {
-                            val dataKey = key.removeSuffix("_meta")
-                            keysToRemove.add(dataKey)
-                            keysToRemove.add(key)
+            if (key?.startsWith(keyPrefix) == true) {
+                keysToRemove.add(key)
+            }
+        }
+        
+        // 删除所有键
+        keysToRemove.forEach { key ->
+            storage.removeItem(key)
+        }
+        
+        cacheExpiryMap.clear()
+        dataFlows.values.forEach { it.value = null }
+    }
+    
+    override suspend fun remove(key: String) = mutex.withLock {
+        storage.removeItem("$keyPrefix$key")
+        storage.removeItem("$objectPrefix$key")
+        storage.removeItem("$expiryPrefix$key")
+        cacheExpiryMap.remove(key)
+        updateDataFlow(key, null)
+    }
+    
+    override suspend fun contains(key: String): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return false
+        }
+        storage["$keyPrefix$key"] != null || storage["$objectPrefix$key"] != null
+    }
+    
+    override suspend fun getAllKeys(): Set<String> = mutex.withLock {
+        val keys = mutableSetOf<String>()
+        
+        for (i in 0 until storage.length) {
+            val key = storage.key(i)
+            when {
+                key?.startsWith(keyPrefix) == true && !key.startsWith(objectPrefix) && !key.startsWith(expiryPrefix) -> {
+                    val cleanKey = key.removePrefix(keyPrefix)
+                    if (!isCacheExpired(cleanKey)) {
+                        keys.add(cleanKey)
+                    }
+                }
+                key?.startsWith(objectPrefix) == true -> {
+                    val cleanKey = key.removePrefix(objectPrefix)
+                    if (!isCacheExpired(cleanKey)) {
+                        keys.add(cleanKey)
+                    }
+                }
+            }
+        }
+        
+        keys
+    }
+    
+    override fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?> {
+        return getOrCreateDataFlow(key).map { value ->
+            when {
+                value == null -> null
+                clazz.isInstance(value) -> clazz.cast(value)
+                value is String -> {
+                    try {
+                        json.decodeFromString<T>(value)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                else -> null
+            }
+        }
+    }
+    
+    override fun observeStringKey(key: String): Flow<String?> {
+        return getOrCreateDataFlow(key).map { it as? String }
+    }
+    
+    override fun observeIntKey(key: String): Flow<Int> {
+        return getOrCreateDataFlow(key).map { 
+            when (it) {
+                is Int -> it
+                is String -> it.toIntOrNull() ?: 0
+                else -> 0
+            }
+        }
+    }
+    
+    override fun observeBooleanKey(key: String): Flow<Boolean> {
+        return getOrCreateDataFlow(key).map { 
+            when (it) {
+                is Boolean -> it
+                is String -> it.toBooleanStrictOrNull() ?: false
+                else -> false
+            }
+        }
+    }
+    
+    override suspend fun setCacheExpiry(key: String, expiryMillis: Long) = mutex.withLock {
+        val expiryTime = kotlinx.datetime.Clock.System.now().toEpochMilliseconds() + expiryMillis
+        cacheExpiryMap[key] = expiryTime
+        storage["$expiryPrefix$key"] = expiryTime.toString()
+    }
+    
+    override suspend fun isCacheExpired(key: String): Boolean {
+        val expiryTime = cacheExpiryMap[key] ?: storage["$expiryPrefix$key"]?.toLongOrNull()
+        if (expiryTime == null) return false
+        
+        val currentTime = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        return currentTime > expiryTime
+    }
+    
+    override suspend fun clearExpiredCache() = mutex.withLock {
+        val currentTime = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
+        val expiredKeys = mutableListOf<String>()
+        
+        // 检查内存中的过期时间
+        cacheExpiryMap.forEach { (key, expiryTime) ->
+            if (currentTime > expiryTime) {
+                expiredKeys.add(key)
+            }
+        }
+        
+        // 检查存储中的过期时间
+        for (i in 0 until storage.length) {
+            val key = storage.key(i)
+            if (key?.startsWith(expiryPrefix) == true) {
+                val cleanKey = key.removePrefix(expiryPrefix)
+                val expiryTime = storage[key]?.toLongOrNull()
+                if (expiryTime != null && currentTime > expiryTime) {
+                    expiredKeys.add(cleanKey)
+                }
+            }
+        }
+        
+        // 删除过期的键
+        expiredKeys.forEach { key ->
+            storage.removeItem("$keyPrefix$key")
+            storage.removeItem("$objectPrefix$key")
+            storage.removeItem("$expiryPrefix$key")
+            cacheExpiryMap.remove(key)
+            updateDataFlow(key, null)
+        }
+    }
+    
+    override suspend fun syncToCloud() {
+        if (!syncEnabled) return
+        
+        try {
+            // 使用Web API进行云端同步
+            val allKeys = getAllKeys()
+            val syncData = mutableMapOf<String, String>()
+            
+            allKeys.forEach { key ->
+                val value = storage["$keyPrefix$key"]
+                val objectValue = storage["$objectPrefix$key"]
+                val expiryValue = storage["$expiryPrefix$key"]
+                
+                when {
+                    value != null -> syncData["$keyPrefix$key"] = value
+                    objectValue != null -> syncData["$objectPrefix$key"] = objectValue
+                }
+                
+                if (expiryValue != null) {
+                    syncData["$expiryPrefix$key"] = expiryValue
+                }
+            }
+            
+            // 将数据存储到sessionStorage作为临时云端存储
+            // 实际项目中应该使用真实的云存储服务
+            val syncJson = json.encodeToString(syncData)
+            window.sessionStorage.setItem("unify_cloud_sync", syncJson)
+            
+        } catch (e: Exception) {
+            console.error("Cloud sync failed:", e.message)
+        }
+    }
+    
+    override suspend fun syncFromCloud() {
+        if (!syncEnabled) return
+        
+        try {
+            // 从sessionStorage获取云端数据
+            val syncJson = window.sessionStorage.getItem("unify_cloud_sync")
+            if (syncJson != null) {
+                val syncData: Map<String, String> = json.decodeFromString(syncJson)
+                
+                syncData.forEach { (key, value) ->
+                    storage[key] = value
+                    
+                    // 更新数据流
+                    when {
+                        key.startsWith(keyPrefix) && !key.startsWith(objectPrefix) && !key.startsWith(expiryPrefix) -> {
+                            val cleanKey = key.removePrefix(keyPrefix)
+                            updateDataFlow(cleanKey, value)
+                        }
+                        key.startsWith(objectPrefix) -> {
+                            val cleanKey = key.removePrefix(objectPrefix)
+                            updateDataFlow(cleanKey, value)
                         }
                     }
-                } catch (e: Exception) {
-                    // 忽略元数据解析错误
                 }
             }
-        }
-        
-        keysToRemove.forEach { storage.removeItem(it) }
-    }
-    
-    private suspend fun cleanOldData() {
-        // 清理最旧的数据以释放空间
-        val dataWithTimestamp = mutableListOf<Pair<String, Double>>()
-        
-        for (i in 0 until storage.length) {
-            val key = storage.key(i)
-            if (key?.startsWith(keyPrefix) == true && key.endsWith("_meta")) {
-                try {
-                    val metaJson = storage[key]
-                    if (metaJson != null) {
-                        val metadata = json.decodeFromString<WebStorageMetadata>(metaJson)
-                        dataWithTimestamp.add(key.removeSuffix("_meta") to metadata.timestamp)
-                    }
-                } catch (e: Exception) {
-                    // 忽略解析错误
-                }
-            }
-        }
-        
-        // 删除最旧的20%数据
-        val sortedData = dataWithTimestamp.sortedBy { it.second }
-        val deleteCount = (sortedData.size * CACHE_CLEANUP_PERCENTAGE).toInt()
-        
-        sortedData.take(deleteCount).forEach { (key, _) ->
-            storage.removeItem(key)
-            storage.removeItem("${key}_meta")
-        }
-    }
-    
-    private fun encryptData(data: String): String {
-        // Web平台加密实现 - 可以使用Web Crypto API
-        // 这里返回原数据作为占位符
-        return data
-    }
-    
-    private fun decryptData(data: String): String {
-        // Web平台解密实现
-        return data
-    }
-}
-
-/**
- * Web状态管理实现
- */
-class WebUnifyStateManager : UnifyStateManager {
-    
-    private val states = mutableMapOf<String, Any?>()
-    private val stateFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
-    
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value
-        
-        val flow = stateFlows.getOrPut(key) { MutableStateFlow(null) }
-        flow.value = value
-    }
-    
-    override fun <T> getState(key: String, type: KClass<T>): T? {
-        return states[key] as? T
-    }
-    
-    override fun <T> observeState(key: String, type: KClass<T>): Flow<T?> {
-        val flow = stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
-        return flow.map { it as? T }
-    }
-    
-    override fun removeState(key: String) {
-        states.remove(key)
-        stateFlows[key]?.value = null
-    }
-    
-    override fun clearStates() {
-        states.clear()
-        stateFlows.values.forEach { it.value = null }
-        stateFlows.clear()
-    }
-    
-    override fun getStateKeys(): Set<String> {
-        return states.keys.toSet()
-    }
-}
-
-/**
- * Web缓存管理实现 - 基于Map和Web Storage
- */
-class WebUnifyCacheManager(
-    private var policy: UnifyCachePolicy
-) : UnifyCacheManager {
-    
-    private val cache = mutableMapOf<String, WebCacheEntry<*>>()
-    private val stats = WebCacheStats()
-    private val sessionStorage = window.sessionStorage
-    
-    companion object {
-        // 缓存过期时间常量
-        private const val NEVER_EXPIRE = 0.0
-    }
-    
-    suspend fun initialize() {
-        // 从sessionStorage恢复缓存
-        restoreCacheFromStorage()
-        cleanExpiredCache()
-    }
-    
-    suspend fun cleanup() {
-        // 保存缓存到sessionStorage
-        saveCacheToStorage()
-        cache.clear()
-    }
-    
-    override suspend fun <T> cache(key: String, value: T, ttl: Long) {
-        val actualTtl = if (ttl > 0) ttl else policy.defaultTtl
-        
-        val expireTime = if (actualTtl > 0) {
-            Date.now() + actualTtl
-        } else {
-            NEVER_EXPIRE // 永不过期
-        }
-        
-        val entry = WebCacheEntry(
-            value = value,
-            expireTime = expireTime,
-            accessTime = Date.now(),
-            accessCount = 1
-        )
-        
-        cache[key] = entry
-        
-        // 检查缓存大小限制
-        if (cache.size * 1024 > policy.maxSize) {
-            evictCache()
-        }
-    }
-    
-    override suspend fun <T> getCache(key: String, type: KClass<T>): T? {
-        val entry = cache[key] ?: run {
-            stats.missCount++
-            return null
-        }
-        
-        // 检查是否过期
-        if (entry.expireTime > 0 && Date.now() > entry.expireTime) {
-            cache.remove(key)
-            stats.missCount++
-            return null
-        }
-        
-        // 更新访问信息
-        entry.accessTime = Date.now()
-        entry.accessCount++
-        
-        stats.hitCount++
-        return entry.value as? T
-    }
-    
-    override suspend fun removeCache(key: String): Boolean {
-        return cache.remove(key) != null
-    }
-    
-    override suspend fun clearCache() {
-        cache.clear()
-        stats.reset()
-        // 清理sessionStorage中的缓存
-        sessionStorage.removeItem("unify_cache")
-    }
-    
-    override suspend fun isCacheValid(key: String): Boolean {
-        val entry = cache[key] ?: return false
-        return entry.expireTime == NEVER_EXPIRE || Date.now() <= entry.expireTime
-    }
-    
-    override suspend fun getCacheStats(): UnifyCacheStats {
-        return UnifyCacheStats(
-            hitCount = stats.hitCount,
-            missCount = stats.missCount,
-            evictionCount = stats.evictionCount,
-            totalSize = cache.size.toLong() * 1024, // 估算
-            maxSize = policy.maxSize,
-            hitRate = if (stats.hitCount + stats.missCount > 0) {
-                stats.hitCount.toDouble() / (stats.hitCount + stats.missCount)
-            } else NEVER_EXPIRE
-        )
-    }
-    
-    override fun setCachePolicy(policy: UnifyCachePolicy) {
-        this.policy = policy
-    }
-    
-    private suspend fun cleanExpiredCache() {
-        val currentTime = Date.now()
-        val expiredKeys = cache.entries
-            .filter { it.value.expireTime > 0 && currentTime > it.value.expireTime }
-            .map { it.key }
-        
-        expiredKeys.forEach { cache.remove(it) }
-    }
-    
-    private fun evictCache() {
-        when (policy.evictionPolicy) {
-            UnifyCacheEvictionPolicy.LRU -> evictLRU()
-            UnifyCacheEvictionPolicy.LFU -> evictLFU()
-            UnifyCacheEvictionPolicy.FIFO -> evictFIFO()
-            UnifyCacheEvictionPolicy.RANDOM -> evictRandom()
-        }
-    }
-    
-    private fun evictLRU() {
-        val lruEntry = cache.entries.minByOrNull { it.value.accessTime }
-        lruEntry?.let { 
-            cache.remove(it.key)
-            stats.evictionCount++
-        }
-    }
-    
-    private fun evictLFU() {
-        val lfuEntry = cache.entries.minByOrNull { it.value.accessCount }
-        lfuEntry?.let { 
-            cache.remove(it.key)
-            stats.evictionCount++
-        }
-    }
-    
-    private fun evictFIFO() {
-        val firstEntry = cache.entries.firstOrNull()
-        firstEntry?.let { 
-            cache.remove(it.key)
-            stats.evictionCount++
-        }
-    }
-    
-    private fun evictRandom() {
-        val randomEntry = cache.entries.randomOrNull()
-        randomEntry?.let { 
-            cache.remove(it.key)
-            stats.evictionCount++
-        }
-    }
-    
-    private fun restoreCacheFromStorage() {
-        // 从sessionStorage恢复缓存数据
-        try {
-            val cacheData = sessionStorage["unify_cache"]
-            if (cacheData != null) {
-                // 这里可以实现缓存数据的反序列化
-                // 由于类型擦除问题，暂时跳过
-            }
         } catch (e: Exception) {
-            // 忽略恢复错误
+            console.error("Cloud sync from failed:", e.message)
         }
     }
     
-    private fun saveCacheToStorage() {
-        // 保存缓存数据到sessionStorage
-        try {
-            // 这里可以实现缓存数据的序列化
-            // 由于类型擦除问题，暂时跳过
-        } catch (e: Exception) {
-            // 忽略保存错误
-        }
+    override fun isSyncEnabled(): Boolean = syncEnabled
+    
+    override fun setSyncEnabled(enabled: Boolean) {
+        syncEnabled = enabled
+    }
+    
+    private fun getOrCreateDataFlow(key: String): Flow<Any?> {
+        return dataFlows.getOrPut(key) {
+            val initialValue = storage["$keyPrefix$key"] ?: storage["$objectPrefix$key"]
+            MutableStateFlow(initialValue)
+        }.asStateFlow()
+    }
+    
+    private fun updateDataFlow(key: String, value: Any?) {
+        dataFlows.getOrPut(key) { MutableStateFlow(null) }.value = value
     }
 }
 
-/**
- * Web数据同步实现
- */
-class WebUnifyDataSync(
-    private var policy: UnifySyncPolicy
-) : UnifyDataSync {
-    
-    private val syncStatus = MutableStateFlow(
-        UnifySyncStatus(
-            isOnline = window.navigator.onLine,
-            isSyncing = false,
-            lastSyncTime = 0L,
-            pendingSyncCount = 0,
-            failedSyncCount = 0
-        )
-    )
-    
-    suspend fun initialize() {
-        // 监听网络状态变化
-        setupNetworkListeners()
-    }
-    
-    suspend fun cleanup() {
-        // 清理网络监听器
-    }
-    
-    override suspend fun syncToRemote(key: String): UnifySyncResult {
-        // Web平台同步到远程实现
-        return try {
-            // 这里可以使用fetch API进行网络请求
-            UnifySyncResult(
-                key = key,
-                success = true,
-                timestamp = System.currentTimeMillis()
-            )
-        } catch (e: Exception) {
-            UnifySyncResult(
-                key = key,
-                success = false,
-                timestamp = System.currentTimeMillis(),
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun syncFromRemote(key: String): UnifySyncResult {
-        // Web平台从远程同步实现
-        return UnifySyncResult(
-            key = key,
-            success = true,
-            timestamp = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun bidirectionalSync(key: String): UnifySyncResult {
-        // Web平台双向同步实现
-        return UnifySyncResult(
-            key = key,
-            success = true,
-            timestamp = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun batchSync(keys: List<String>): List<UnifySyncResult> {
-        return keys.map { bidirectionalSync(it) }
-    }
-    
-    override fun setSyncPolicy(policy: UnifySyncPolicy) {
-        this.policy = policy
-    }
-    
-    override fun observeSyncStatus(): Flow<UnifySyncStatus> {
-        return syncStatus
-    }
-    
-    private fun setupNetworkListeners() {
-        // 监听网络状态变化
-        window.addEventListener("online", {
-            syncStatus.value = syncStatus.value.copy(isOnline = true)
-        })
-        
-        window.addEventListener("offline", {
-            syncStatus.value = syncStatus.value.copy(isOnline = false)
-        })
-    }
-}
-
-/**
- * Web存储元数据
- */
-@kotlinx.serialization.Serializable
-private data class WebStorageMetadata(
-    val timestamp: Double,
-    val size: Int,
-    val encrypted: Boolean
-)
-
-/**
- * Web缓存条目
- */
-private data class WebCacheEntry(
-    val value: Any?,
-    var expireTime: Double,
-    var accessTime: Double,
-    var accessCount: Long
-)
-
-/**
- * Web缓存统计
- */
-private class WebCacheStats {
-    var hitCount: Long = 0
-    var missCount: Long = 0
-    var evictionCount: Long = 0
-    
-    fun reset() {
-        hitCount = 0
-        missCount = 0
-        evictionCount = 0
-    }
-}
-
-/**
- * Web数据管理器工厂实现
- */
 actual object UnifyDataManagerFactory {
-    actual fun create(config: UnifyDataManagerConfig): UnifyDataManager {
-        return WebUnifyDataManager(config)
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl()
     }
 }

@@ -1,400 +1,476 @@
 package com.unify.ui.platform
 
-import androidx.compose.runtime.Immutable
-import com.unify.ui.theme.UnifyTheme
-import com.unify.ui.theme.UnifyColors
-import com.unify.core.platform.PlatformManager
-import com.unify.core.platform.PlatformType
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import kotlinx.serialization.Serializable
 
 /**
- * 平台适配主题系统
- * 根据不同平台的设计规范自动适配主题样式
+ * Unify跨平台主题系统
+ * 提供统一的主题管理和平台适配
  */
-@Immutable
-data class UnifyPlatformTheme(
-    val platformType: PlatformType,
-    val adaptedColors: UnifyColors,
-    val platformSpecificStyles: Map<String, Any>,
-    val interactionPatterns: InteractionPatterns,
-    val accessibilityFeatures: AccessibilityFeatures
-) {
-    companion object {
-        fun default(): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformManager.getPlatformType(),
-                adaptedColors = UnifyColors.defaultLight(),
-                platformSpecificStyles = emptyMap(),
-                interactionPatterns = InteractionPatterns.default(),
-                accessibilityFeatures = AccessibilityFeatures.default()
-            )
+
+/**
+ * 统一主题配置
+ */
+@Serializable
+data class UnifyThemeConfig(
+    val name: String,
+    val lightColorScheme: UnifyColorScheme,
+    val darkColorScheme: UnifyColorScheme,
+    val typography: UnifyTypography,
+    val shapes: UnifyShapes,
+    val spacing: UnifySpacing
+)
+
+/**
+ * 统一颜色方案
+ */
+@Serializable
+data class UnifyColorScheme(
+    val primary: Long,
+    val onPrimary: Long,
+    val primaryContainer: Long,
+    val onPrimaryContainer: Long,
+    val secondary: Long,
+    val onSecondary: Long,
+    val secondaryContainer: Long,
+    val onSecondaryContainer: Long,
+    val tertiary: Long,
+    val onTertiary: Long,
+    val tertiaryContainer: Long,
+    val onTertiaryContainer: Long,
+    val error: Long,
+    val onError: Long,
+    val errorContainer: Long,
+    val onErrorContainer: Long,
+    val background: Long,
+    val onBackground: Long,
+    val surface: Long,
+    val onSurface: Long,
+    val surfaceVariant: Long,
+    val onSurfaceVariant: Long,
+    val outline: Long,
+    val outlineVariant: Long,
+    val scrim: Long,
+    val inverseSurface: Long,
+    val inverseOnSurface: Long,
+    val inversePrimary: Long
+)
+
+/**
+ * 统一字体排版
+ */
+@Serializable
+data class UnifyTypography(
+    val displayLarge: UnifyTextStyle,
+    val displayMedium: UnifyTextStyle,
+    val displaySmall: UnifyTextStyle,
+    val headlineLarge: UnifyTextStyle,
+    val headlineMedium: UnifyTextStyle,
+    val headlineSmall: UnifyTextStyle,
+    val titleLarge: UnifyTextStyle,
+    val titleMedium: UnifyTextStyle,
+    val titleSmall: UnifyTextStyle,
+    val bodyLarge: UnifyTextStyle,
+    val bodyMedium: UnifyTextStyle,
+    val bodySmall: UnifyTextStyle,
+    val labelLarge: UnifyTextStyle,
+    val labelMedium: UnifyTextStyle,
+    val labelSmall: UnifyTextStyle
+)
+
+/**
+ * 统一文本样式
+ */
+@Serializable
+data class UnifyTextStyle(
+    val fontSize: Float,
+    val lineHeight: Float,
+    val fontWeight: Int,
+    val letterSpacing: Float
+)
+
+/**
+ * 统一形状配置
+ */
+@Serializable
+data class UnifyShapes(
+    val extraSmall: Float,
+    val small: Float,
+    val medium: Float,
+    val large: Float,
+    val extraLarge: Float
+)
+
+/**
+ * 统一间距配置
+ */
+@Serializable
+data class UnifySpacing(
+    val extraSmall: Float,
+    val small: Float,
+    val medium: Float,
+    val large: Float,
+    val extraLarge: Float
+)
+
+/**
+ * 平台主题适配器
+ */
+expect class UnifyPlatformThemeAdapter {
+    fun getSystemColorScheme(isDark: Boolean): UnifyColorScheme
+    fun getSystemTypography(): UnifyTypography
+    fun getSystemShapes(): UnifyShapes
+    fun getSystemSpacing(): UnifySpacing
+    fun applyPlatformSpecificTheme(config: UnifyThemeConfig): UnifyThemeConfig
+}
+
+/**
+ * 主题管理器
+ */
+class UnifyThemeManager {
+    
+    private val _currentTheme = mutableStateOf(getDefaultTheme())
+    val currentTheme: State<UnifyThemeConfig> = _currentTheme
+    
+    private val _isDarkMode = mutableStateOf(false)
+    val isDarkMode: State<Boolean> = _isDarkMode
+    
+    private val platformAdapter = UnifyPlatformThemeAdapter()
+    
+    /**
+     * 设置主题
+     */
+    fun setTheme(theme: UnifyThemeConfig) {
+        _currentTheme.value = platformAdapter.applyPlatformSpecificTheme(theme)
+    }
+    
+    /**
+     * 切换深色模式
+     */
+    fun toggleDarkMode() {
+        _isDarkMode.value = !_isDarkMode.value
+    }
+    
+    /**
+     * 设置深色模式
+     */
+    fun setDarkMode(isDark: Boolean) {
+        _isDarkMode.value = isDark
+    }
+    
+    /**
+     * 获取当前颜色方案
+     */
+    fun getCurrentColorScheme(): UnifyColorScheme {
+        return if (_isDarkMode.value) {
+            _currentTheme.value.darkColorScheme
+        } else {
+            _currentTheme.value.lightColorScheme
         }
+    }
+    
+    /**
+     * 创建自定义主题
+     */
+    fun createCustomTheme(
+        name: String,
+        primaryColor: Color,
+        secondaryColor: Color? = null,
+        backgroundColor: Color? = null
+    ): UnifyThemeConfig {
+        val baseTheme = getDefaultTheme()
+        val lightScheme = createColorSchemeFromPrimary(primaryColor, false)
+        val darkScheme = createColorSchemeFromPrimary(primaryColor, true)
         
-        /**
-         * Android Material Design 适配
-         */
-        fun material(baseTheme: UnifyTheme): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformType.ANDROID,
-                adaptedColors = adaptColorsForMaterial(baseTheme.colors),
-                platformSpecificStyles = mapOf(
-                    "rippleEffect" to true,
-                    "elevation" to true,
-                    "materialMotion" to true,
-                    "fab" to true
-                ),
-                interactionPatterns = InteractionPatterns.material(),
-                accessibilityFeatures = AccessibilityFeatures.android()
-            )
-        }
-        
-        /**
-         * iOS Cupertino 适配
-         */
-        fun cupertino(baseTheme: UnifyTheme): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformType.IOS,
-                adaptedColors = adaptColorsForCupertino(baseTheme.colors),
-                platformSpecificStyles = mapOf(
-                    "blurEffect" to true,
-                    "vibrancy" to true,
-                    "springAnimation" to true,
-                    "navigationStyle" to "large"
-                ),
-                interactionPatterns = InteractionPatterns.cupertino(),
-                accessibilityFeatures = AccessibilityFeatures.ios()
-            )
-        }
-        
-        /**
-         * HarmonyOS 适配
-         */
-        fun harmony(baseTheme: UnifyTheme): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformType.HARMONY,
-                adaptedColors = adaptColorsForHarmony(baseTheme.colors),
-                platformSpecificStyles = mapOf(
-                    "arkUIStyle" to true,
-                    "distributedUI" to true,
-                    "atomicService" to true,
-                    "serviceWidget" to true
-                ),
-                interactionPatterns = InteractionPatterns.harmony(),
-                accessibilityFeatures = AccessibilityFeatures.harmony()
-            )
-        }
-        
-        /**
-         * Web 适配
-         */
-        fun web(baseTheme: UnifyTheme): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformType.WEB,
-                adaptedColors = adaptColorsForWeb(baseTheme.colors),
-                platformSpecificStyles = mapOf(
-                    "cssTransitions" to true,
-                    "hoverEffects" to true,
-                    "focusRing" to true,
-                    "responsiveDesign" to true
-                ),
-                interactionPatterns = InteractionPatterns.web(),
-                accessibilityFeatures = AccessibilityFeatures.web()
-            )
-        }
-        
-        /**
-         * Desktop 适配
-         */
-        fun desktop(baseTheme: UnifyTheme): UnifyPlatformTheme {
-            return UnifyPlatformTheme(
-                platformType = PlatformType.DESKTOP,
-                adaptedColors = adaptColorsForDesktop(baseTheme.colors),
-                platformSpecificStyles = mapOf(
-                    "nativeMenus" to true,
-                    "keyboardShortcuts" to true,
-                    "contextMenus" to true,
-                    "windowChrome" to true
-                ),
-                interactionPatterns = InteractionPatterns.desktop(),
-                accessibilityFeatures = AccessibilityFeatures.desktop()
-            )
-        }
-        
-        private fun adaptColorsForMaterial(colors: UnifyColors): UnifyColors {
-            // Material Design 色彩适配逻辑
-            return colors.copy(
-                // 增强对比度以符合 Material Design 规范
-                primary = colors.primary,
-                surface = colors.surface
-            )
-        }
-        
-        private fun adaptColorsForCupertino(colors: UnifyColors): UnifyColors {
-            // iOS 色彩适配逻辑
-            return colors.copy(
-                // 调整为 iOS 系统色彩
-                primary = colors.primary,
-                background = colors.background
-            )
-        }
-        
-        private fun adaptColorsForHarmony(colors: UnifyColors): UnifyColors {
-            // HarmonyOS 色彩适配逻辑
-            return colors.copy(
-                // 适配鸿蒙设计语言
-                primary = colors.primary,
-                surface = colors.surface
-            )
-        }
-        
-        private fun adaptColorsForWeb(colors: UnifyColors): UnifyColors {
-            // Web 色彩适配逻辑
-            return colors.copy(
-                // Web 可访问性色彩调整
-                primary = colors.primary,
-                outline = colors.outline
-            )
-        }
-        
-        private fun adaptColorsForDesktop(colors: UnifyColors): UnifyColors {
-            // Desktop 色彩适配逻辑
-            return colors.copy(
-                // 桌面环境色彩调整
-                primary = colors.primary,
-                surface = colors.surface
-            )
+        return baseTheme.copy(
+            name = name,
+            lightColorScheme = lightScheme,
+            darkColorScheme = darkScheme
+        )
+    }
+    
+    private fun createColorSchemeFromPrimary(primary: Color, isDark: Boolean): UnifyColorScheme {
+        // 基于主色生成完整的颜色方案
+        return if (isDark) {
+            getDarkColorScheme().copy(primary = primary.value.toLong())
+        } else {
+            getLightColorScheme().copy(primary = primary.value.toLong())
         }
     }
 }
 
 /**
- * 交互模式定义
+ * 统一主题提供者组件
  */
-@Immutable
-data class InteractionPatterns(
-    val touchTargetSize: Float,
-    val animationDuration: Int,
-    val feedbackType: FeedbackType,
-    val navigationPattern: NavigationPattern,
-    val gestureSupport: Set<GestureType>
+@Composable
+fun UnifyTheme(
+    themeConfig: UnifyThemeConfig = getDefaultTheme(),
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
 ) {
-    companion object {
-        fun default(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 44f,
-                animationDuration = 300,
-                feedbackType = FeedbackType.VISUAL,
-                navigationPattern = NavigationPattern.STACK,
-                gestureSupport = setOf(GestureType.TAP, GestureType.LONG_PRESS)
-            )
-        }
-        
-        fun material(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 48f,
-                animationDuration = 300,
-                feedbackType = FeedbackType.RIPPLE,
-                navigationPattern = NavigationPattern.DRAWER,
-                gestureSupport = setOf(
-                    GestureType.TAP,
-                    GestureType.LONG_PRESS,
-                    GestureType.SWIPE,
-                    GestureType.PINCH
-                )
-            )
-        }
-        
-        fun cupertino(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 44f,
-                animationDuration = 250,
-                feedbackType = FeedbackType.HAPTIC,
-                navigationPattern = NavigationPattern.TAB,
-                gestureSupport = setOf(
-                    GestureType.TAP,
-                    GestureType.LONG_PRESS,
-                    GestureType.SWIPE,
-                    GestureType.EDGE_SWIPE
-                )
-            )
-        }
-        
-        fun harmony(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 48f,
-                animationDuration = 350,
-                feedbackType = FeedbackType.DISTRIBUTED,
-                navigationPattern = NavigationPattern.SERVICE,
-                gestureSupport = setOf(
-                    GestureType.TAP,
-                    GestureType.LONG_PRESS,
-                    GestureType.SWIPE,
-                    GestureType.MULTI_DEVICE
-                )
-            )
-        }
-        
-        fun web(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 44f,
-                animationDuration = 200,
-                feedbackType = FeedbackType.VISUAL,
-                navigationPattern = NavigationPattern.BREADCRUMB,
-                gestureSupport = setOf(
-                    GestureType.TAP,
-                    GestureType.HOVER,
-                    GestureType.KEYBOARD
-                )
-            )
-        }
-        
-        fun desktop(): InteractionPatterns {
-            return InteractionPatterns(
-                touchTargetSize = 32f,
-                animationDuration = 150,
-                feedbackType = FeedbackType.VISUAL,
-                navigationPattern = NavigationPattern.MENU,
-                gestureSupport = setOf(
-                    GestureType.CLICK,
-                    GestureType.RIGHT_CLICK,
-                    GestureType.KEYBOARD,
-                    GestureType.SCROLL
-                )
-            )
+    val colorScheme = if (darkTheme) {
+        themeConfig.darkColorScheme.toMaterial3ColorScheme()
+    } else {
+        themeConfig.lightColorScheme.toMaterial3ColorScheme()
+    }
+    
+    val typography = themeConfig.typography.toMaterial3Typography()
+    val shapes = themeConfig.shapes.toMaterial3Shapes()
+    
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = typography,
+        shapes = shapes,
+        content = content
+    )
+}
+
+/**
+ * 主题预览组件
+ */
+@Composable
+fun UnifyThemePreview(
+    theme: UnifyThemeConfig,
+    isDark: Boolean = false
+) {
+    UnifyTheme(
+        themeConfig = theme,
+        darkTheme = isDark
+    ) {
+        Surface {
+            // 主题预览内容
         }
     }
 }
 
-/**
- * 无障碍功能定义
- */
-@Immutable
-data class AccessibilityFeatures(
-    val screenReaderSupport: Boolean,
-    val highContrastSupport: Boolean,
-    val largeTextSupport: Boolean,
-    val keyboardNavigationSupport: Boolean,
-    val voiceControlSupport: Boolean,
-    val reduceMotionSupport: Boolean,
-    val semanticLabels: Boolean,
-    val focusManagement: Boolean
-) {
-    companion object {
-        fun default(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true,
-                highContrastSupport = true,
-                largeTextSupport = true,
-                keyboardNavigationSupport = true,
-                voiceControlSupport = false,
-                reduceMotionSupport = true,
-                semanticLabels = true,
-                focusManagement = true
-            )
-        }
-        
-        fun android(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true, // TalkBack
-                highContrastSupport = true,
-                largeTextSupport = true,
-                keyboardNavigationSupport = true,
-                voiceControlSupport = true, // Voice Access
-                reduceMotionSupport = true,
-                semanticLabels = true,
-                focusManagement = true
-            )
-        }
-        
-        fun ios(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true, // VoiceOver
-                highContrastSupport = true,
-                largeTextSupport = true, // Dynamic Type
-                keyboardNavigationSupport = true,
-                voiceControlSupport = true, // Voice Control
-                reduceMotionSupport = true,
-                semanticLabels = true,
-                focusManagement = true
-            )
-        }
-        
-        fun harmony(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true,
-                highContrastSupport = true,
-                largeTextSupport = true,
-                keyboardNavigationSupport = true,
-                voiceControlSupport = true,
-                reduceMotionSupport = true,
-                semanticLabels = true,
-                focusManagement = true
-            )
-        }
-        
-        fun web(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true, // NVDA, JAWS, VoiceOver
-                highContrastSupport = true,
-                largeTextSupport = true,
-                keyboardNavigationSupport = true,
-                voiceControlSupport = false,
-                reduceMotionSupport = true, // prefers-reduced-motion
-                semanticLabels = true, // ARIA
-                focusManagement = true
-            )
-        }
-        
-        fun desktop(): AccessibilityFeatures {
-            return AccessibilityFeatures(
-                screenReaderSupport = true,
-                highContrastSupport = true,
-                largeTextSupport = true,
-                keyboardNavigationSupport = true,
-                voiceControlSupport = true,
-                reduceMotionSupport = true,
-                semanticLabels = true,
-                focusManagement = true
-            )
-        }
+// 扩展函数：转换为Material3类型
+private fun UnifyColorScheme.toMaterial3ColorScheme(): ColorScheme {
+    return if (background == Color.Black.value.toLong()) {
+        darkColorScheme(
+            primary = Color(primary.toULong()),
+            onPrimary = Color(onPrimary.toULong()),
+            primaryContainer = Color(primaryContainer.toULong()),
+            onPrimaryContainer = Color(onPrimaryContainer.toULong()),
+            secondary = Color(secondary.toULong()),
+            onSecondary = Color(onSecondary.toULong()),
+            secondaryContainer = Color(secondaryContainer.toULong()),
+            onSecondaryContainer = Color(onSecondaryContainer.toULong()),
+            tertiary = Color(tertiary.toULong()),
+            onTertiary = Color(onTertiary.toULong()),
+            tertiaryContainer = Color(tertiaryContainer.toULong()),
+            onTertiaryContainer = Color(onTertiaryContainer.toULong()),
+            error = Color(error.toULong()),
+            onError = Color(onError.toULong()),
+            errorContainer = Color(errorContainer.toULong()),
+            onErrorContainer = Color(onErrorContainer.toULong()),
+            background = Color(background.toULong()),
+            onBackground = Color(onBackground.toULong()),
+            surface = Color(surface.toULong()),
+            onSurface = Color(onSurface.toULong()),
+            surfaceVariant = Color(surfaceVariant.toULong()),
+            onSurfaceVariant = Color(onSurfaceVariant.toULong()),
+            outline = Color(outline.toULong()),
+            outlineVariant = Color(outlineVariant.toULong()),
+            scrim = Color(scrim.toULong()),
+            inverseSurface = Color(inverseSurface.toULong()),
+            inverseOnSurface = Color(inverseOnSurface.toULong()),
+            inversePrimary = Color(inversePrimary.toULong())
+        )
+    } else {
+        lightColorScheme(
+            primary = Color(primary.toULong()),
+            onPrimary = Color(onPrimary.toULong()),
+            primaryContainer = Color(primaryContainer.toULong()),
+            onPrimaryContainer = Color(onPrimaryContainer.toULong()),
+            secondary = Color(secondary.toULong()),
+            onSecondary = Color(onSecondary.toULong()),
+            secondaryContainer = Color(secondaryContainer.toULong()),
+            onSecondaryContainer = Color(onSecondaryContainer.toULong()),
+            tertiary = Color(tertiary.toULong()),
+            onTertiary = Color(onTertiary.toULong()),
+            tertiaryContainer = Color(tertiaryContainer.toULong()),
+            onTertiaryContainer = Color(onTertiaryContainer.toULong()),
+            error = Color(error.toULong()),
+            onError = Color(onError.toULong()),
+            errorContainer = Color(errorContainer.toULong()),
+            onErrorContainer = Color(onErrorContainer.toULong()),
+            background = Color(background.toULong()),
+            onBackground = Color(onBackground.toULong()),
+            surface = Color(surface.toULong()),
+            onSurface = Color(onSurface.toULong()),
+            surfaceVariant = Color(surfaceVariant.toULong()),
+            onSurfaceVariant = Color(onSurfaceVariant.toULong()),
+            outline = Color(outline.toULong()),
+            outlineVariant = Color(outlineVariant.toULong()),
+            scrim = Color(scrim.toULong()),
+            inverseSurface = Color(inverseSurface.toULong()),
+            inverseOnSurface = Color(inverseOnSurface.toULong()),
+            inversePrimary = Color(inversePrimary.toULong())
+        )
     }
 }
 
-/**
- * 反馈类型枚举
- */
-enum class FeedbackType {
-    VISUAL,      // 视觉反馈
-    HAPTIC,      // 触觉反馈
-    AUDIO,       // 音频反馈
-    RIPPLE,      // 涟漪效果
-    DISTRIBUTED  // 分布式反馈
+private fun UnifyTypography.toMaterial3Typography(): Typography {
+    return Typography(
+        displayLarge = displayLarge.toTextStyle(),
+        displayMedium = displayMedium.toTextStyle(),
+        displaySmall = displaySmall.toTextStyle(),
+        headlineLarge = headlineLarge.toTextStyle(),
+        headlineMedium = headlineMedium.toTextStyle(),
+        headlineSmall = headlineSmall.toTextStyle(),
+        titleLarge = titleLarge.toTextStyle(),
+        titleMedium = titleMedium.toTextStyle(),
+        titleSmall = titleSmall.toTextStyle(),
+        bodyLarge = bodyLarge.toTextStyle(),
+        bodyMedium = bodyMedium.toTextStyle(),
+        bodySmall = bodySmall.toTextStyle(),
+        labelLarge = labelLarge.toTextStyle(),
+        labelMedium = labelMedium.toTextStyle(),
+        labelSmall = labelSmall.toTextStyle()
+    )
 }
 
-/**
- * 导航模式枚举
- */
-enum class NavigationPattern {
-    STACK,       // 堆栈导航
-    TAB,         // 标签导航
-    DRAWER,      // 抽屉导航
-    BREADCRUMB,  // 面包屑导航
-    MENU,        // 菜单导航
-    SERVICE      // 服务导航
+private fun UnifyTextStyle.toTextStyle(): TextStyle {
+    return TextStyle(
+        fontSize = fontSize.sp,
+        lineHeight = lineHeight.sp,
+        fontWeight = FontWeight(fontWeight),
+        letterSpacing = letterSpacing.sp,
+        fontFamily = FontFamily.Default
+    )
 }
 
-/**
- * 手势类型枚举
- */
-enum class GestureType {
-    TAP,           // 点击
-    LONG_PRESS,    // 长按
-    SWIPE,         // 滑动
-    PINCH,         // 捏合
-    EDGE_SWIPE,    // 边缘滑动
-    HOVER,         // 悬停
-    CLICK,         // 鼠标点击
-    RIGHT_CLICK,   // 右键点击
-    KEYBOARD,      // 键盘操作
-    SCROLL,        // 滚动
-    MULTI_DEVICE   // 多设备手势
+private fun UnifyShapes.toMaterial3Shapes(): Shapes {
+    return Shapes(
+        extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(extraSmall.dp),
+        small = androidx.compose.foundation.shape.RoundedCornerShape(small.dp),
+        medium = androidx.compose.foundation.shape.RoundedCornerShape(medium.dp),
+        large = androidx.compose.foundation.shape.RoundedCornerShape(large.dp),
+        extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(extraLarge.dp)
+    )
+}
+
+// 默认主题配置
+fun getDefaultTheme(): UnifyThemeConfig {
+    return UnifyThemeConfig(
+        name = "Unify Default",
+        lightColorScheme = getLightColorScheme(),
+        darkColorScheme = getDarkColorScheme(),
+        typography = getDefaultTypography(),
+        shapes = getDefaultShapes(),
+        spacing = getDefaultSpacing()
+    )
+}
+
+private fun getLightColorScheme(): UnifyColorScheme {
+    return UnifyColorScheme(
+        primary = 0xFF6750A4,
+        onPrimary = 0xFFFFFFFF,
+        primaryContainer = 0xFFEADDFF,
+        onPrimaryContainer = 0xFF21005D,
+        secondary = 0xFF625B71,
+        onSecondary = 0xFFFFFFFF,
+        secondaryContainer = 0xFFE8DEF8,
+        onSecondaryContainer = 0xFF1D192B,
+        tertiary = 0xFF7D5260,
+        onTertiary = 0xFFFFFFFF,
+        tertiaryContainer = 0xFFFFD8E4,
+        onTertiaryContainer = 0xFF31111D,
+        error = 0xFFBA1A1A,
+        onError = 0xFFFFFFFF,
+        errorContainer = 0xFFFFDAD6,
+        onErrorContainer = 0xFF410002,
+        background = 0xFFFFFBFE,
+        onBackground = 0xFF1C1B1F,
+        surface = 0xFFFFFBFE,
+        onSurface = 0xFF1C1B1F,
+        surfaceVariant = 0xFFE7E0EC,
+        onSurfaceVariant = 0xFF49454F,
+        outline = 0xFF79747E,
+        outlineVariant = 0xFFCAC4D0,
+        scrim = 0xFF000000,
+        inverseSurface = 0xFF313033,
+        inverseOnSurface = 0xFFF4EFF4,
+        inversePrimary = 0xFFD0BCFF
+    )
+}
+
+private fun getDarkColorScheme(): UnifyColorScheme {
+    return UnifyColorScheme(
+        primary = 0xFFD0BCFF,
+        onPrimary = 0xFF381E72,
+        primaryContainer = 0xFF4F378B,
+        onPrimaryContainer = 0xFFEADDFF,
+        secondary = 0xFFCCC2DC,
+        onSecondary = 0xFF332D41,
+        secondaryContainer = 0xFF4A4458,
+        onSecondaryContainer = 0xFFE8DEF8,
+        tertiary = 0xFFEFB8C8,
+        onTertiary = 0xFF492532,
+        tertiaryContainer = 0xFF633B48,
+        onTertiaryContainer = 0xFFFFD8E4,
+        error = 0xFFFFB4AB,
+        onError = 0xFF690005,
+        errorContainer = 0xFF93000A,
+        onErrorContainer = 0xFFFFDAD6,
+        background = 0xFF1C1B1F,
+        onBackground = 0xFFE6E1E5,
+        surface = 0xFF1C1B1F,
+        onSurface = 0xFFE6E1E5,
+        surfaceVariant = 0xFF49454F,
+        onSurfaceVariant = 0xFFCAC4D0,
+        outline = 0xFF938F99,
+        outlineVariant = 0xFF49454F,
+        scrim = 0xFF000000,
+        inverseSurface = 0xFFE6E1E5,
+        inverseOnSurface = 0xFF313033,
+        inversePrimary = 0xFF6750A4
+    )
+}
+
+private fun getDefaultTypography(): UnifyTypography {
+    return UnifyTypography(
+        displayLarge = UnifyTextStyle(57f, 64f, 400, -0.25f),
+        displayMedium = UnifyTextStyle(45f, 52f, 400, 0f),
+        displaySmall = UnifyTextStyle(36f, 44f, 400, 0f),
+        headlineLarge = UnifyTextStyle(32f, 40f, 400, 0f),
+        headlineMedium = UnifyTextStyle(28f, 36f, 400, 0f),
+        headlineSmall = UnifyTextStyle(24f, 32f, 400, 0f),
+        titleLarge = UnifyTextStyle(22f, 28f, 400, 0f),
+        titleMedium = UnifyTextStyle(16f, 24f, 500, 0.15f),
+        titleSmall = UnifyTextStyle(14f, 20f, 500, 0.1f),
+        bodyLarge = UnifyTextStyle(16f, 24f, 400, 0.5f),
+        bodyMedium = UnifyTextStyle(14f, 20f, 400, 0.25f),
+        bodySmall = UnifyTextStyle(12f, 16f, 400, 0.4f),
+        labelLarge = UnifyTextStyle(14f, 20f, 500, 0.1f),
+        labelMedium = UnifyTextStyle(12f, 16f, 500, 0.5f),
+        labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f)
+    )
+}
+
+private fun getDefaultShapes(): UnifyShapes {
+    return UnifyShapes(
+        extraSmall = 4f,
+        small = 8f,
+        medium = 12f,
+        large = 16f,
+        extraLarge = 28f
+    )
+}
+
+private fun getDefaultSpacing(): UnifySpacing {
+    return UnifySpacing(
+        extraSmall = 4f,
+        small = 8f,
+        medium = 16f,
+        large = 24f,
+        extraLarge = 32f
+    )
 }

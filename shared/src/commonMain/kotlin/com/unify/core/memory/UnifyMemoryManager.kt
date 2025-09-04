@@ -1,467 +1,333 @@
 package com.unify.core.memory
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import com.unify.core.performance.UnifyPerformanceMonitor
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * Unify-Core 内存管理优化系统
- * 提供智能内存管理、缓存优化、内存泄漏检测等功能
+ * Unify跨平台内存管理器
+ * 支持8大平台的统一内存管理
  */
-
-/**
- * 内存管理器
- */
-object UnifyMemoryManager {
-    
-    private val _memoryState = MutableStateFlow(MemoryState())
-    val memoryState: StateFlow<MemoryState> = _memoryState.asStateFlow()
-    
-    private val objectPool = mutableMapOf<String, ObjectPool<*>>()
-    private val cacheManager = CacheManager()
-    private val leakDetector = MemoryLeakDetector()
-    
-    /**
-     * 初始化内存管理器
-     */
-    fun initialize() {
-        // 初始化对象池
-        initializeObjectPools()
-        
-        // 启动内存监控
-        startMemoryMonitoring()
-        
-        // 启动泄漏检测
-        leakDetector.startDetection()
-        
-        UnifyPerformanceMonitor.recordMetric("memory_manager_initialized", 1.0, "count")
-    }
-    
-    /**
-     * 智能内存优化
-     */
-    fun optimizeMemory() {
-        val currentState = _memoryState.value
-        
-        // 清理缓存
-        if (currentState.usedMemory > currentState.maxMemory * 0.8) {
-            cacheManager.clearLRUCache()
-            UnifyPerformanceMonitor.recordMetric("cache_cleared_high_memory", 1.0, "count")
-        }
-        
-        // 回收对象池
-        recycleUnusedObjects()
-        
-        // 触发垃圾回收建议
-        if (currentState.usedMemory > currentState.maxMemory * 0.9) {
-            suggestGarbageCollection()
-        }
-        
-        // 更新内存状态
-        updateMemoryState()
-    }
-    
-    /**
-     * 获取对象池
-     */
-    @Suppress("UNCHECKED_CAST")
-    fun <T> getObjectPool(type: String): ObjectPool<T>? {
-        return objectPool[type] as? ObjectPool<T>
-    }
-    
-    /**
-     * 创建对象池
-     */
-    fun <T> createObjectPool(
-        type: String,
-        factory: () -> T,
-        maxSize: Int = 50,
-        resetAction: (T) -> Unit = {}
-    ): ObjectPool<T> {
-        val pool = ObjectPool(factory, maxSize, resetAction)
-        objectPool[type] = pool
-        return pool
-    }
-    
-    /**
-     * 缓存管理
-     */
-    fun <K, V> createCache(
-        name: String,
-        maxSize: Int = 100,
-        ttlMs: Long = 300000L // 5分钟
-    ): Cache<K, V> {
-        return cacheManager.createCache(name, maxSize, ttlMs)
-    }
-    
-    /**
-     * 检测内存泄漏
-     */
-    fun detectMemoryLeaks(): List<MemoryLeak> {
-        return leakDetector.detectLeaks()
-    }
-    
-    /**
-     * 内存压力测试
-     */
-    fun performMemoryStressTest(): MemoryStressTestResult {
-        val startTime = System.currentTimeMillis()
-        val initialMemory = getCurrentMemoryUsage()
-        
-        // 创建大量对象测试
-        val testObjects = mutableListOf<Any>()
-        repeat(10000) {
-            testObjects.add(TestObject("test_$it", ByteArray(1024)))
-        }
-        
-        val peakMemory = getCurrentMemoryUsage()
-        
-        // 清理测试对象
-        testObjects.clear()
-        
-        // 等待GC
-        System.gc()
-        Thread.sleep(100)
-        
-        val finalMemory = getCurrentMemoryUsage()
-        val duration = System.currentTimeMillis() - startTime
-        
-        val result = MemoryStressTestResult(
-            initialMemory = initialMemory,
-            peakMemory = peakMemory,
-            finalMemory = finalMemory,
-            memoryLeaked = finalMemory - initialMemory,
-            duration = duration
-        )
-        
-        UnifyPerformanceMonitor.recordMetric("memory_stress_test_duration", duration.toDouble(), "ms")
-        UnifyPerformanceMonitor.recordMetric("memory_leaked", result.memoryLeaked.toDouble(), "bytes")
-        
-        return result
-    }
-    
-    private fun initializeObjectPools() {
-        // 创建常用对象池
-        createObjectPool<StringBuilder>("StringBuilder", { StringBuilder() }, 20) { it.clear() }
-        createObjectPool<ByteArray>("ByteArray1K", { ByteArray(1024) }, 10)
-        createObjectPool<MutableList<Any>>("MutableList", { mutableListOf() }, 15) { it.clear() }
-        
-        UnifyPerformanceMonitor.recordMetric("object_pools_initialized", objectPool.size.toDouble(), "count")
-    }
-    
-    private fun startMemoryMonitoring() {
-        // 启动定期内存监控
-        updateMemoryState()
-    }
-    
-    private fun recycleUnusedObjects() {
-        objectPool.values.forEach { pool ->
-            pool.recycleUnused()
-        }
-        UnifyPerformanceMonitor.recordMetric("objects_recycled", 1.0, "count")
-    }
-    
-    private fun suggestGarbageCollection() {
-        System.gc()
-        UnifyPerformanceMonitor.recordMetric("gc_suggested", 1.0, "count")
-    }
-    
-    private fun updateMemoryState() {
-        val runtime = Runtime.getRuntime()
-        val usedMemory = runtime.totalMemory() - runtime.freeMemory()
-        val maxMemory = runtime.maxMemory()
-        val freeMemory = runtime.freeMemory()
-        
-        _memoryState.value = MemoryState(
-            usedMemory = usedMemory,
-            freeMemory = freeMemory,
-            maxMemory = maxMemory,
-            memoryUsagePercent = (usedMemory.toDouble() / maxMemory * 100).toInt()
-        )
-        
-        UnifyPerformanceMonitor.recordMetric("memory_usage", usedMemory.toDouble() / (1024 * 1024), "MB")
-        UnifyPerformanceMonitor.recordMetric("memory_usage_percent", _memoryState.value.memoryUsagePercent.toDouble(), "%")
-    }
-    
-    private fun getCurrentMemoryUsage(): Long {
-        val runtime = Runtime.getRuntime()
-        return runtime.totalMemory() - runtime.freeMemory()
-    }
+interface UnifyMemoryManager {
+    suspend fun getMemoryInfo(): MemoryInfo
+    suspend fun getMemoryUsage(): MemoryUsage
+    suspend fun clearCache()
+    suspend fun optimizeMemory()
+    suspend fun setMemoryThreshold(threshold: Long)
+    fun getMemoryStatus(): Flow<MemoryStatus>
+    suspend fun enableMemoryMonitoring(enabled: Boolean)
+    suspend fun getGarbageCollectionInfo(): GCInfo
 }
 
 /**
- * 对象池实现
+ * 内存信息数据类
  */
-class ObjectPool<T>(
-    private val factory: () -> T,
-    private val maxSize: Int,
-    private val resetAction: (T) -> Unit = {}
-) {
-    private val pool = mutableListOf<T>()
-    private var createdCount = 0
-    private var borrowedCount = 0
-    private var returnedCount = 0
+@Serializable
+data class MemoryInfo(
+    val totalMemory: Long,
+    val availableMemory: Long,
+    val usedMemory: Long,
+    val freeMemory: Long,
+    val maxMemory: Long,
+    val memoryClass: Int,
+    val largeMemoryClass: Int,
+    val isLowMemory: Boolean,
+    val threshold: Long,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+/**
+ * 内存使用情况
+ */
+@Serializable
+data class MemoryUsage(
+    val heapUsed: Long,
+    val heapTotal: Long,
+    val heapMax: Long,
+    val nonHeapUsed: Long,
+    val nonHeapTotal: Long,
+    val directMemoryUsed: Long,
+    val directMemoryMax: Long,
+    val gcCount: Long,
+    val gcTime: Long,
+    val usagePercentage: Float,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+/**
+ * 内存状态枚举
+ */
+@Serializable
+enum class MemoryStatus {
+    NORMAL,
+    WARNING,
+    CRITICAL,
+    LOW_MEMORY,
+    OUT_OF_MEMORY,
+    OPTIMIZING,
+    MONITORING_DISABLED
+}
+
+/**
+ * 垃圾回收信息
+ */
+@Serializable
+data class GCInfo(
+    val youngGenCollections: Long,
+    val youngGenTime: Long,
+    val oldGenCollections: Long,
+    val oldGenTime: Long,
+    val totalCollections: Long,
+    val totalTime: Long,
+    val lastGCTime: Long,
+    val averageGCTime: Double
+)
+
+/**
+ * 内存配置
+ */
+@Serializable
+data class MemoryConfig(
+    val warningThreshold: Float = 0.8f,
+    val criticalThreshold: Float = 0.9f,
+    val autoOptimize: Boolean = true,
+    val monitoringInterval: Long = 5000L,
+    val enableGCLogging: Boolean = false,
+    val maxCacheSize: Long = 50 * 1024 * 1024L, // 50MB
+    val enableMemoryProfiling: Boolean = false
+)
+
+/**
+ * Unify内存管理器实现
+ */
+class UnifyMemoryManagerImpl(
+    private val config: MemoryConfig = MemoryConfig()
+) : UnifyMemoryManager {
     
-    /**
-     * 借用对象
-     */
-    fun borrow(): T {
-        borrowedCount++
-        return if (pool.isNotEmpty()) {
-            pool.removeAt(pool.size - 1)
+    private val _memoryStatus = MutableStateFlow(MemoryStatus.NORMAL)
+    private val memoryStatus: StateFlow<MemoryStatus> = _memoryStatus.asStateFlow()
+    
+    private var isMonitoringEnabled = false
+    private var memoryThreshold = config.maxCacheSize
+    
+    override suspend fun getMemoryInfo(): MemoryInfo {
+        return getPlatformMemoryInfo()
+    }
+    
+    override suspend fun getMemoryUsage(): MemoryUsage {
+        return getPlatformMemoryUsage()
+    }
+    
+    override suspend fun clearCache() {
+        performCacheClear()
+        updateMemoryStatus()
+    }
+    
+    override suspend fun optimizeMemory() {
+        performMemoryOptimization()
+        updateMemoryStatus()
+    }
+    
+    override suspend fun setMemoryThreshold(threshold: Long) {
+        memoryThreshold = threshold
+        updateMemoryStatus()
+    }
+    
+    override fun getMemoryStatus(): Flow<MemoryStatus> {
+        return memoryStatus
+    }
+    
+    override suspend fun enableMemoryMonitoring(enabled: Boolean) {
+        isMonitoringEnabled = enabled
+        if (enabled) {
+            startMemoryMonitoring()
         } else {
-            createdCount++
-            factory()
+            stopMemoryMonitoring()
+            _memoryStatus.value = MemoryStatus.MONITORING_DISABLED
         }
     }
     
-    /**
-     * 归还对象
-     */
-    fun return(obj: T) {
-        returnedCount++
-        if (pool.size < maxSize) {
-            resetAction(obj)
-            pool.add(obj)
+    override suspend fun getGarbageCollectionInfo(): GCInfo {
+        return getPlatformGCInfo()
+    }
+    
+    private suspend fun updateMemoryStatus() {
+        if (!isMonitoringEnabled) return
+        
+        val usage = getMemoryUsage()
+        val newStatus = when {
+            usage.usagePercentage >= config.criticalThreshold -> MemoryStatus.CRITICAL
+            usage.usagePercentage >= config.warningThreshold -> MemoryStatus.WARNING
+            else -> MemoryStatus.NORMAL
+        }
+        
+        _memoryStatus.value = newStatus
+        
+        if (config.autoOptimize && newStatus == MemoryStatus.CRITICAL) {
+            optimizeMemory()
         }
     }
     
-    /**
-     * 回收未使用的对象
-     */
-    fun recycleUnused() {
-        if (pool.size > maxSize / 2) {
-            val toRemove = pool.size - maxSize / 2
-            repeat(toRemove) {
-                if (pool.isNotEmpty()) {
-                    pool.removeAt(pool.size - 1)
-                }
-            }
-        }
-    }
-    
-    /**
-     * 获取统计信息
-     */
-    fun getStats(): ObjectPoolStats {
-        return ObjectPoolStats(
-            poolSize = pool.size,
-            maxSize = maxSize,
-            createdCount = createdCount,
-            borrowedCount = borrowedCount,
-            returnedCount = returnedCount
-        )
-    }
+    private expect suspend fun getPlatformMemoryInfo(): MemoryInfo
+    private expect suspend fun getPlatformMemoryUsage(): MemoryUsage
+    private expect suspend fun getPlatformGCInfo(): GCInfo
+    private expect suspend fun performCacheClear()
+    private expect suspend fun performMemoryOptimization()
+    private expect suspend fun startMemoryMonitoring()
+    private expect suspend fun stopMemoryMonitoring()
 }
 
 /**
- * 缓存管理器
+ * 内存缓存管理器
  */
-class CacheManager {
-    private val caches = mutableMapOf<String, Cache<*, *>>()
-    
-    fun <K, V> createCache(name: String, maxSize: Int, ttlMs: Long): Cache<K, V> {
-        val cache = Cache<K, V>(maxSize, ttlMs)
-        caches[name] = cache
-        return cache
-    }
-    
-    fun clearLRUCache() {
-        caches.values.forEach { it.clearLRU() }
-        UnifyPerformanceMonitor.recordMetric("lru_cache_cleared", caches.size.toDouble(), "count")
-    }
-    
-    fun getCacheStats(): Map<String, CacheStats> {
-        return caches.mapValues { it.value.getStats() }
-    }
+interface UnifyMemoryCache {
+    suspend fun put(key: String, value: Any, size: Long)
+    suspend fun get(key: String): Any?
+    suspend fun remove(key: String)
+    suspend fun clear()
+    suspend fun size(): Long
+    suspend fun maxSize(): Long
+    suspend fun hitRate(): Float
+    suspend fun evictAll()
 }
 
 /**
- * 缓存实现
+ * LRU内存缓存实现
  */
-class Cache<K, V>(
-    private val maxSize: Int,
-    private val ttlMs: Long
-) {
-    private val cache = mutableMapOf<K, CacheEntry<V>>()
-    private val accessOrder = mutableListOf<K>()
-    private var hitCount = 0
-    private var missCount = 0
+class UnifyLRUMemoryCache(
+    private val maxSize: Long
+) : UnifyMemoryCache {
     
-    fun get(key: K): V? {
+    private val cache = mutableMapOf<String, CacheEntry>()
+    private val accessOrder = mutableListOf<String>()
+    private var currentSize = 0L
+    private var hits = 0L
+    private var misses = 0L
+    
+    @Serializable
+    private data class CacheEntry(
+        val value: String, // 序列化后的值
+        val size: Long,
+        val timestamp: Long
+    )
+    
+    override suspend fun put(key: String, value: Any, size: Long) {
+        val serializedValue = Json.encodeToString(kotlinx.serialization.serializer(), value)
+        val entry = CacheEntry(serializedValue, size, System.currentTimeMillis())
+        
+        // 如果key已存在，先移除旧值
+        remove(key)
+        
+        // 确保有足够空间
+        while (currentSize + size > maxSize && cache.isNotEmpty()) {
+            evictLRU()
+        }
+        
+        if (size <= maxSize) {
+            cache[key] = entry
+            accessOrder.add(key)
+            currentSize += size
+        }
+    }
+    
+    override suspend fun get(key: String): Any? {
         val entry = cache[key]
-        return if (entry != null && !entry.isExpired()) {
-            hitCount++
+        return if (entry != null) {
+            hits++
             // 更新访问顺序
             accessOrder.remove(key)
             accessOrder.add(key)
-            entry.value
+            Json.decodeFromString(kotlinx.serialization.serializer<Any>(), entry.value)
         } else {
-            missCount++
-            if (entry != null) {
-                cache.remove(key)
-                accessOrder.remove(key)
-            }
+            misses++
             null
         }
     }
     
-    fun put(key: K, value: V) {
-        // 检查是否需要清理过期项
-        cleanupExpired()
-        
-        // 检查是否需要LRU清理
-        if (cache.size >= maxSize) {
-            evictLRU()
-        }
-        
-        cache[key] = CacheEntry(value, System.currentTimeMillis() + ttlMs)
-        accessOrder.remove(key)
-        accessOrder.add(key)
-    }
-    
-    fun clearLRU() {
-        val toRemove = maxSize / 2
-        repeat(toRemove) {
-            if (accessOrder.isNotEmpty()) {
-                val key = accessOrder.removeAt(0)
-                cache.remove(key)
-            }
-        }
-    }
-    
-    private fun cleanupExpired() {
-        val currentTime = System.currentTimeMillis()
-        val expiredKeys = cache.filter { it.value.expiryTime < currentTime }.keys
-        expiredKeys.forEach { key ->
+    override suspend fun remove(key: String) {
+        cache[key]?.let { entry ->
             cache.remove(key)
             accessOrder.remove(key)
+            currentSize -= entry.size
         }
+    }
+    
+    override suspend fun clear() {
+        cache.clear()
+        accessOrder.clear()
+        currentSize = 0L
+        hits = 0L
+        misses = 0L
+    }
+    
+    override suspend fun size(): Long = currentSize
+    
+    override suspend fun maxSize(): Long = maxSize
+    
+    override suspend fun hitRate(): Float {
+        val total = hits + misses
+        return if (total > 0) hits.toFloat() / total else 0f
+    }
+    
+    override suspend fun evictAll() {
+        clear()
     }
     
     private fun evictLRU() {
         if (accessOrder.isNotEmpty()) {
-            val key = accessOrder.removeAt(0)
-            cache.remove(key)
+            val oldestKey = accessOrder.removeFirst()
+            cache[oldestKey]?.let { entry ->
+                cache.remove(oldestKey)
+                currentSize -= entry.size
+            }
         }
-    }
-    
-    fun getStats(): CacheStats {
-        return CacheStats(
-            size = cache.size,
-            maxSize = maxSize,
-            hitCount = hitCount,
-            missCount = missCount,
-            hitRate = if (hitCount + missCount > 0) hitCount.toDouble() / (hitCount + missCount) else 0.0
-        )
     }
 }
 
 /**
- * 内存泄漏检测器
+ * 内存监控器
  */
-class MemoryLeakDetector {
-    private val trackedObjects = mutableMapOf<String, WeakReference<Any>>()
-    private var isDetecting = false
-    
-    fun startDetection() {
-        isDetecting = true
-        UnifyPerformanceMonitor.recordMetric("leak_detection_started", 1.0, "count")
-    }
-    
-    fun stopDetection() {
-        isDetecting = false
-        trackedObjects.clear()
-    }
-    
-    fun trackObject(name: String, obj: Any) {
-        if (isDetecting) {
-            trackedObjects[name] = WeakReference(obj)
-        }
-    }
-    
-    fun detectLeaks(): List<MemoryLeak> {
-        val leaks = mutableListOf<MemoryLeak>()
-        
-        // 触发GC
-        System.gc()
-        Thread.sleep(100)
-        
-        // 检查弱引用
-        trackedObjects.forEach { (name, ref) ->
-            if (ref.get() != null) {
-                leaks.add(MemoryLeak(name, "对象未被回收"))
-            }
-        }
-        
-        UnifyPerformanceMonitor.recordMetric("memory_leaks_detected", leaks.size.toDouble(), "count")
-        
-        return leaks
-    }
+interface UnifyMemoryMonitor {
+    fun onMemoryStatusChanged(status: MemoryStatus)
+    fun onMemoryWarning(usage: MemoryUsage)
+    fun onOutOfMemory()
+    fun onGarbageCollection(gcInfo: GCInfo)
 }
 
-// 数据类定义
-data class MemoryState(
-    val usedMemory: Long = 0,
-    val freeMemory: Long = 0,
-    val maxMemory: Long = 0,
-    val memoryUsagePercent: Int = 0
-)
-
-data class MemoryStressTestResult(
-    val initialMemory: Long,
-    val peakMemory: Long,
-    val finalMemory: Long,
-    val memoryLeaked: Long,
-    val duration: Long
-)
-
-data class ObjectPoolStats(
-    val poolSize: Int,
-    val maxSize: Int,
-    val createdCount: Int,
-    val borrowedCount: Int,
-    val returnedCount: Int
-)
-
-data class CacheStats(
-    val size: Int,
-    val maxSize: Int,
-    val hitCount: Int,
-    val missCount: Int,
-    val hitRate: Double
-)
-
-data class MemoryLeak(
-    val objectName: String,
-    val description: String
-)
-
-private data class CacheEntry<V>(
-    val value: V,
-    val expiryTime: Long
-) {
-    fun isExpired(): Boolean = System.currentTimeMillis() > expiryTime
-}
-
-private data class TestObject(
-    val name: String,
-    val data: ByteArray
-)
-
-// 弱引用包装
-private class WeakReference<T>(referent: T) {
-    private var ref: java.lang.ref.WeakReference<T>? = null
-    
-    init {
-        ref = java.lang.ref.WeakReference(referent)
+/**
+ * 内存工具类
+ */
+object UnifyMemoryUtils {
+    /**
+     * 格式化内存大小
+     */
+    fun formatMemorySize(bytes: Long): String {
+        val units = arrayOf("B", "KB", "MB", "GB", "TB")
+        var size = bytes.toDouble()
+        var unitIndex = 0
+        
+        while (size >= 1024 && unitIndex < units.size - 1) {
+            size /= 1024
+            unitIndex++
+        }
+        
+        return "%.2f %s".format(size, units[unitIndex])
     }
     
-    fun get(): T? = ref?.get()
+    /**
+     * 计算内存使用百分比
+     */
+    fun calculateUsagePercentage(used: Long, total: Long): Float {
+        return if (total > 0) (used.toFloat() / total) * 100f else 0f
+    }
+    
+    /**
+     * 检查是否为低内存状态
+     */
+    fun isLowMemory(available: Long, total: Long, threshold: Float = 0.1f): Boolean {
+        return (available.toFloat() / total) < threshold
+    }
 }

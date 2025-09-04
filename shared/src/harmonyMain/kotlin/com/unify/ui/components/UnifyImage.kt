@@ -1,133 +1,102 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.DefaultAlpha
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.unit.Dp
 
-/**
- * HarmonyOS平台的图片实现
- */
-actual class UnifyPlatformImage {
-    companion object {
-        fun getImageCacheSize(): Long {
-            return 150 * 1024 * 1024L // 150MB for HarmonyOS
-        }
-        
-        fun getSupportedFormats(): List<String> {
-            return listOf("JPEG", "PNG", "GIF", "WebP", "BMP", "SVG")
-        }
-        
-        fun isDistributedDevice(): Boolean {
-            // 检查是否为分布式设备
-            return false // 实际实现需要调用HarmonyOS API
-        }
-        
-        fun getDeviceCapabilities(): Map<String, Any> {
-            return mapOf(
-                "supportsHardwareDecoding" to true,
-                "supportsGPUAcceleration" to true,
-                "maxImageResolution" to "4K",
-                "supportedColorSpaces" to listOf("sRGB", "P3", "Rec2020")
-            )
-        }
-        
-        fun isLowMemoryDevice(): Boolean {
-            // 检查是否为低内存设备
-            return false // 实际实现需要调用HarmonyOS API
-        }
-        
-        fun getHarmonyImageLoader(): String {
-            return "HarmonyImageLoader"
-        }
-        
-        fun supportsCrossDeviceSync(): Boolean {
-            // 检查是否支持跨设备同步
-            return true // HarmonyOS特有功能
-        }
-    }
-}
-
-/**
- * HarmonyOS平台的异步图片加载实现
- */
-actual suspend fun loadImageFromUrl(url: String): Painter {
-    return withContext(Dispatchers.IO) {
-        try {
-            // 使用HarmonyOS ArkUI图片加载API
-            val imageSource = when {
-                url.startsWith("http") -> {
-                    // 使用HarmonyOS网络请求加载图片
-                    loadNetworkImage(url)
-                }
-                url.startsWith("file://") -> {
-                    // 加载本地文件
-                    loadLocalImage(url.removePrefix("file://"))
-                }
-                else -> {
-                    // 从资源加载
-                    loadResourceImage(url)
-                }
-            }
-            
-            imageSource?.let { BitmapPainter(it) } ?: ColorPainter(Color.Gray)
-        } catch (e: Exception) {
-            ColorPainter(Color.Gray)
-        }
-    }
-}
-
-/**
- * HarmonyOS平台的原生图片组件适配器
- */
 @Composable
-actual fun UnifyNativeImage(
-    url: String,
+actual fun UnifyImage(
+    imageUrl: String,
     contentDescription: String?,
     modifier: Modifier,
+    alignment: Alignment,
     contentScale: ContentScale,
-    shape: UnifyImageShape,
-    placeholder: @Composable (() -> Unit)?,
-    error: @Composable (() -> Unit)?,
-    loading: @Composable (() -> Unit)?
+    alpha: Float,
+    colorFilter: ColorFilter?,
+    filterQuality: FilterQuality
 ) {
-    var painter by remember { mutableStateOf<Painter?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-    var hasError by remember { mutableStateOf(false) }
-    
-    LaunchedEffect(url) {
-        isLoading = true
-        hasError = false
-        
-        try {
-            // 模拟HarmonyOS图片加载
-            painter = loadImageFromUrl(url)
-        } catch (e: Exception) {
-            hasError = true
-        } finally {
-            isLoading = false
-        }
-    }
-    
-    when {
-        isLoading -> loading?.invoke()
-        hasError -> error?.invoke()
-        painter != null -> {
-            Image(
-                painter = painter!!,
-                contentDescription = contentDescription,
-                modifier = modifier.fillMaxSize(),
-                contentScale = contentScale
+    UnifyImagePlaceholder(
+        modifier = modifier,
+        content = {
+            Text(
+                text = "🔥",
+                style = MaterialTheme.typography.headlineMedium
             )
         }
-        else -> placeholder?.invoke()
+    )
+}
+
+@Composable
+actual fun UnifyResourceImage(
+    resourcePath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    alignment: Alignment,
+    contentScale: ContentScale,
+    alpha: Float,
+    colorFilter: ColorFilter?
+) {
+    UnifyImagePlaceholder(
+        modifier = modifier,
+        content = {
+            Text(
+                text = "🎯",
+                style = MaterialTheme.typography.headlineMedium
+            )
+        }
+    )
+}
+
+@Composable
+actual fun UnifyAvatar(
+    imageUrl: String?,
+    name: String,
+    modifier: Modifier,
+    size: Dp,
+    backgroundColor: Color
+) {
+    Box(
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = name.firstOrNull()?.uppercase() ?: "?",
+            style = MaterialTheme.typography.headlineSmall,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+actual fun UnifyImagePlaceholder(
+    modifier: Modifier,
+    backgroundColor: Color,
+    content: (@Composable () -> Unit)?
+) {
+    Box(
+        modifier = modifier.background(backgroundColor),
+        contentAlignment = Alignment.Center
+    ) {
+        content?.invoke() ?: Text(
+            text = "📷",
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.Gray
+        )
     }
 }

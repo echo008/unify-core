@@ -33,7 +33,41 @@ kotlin {
     jvmToolchain(17)
 
     // Android 目标
-    androidTarget()
+    androidTarget {
+        publishLibraryVariants("release", "debug")
+    }
+    
+    // iOS 目标
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    
+    // JVM Desktop 目标
+    jvm("desktop")
+    
+    // JavaScript/Web 目标 (支持Web和小程序)
+    js(IR) {
+        browser {
+            commonWebpackConfig {
+                cssSupport {
+                    enabled.set(true)
+                }
+            }
+        }
+        nodejs()
+        binaries.executable()
+    }
+    
+    // Native 目标 (用于其他平台)
+    linuxX64()
+    macosX64()
+    macosArm64()
+    mingwX64()
+    
+    // HarmonyOS 目标 (使用 Native 编译)
+    linuxArm64("harmony")
+    
+    // TV 和 Watch 通过 Android 变体支持
     
     sourceSets {
         val commonMain by getting {
@@ -42,6 +76,7 @@ kotlin {
                 implementation(compose.foundation)
                 implementation(compose.material3)
                 implementation(compose.ui)
+                implementation(compose.materialIconsExtended)
                 
                 // 网络请求
                 implementation(libs.ktor.client.core)
@@ -66,12 +101,89 @@ kotlin {
         val androidMain by getting {
             dependencies {
                 implementation(libs.androidx.activity.compose)
+                implementation(libs.androidx.security.crypto)
                 
                 // Android网络引擎
                 implementation(libs.ktor.client.android)
                 
                 // Android协程
                 implementation(libs.kotlinx.coroutines.core)
+            }
+        }
+        
+        val iosMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.ktor.client.darwin)
+            }
+        }
+        
+        val iosX64Main by getting { dependsOn(iosMain) }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+        
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.common)
+                implementation(libs.ktor.client.cio)
+            }
+        }
+        
+        val jsMain by getting {
+            dependencies {
+                implementation(compose.html.core)
+                implementation(libs.ktor.client.js)
+            }
+        }
+        
+        val nativeMain by creating {
+            dependsOn(commonMain)
+            dependencies {
+                implementation(libs.ktor.client.cio)
+            }
+        }
+        
+        val linuxX64Main by getting { dependsOn(nativeMain) }
+        val macosX64Main by getting { dependsOn(nativeMain) }
+        val macosArm64Main by getting { dependsOn(nativeMain) }
+        val mingwX64Main by getting { dependsOn(nativeMain) }
+        
+        // HarmonyOS 平台配置
+        val harmonyMain by getting {
+            dependsOn(nativeMain)
+            dependencies {
+                implementation(libs.ktor.client.cio)
+            }
+        }
+        
+        // 小程序和TV/Watch平台通过现有目标支持，无需额外配置
+        
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+        
+        val iosTest by creating {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+        
+        val iosX64Test by getting { dependsOn(iosTest) }
+        val iosArm64Test by getting { dependsOn(iosTest) }
+        val iosSimulatorArm64Test by getting { dependsOn(iosTest) }
+        
+        val desktopTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+        
+        val jsTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
             }
         }
     }

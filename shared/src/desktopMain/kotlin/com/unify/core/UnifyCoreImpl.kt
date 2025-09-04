@@ -1,64 +1,145 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 
 /**
- * Desktop平台的UnifyCore实现
+ * Desktop平台UnifyCore实现
  */
-actual class UnifyCoreImpl : UnifyCore {
+class UnifyCoreImpl : UnifyCore {
+    private val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化各个管理器
+            try {
+                // 初始化数据管理器
+                // dataManager 已通过 lazy 初始化
+                
+                // 初始化网络管理器
+                networkManager.setBaseUrl("https://api.unify.com")
+                networkManager.setDefaultHeaders(mapOf(
+                    "User-Agent" to "UnifyCore-Desktop/1.0",
+                    "Accept" to "application/json",
+                    "Content-Type" to "application/json"
+                ))
+                
+                // 初始化UI管理器
+                // uiManager 已通过 lazy 初始化
+                
+                // 初始化设备管理器
+                // deviceManager 已通过 lazy 初始化
+                
+                initialized = true
+            } catch (e: Exception) {
+                throw RuntimeException("UnifyCore初始化失败: ${e.message}", e)
+            }
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            try {
+                // 清理网络连接
+                networkManager.clearCache()
+                
+                // 清理数据缓存
+                dataManager.clearExpiredCache()
+                
+                // 取消协程作用域
+                coroutineScope.cancel()
+                
+                initialized = false
+            } catch (e: Exception) {
+                // 记录错误但不抛出异常，确保shutdown能够完成
+                println("UnifyCore关闭时发生错误: ${e.message}")
+            }
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        val osName = System.getProperty("os.name")
-        val osVersion = System.getProperty("os.version")
-        val javaVersion = System.getProperty("java.version")
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        val osName = System.getProperty("os.name") ?: "Unknown"
+        val osVersion = System.getProperty("os.version") ?: "Unknown"
+        val javaVersion = System.getProperty("java.version") ?: "Unknown"
         
-        return mapOf(
-            "platform" to "Desktop",
-            "version" to getVersion(),
-            "os_name" to osName,
-            "os_version" to osVersion,
-            "java_version" to javaVersion,
-            "capabilities" to listOf(
-                "keyboard", "mouse", "file_system", "multi_window", 
-                "system_tray", "notifications", "clipboard", "drag_drop"
-            ),
-            "ui_framework" to "Compose Desktop",
-            "desktop_features" to listOf(
-                "window_management", "menu_bar", "system_integration", 
-                "file_associations", "shortcuts", "auto_updater"
-            ),
-            "supported_os" to listOf("Windows 10+", "macOS 10.14+", "Linux"),
-            "architecture" to System.getProperty("os.arch")
+        return PlatformInfo(
+            platformName = "Desktop",
+            version = javaVersion,
+            deviceModel = getDesktopDeviceModel(),
+            osVersion = "$osName $osVersion",
+            capabilities = getDesktopCapabilities()
         )
+    }
+    
+    private fun getDesktopDeviceModel(): String {
+        val osName = System.getProperty("os.name")?.lowercase() ?: ""
+        return when {
+            osName.contains("windows") -> "Windows PC"
+            osName.contains("mac") -> "Mac"
+            osName.contains("linux") -> "Linux PC"
+            else -> "Desktop Computer"
+        }
+    }
+    
+    private fun getDesktopCapabilities(): List<String> {
+        val capabilities = mutableListOf<String>()
+        
+        // 基础桌面功能
+        capabilities.addAll(listOf(
+            "FileSystem",
+            "Network",
+            "Clipboard",
+            "SystemTray",
+            "WindowManagement"
+        ))
+        
+        // 检查Java AWT功能
+        try {
+            java.awt.Toolkit.getDefaultToolkit()
+            capabilities.add("AWT")
+        } catch (e: Exception) {
+            // AWT不可用
+        }
+        
+        // 检查系统特定功能
+        val osName = System.getProperty("os.name")?.lowercase() ?: ""
+        when {
+            osName.contains("windows") -> {
+                capabilities.addAll(listOf("WindowsRegistry", "WindowsServices"))
+            }
+            osName.contains("mac") -> {
+                capabilities.addAll(listOf("AppleScript", "Keychain"))
+            }
+            osName.contains("linux") -> {
+                capabilities.addAll(listOf("DBus", "SystemD"))
+            }
+        }
+        
+        return capabilities
+    }
+}
+
+actual object UnifyCoreFactory {
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl()
     }
 }

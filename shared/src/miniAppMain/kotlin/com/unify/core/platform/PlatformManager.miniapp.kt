@@ -1,251 +1,204 @@
 package com.unify.core.platform
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
+import com.unify.core.exceptions.PlatformException
 
-/**
- * 小程序平台管理器生产级实现
- * 支持微信、支付宝、字节跳动、百度、快手、小米、华为、QQ小程序
- */
-actual object PlatformManager {
+actual class PlatformManagerImpl : PlatformManager {
     
-    private var miniAppType: String = "wechat"
-    private var miniAppContext: Any? = null
-    
-    actual fun initialize() {
-        detectMiniAppType()
-        initializeMiniAppServices()
+    override fun getPlatformInfo(): PlatformInfo {
+        return PlatformInfo(
+            name = "小程序",
+            version = getMiniAppVersion(),
+            architecture = "JavaScript",
+            isDebug = isDebugMode(),
+            capabilities = getMiniAppCapabilities()
+        )
     }
     
-    private fun detectMiniAppType() {
-        // 检测当前运行的小程序平台
-        miniAppType = when {
-            isWeChatMiniApp() -> "wechat"
-            isAlipayMiniApp() -> "alipay"
-            isByteDanceMiniApp() -> "bytedance"
-            isBaiduMiniApp() -> "baidu"
-            isKuaishouMiniApp() -> "kuaishou"
-            isXiaomiMiniApp() -> "xiaomi"
-            isHuaweiMiniApp() -> "huawei"
-            isQQMiniApp() -> "qq"
-            else -> "unknown"
+    override fun isFeatureSupported(feature: PlatformFeature): Boolean {
+        return when (feature) {
+            PlatformFeature.CAMERA -> true
+            PlatformFeature.GPS -> true
+            PlatformFeature.BLUETOOTH -> false // 小程序通常不支持蓝牙
+            PlatformFeature.NFC -> false // 小程序通常不支持NFC
+            PlatformFeature.BIOMETRIC -> false // 小程序通常不支持生物识别
+            PlatformFeature.PUSH_NOTIFICATIONS -> true
+            PlatformFeature.BACKGROUND_TASKS -> false // 小程序后台任务受限
+            PlatformFeature.FILE_SYSTEM -> false // 小程序文件系统受限
+            PlatformFeature.NETWORK -> true
+            PlatformFeature.SENSORS -> false // 小程序传感器访问受限
         }
     }
     
-    private fun isWeChatMiniApp(): Boolean = js("typeof wx !== 'undefined'")
-    private fun isAlipayMiniApp(): Boolean = js("typeof my !== 'undefined'")
-    private fun isByteDanceMiniApp(): Boolean = js("typeof tt !== 'undefined'")
-    private fun isBaiduMiniApp(): Boolean = js("typeof swan !== 'undefined'")
-    private fun isKuaishouMiniApp(): Boolean = js("typeof ks !== 'undefined'")
-    private fun isXiaomiMiniApp(): Boolean = js("typeof mi !== 'undefined'")
-    private fun isHuaweiMiniApp(): Boolean = js("typeof hm !== 'undefined'")
-    private fun isQQMiniApp(): Boolean = js("typeof qq !== 'undefined'")
-    
-    private fun initializeMiniAppServices() {
-        // 初始化小程序服务
-    }
-    
-    actual fun getPlatformType(): PlatformType = PlatformType.MINI_PROGRAM
-    
-    actual fun getPlatformName(): String = "MiniApp-$miniAppType"
-    
-    actual fun getPlatformVersion(): String {
-        return when (miniAppType) {
-            "wechat" -> getWeChatVersion()
-            "alipay" -> getAlipayVersion()
-            "bytedance" -> getByteDanceVersion()
-            "baidu" -> getBaiduVersion()
-            "kuaishou" -> getKuaishouVersion()
-            "xiaomi" -> getXiaomiVersion()
-            "huawei" -> getHuaweiVersion()
-            "qq" -> getQQVersion()
-            else -> "unknown"
-        }
-    }
-    
-    private fun getWeChatVersion(): String = "8.0"
-    private fun getAlipayVersion(): String = "10.3"
-    private fun getByteDanceVersion(): String = "3.0"
-    private fun getBaiduVersion(): String = "13.0"
-    private fun getKuaishouVersion(): String = "11.0"
-    private fun getXiaomiVersion(): String = "1.0"
-    private fun getHuaweiVersion(): String = "12.0"
-    private fun getQQVersion(): String = "8.9"
-    
-    actual fun getDeviceInfo(): DeviceInfo {
-        return DeviceInfo(
-            manufacturer = "MiniApp",
-            model = miniAppType,
-            systemName = getPlatformName(),
-            systemVersion = getPlatformVersion(),
-            deviceId = "miniapp_${miniAppType}_${System.currentTimeMillis()}",
-            isEmulator = false
-        )
-    }
-    
-    actual fun getScreenInfo(): ScreenInfo {
-        val screenInfo = getMiniAppScreenInfo()
-        return ScreenInfo(
-            width = screenInfo.width,
-            height = screenInfo.height,
-            density = screenInfo.density,
-            orientation = Orientation.PORTRAIT,
-            refreshRate = 60f,
-            safeAreaInsets = SafeAreaInsets()
-        )
-    }
-    
-    private fun getMiniAppScreenInfo(): MiniAppScreenInfo {
-        return MiniAppScreenInfo(375, 667, 2.0f) // iPhone默认尺寸
-    }
-    
-    private data class MiniAppScreenInfo(val width: Int, val height: Int, val density: Float)
-    
-    actual fun getSystemCapabilities(): SystemCapabilities {
-        return SystemCapabilities(
-            isTouchSupported = true,
-            isKeyboardSupported = false,
-            isMouseSupported = false,
-            isCameraSupported = true,
-            isMicrophoneSupported = true,
-            isLocationSupported = true,
-            isNotificationSupported = false,
-            isFileSystemSupported = false,
-            isBiometricSupported = false,
-            isNFCSupported = false,
-            isBluetoothSupported = false,
-            supportedSensors = listOf()
-        )
-    }
-    
-    actual fun getNetworkStatus(): NetworkStatus = NetworkStatus.CONNECTED_WIFI
-    
-    actual fun observeNetworkStatus(): Flow<NetworkStatus> = flowOf(NetworkStatus.CONNECTED_WIFI)
-    
-    actual fun getStorageInfo(): StorageInfo {
-        return StorageInfo(
-            totalSpace = 10L * 1024 * 1024, // 10MB限制
-            availableSpace = 5L * 1024 * 1024,
-            usedSpace = 5L * 1024 * 1024,
-            isExternalStorageAvailable = false
-        )
-    }
-    
-    actual fun getPerformanceInfo(): PerformanceInfo {
-        val memoryUsage = MemoryUsage(
-            totalMemory = 512L * 1024 * 1024, // 512MB限制
-            availableMemory = 256L * 1024 * 1024,
-            usedMemory = 256L * 1024 * 1024,
-            appMemoryUsage = 256L * 1024 * 1024
-        )
-        
-        return PerformanceInfo(
-            cpuUsage = 10f,
-            memoryUsage = memoryUsage,
-            batteryLevel = -1f,
-            thermalState = ThermalState.NORMAL
-        )
-    }
-    
-    actual suspend fun showNativeDialog(config: DialogConfig): DialogResult = suspendCancellableCoroutine { continuation ->
-        when (miniAppType) {
-            "wechat" -> showWeChatDialog(config) { result ->
-                continuation.resume(result)
-            }
-            "alipay" -> showAlipayDialog(config) { result ->
-                continuation.resume(result)
-            }
-            else -> continuation.resume(DialogResult(buttonIndex = -1, cancelled = true))
-        }
-    }
-    
-    private fun showWeChatDialog(config: DialogConfig, callback: (DialogResult) -> Unit) {
-        js("""
-            wx.showModal({
-                title: config.title,
-                content: config.message,
-                success: function(res) {
-                    if (res.confirm) {
-                        callback(new DialogResult(0));
-                    } else {
-                        callback(new DialogResult(-1, true));
-                    }
-                }
-            });
-        """)
-    }
-    
-    private fun showAlipayDialog(config: DialogConfig, callback: (DialogResult) -> Unit) {
-        js("""
-            my.confirm({
-                title: config.title,
-                content: config.message,
-                success: function(res) {
-                    if (res.confirm) {
-                        callback(new DialogResult(0));
-                    } else {
-                        callback(new DialogResult(-1, true));
-                    }
-                }
-            });
-        """)
-    }
-    
-    actual suspend fun invokePlatformFeature(feature: PlatformFeature): PlatformResult {
+    override suspend fun requestPermission(permission: PlatformPermission): Boolean {
         return try {
-            when (feature) {
-                is PlatformFeature.ShareContent -> {
-                    shareMiniAppContent(feature.content)
-                    PlatformResult(success = true)
-                }
-                is PlatformFeature.OpenUrl -> {
-                    openMiniAppUrl(feature.url)
-                    PlatformResult(success = true)
-                }
-                else -> PlatformResult(success = false, error = "小程序不支持的功能")
+            when (permission) {
+                PlatformPermission.CAMERA -> requestMiniAppCameraPermission()
+                PlatformPermission.LOCATION -> requestMiniAppLocationPermission()
+                PlatformPermission.STORAGE -> requestMiniAppStoragePermission()
+                PlatformPermission.MICROPHONE -> requestMiniAppMicrophonePermission()
+                PlatformPermission.CONTACTS -> false // 小程序通常不支持联系人访问
+                PlatformPermission.NOTIFICATIONS -> requestMiniAppNotificationPermission()
             }
         } catch (e: Exception) {
-            PlatformResult(success = false, error = e.message)
+            throw PlatformException("小程序权限请求失败: ${e.message}", e)
         }
     }
     
-    private fun shareMiniAppContent(content: String) {
-        when (miniAppType) {
-            "wechat" -> js("wx.shareAppMessage({title: '$content'})")
-            "alipay" -> js("my.shareAppMessage({title: '$content'})")
+    override fun getSystemProperty(key: String): String? {
+        return try {
+            when (key) {
+                "os.name" -> "小程序"
+                "os.version" -> getMiniAppVersion()
+                "platform.type" -> getMiniAppPlatformType()
+                "host.app" -> getHostAppName()
+                else -> null
+            }
+        } catch (e: Exception) {
+            null
         }
     }
     
-    private fun openMiniAppUrl(url: String) {
-        when (miniAppType) {
-            "wechat" -> js("wx.navigateToMiniProgram({appId: '$url'})")
-            "alipay" -> js("my.navigateToMiniProgram({appId: '$url'})")
+    override suspend fun executeNativeCode(code: String, params: Map<String, Any>): Any? {
+        return try {
+            // 小程序原生API调用
+            executeMiniAppNativeCode(code, params)
+        } catch (e: Exception) {
+            throw PlatformException("小程序原生代码执行失败: ${e.message}", e)
         }
     }
     
-    actual fun getPlatformConfig(): PlatformConfig {
-        return PlatformConfig(
-            platformType = PlatformType.MINI_APP,
-            supportedFeatures = setOf(
-                "share", "payment", "location", "camera", "microphone",
-                "storage_limited", "network", "user_info"
-            ),
-            limitations = setOf(
-                "no_file_system", "memory_limited", "api_restricted",
-                "sandbox_environment", "no_background_tasks"
-            ),
-            optimizations = mapOf(
-                "lightweight" to true,
-                "fast_startup" to true,
-                "cloud_functions" to true,
-                "component_based" to true
-            )
+    // 小程序特定实现
+    private fun getMiniAppVersion(): String {
+        return try {
+            // 获取小程序版本
+            "1.0.0" // 模拟版本号
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }
+    
+    private fun isDebugMode(): Boolean {
+        return try {
+            // 检查小程序是否为开发版
+            false // 模拟正式版
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private fun getMiniAppCapabilities(): List<String> {
+        return listOf(
+            "轻量化运行",
+            "即用即走",
+            "跨平台兼容",
+            "云端同步",
+            "快速启动",
+            "低内存占用",
+            "网络API访问",
+            "本地存储"
         )
     }
+    
+    private fun getMiniAppPlatformType(): String {
+        return try {
+            // 获取小程序平台类型（微信、支付宝、百度等）
+            "WeChat" // 模拟微信小程序
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }
+    
+    private fun getHostAppName(): String {
+        return try {
+            // 获取宿主应用名称
+            "微信" // 模拟微信宿主
+        } catch (e: Exception) {
+            "Unknown"
+        }
+    }
+    
+    private suspend fun requestMiniAppCameraPermission(): Boolean {
+        // 小程序相机权限请求
+        return try {
+            // 调用小程序相机API
+            true // 模拟权限授予
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private suspend fun requestMiniAppLocationPermission(): Boolean {
+        // 小程序位置权限请求
+        return try {
+            // 调用小程序位置API
+            true // 模拟权限授予
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private suspend fun requestMiniAppStoragePermission(): Boolean {
+        // 小程序存储权限（通常自动授予）
+        return true
+    }
+    
+    private suspend fun requestMiniAppMicrophonePermission(): Boolean {
+        // 小程序麦克风权限请求
+        return try {
+            // 调用小程序录音API
+            true // 模拟权限授予
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private suspend fun requestMiniAppNotificationPermission(): Boolean {
+        // 小程序通知权限请求
+        return try {
+            // 调用小程序通知API
+            true // 模拟权限授予
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    private suspend fun executeMiniAppNativeCode(code: String, params: Map<String, Any>): Any? {
+        // 小程序原生API执行逻辑
+        return when (code) {
+            "getSystemInfo" -> mapOf(
+                "platform" to getMiniAppPlatformType(),
+                "version" to getMiniAppVersion(),
+                "hostApp" to getHostAppName()
+            )
+            "showToast" -> {
+                val title = params["title"] as? String ?: ""
+                val icon = params["icon"] as? String ?: "success"
+                // 显示小程序 Toast
+                mapOf("success" to true)
+            }
+            "showModal" -> {
+                val title = params["title"] as? String ?: ""
+                val content = params["content"] as? String ?: ""
+                // 显示小程序模态框
+                mapOf("confirm" to true, "cancel" to false)
+            }
+            "navigateTo" -> {
+                val url = params["url"] as? String ?: ""
+                // 小程序页面跳转
+                mapOf("success" to true)
+            }
+            "setStorage" -> {
+                val key = params["key"] as? String ?: ""
+                val data = params["data"]
+                // 小程序本地存储
+                mapOf("success" to true)
+            }
+            "getStorage" -> {
+                val key = params["key"] as? String ?: ""
+                // 获取小程序本地存储
+                mapOf("data" to "mock_data")
+            }
+            else -> null
+        }
+    }
 }
-
-// 扩展PlatformType以包含MINI_APP
-val PlatformType.Companion.MINI_APP: PlatformType
-    get() = PlatformType.valueOf("MINI_APP")

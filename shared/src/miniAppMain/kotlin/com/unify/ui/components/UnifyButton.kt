@@ -1,129 +1,69 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ElevatedButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalButtonDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedButtonDefaults
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextButtonDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.unify.ui.LocalUnifyTheme
+import androidx.compose.ui.graphics.Color
 
-/**
- * MiniApp平台特定的按钮实现
- */
-actual class UnifyPlatformButton
-
-/**
- * MiniApp平台按钮适配器
- */
 @Composable
-actual fun UnifyNativeButton(
+actual fun UnifyButton(
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,
-    variant: UnifyButtonVariant,
-    size: UnifyButtonSize,
-    content: @Composable RowScope.() -> Unit
+    text: String,
+    backgroundColor: Color,
+    contentColor: Color,
+    contentPadding: PaddingValues
 ) {
-    val theme = LocalUnifyTheme.current
-    val buttonColors = UnifyButtonDefaults.colors(variant, theme.colors)
-    val buttonShape = UnifyButtonDefaults.shape(size)
-    val buttonPadding = UnifyButtonDefaults.contentPadding(size)
-    
-    // MiniApp平台触觉反馈
-    val handleClick = {
-        // 使用小程序wx.vibrateShort API
-        // wx.vibrateShort()
-        onClick()
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primary,
+            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary
+        ),
+        contentPadding = contentPadding
+    ) {
+        Text(text = text)
     }
-    
-    when (variant) {
-        UnifyButtonVariant.Primary -> {
-            Button(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Secondary -> {
-            OutlinedButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = OutlinedButtonDefaults.buttonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Text -> {
-            TextButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = TextButtonDefaults.textButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Elevated -> {
-            ElevatedButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = ElevatedButtonDefaults.elevatedButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Tonal -> {
-            FilledTonalButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = FilledTonalButtonDefaults.filledTonalButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-    }
+}
+
+@Composable
+actual fun UnifyIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    content: @Composable () -> Unit
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        content = content
+    )
+}
+
+@Composable
+actual fun UnifyFloatingActionButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    backgroundColor: Color,
+    contentColor: Color,
+    content: @Composable () -> Unit
+) {
+    FloatingActionButton(
+        onClick = onClick,
+        modifier = modifier,
+        containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else FloatingActionButtonDefaults.containerColor,
+        contentColor = if (contentColor != Color.Unspecified) contentColor else FloatingActionButtonDefaults.contentColor,
+        content = content
+    )
 }

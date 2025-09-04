@@ -1,431 +1,427 @@
 package com.unify.ui.components.platform
 
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import com.unify.ui.components.media.UnifyLivePlayerConfig
-import com.unify.ui.components.media.UnifyLivePlayerState
-import com.unify.ui.components.media.UnifyLivePusherConfig
-import com.unify.ui.components.media.UnifyLivePusherState
-import com.unify.ui.components.media.UnifyWebRTCConfig
-import com.unify.ui.components.scanner.UnifyScannerConfig
-import com.unify.ui.components.scanner.UnifyScannerResult
-import com.unify.ui.components.scanner.UnifyScannerState
-import com.unify.ui.components.sensor.UnifySensorConfig
-import com.unify.ui.components.sensor.UnifySensorData
-import com.unify.ui.components.sensor.UnifySensorType
+import androidx.compose.ui.unit.dp
 
 /**
- * HarmonyOS 平台直播播放器实现
- * 基于ArkUI Video组件和分布式播放能力
+ * HarmonyOS平台UI适配器
+ * 提供鸿蒙系统特有的UI组件和交互方式
  */
-@Composable
-actual fun PlatformLivePlayer(
-    config: UnifyLivePlayerConfig,
-    onStateChange: ((UnifyLivePlayerState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config.src) {
-        try {
-            // 使用ArkUI Video组件实现直播播放
-            onStateChange?.invoke(UnifyLivePlayerState.LOADING)
-
-            // HarmonyOS 分布式播放实现
-            // 集成多设备协同播放能力
-            kotlinx.coroutines.delay(1000)
-            onStateChange?.invoke(UnifyLivePlayerState.PLAYING)
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS live player error: ${e.message}")
-            onStateChange?.invoke(UnifyLivePlayerState.ERROR)
-        }
-    }
-}
-
-/**
- * HarmonyOS 平台直播推流器实现
- */
-@Composable
-actual fun PlatformLivePusher(
-    config: UnifyLivePusherConfig,
-    onStateChange: ((UnifyLivePusherState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config.url) {
-        try {
-            // 使用ArkUI Camera组件和推流能力
-            onStateChange?.invoke(UnifyLivePusherState.CONNECTING)
-
-            // HarmonyOS 分布式推流实现
-            kotlinx.coroutines.delay(1500)
-            onStateChange?.invoke(UnifyLivePusherState.PUSHING)
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS live pusher error: ${e.message}")
-            onStateChange?.invoke(UnifyLivePusherState.ERROR)
-        }
-    }
-}
-
-/**
- * HarmonyOS 平台扫码器实现
- */
-@Composable
-actual fun PlatformScanner(
-    config: UnifyScanConfig,
-    onScanResult: ((UnifyScanResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        try {
-            // 使用ArkUI Camera组件实现二维码扫描
-            // 集成HarmonyOS扫码服务
-            kotlinx.coroutines.delay(2000)
-            onScanResult?.invoke(
-                UnifyScanResult(
-                    type = UnifyScanType.QRCODE,
-                    result = "https://harmonyos.example.com"
+object HarmonyUnifyPlatformAdapters {
+    
+    /**
+     * HarmonyOS分布式设备选择器
+     */
+    @Composable
+    fun HarmonyDeviceSelector(
+        devices: List<HarmonyDevice>,
+        selectedDevice: HarmonyDevice?,
+        onDeviceSelected: (HarmonyDevice) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "选择设备",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-            )
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS scanner error: ${e.message}")
+                
+                devices.forEach { device ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        RadioButton(
+                            selected = selectedDevice == device,
+                            onClick = { onDeviceSelected(device) }
+                        )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Column {
+                            Text(
+                                text = device.name,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            Text(
+                                text = device.type,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.weight(1f))
+                        
+                        // 连接状态指示器
+                        Surface(
+                            shape = RoundedCornerShape(50),
+                            color = if (device.isConnected) Color.Green else Color.Gray,
+                            modifier = Modifier.size(8.dp)
+                        ) {}
+                    }
+                }
+            }
         }
     }
-}
-
-
-/**
- * HarmonyOS 平台传感器监听实现
- */
-@Composable
-actual fun PlatformSensorListener(
-    sensorType: UnifySensorType,
-    onSensorData: ((UnifySensorData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(sensorType) {
-        try {
-            // 使用HarmonyOS传感器框架
-            // 支持分布式传感器数据共享
-            
-            // 传感器数据常量
-            val ACCEL_X = 0.1f
-            val ACCEL_Y = 0.2f
-            val ACCEL_Z = 9.8f
-            val GYRO_ZERO = 0.0f
-            val MAG_X = 20.0f
-            val MAG_Y = -15.0f
-            val MAG_Z = 45.0f
-            val LIGHT_LUX = 300.0f
-            val PROXIMITY_CM = 5.0f
-            val HEART_RATE_BPM = 72.0f
-            val STEP_COUNT = 8500.0f
-            val DEFAULT_VALUE = 0f
-            val HIGH_ACCURACY = 3
-            
-            val sensorData = UnifySensorData(
-                type = sensorType,
-                values = when (sensorType) {
-                    UnifySensorType.ACCELEROMETER -> floatArrayOf(ACCEL_X, ACCEL_Y, ACCEL_Z)
-                    UnifySensorType.GYROSCOPE -> floatArrayOf(GYRO_ZERO, GYRO_ZERO, GYRO_ZERO)
-                    UnifySensorType.MAGNETOMETER -> floatArrayOf(MAG_X, MAG_Y, MAG_Z)
-                    UnifySensorType.LIGHT -> floatArrayOf(LIGHT_LUX)
-                    UnifySensorType.PROXIMITY -> floatArrayOf(PROXIMITY_CM)
-                    UnifySensorType.HEART_RATE -> floatArrayOf(HEART_RATE_BPM)
-                    UnifySensorType.STEP_COUNTER -> floatArrayOf(STEP_COUNT)
-                    else -> floatArrayOf(DEFAULT_VALUE)
-                },
-                accuracy = HIGH_ACCURACY,
-                timestamp = System.currentTimeMillis()
-            )
-            
-            onSensorData?.invoke(sensorData)
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS sensor error: ${e.message}")
+    
+    /**
+     * HarmonyOS多屏协同面板
+     */
+    @Composable
+    fun HarmonyMultiScreenPanel(
+        screens: List<HarmonyScreen>,
+        onScreenSelected: (HarmonyScreen) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyRow(
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp)
+        ) {
+            items(screens.size) { index ->
+                val screen = screens[index]
+                Card(
+                    modifier = Modifier
+                        .width(120.dp)
+                        .height(80.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (screen.isActive) {
+                            MaterialTheme.colorScheme.primaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.surface
+                        }
+                    ),
+                    onClick = { onScreenSelected(screen) }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = screen.icon,
+                                contentDescription = screen.name,
+                                tint = if (screen.isActive) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = screen.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (screen.isActive) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
-}
-
-
-/**
- * HarmonyOS 平台生物识别实现
- */
-@Composable
-actual fun PlatformBiometricAuth(
-    config: UnifyBiometricConfig,
-    onAuthResult: ((UnifyBiometricResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        try {
-            // 使用HarmonyOS生物识别框架
-            // 支持指纹、面部、声纹等多种识别方式
-            // 支持分布式生物识别验证
-            
-            kotlinx.coroutines.delay(2000) // 模拟识别过程
-            
-            onAuthResult?.invoke(
-                UnifyBiometricResult(
-                    isSuccess = true,
-                    authType = UnifyBiometricType.FINGERPRINT,
-                    errorMessage = null
+    
+    /**
+     * HarmonyOS原子化服务卡片
+     */
+    @Composable
+    fun HarmonyAtomicServiceCard(
+        service: AtomicService,
+        onServiceClick: (AtomicService) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            onClick = { onServiceClick(service) }
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = service.iconColor,
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = service.icon,
+                                contentDescription = service.name,
+                                tint = Color.White
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Column {
+                        Text(
+                            text = service.name,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = service.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+                
+                // 服务状态
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "状态: ${service.status}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    
+                    Surface(
+                        shape = RoundedCornerShape(50),
+                        color = when (service.status) {
+                            "运行中" -> Color.Green
+                            "已停止" -> Color.Gray
+                            "错误" -> Color.Red
+                            else -> Color.Gray
+                        },
+                        modifier = Modifier.size(8.dp)
+                    ) {}
+                }
+            }
+        }
+    }
+    
+    /**
+     * HarmonyOS分布式任务面板
+     */
+    @Composable
+    fun HarmonyDistributedTaskPanel(
+        tasks: List<DistributedTask>,
+        onTaskAction: (DistributedTask, String) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyColumn(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(16.dp)
+        ) {
+            items(tasks.size) { index ->
+                val task = tasks[index]
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = task.name,
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            
+                            Text(
+                                text = task.progress,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        
+                        Text(
+                            text = "设备: ${task.deviceName}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                        
+                        LinearProgressIndicator(
+                            progress = task.progressValue,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = { onTaskAction(task, "pause") }
+                            ) {
+                                Text("暂停")
+                            }
+                            
+                            TextButton(
+                                onClick = { onTaskAction(task, "cancel") }
+                            ) {
+                                Text("取消")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * HarmonyOS智能推荐卡片
+     */
+    @Composable
+    fun HarmonySmartRecommendationCard(
+        recommendations: List<SmartRecommendation>,
+        onRecommendationClick: (SmartRecommendation) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = "智能推荐",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
-            )
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS biometric auth error: ${e.message}")
+                
+                recommendations.forEach { recommendation ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = recommendation.icon,
+                            contentDescription = recommendation.title,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(
+                                text = recommendation.title,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Text(
+                                text = recommendation.description,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            )
+                        }
+                        
+                        TextButton(
+                            onClick = { onRecommendationClick(recommendation) }
+                        ) {
+                            Text(
+                                text = "查看",
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }
 
 /**
- * HarmonyOS 平台触觉反馈实现
+ * HarmonyOS设备信息
  */
-@Composable
-actual fun PlatformHapticFeedback(
-    intensity: Float,
-    duration: Long,
-    pattern: List<Long>
-) {
-    // 使用HarmonyOS震动服务
-    // 支持分布式设备协同震动
-}
+data class HarmonyDevice(
+    val id: String,
+    val name: String,
+    val type: String,
+    val isConnected: Boolean
+)
 
 /**
- * HarmonyOS 平台文字转语音实现
+ * HarmonyOS屏幕信息
  */
-actual fun PlatformTextToSpeech(
-    text: String,
-    config: UnifyTTSConfig,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    try {
-        // 使用HarmonyOS文字转语音服务
-        // 支持多种语音和情感表达
-        onComplete?.invoke()
-    } catch (e: Exception) {
-        onError?.invoke("HarmonyOS TTS error: ${e.message}")
-    }
-}
+data class HarmonyScreen(
+    val id: String,
+    val name: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val isActive: Boolean
+)
 
 /**
- * HarmonyOS 平台语音识别实现
+ * 原子化服务
  */
-@Composable
-actual fun PlatformSpeechRecognition(
-    config: UnifySpeechConfig,
-    onResult: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        try {
-            // 使用HarmonyOS语音识别服务
-            // 支持多语言和离线识别
-            kotlinx.coroutines.delay(3000)
-            val recognizedText = "Hello HarmonyOS"
-            onResult?.invoke(recognizedText)
-        } catch (e: Exception) {
-            onError?.invoke("HarmonyOS speech recognition error: ${e.message}")
-        }
-    }
-}
+data class AtomicService(
+    val id: String,
+    val name: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val iconColor: Color,
+    val status: String
+)
 
 /**
- * HarmonyOS 平台设备震动实现
+ * 分布式任务
  */
-@Composable
-actual fun PlatformVibration(
-    pattern: List<Long>,
-    intensity: Float
-) {
-    // 使用HarmonyOS震动框架
-    // 支持多设备震动同步
-    // 模拟HarmonyOS设备震动
-    // 实际实现会调用HarmonyOS的震动API
-}
+data class DistributedTask(
+    val id: String,
+    val name: String,
+    val deviceName: String,
+    val progress: String,
+    val progressValue: Float
+)
 
 /**
- * HarmonyOS 平台屏幕亮度控制实现
+ * 智能推荐
  */
-@Composable
-actual fun PlatformScreenBrightness(
-    brightness: Float,
-    onResult: ((Boolean) -> Unit)?
-) {
-    // 使用HarmonyOS显示框架
-    // 支持多设备亮度同步
-    onResult?.invoke(true)
-}
-
-/**
- * HarmonyOS 平台屏幕方向控制实现
- */
-@Composable
-actual fun PlatformScreenOrientation(
-    orientation: UnifyScreenOrientation,
-    onResult: ((Boolean) -> Unit)?
-) {
-    // 使用HarmonyOS显示框架
-    // 支持多设备方向同步
-    onResult?.invoke(true)
-}
-
-/**
- * HarmonyOS 平台状态栏控制实现
- */
-@Composable
-actual fun PlatformStatusBarControl(
-    config: UnifyStatusBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    // 使用ArkUI状态栏API
-    // 支持分布式状态栏管理
-    onResult?.invoke(true)
-}
-
-/**
- * HarmonyOS 平台导航栏控制实现
- */
-@Composable
-actual fun PlatformNavigationBarControl(
-    config: UnifyNavigationBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    // 使用ArkUI导航栏API
-    // 支持分布式导航栏管理
-    onResult?.invoke(true)
-}
-
-/**
- * HarmonyOS 平台系统通知实现
- */
-@Composable
-actual fun PlatformNotification(
-    config: UnifyNotificationConfig,
-    onAction: ((String) -> Unit)?,
-    onDismiss: (() -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // 使用HarmonyOS通知框架
-        // 支持分布式通知
-        onAction?.invoke("harmony_notification_shown")
-    }
-}
-
-/**
- * HarmonyOS 平台文件选择器实现
- */
-@Composable
-actual fun PlatformFilePicker(
-    config: UnifyFilePickerConfig,
-    onFileSelected: ((List<String>) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // 使用HarmonyOS文件管理框架
-        // 支持分布式文件访问
-        onFileSelected?.invoke(listOf("harmony_file.txt"))
-    }
-}
-
-/**
- * HarmonyOS 平台相机实现
- */
-@Composable
-actual fun PlatformCamera(
-    config: UnifyCameraConfig,
-    onCapture: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // 使用ArkUI Camera组件
-        // 支持分布式相机控制
-        onCapture?.invoke("harmony_camera_capture.jpg")
-    }
-}
-
-/**
- * HarmonyOS 平台位置服务实现
- */
-@Composable
-actual fun PlatformLocationService(
-    config: UnifyLocationConfig,
-    onLocationUpdate: ((UnifyLocationData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // 位置数据常量（北京坐标示例）
-        val BEIJING_LATITUDE = 39.9042
-        val BEIJING_LONGITUDE = 116.4074
-        val HIGH_ACCURACY = 3.0
-        
-        // 使用HarmonyOS位置服务
-        // 支持分布式位置共享
-        onLocationUpdate?.invoke(
-            UnifyLocationData(
-                latitude = BEIJING_LATITUDE,
-                longitude = BEIJING_LONGITUDE,
-                accuracy = HIGH_ACCURACY,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
-}
-
-/**
- * HarmonyOS 平台网络状态监听实现
- */
-@Composable
-actual fun PlatformNetworkMonitor(
-    onNetworkChange: ((UnifyNetworkInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        // 使用HarmonyOS网络管理框架
-        // 支持分布式网络状态同步
-        onNetworkChange?.invoke(
-            UnifyNetworkInfo(
-                isConnected = true,
-                connectionType = UnifyConnectionType.WIFI,
-                signalStrength = 95
-            )
-        )
-    }
-}
-
-/**
- * HarmonyOS 平台电池状态监听实现
- */
-@Composable
-actual fun PlatformBatteryMonitor(
-    onBatteryUpdate: ((UnifyBatteryInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        // 使用HarmonyOS电源管理框架
-        // 支持分布式电池状态监控
-        onBatteryUpdate?.invoke(
-            UnifyBatteryInfo(
-                level = 85,
-                isCharging = false,
-                batteryHealth = UnifyBatteryHealth.GOOD
-            )
-        )
-    }
-}
-
-/**
- * HarmonyOS 平台应用生命周期监听实现
- */
-@Composable
-actual fun PlatformLifecycleMonitor(
-    onLifecycleChange: ((UnifyLifecycleState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        // 使用HarmonyOS应用框架
-        // 支持分布式应用生命周期管理
-        onLifecycleChange?.invoke(UnifyLifecycleState.ACTIVE)
-    }
-}
+data class SmartRecommendation(
+    val id: String,
+    val title: String,
+    val description: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector
+)

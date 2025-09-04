@@ -1,640 +1,152 @@
 package com.unify.ui.components.harmonyos
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.LocalUnifyTheme
-import com.unify.ui.components.foundation.*
 
 /**
- * HarmonyOS 分布式设备类型
+ * Unify HarmonyOS平台特定组件
+ * 专为HarmonyOS平台优化的UI组件，集成分布式特性
  */
-enum class UnifyDistributedDeviceType {
-    PHONE,          // 手机
-    TABLET,         // 平板
-    WATCH,          // 手表
-    TV,             // 电视
-    CAR,            // 车机
-    SMART_SPEAKER,  // 智能音箱
-    IOT_DEVICE,     // IoT设备
-    PC              // 电脑
-}
 
-/**
- * HarmonyOS 分布式设备信息
- */
-data class UnifyDistributedDevice(
-    val deviceId: String,
-    val deviceName: String,
-    val deviceType: UnifyDistributedDeviceType,
-    val isOnline: Boolean = true,
-    val capabilities: List<String> = emptyList(),
-    val batteryLevel: Int = 100,
-    val networkType: String = "WiFi"
-)
-
-/**
- * HarmonyOS 分布式能力
- */
-enum class UnifyDistributedCapability {
-    CONTINUATION,       // 流转
-    COLLABORATION,      // 协同
-    MIGRATION,         // 迁移
-    MULTI_SCREEN,      // 多屏
-    CROSS_DEVICE_CALL, // 跨设备调用
-    DATA_SYNC,         // 数据同步
-    RESOURCE_SHARE     // 资源共享
-}
-
-/**
- * HarmonyOS 分布式设备发现组件
- */
 @Composable
-fun UnifyDistributedDeviceDiscovery(
+fun UnifyHarmonyCard(
+    title: String,
     modifier: Modifier = Modifier,
-    onDeviceFound: ((UnifyDistributedDevice) -> Unit)? = null,
-    onDeviceLost: ((String) -> Unit)? = null,
-    contentDescription: String? = null
+    subtitle: String? = null,
+    icon: String? = null,
+    onClick: (() -> Unit)? = null,
+    content: (@Composable ColumnScope.() -> Unit)? = null
 ) {
-    val theme = LocalUnifyTheme.current
-    var isScanning by remember { mutableStateOf(false) }
-    var discoveredDevices by remember { mutableStateOf<List<UnifyDistributedDevice>>(emptyList()) }
-    
-    LaunchedEffect(isScanning) {
-        if (isScanning) {
-            // 模拟设备发现
-            val mockDevices = listOf(
-                UnifyDistributedDevice(
-                    deviceId = "harmony_phone_001",
-                    deviceName = "华为 Mate 60",
-                    deviceType = UnifyDistributedDeviceType.PHONE,
-                    capabilities = listOf("continuation", "collaboration")
-                ),
-                UnifyDistributedDevice(
-                    deviceId = "harmony_tablet_001",
-                    deviceName = "华为 MatePad Pro",
-                    deviceType = UnifyDistributedDeviceType.TABLET,
-                    capabilities = listOf("multi_screen", "migration")
-                ),
-                UnifyDistributedDevice(
-                    deviceId = "harmony_watch_001",
-                    deviceName = "华为 Watch GT 4",
-                    deviceType = UnifyDistributedDeviceType.WATCH,
-                    capabilities = listOf("data_sync", "collaboration")
-                )
-            )
-            
-            for (device in mockDevices) {
-                kotlinx.coroutines.delay(1000)
-                discoveredDevices = discoveredDevices + device
-                onDeviceFound?.invoke(device)
-            }
-        } else {
-            discoveredDevices = emptyList()
-        }
-    }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                UnifyText(
-                    text = "分布式设备发现",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (isScanning) {
-                        val infiniteTransition = rememberInfiniteTransition(label = "scanning")
-                        val rotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(2000, easing = LinearEasing)
-                            ),
-                            label = "rotation"
-                        )
-                        
-                        Icon(
-                            imageVector = Icons.Default.Refresh,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(20.dp)
-                                .graphicsLayer { rotationZ = rotation },
-                            tint = theme.colors.primary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    
-                    Switch(
-                        checked = isScanning,
-                        onCheckedChange = { isScanning = it }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 设备列表
-            if (discoveredDevices.isNotEmpty()) {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.height(200.dp)
-                ) {
-                    items(discoveredDevices.size) { index ->
-                        val device = discoveredDevices[index]
-                        DistributedDeviceCard(
-                            device = device,
-                            onConnect = { /* 处理连接 */ },
-                            onDisconnect = { /* 处理断开 */ }
-                        )
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    UnifyText(
-                        text = if (isScanning) "正在搜索设备..." else "点击开关开始搜索分布式设备",
-                        variant = UnifyTextVariant.BODY_MEDIUM,
-                        color = theme.colors.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * 分布式设备卡片
- */
-@Composable
-private fun DistributedDeviceCard(
-    device: UnifyDistributedDevice,
-    onConnect: (() -> Unit)? = null,
-    onDisconnect: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
-) {
-    val theme = LocalUnifyTheme.current
-    var isConnected by remember { mutableStateOf(false) }
-    
     Card(
         modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (device.isOnline) 
-                theme.colors.surfaceVariant 
-            else 
-                theme.colors.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        onClick = onClick ?: {}
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (icon != null) {
+                    Text(
+                        text = icon,
+                        style = MaterialTheme.typography.headlineMedium,
+                        modifier = Modifier.padding(end = 12.dp)
+                    )
+                }
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    
+                    if (subtitle != null) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            
+            if (content != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+fun UnifyHarmonyServiceCard(
+    serviceName: String,
+    deviceName: String,
+    isConnected: Boolean,
+    onConnect: () -> Unit,
+    onDisconnect: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    UnifyHarmonyCard(
+        title = serviceName,
+        subtitle = deviceName,
+        icon = if (isConnected) "🔗" else "📱",
+        modifier = modifier
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                imageVector = getDeviceTypeIcon(device.deviceType),
-                contentDescription = null,
-                tint = if (device.isOnline) theme.colors.primary else Color.Gray,
-                modifier = Modifier.size(32.dp)
+            Text(
+                text = if (isConnected) "已连接" else "未连接",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (isConnected) Color(0xFF4CAF50) else Color(0xFF757575)
             )
             
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                UnifyText(
-                    text = device.deviceName,
-                    variant = UnifyTextVariant.BODY_MEDIUM,
-                    fontWeight = FontWeight.Medium
-                )
-                UnifyText(
-                    text = "${getDeviceTypeName(device.deviceType)} • ${device.networkType}",
-                    variant = UnifyTextVariant.CAPTION,
-                    color = theme.colors.onSurfaceVariant
-                )
-                
-                if (device.capabilities.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    LazyRow(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(device.capabilities.size) { index ->
-                            val capability = device.capabilities[index]
-                            AssistChip(
-                                onClick = { },
-                                label = {
-                                    UnifyText(
-                                        text = capability,
-                                        variant = UnifyTextVariant.CAPTION
-                                    )
-                                },
-                                modifier = Modifier.height(24.dp)
-                            )
-                        }
-                    }
-                }
-            }
-            
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                if (device.isOnline) {
-                    FilledTonalButton(
-                        onClick = {
-                            isConnected = !isConnected
-                            if (isConnected) {
-                                onConnect?.invoke()
-                            } else {
-                                onDisconnect?.invoke()
-                            }
-                        },
-                        modifier = Modifier.height(32.dp)
-                    ) {
-                        UnifyText(
-                            text = if (isConnected) "断开" else "连接",
-                            variant = UnifyTextVariant.CAPTION
-                        )
-                    }
-                } else {
-                    UnifyText(
-                        text = "离线",
-                        variant = UnifyTextVariant.CAPTION,
-                        color = Color.Gray
-                    )
-                }
-                
-                if (device.deviceType in listOf(
-                    UnifyDistributedDeviceType.PHONE,
-                    UnifyDistributedDeviceType.TABLET,
-                    UnifyDistributedDeviceType.WATCH
-                )) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Battery6Bar,
-                            contentDescription = null,
-                            tint = getBatteryColor(device.batteryLevel),
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(2.dp))
-                        UnifyText(
-                            text = "${device.batteryLevel}%",
-                            variant = UnifyTextVariant.CAPTION,
-                            color = getBatteryColor(device.batteryLevel)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * HarmonyOS 分布式流转组件
- */
-@Composable
-fun UnifyDistributedContinuation(
-    sourceDevice: UnifyDistributedDevice,
-    targetDevices: List<UnifyDistributedDevice>,
-    modifier: Modifier = Modifier,
-    onContinue: ((UnifyDistributedDevice) -> Unit)? = null,
-    contentDescription: String? = null
-) {
-    val theme = LocalUnifyTheme.current
-    var selectedDevice by remember { mutableStateOf<UnifyDistributedDevice?>(null) }
-    var isContinuing by remember { mutableStateOf(false) }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SwapHoriz,
-                    contentDescription = null,
-                    tint = theme.colors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                UnifyText(
-                    text = "应用流转",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 源设备
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = getDeviceTypeIcon(sourceDevice.deviceType),
-                    contentDescription = null,
-                    tint = theme.colors.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                UnifyText(
-                    text = "从 ${sourceDevice.deviceName}",
-                    variant = UnifyTextVariant.BODY_MEDIUM
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Icon(
-                imageVector = Icons.Default.ArrowDownward,
-                contentDescription = null,
-                tint = theme.colors.onSurfaceVariant,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(16.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // 目标设备选择
-            UnifyText(
-                text = "流转到:",
-                variant = UnifyTextVariant.BODY_MEDIUM,
-                fontWeight = FontWeight.Medium
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.height(150.dp)
-            ) {
-                items(targetDevices.size) { index ->
-                    val device = targetDevices[index]
-                    val isSelected = selectedDevice?.deviceId == device.deviceId
-                    
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectedDevice = device },
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (isSelected) 
-                                theme.colors.primaryContainer 
-                            else 
-                                theme.colors.surface
-                        ),
-                        border = if (isSelected) 
-                            BorderStroke(2.dp, theme.colors.primary) 
-                        else null
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = getDeviceTypeIcon(device.deviceType),
-                                contentDescription = null,
-                                tint = if (isSelected) theme.colors.primary else theme.colors.onSurface,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                UnifyText(
-                                    text = device.deviceName,
-                                    variant = UnifyTextVariant.BODY_MEDIUM,
-                                    color = if (isSelected) theme.colors.onPrimaryContainer else theme.colors.onSurface
-                                )
-                                UnifyText(
-                                    text = getDeviceTypeName(device.deviceType),
-                                    variant = UnifyTextVariant.CAPTION,
-                                    color = if (isSelected) 
-                                        theme.colors.onPrimaryContainer.copy(alpha = 0.7f) 
-                                    else 
-                                        theme.colors.onSurfaceVariant
-                                )
-                            }
-                            
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = theme.colors.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 流转按钮
             Button(
-                onClick = {
-                    selectedDevice?.let { device ->
-                        isContinuing = true
-                        onContinue?.invoke(device)
+                onClick = if (isConnected) onDisconnect else onConnect,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isConnected) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
                     }
-                },
-                enabled = selectedDevice != null && !isContinuing,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                if (isContinuing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = theme.colors.onPrimary
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                UnifyText(
-                    text = if (isContinuing) "流转中..." else "开始流转",
-                    variant = UnifyTextVariant.BODY_MEDIUM,
-                    color = theme.colors.onPrimary
                 )
+            ) {
+                Text(if (isConnected) "断开" else "连接")
             }
         }
     }
 }
 
-/**
- * HarmonyOS 多屏协同组件
- */
 @Composable
-fun UnifyMultiScreenCollaboration(
-    connectedDevices: List<UnifyDistributedDevice>,
-    modifier: Modifier = Modifier,
-    onScreenShare: ((UnifyDistributedDevice) -> Unit)? = null,
-    onScreenMirror: ((UnifyDistributedDevice) -> Unit)? = null,
-    contentDescription: String? = null
+fun UnifyHarmonyDeviceList(
+    devices: List<UnifyHarmonyDevice>,
+    onDeviceClick: (UnifyHarmonyDevice) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    var collaborationMode by remember { mutableStateOf("share") } // "share", "mirror", "extend"
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ScreenShare,
-                    contentDescription = null,
-                    tint = theme.colors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                UnifyText(
-                    text = "多屏协同",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 协同模式选择
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                listOf("share" to "共享", "mirror" to "镜像", "extend" to "扩展").forEach { (mode, label) ->
-                    FilterChip(
-                        selected = collaborationMode == mode,
-                        onClick = { collaborationMode = mode },
-                        label = {
-                            UnifyText(
-                                text = label,
-                                variant = UnifyTextVariant.BODY_SMALL
-                            )
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 设备网格
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.height(200.dp)
-            ) {
-                items(connectedDevices.size) { index ->
-                    val device = connectedDevices[index]
-                    
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(80.dp)
-                            .clickable {
-                                when (collaborationMode) {
-                                    "share" -> onScreenShare?.invoke(device)
-                                    "mirror" -> onScreenMirror?.invoke(device)
-                                }
-                            },
-                        colors = CardDefaults.cardColors(
-                            containerColor = theme.colors.surface
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(8.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = getDeviceTypeIcon(device.deviceType),
-                                contentDescription = null,
-                                tint = theme.colors.primary,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            UnifyText(
-                                text = device.deviceName,
-                                variant = UnifyTextVariant.CAPTION,
-                                maxLines = 1
-                            )
-                        }
-                    }
-                }
-            }
+        items(devices) { device ->
+            UnifyHarmonyDeviceItem(
+                device = device,
+                onClick = { onDeviceClick(device) }
+            )
         }
     }
 }
 
-/**
- * HarmonyOS 原子化服务卡片
- */
 @Composable
-fun UnifyAtomicServiceCard(
-    serviceName: String,
-    serviceIcon: ImageVector,
-    serviceDescription: String,
-    modifier: Modifier = Modifier,
-    onLaunch: (() -> Unit)? = null,
-    contentDescription: String? = null
+private fun UnifyHarmonyDeviceItem(
+    device: UnifyHarmonyDevice,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onLaunch?.invoke() }
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            },
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = theme.colors.surfaceVariant
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -643,83 +155,249 @@ fun UnifyAtomicServiceCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Card(
-                modifier = Modifier.size(48.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = theme.colors.primaryContainer
-                )
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = serviceIcon,
-                        contentDescription = null,
-                        tint = theme.colors.onPrimaryContainer,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = device.icon,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(end = 16.dp)
+            )
             
             Column(modifier = Modifier.weight(1f)) {
-                UnifyText(
-                    text = serviceName,
-                    variant = UnifyTextVariant.BODY_LARGE,
+                Text(
+                    text = device.name,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                UnifyText(
-                    text = serviceDescription,
-                    variant = UnifyTextVariant.BODY_SMALL,
-                    color = theme.colors.onSurfaceVariant,
-                    maxLines = 2
+                Text(
+                    text = device.type,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             
-            Icon(
-                imageVector = Icons.Default.ArrowForward,
-                contentDescription = null,
-                tint = theme.colors.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (device.isOnline) Color(0xFF4CAF50) else Color(0xFF757575)
+            ) {
+                Text(
+                    text = if (device.isOnline) "在线" else "离线",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
         }
     }
 }
 
-// 辅助函数
-private fun getDeviceTypeIcon(deviceType: UnifyDistributedDeviceType): ImageVector {
-    return when (deviceType) {
-        UnifyDistributedDeviceType.PHONE -> Icons.Default.PhoneAndroid
-        UnifyDistributedDeviceType.TABLET -> Icons.Default.Tablet
-        UnifyDistributedDeviceType.WATCH -> Icons.Default.Watch
-        UnifyDistributedDeviceType.TV -> Icons.Default.Tv
-        UnifyDistributedDeviceType.CAR -> Icons.Default.DirectionsCar
-        UnifyDistributedDeviceType.SMART_SPEAKER -> Icons.Default.Speaker
-        UnifyDistributedDeviceType.IOT_DEVICE -> Icons.Default.DeviceHub
-        UnifyDistributedDeviceType.PC -> Icons.Default.Computer
+data class UnifyHarmonyDevice(
+    val id: String,
+    val name: String,
+    val type: String,
+    val icon: String,
+    val isOnline: Boolean
+)
+
+@Composable
+fun UnifyHarmonyDistributedPanel(
+    title: String,
+    devices: List<UnifyHarmonyDevice>,
+    onDeviceSelect: (UnifyHarmonyDevice) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(devices) { device ->
+                    Surface(
+                        onClick = { onDeviceSelect(device) },
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = device.icon,
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(end = 12.dp)
+                            )
+                            
+                            Text(
+                                text = device.name,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.weight(1f)
+                            )
+                            
+                            if (device.isOnline) {
+                                Text(
+                                    text = "✓",
+                                    color = Color(0xFF4CAF50),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-private fun getDeviceTypeName(deviceType: UnifyDistributedDeviceType): String {
-    return when (deviceType) {
-        UnifyDistributedDeviceType.PHONE -> "手机"
-        UnifyDistributedDeviceType.TABLET -> "平板"
-        UnifyDistributedDeviceType.WATCH -> "手表"
-        UnifyDistributedDeviceType.TV -> "电视"
-        UnifyDistributedDeviceType.CAR -> "车机"
-        UnifyDistributedDeviceType.SMART_SPEAKER -> "音箱"
-        UnifyDistributedDeviceType.IOT_DEVICE -> "IoT设备"
-        UnifyDistributedDeviceType.PC -> "电脑"
+@Composable
+fun UnifyHarmonyAtomicService(
+    serviceName: String,
+    description: String,
+    icon: String,
+    onLaunch: () -> Unit,
+    modifier: Modifier = Modifier,
+    isInstalled: Boolean = true
+) {
+    Card(
+        modifier = modifier.width(160.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.displaySmall,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            
+            Text(
+                text = serviceName,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
+            
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            Button(
+                onClick = onLaunch,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isInstalled) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.secondary
+                    }
+                )
+            ) {
+                Text(if (isInstalled) "启动" else "安装")
+            }
+        }
     }
 }
 
-private fun getBatteryColor(batteryLevel: Int): Color {
-    return when {
-        batteryLevel > 50 -> Color.Green
-        batteryLevel > 20 -> Color.Orange
-        else -> Color.Red
+@Composable
+fun UnifyHarmonyMultiScreenLayout(
+    primaryContent: @Composable () -> Unit,
+    secondaryContent: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    isMultiScreen: Boolean = false
+) {
+    if (isMultiScreen && secondaryContent != null) {
+        Row(
+            modifier = modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                primaryContent()
+            }
+            
+            Divider(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(1.dp)
+            )
+            
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                secondaryContent()
+            }
+        }
+    } else {
+        Box(modifier = modifier.fillMaxSize()) {
+            primaryContent()
+        }
+    }
+}
+
+@Composable
+fun UnifyHarmonyFlowLayout(
+    items: List<String>,
+    onItemClick: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // 简化的流式布局实现
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        var currentRow = mutableListOf<String>()
+        val rows = mutableListOf<List<String>>()
+        
+        items.forEach { item ->
+            if (currentRow.size < 3) { // 每行最多3个
+                currentRow.add(item)
+            } else {
+                rows.add(currentRow.toList())
+                currentRow = mutableListOf(item)
+            }
+        }
+        if (currentRow.isNotEmpty()) {
+            rows.add(currentRow)
+        }
+        
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                row.forEach { item ->
+                    FilterChip(
+                        onClick = { onItemClick(item) },
+                        label = { Text(item) },
+                        selected = false,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                // 填充剩余空间
+                repeat(3 - row.size) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
     }
 }

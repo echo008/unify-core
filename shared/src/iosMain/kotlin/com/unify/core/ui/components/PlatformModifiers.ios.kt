@@ -1,22 +1,215 @@
 package com.unify.core.ui.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * iOS 平台特定修饰符实现
+ * iOS平台特定的Modifier扩展
+ * 提供iOS原生的交互效果和行为
  */
-actual fun Modifier.platformSpecific(): Modifier = this
-    .fillMaxWidth()
-    .padding(horizontal = 20.dp) // iOS 设计规范边距
 
-actual fun Modifier.platformButtonStyle(): Modifier = this
-    .fillMaxWidth()
-    .height(44.dp) // iOS Human Interface Guidelines 推荐高度
+/**
+ * iOS平台点击效果
+ */
+@Composable
+actual fun Modifier.platformClickable(
+    enabled: Boolean,
+    onClick: () -> Unit
+): Modifier {
+    return this.clickable(
+        enabled = enabled,
+        indication = null, // iOS通常不使用ripple效果
+        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+        onClick = {
+            if (enabled) {
+                // iOS触觉反馈
+                onClick()
+            }
+        }
+    )
+}
 
-actual fun Modifier.platformTextFieldStyle(): Modifier = this
-    .fillMaxWidth()
-    .padding(horizontal = 8.dp)
+/**
+ * iOS平台长按效果
+ */
+@Composable
+actual fun Modifier.platformLongClickable(
+    enabled: Boolean,
+    onLongClick: () -> Unit
+): Modifier {
+    return this.pointerInput(enabled) {
+        if (enabled) {
+            detectTapGestures(
+                onLongPress = {
+                    // iOS长按触觉反馈
+                    onLongClick()
+                }
+            )
+        }
+    }
+}
+
+/**
+ * iOS平台阴影效果
+ */
+@Composable
+actual fun Modifier.platformShadow(
+    elevation: Dp,
+    shape: Shape,
+    clip: Boolean
+): Modifier {
+    return this
+        .shadow(
+            elevation = elevation,
+            shape = shape,
+            clip = clip
+        )
+}
+
+/**
+ * iOS平台圆角效果
+ */
+@Composable
+actual fun Modifier.platformRoundedCorners(
+    radius: Dp
+): Modifier {
+    return this.clip(RoundedCornerShape(radius))
+}
+
+/**
+ * iOS平台边框效果
+ */
+@Composable
+actual fun Modifier.platformBorder(
+    width: Dp,
+    color: Color,
+    shape: Shape
+): Modifier {
+    return this.then(
+        androidx.compose.foundation.border(
+            width = width,
+            color = color,
+            shape = shape
+        )
+    )
+}
+
+/**
+ * iOS平台内边距
+ */
+@Composable
+actual fun Modifier.platformPadding(
+    horizontal: Dp,
+    vertical: Dp
+): Modifier {
+    return this.padding(horizontal = horizontal, vertical = vertical)
+}
+
+/**
+ * iOS平台尺寸
+ */
+@Composable
+actual fun Modifier.platformSize(
+    width: Dp,
+    height: Dp
+): Modifier {
+    return this.size(width = width, height = height)
+}
+
+/**
+ * iOS平台触摸反馈
+ */
+@Composable
+actual fun Modifier.platformTouchFeedback(
+    enabled: Boolean
+): Modifier {
+    return this.pointerInput(enabled) {
+        if (enabled) {
+            detectTapGestures(
+                onPress = {
+                    // iOS触觉反馈实现
+                }
+            )
+        }
+    }
+}
+
+/**
+ * iOS平台可访问性支持
+ */
+@Composable
+actual fun Modifier.platformAccessibility(
+    contentDescription: String?,
+    role: String?
+): Modifier {
+    return this.then(
+        androidx.compose.ui.semantics.semantics {
+            contentDescription?.let { desc ->
+                this.contentDescription = desc
+            }
+            role?.let { r ->
+                when (r) {
+                    "button" -> this.role = androidx.compose.ui.semantics.Role.Button
+                    "checkbox" -> this.role = androidx.compose.ui.semantics.Role.Checkbox
+                    "switch" -> this.role = androidx.compose.ui.semantics.Role.Switch
+                    "radiobutton" -> this.role = androidx.compose.ui.semantics.Role.RadioButton
+                    "tab" -> this.role = androidx.compose.ui.semantics.Role.Tab
+                    "image" -> this.role = androidx.compose.ui.semantics.Role.Image
+                }
+            }
+        }
+    )
+}
+
+/**
+ * iOS平台滚动行为
+ */
+@Composable
+actual fun Modifier.platformScrollable(
+    enabled: Boolean
+): Modifier {
+    return if (enabled) {
+        this.then(
+            androidx.compose.foundation.verticalScroll(
+                androidx.compose.foundation.rememberScrollState()
+            )
+        )
+    } else {
+        this
+    }
+}
+
+/**
+ * iOS平台动画效果
+ */
+@Composable
+actual fun Modifier.platformAnimated(
+    enabled: Boolean
+): Modifier {
+    return if (enabled) {
+        this.then(
+            androidx.compose.animation.animateContentSize(
+                animationSpec = androidx.compose.animation.core.spring(
+                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
+                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+                )
+            )
+        )
+    } else {
+        this
+    }
+}

@@ -1,644 +1,406 @@
 package com.unify.core.dynamic
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
 /**
- * Unify动态化系统演示应用
- * 展示AI增强的动态组件加载、智能推荐和性能优化功能
+ * 动态组件演示应用
  */
 @Composable
 fun UnifyDynamicDemo() {
-    var selectedTab by remember { mutableStateOf(0) }
-    val scope = rememberCoroutineScope()
+    var selectedTab by remember { mutableIntStateOf(0) }
+    val tabs = listOf("组件加载", "热更新", "配置管理", "安全验证")
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Unify Dynamic Engine Demo",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        
-        TabRow(selectedTabIndex = selectedTab) {
-            Tab(
-                selected = selectedTab == 0,
-                onClick = { selectedTab = 0 },
-                text = { Text("AI推荐") }
-            )
-            Tab(
-                selected = selectedTab == 1,
-                onClick = { selectedTab = 1 },
-                text = { Text("代码生成") }
-            )
-            Tab(
-                selected = selectedTab == 2,
-                onClick = { selectedTab = 2 },
-                text = { Text("性能分析") }
-            )
-            Tab(
-                selected = selectedTab == 3,
-                onClick = { selectedTab = 3 },
-                text = { Text("缓存管理") }
-            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // 顶部标题
+        Card(
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "🔄 动态组件系统演示",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+                Text(
+                    text = "实时组件加载、热更新和配置管理",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        // 标签页
+        TabRow(selectedTabIndex = selectedTab) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) }
+                )
+            }
+        }
         
+        // 内容区域
         when (selectedTab) {
-            0 -> AIRecommendationDemo()
-            1 -> CodeGenerationDemo()
-            2 -> PerformanceAnalysisDemo()
-            3 -> CacheManagementDemo()
+            0 -> ComponentLoadingDemo()
+            1 -> HotUpdateDemo()
+            2 -> ConfigurationDemo()
+            3 -> SecurityDemo()
         }
     }
 }
 
-/**
- * AI智能推荐演示
- */
 @Composable
-fun AIRecommendationDemo() {
-    var recommendations by remember { mutableStateOf<List<ComponentRecommendation>>(emptyList()) }
+private fun ComponentLoadingDemo() {
+    var loadedComponents by remember { mutableStateOf<List<ComponentInfo>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     
-    Column {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            Card {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "组件加载演示",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    isLoading = true
+                                    // 模拟加载组件
+                                    kotlinx.coroutines.delay(1000)
+                                    loadedComponents = getSampleComponents()
+                                    isLoading = false
+                                }
+                            },
+                            enabled = !isLoading
+                        ) {
+                            Text("加载示例组件")
+                        }
+                        
+                        Button(
+                            onClick = { loadedComponents = emptyList() },
+                            enabled = loadedComponents.isNotEmpty()
+                        ) {
+                            Text("清空组件")
+                        }
+                    }
+                    
+                    if (isLoading) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                }
+            }
+        }
+        
+        items(loadedComponents) { component ->
+            ComponentInfoCard(component)
+        }
+    }
+}
+
+@Composable
+private fun HotUpdateDemo() {
+    var updateAvailable by remember { mutableStateOf(false) }
+    var updateProgress by remember { mutableFloatStateOf(0f) }
+    var isUpdating by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
                 Text(
-                    text = "AI智能组件推荐",
+                    text = "热更新演示",
                     style = MaterialTheme.typography.titleMedium
                 )
-                Text(
-                    text = "基于使用模式、平台特性和性能需求的智能推荐",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 
                 Button(
                     onClick = {
                         scope.launch {
-                            isLoading = true
-                            try {
-                                val context = mapOf(
-                                    "platform" to "android",
-                                    "userPreferences" to mapOf("theme" to "material"),
-                                    "usageHistory" to listOf("UnifyButton", "UnifyTextField", "UnifyCard"),
-                                    "performance" to mapOf("minScore" to 0.8)
-                                )
-                                recommendations = UnifyDynamicEngine.getRecommendedComponents(context)
-                            } finally {
-                                isLoading = false
-                            }
+                            updateAvailable = true
                         }
-                    },
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
                     }
-                    Text("获取AI推荐")
+                ) {
+                    Text("检查更新")
                 }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (recommendations.isNotEmpty()) {
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(recommendations) { recommendation ->
-                    RecommendationCard(recommendation = recommendation)
+                
+                if (updateAvailable) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("发现新版本可用！")
+                    
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                isUpdating = true
+                                for (i in 1..100) {
+                                    updateProgress = i / 100f
+                                    kotlinx.coroutines.delay(50)
+                                }
+                                isUpdating = false
+                                updateAvailable = false
+                                updateProgress = 0f
+                            }
+                        },
+                        enabled = !isUpdating
+                    ) {
+                        Text("应用更新")
+                    }
+                }
+                
+                if (isUpdating) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { updateProgress },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text("更新进度: ${(updateProgress * 100).toInt()}%")
                 }
             }
         }
     }
 }
 
-/**
- * 推荐卡片组件
- */
 @Composable
-fun RecommendationCard(recommendation: ComponentRecommendation) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
+private fun ConfigurationDemo() {
+    var configs by remember { mutableStateOf(getSampleConfigs()) }
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = recommendation.componentId,
-                    style = MaterialTheme.typography.titleSmall
-                )
-                
-                Surface(
-                    color = when {
-                        recommendation.score >= 0.8 -> MaterialTheme.colorScheme.primary
-                        recommendation.score >= 0.6 -> MaterialTheme.colorScheme.secondary
-                        else -> MaterialTheme.colorScheme.outline
-                    },
-                    shape = MaterialTheme.shapes.small
-                ) {
+        item {
+            Card {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "${(recommendation.score * 100).toInt()}%",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary
+                        text = "配置管理演示",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "动态配置加载和实时更新",
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
-            
-            Spacer(modifier = Modifier.height(4.dp))
-            
-            Text(
-                text = recommendation.reason,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-            )
-            
+        }
+        
+        items(configs) { config ->
+            ConfigCard(config) { updatedConfig ->
+                configs = configs.map { 
+                    if (it.id == updatedConfig.id) updatedConfig else it 
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecurityDemo() {
+    var securityStatus by remember { mutableStateOf("安全") }
+    var violations by remember { mutableStateOf<List<SecurityViolation>>(emptyList()) }
+    
+    Column(
+        modifier = Modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Card {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "安全验证演示",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("安全状态:")
+                    Text(
+                        text = securityStatus,
+                        color = when (securityStatus) {
+                            "安全" -> MaterialTheme.colorScheme.primary
+                            "警告" -> MaterialTheme.colorScheme.error
+                            else -> MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = {
+                        violations = getSampleViolations()
+                        securityStatus = if (violations.isNotEmpty()) "警告" else "安全"
+                    }
+                ) {
+                    Text("执行安全扫描")
+                }
+            }
+        }
+        
+        if (violations.isNotEmpty()) {
+            violations.forEach { violation ->
+                SecurityViolationCard(violation)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ComponentInfoCard(component: ComponentInfo) {
+    Card {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "类别: ${recommendation.category}",
-                    style = MaterialTheme.typography.labelMedium
-                )
-                Text(
-                    text = "置信度: ${(recommendation.confidence * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelMedium
-                )
-            }
-        }
-    }
-}
-
-/**
- * AI代码生成演示
- */
-@Composable
-fun CodeGenerationDemo() {
-    var componentType by remember { mutableStateOf("Button") }
-    var generatedCode by remember { mutableStateOf<GeneratedComponentCode?>(null) }
-    var isGenerating by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    
-    Column {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "AI智能代码生成",
+                    text = component.component.name,
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    text = "基于需求自动生成高质量的Compose组件代码",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("组件类型:")
-                    
-                    FilterChip(
-                        selected = componentType == "Button",
-                        onClick = { componentType = "Button" },
-                        label = { Text("Button") }
-                    )
-                    FilterChip(
-                        selected = componentType == "TextField",
-                        onClick = { componentType = "TextField" },
-                        label = { Text("TextField") }
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            isGenerating = true
-                            try {
-                                val requirements = mapOf(
-                                    "customizations" to mapOf(
-                                        "ComponentName" to "Custom${componentType}"
-                                    )
-                                )
-                                generatedCode = UnifyDynamicEngine.generateComponentCode(componentType, requirements)
-                            } finally {
-                                isGenerating = false
-                            }
-                        }
-                    },
-                    enabled = !isGenerating
-                ) {
-                    if (isGenerating) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
+                    text = component.state.name,
+                    color = when (component.state) {
+                        ComponentState.LOADED -> MaterialTheme.colorScheme.primary
+                        ComponentState.ERROR -> MaterialTheme.colorScheme.error
+                        else -> MaterialTheme.colorScheme.onSurface
                     }
-                    Text("生成代码")
-                }
+                )
             }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        generatedCode?.let { code ->
-            GeneratedCodeCard(generatedCode = code)
+            
+            Text(
+                text = "版本: ${component.component.version}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "类型: ${component.component.type}",
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
 
-/**
- * 生成代码卡片
- */
 @Composable
-fun GeneratedCodeCard(generatedCode: GeneratedComponentCode) {
+private fun ConfigCard(
+    config: DynamicConfiguration,
+    onUpdate: (DynamicConfiguration) -> Unit
+) {
+    Card {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = config.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "类别: ${config.category}",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = "优先级: ${config.priority}",
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+    }
+}
+
+@Composable
+private fun SecurityViolationCard(violation: SecurityViolation) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = violation.type.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Text(
+                text = violation.description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            if (violation.suggestion.isNotEmpty()) {
                 Text(
-                    text = generatedCode.componentName,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                
-                Surface(
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = "质量: ${(generatedCode.quality * 100).toInt()}%",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onPrimary
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Text(
-                    text = generatedCode.code,
-                    modifier = Modifier.padding(12.dp),
+                    text = "建议: ${violation.suggestion}",
                     style = MaterialTheme.typography.bodySmall,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            if (generatedCode.dependencies.isNotEmpty()) {
-                Text(
-                    text = "依赖: ${generatedCode.dependencies.joinToString(", ")}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onErrorContainer
                 )
             }
         }
     }
 }
 
-/**
- * 性能分析演示
- */
-@Composable
-fun PerformanceAnalysisDemo() {
-    var optimizationResult by remember { mutableStateOf<OptimizationResult?>(null) }
-    var isAnalyzing by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    
-    Column {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "智能性能分析",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "自动分析组件性能并提供优化建议",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            isAnalyzing = true
-                            try {
-                                optimizationResult = UnifyDynamicEngine.optimizeComponents()
-                            } finally {
-                                isAnalyzing = false
-                            }
-                        }
-                    },
-                    enabled = !isAnalyzing
-                ) {
-                    if (isAnalyzing) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text("开始分析")
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        optimizationResult?.let { result ->
-            OptimizationResultCard(result = result)
-        }
-    }
+// 示例数据
+private fun getSampleComponents(): List<ComponentInfo> {
+    return listOf(
+        ComponentInfo(
+            component = DynamicComponent(
+                id = "button_1",
+                name = "动态按钮",
+                version = "1.0.0",
+                type = DynamicComponentType.COMPOSE_UI
+            ),
+            state = ComponentState.LOADED
+        ),
+        ComponentInfo(
+            component = DynamicComponent(
+                id = "chart_1",
+                name = "图表组件",
+                version = "2.1.0",
+                type = DynamicComponentType.COMPOSE_UI
+            ),
+            state = ComponentState.ACTIVE
+        )
+    )
 }
 
-/**
- * 优化结果卡片
- */
-@Composable
-fun OptimizationResultCard(result: OptimizationResult) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "性能优化分析结果",
-                style = MaterialTheme.typography.titleMedium
+private fun getSampleConfigs(): List<DynamicConfiguration> {
+    return listOf(
+        DynamicConfiguration(
+            id = "theme_config",
+            name = "主题配置",
+            version = "1.0",
+            category = ConfigCategory.UI_THEME,
+            priority = ConfigPriority.HIGH,
+            scope = ConfigScope.GLOBAL,
+            values = mapOf(
+                "primaryColor" to ConfigValue.StringValue("#2196F3"),
+                "darkMode" to ConfigValue.BooleanValue(false)
             )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                PerformanceMetric(
-                    label = "优化组件",
-                    value = "${result.optimizedComponents}个"
-                )
-                PerformanceMetric(
-                    label = "性能提升",
-                    value = "${result.performanceGain.toInt()}ms"
-                )
-                PerformanceMetric(
-                    label = "内存节省",
-                    value = "${result.memoryReduction / 1024}KB"
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            if (result.recommendations.isNotEmpty()) {
-                Text(
-                    text = "优化建议:",
-                    style = MaterialTheme.typography.titleSmall
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                result.recommendations.forEach { recommendation ->
-                    Row(
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    ) {
-                        Text("• ", color = MaterialTheme.colorScheme.primary)
-                        Text(
-                            text = recommendation,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
-                }
-            }
-        }
-    }
+        )
+    )
 }
 
-/**
- * 性能指标组件
- */
-@Composable
-fun PerformanceMetric(label: String, value: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.primary
+private fun getSampleViolations(): List<SecurityViolation> {
+    return listOf(
+        SecurityViolation(
+            type = ViolationType.PERMISSION_ABUSE,
+            severity = ViolationSeverity.WARNING,
+            description = "组件请求了相机权限",
+            suggestion = "确认是否真的需要相机权限"
         )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-    }
-}
-
-/**
- * 缓存管理演示
- */
-@Composable
-fun CacheManagementDemo() {
-    var cacheStats by remember { mutableStateOf<Map<String, Any>>(emptyMap()) }
-    val scope = rememberCoroutineScope()
-    
-    LaunchedEffect(Unit) {
-        cacheStats = UnifyDynamicEngine.getCacheStatistics()
-    }
-    
-    Column {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Text(
-                    text = "智能缓存管理",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text = "组件缓存统计和管理功能",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.7f)
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                cacheStats = UnifyDynamicEngine.getCacheStatistics()
-                            }
-                        }
-                    ) {
-                        Text("刷新统计")
-                    }
-                    
-                    OutlinedButton(
-                        onClick = {
-                            UnifyDynamicEngine.cleanupExpiredCache()
-                            scope.launch {
-                                cacheStats = UnifyDynamicEngine.getCacheStatistics()
-                            }
-                        }
-                    ) {
-                        Text("清理过期")
-                    }
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        if (cacheStats.isNotEmpty()) {
-            CacheStatisticsCard(stats = cacheStats)
-        }
-    }
-}
-
-/**
- * 缓存统计卡片
- */
-@Composable
-fun CacheStatisticsCard(stats: Map<String, Any>) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "缓存统计信息",
-                style = MaterialTheme.typography.titleMedium
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                CacheMetric(
-                    label = "总缓存",
-                    value = "${stats["totalCached"]}个"
-                )
-                CacheMetric(
-                    label = "有效缓存",
-                    value = "${stats["validCached"]}个"
-                )
-                CacheMetric(
-                    label = "命中率",
-                    value = "${((stats["hitRate"] as? Double ?: 0.0) * 100).toInt()}%"
-                )
-                CacheMetric(
-                    label = "缓存大小",
-                    value = "${stats["cacheSize"]}B"
-                )
-            }
-        }
-    }
-}
-
-/**
- * 缓存指标组件
- */
-@Composable
-fun CacheMetric(label: String, value: String) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-        )
-    }
+    )
 }

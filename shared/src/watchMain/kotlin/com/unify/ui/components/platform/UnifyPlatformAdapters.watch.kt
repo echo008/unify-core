@@ -1,380 +1,558 @@
 package com.unify.ui.components.platform
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * Watch平台UnifyPlatformAdapters完整actual实现
- * 适配Wear OS、watchOS、HarmonyOS穿戴设备的小屏幕交互
+ * Watch平台UI适配器
+ * 提供智能手表特有的UI组件和交互方式
  */
-
-/**
- * Watch 平台直播播放器实现
- */
-@Composable
-actual fun PlatformLivePlayer(
-    config: UnifyLivePlayerConfig,
-    onStateChange: ((UnifyLivePlayerState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(120.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black)
+object WatchUnifyPlatformAdapters {
+    
+    /**
+     * Watch圆形表盘
+     */
+    @Composable
+    fun WatchFace(
+        time: String,
+        date: String,
+        batteryLevel: Float,
+        heartRate: Int?,
+        steps: Int?,
+        modifier: Modifier = Modifier
     ) {
-        Text(
-            text = "Watch Live\n${config.url.take(20)}...",
-            color = Color.White,
-            modifier = Modifier.align(Alignment.Center)
-        )
+        Card(
+            modifier = modifier.size(200.dp),
+            shape = CircleShape,
+            colors = CardDefaults.cardColors(
+                containerColor = Color.Black
+            )
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // 时间显示
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = Color.White
+                    )
+                    
+                    // 日期显示
+                    Text(
+                        text = date,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.8f)
+                    )
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // 健康数据
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        heartRate?.let { hr ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
+                                    contentDescription = "心率",
+                                    tint = Color.Red,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = hr.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                        
+                        steps?.let { stepCount ->
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Default.DirectionsWalk,
+                                    contentDescription = "步数",
+                                    tint = Color.Green,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = stepCount.toString(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+                
+                // 电池指示器
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp)
+                ) {
+                    LinearProgressIndicator(
+                        progress = batteryLevel,
+                        modifier = Modifier
+                            .width(30.dp)
+                            .height(4.dp),
+                        color = when {
+                            batteryLevel > 0.5f -> Color.Green
+                            batteryLevel > 0.2f -> Color.Yellow
+                            else -> Color.Red
+                        }
+                    )
+                }
+            }
+        }
     }
     
-    LaunchedEffect(config) {
-        onStateChange?.invoke(UnifyLivePlayerState.PLAYING)
-    }
-}
-
-/**
- * Watch 平台扫码器实现
- */
-@Composable
-actual fun PlatformScanner(
-    config: UnifyScanConfig,
-    onScanResult: ((UnifyScanResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(150.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black)
+    /**
+     * Watch健康数据卡片
+     */
+    @Composable
+    fun WatchHealthCard(
+        title: String,
+        value: String,
+        unit: String,
+        icon: androidx.compose.ui.graphics.vector.ImageVector,
+        iconColor: Color,
+        progress: Float? = null,
+        modifier: Modifier = Modifier
     ) {
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Watch扫码",
-                color = Color.White
+        Card(
+            modifier = modifier.size(120.dp),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                onClick = {
-                    onScanResult?.invoke(
-                        UnifyScanResult(
-                            content = "WATCH_SCAN_RESULT",
-                            format = UnifyScanFormat.QR_CODE
-                        )
-                    )
-                },
-                modifier = Modifier.height(32.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("扫描", fontSize = 10.sp)
+                Icon(
+                    imageVector = icon,
+                    contentDescription = title,
+                    tint = iconColor,
+                    modifier = Modifier.size(24.dp)
+                )
+                
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = value,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = unit,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    )
+                }
+                
+                progress?.let { prog ->
+                    LinearProgressIndicator(
+                        progress = prog,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp),
+                        color = iconColor
+                    )
+                }
+                
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+            }
+        }
+    }
+    
+    /**
+     * Watch运动控制面板
+     */
+    @Composable
+    fun WatchWorkoutControls(
+        isActive: Boolean,
+        workoutType: String,
+        duration: String,
+        calories: Int,
+        onStartPause: () -> Unit,
+        onStop: () -> Unit,
+        onLap: () -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text(
+                    text = workoutType,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                
+                Text(
+                    text = duration,
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                Text(
+                    text = "${calories} 卡路里",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                )
+                
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onStartPause,
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isActive) Color.Red else Color.Green
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (isActive) {
+                                androidx.compose.material.icons.Icons.Default.Pause
+                            } else {
+                                androidx.compose.material.icons.Icons.Default.PlayArrow
+                            },
+                            contentDescription = if (isActive) "暂停" else "开始",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    
+                    OutlinedButton(
+                        onClick = onLap,
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Flag,
+                            contentDescription = "计圈",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    
+                    OutlinedButton(
+                        onClick = onStop,
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape
+                    ) {
+                        Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Stop,
+                            contentDescription = "停止",
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Watch通知卡片
+     */
+    @Composable
+    fun WatchNotificationCard(
+        title: String,
+        content: String,
+        time: String,
+        appIcon: androidx.compose.ui.graphics.vector.ImageVector,
+        onDismiss: () -> Unit,
+        onAction: (() -> Unit)? = null,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = appIcon,
+                            contentDescription = title,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    Text(
+                        text = time,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+                
+                Text(
+                    text = content,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    onAction?.let { action ->
+                        TextButton(
+                            onClick = action,
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text(
+                                text = "查看",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Text(
+                            text = "关闭",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Watch快捷操作面板
+     */
+    @Composable
+    fun WatchQuickActions(
+        actions: List<QuickAction>,
+        onActionClick: (QuickAction) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(2),
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            items(actions.size) { index ->
+                val action = actions[index]
+                Card(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .aspectRatio(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = action.backgroundColor
+                    ),
+                    onClick = { onActionClick(action) }
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = action.icon,
+                            contentDescription = action.name,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = action.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White
+                        )
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Watch设置滑块
+     */
+    @Composable
+    fun WatchSettingSlider(
+        title: String,
+        value: Float,
+        onValueChange: (Float) -> Unit,
+        valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+        icon: androidx.compose.ui.graphics.vector.ImageVector,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = title,
+                        modifier = Modifier.size(20.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                Slider(
+                    value = value,
+                    onValueChange = onValueChange,
+                    valueRange = valueRange,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Text(
+                    text = "${(value * 100).toInt()}%",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+            }
+        }
+    }
+    
+    /**
+     * Watch应用启动器
+     */
+    @Composable
+    fun WatchAppLauncher(
+        apps: List<WatchApp>,
+        onAppClick: (WatchApp) -> Unit,
+        modifier: Modifier = Modifier
+    ) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = modifier,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(8.dp)
+        ) {
+            items(apps.size) { index ->
+                val app = apps[index]
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Card(
+                        modifier = Modifier.size(48.dp),
+                        shape = CircleShape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = app.iconColor
+                        ),
+                        onClick = { onAppClick(app) }
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = app.icon,
+                                contentDescription = app.name,
+                                tint = Color.White,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = app.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
             }
         }
     }
 }
 
 /**
- * Watch 平台传感器监听实现
+ * 快捷操作
  */
-@Composable
-actual fun PlatformSensorListener(
-    sensorType: UnifySensorType,
-    onSensorData: ((UnifySensorData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(sensorType) {
-        // Watch平台传感器丰富，特别是健康传感器
-        val sensorValues = when (sensorType) {
-            UnifySensorType.ACCELEROMETER -> floatArrayOf(0.1f, 0.2f, 9.8f)
-            UnifySensorType.GYROSCOPE -> floatArrayOf(0.0f, 0.0f, 0.0f)
-            UnifySensorType.HEART_RATE -> floatArrayOf(72.0f)
-            UnifySensorType.STEP_COUNTER -> floatArrayOf(8500.0f)
-            else -> floatArrayOf(0f, 0f, 0f)
-        }
-        
-        onSensorData?.invoke(
-            UnifySensorData(
-                type = sensorType,
-                values = sensorValues,
-                accuracy = 3,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
-}
+data class QuickAction(
+    val id: String,
+    val name: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val backgroundColor: Color
+)
 
 /**
- * Watch 平台生物识别实现
+ * Watch应用
  */
-@Composable
-actual fun PlatformBiometricAuth(
-    config: UnifyBiometricConfig,
-    onAuthResult: ((UnifyBiometricResult) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onAuthResult?.invoke(
-                UnifyBiometricResult(
-                    isSuccess = true,
-                    authType = UnifyBiometricType.FINGERPRINT,
-                    errorMessage = null
-                )
-            )
-        },
-        modifier = Modifier.height(32.dp)
-    ) {
-        Text("Watch认证", fontSize = 10.sp)
-    }
-}
-
-/**
- * Watch 平台触觉反馈实现
- */
-actual fun PlatformHapticFeedback(
-    intensity: Float,
-    duration: Long,
-    pattern: List<Long>
-) {
-    // Watch平台触觉反馈是核心功能
-    // 模拟触觉反馈实现
-}
-
-/**
- * Watch 平台语音识别实现
- */
-@Composable
-actual fun PlatformSpeechRecognition(
-    config: UnifySpeechConfig,
-    onResult: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onResult?.invoke("Watch语音识别结果")
-        },
-        modifier = Modifier.height(32.dp)
-    ) {
-        Text("语音", fontSize = 10.sp)
-    }
-}
-
-/**
- * Watch 平台文字转语音实现
- */
-actual fun PlatformTextToSpeech(
-    text: String,
-    config: UnifyTTSConfig,
-    onComplete: (() -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    try {
-        onComplete?.invoke()
-    } catch (e: Exception) {
-        onError?.invoke(e.message ?: "Watch TTS错误")
-    }
-}
-
-/**
- * Watch 平台振动实现
- */
-actual fun PlatformVibration(
-    pattern: List<Long>,
-    intensity: Float
-) {
-    // Watch平台振动是核心功能
-    // 模拟振动实现
-}
-
-/**
- * Watch 平台屏幕亮度控制实现
- */
-actual fun PlatformScreenBrightness(
-    brightness: Float,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(true) // Watch支持亮度控制
-}
-
-/**
- * Watch 平台屏幕方向控制实现
- */
-actual fun PlatformScreenOrientation(
-    orientation: UnifyScreenOrientation,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // Watch通常不支持屏幕旋转
-}
-
-/**
- * Watch 平台状态栏控制实现
- */
-actual fun PlatformStatusBarControl(
-    config: UnifyStatusBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // Watch无状态栏概念
-}
-
-/**
- * Watch 平台导航栏控制实现
- */
-actual fun PlatformNavigationBarControl(
-    config: UnifyNavigationBarConfig,
-    onResult: ((Boolean) -> Unit)?
-) {
-    onResult?.invoke(false) // Watch无导航栏概念
-}
-
-/**
- * Watch 平台通知实现
- */
-@Composable
-actual fun PlatformNotification(
-    config: UnifyNotificationConfig,
-    onAction: ((String) -> Unit)?,
-    onDismiss: (() -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // Watch平台通知是核心功能
-        onAction?.invoke("watch_notification_shown")
-    }
-}
-
-/**
- * Watch 平台文件选择器实现
- */
-@Composable
-actual fun PlatformFilePicker(
-    config: UnifyFilePickerConfig,
-    onFileSelected: ((List<String>) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onError?.invoke("Watch平台不支持文件选择")
-        },
-        modifier = Modifier.height(32.dp)
-    ) {
-        Text("文件", fontSize = 10.sp)
-    }
-}
-
-/**
- * Watch 平台相机实现
- */
-@Composable
-actual fun PlatformCamera(
-    config: UnifyCameraConfig,
-    onCapture: ((String) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    Button(
-        onClick = {
-            onCapture?.invoke("watch_camera_capture.jpg")
-        },
-        modifier = Modifier.height(32.dp)
-    ) {
-        Text("拍照", fontSize = 10.sp)
-    }
-}
-
-/**
- * Watch 平台位置服务实现
- */
-@Composable
-actual fun PlatformLocationService(
-    config: UnifyLocationConfig,
-    onLocationUpdate: ((UnifyLocationData) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(config) {
-        // Watch平台GPS功能
-        onLocationUpdate?.invoke(
-            UnifyLocationData(
-                latitude = 39.9042,
-                longitude = 116.4074,
-                accuracy = 5.0,
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
-}
-
-/**
- * Watch 平台网络监控实现
- */
-@Composable
-actual fun PlatformNetworkMonitor(
-    onNetworkChange: ((UnifyNetworkInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        onNetworkChange?.invoke(
-            UnifyNetworkInfo(
-                isConnected = true,
-                connectionType = UnifyConnectionType.CELLULAR,
-                signalStrength = 80
-            )
-        )
-    }
-}
-
-/**
- * Watch 平台电池监控实现
- */
-@Composable
-actual fun PlatformBatteryMonitor(
-    onBatteryUpdate: ((UnifyBatteryInfo) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        // Watch平台电池监控是核心功能
-        onBatteryUpdate?.invoke(
-            UnifyBatteryInfo(
-                level = 65,
-                isCharging = false,
-                batteryHealth = UnifyBatteryHealth.GOOD
-            )
-        )
-    }
-}
-
-/**
- * Watch 平台生命周期监控实现
- */
-@Composable
-actual fun PlatformLifecycleMonitor(
-    onLifecycleChange: ((UnifyLifecycleState) -> Unit)?,
-    onError: ((String) -> Unit)?
-) {
-    LaunchedEffect(Unit) {
-        onLifecycleChange?.invoke(UnifyLifecycleState.ACTIVE)
-    }
-}
+data class WatchApp(
+    val id: String,
+    val name: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val iconColor: Color
+)

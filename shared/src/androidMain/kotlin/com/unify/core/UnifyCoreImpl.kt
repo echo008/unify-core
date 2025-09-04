@@ -1,54 +1,65 @@
 package com.unify.core
 
+import android.content.Context
 import com.unify.core.data.UnifyDataManager
-import com.unify.core.data.UnifyDataManagerImpl
+import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.network.UnifyNetworkManager
-import com.unify.core.network.UnifyNetworkManagerImpl
-import com.unify.core.platform.PlatformManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.core.ui.UnifyUIManager
-import com.unify.core.ui.UnifyUIManagerImpl
+import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.device.UnifyDeviceManager
+import com.unify.device.UnifyDeviceManagerFactory
 
 /**
- * Android平台的UnifyCore实现
+ * Android平台UnifyCore实现
  */
-actual class UnifyCoreImpl : UnifyCore {
-    
-    override val uiManager: UnifyUIManager = UnifyUIManagerImpl()
-    override val dataManager: UnifyDataManager = UnifyDataManagerImpl()
-    override val networkManager: UnifyNetworkManager = UnifyNetworkManagerImpl()
-    override val platformManager: PlatformManager = PlatformManager
+class UnifyCoreImpl(private val context: Context) : UnifyCore {
+    override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
+    override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
     
     private var initialized = false
     
-    override fun initialize() {
-        if (initialized) return
-        
-        // 初始化各个管理器
-        platformManager.initialize()
-        
-        initialized = true
+    override suspend fun initialize() {
+        if (!initialized) {
+            // 初始化各个管理器
+            initialized = true
+        }
     }
     
-    override fun getVersion(): String = UnifyCoreInstance.VERSION
-    
-    override fun getSupportedPlatforms(): List<String> = UnifyCoreInstance.SUPPORTED_PLATFORMS
-    
-    override fun isPlatformSupported(platform: String): Boolean {
-        return platform in UnifyCoreInstance.SUPPORTED_PLATFORMS
+    override suspend fun shutdown() {
+        if (initialized) {
+            // 清理资源
+            initialized = false
+        }
     }
     
-    override fun getCurrentPlatformConfig(): Map<String, Any> {
-        return mapOf(
-            "platform" to "Android",
-            "version" to getVersion(),
-            "capabilities" to listOf(
-                "touch", "camera", "location", "notifications", 
-                "biometric", "nfc", "sensors", "storage"
-            ),
-            "ui_framework" to "Jetpack Compose",
-            "native_features" to listOf(
-                "android_auto", "wear_os", "tv_support", "widgets"
+    override fun isInitialized(): Boolean = initialized
+    
+    override fun getPlatformInfo(): PlatformInfo {
+        return PlatformInfo(
+            platformName = "Android",
+            version = android.os.Build.VERSION.RELEASE,
+            deviceModel = android.os.Build.MODEL,
+            osVersion = android.os.Build.VERSION.RELEASE,
+            capabilities = listOf(
+                "Camera", "GPS", "Sensors", "Bluetooth", "NFC", "Biometric"
             )
+        )
+    }
+}
+
+actual object UnifyCoreFactory {
+    private var context: Context? = null
+    
+    fun initialize(context: Context) {
+        this.context = context.applicationContext
+    }
+    
+    actual fun create(): UnifyCore {
+        return UnifyCoreImpl(
+            context ?: throw IllegalStateException("UnifyCoreFactory not initialized. Call initialize(context) first.")
         )
     }
 }

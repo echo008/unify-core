@@ -1,185 +1,197 @@
 package com.unify.ui.accessibility
 
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.semantics.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unify.ui.LocalUnifyTheme
 
 /**
- * Unify 无障碍支持系统
- * 提供全面的无障碍功能，支持屏幕阅读器、键盘导航、高对比度等
+ * Unify无障碍访问支持
+ * 提供跨平台的无障碍功能和WCAG 2.1标准实现
  */
 
 /**
- * 无障碍级别枚举
+ * 无障碍配置
  */
-enum class UnifyAccessibilityLevel {
-    AA,     // WCAG 2.1 AA 级别
-    AAA     // WCAG 2.1 AAA 级别
-}
-
-/**
- * 无障碍配置数据类
- */
-data class UnifyAccessibilityConfig(
-    val level: UnifyAccessibilityLevel = UnifyAccessibilityLevel.AA,
-    val highContrast: Boolean = false,
-    val largeText: Boolean = false,
-    val reduceMotion: Boolean = false,
-    val screenReaderEnabled: Boolean = false,
-    val keyboardNavigationEnabled: Boolean = true,
-    val focusIndicatorEnabled: Boolean = true,
-    val semanticLabelsEnabled: Boolean = true
+@Stable
+data class AccessibilityConfig(
+    val enableScreenReader: Boolean = true,
+    val enableHighContrast: Boolean = false,
+    val enableLargeText: Boolean = false,
+    val enableReducedMotion: Boolean = false,
+    val enableFocusIndicator: Boolean = true,
+    val minimumTouchTargetSize: androidx.compose.ui.unit.Dp = 48.dp,
+    val colorContrastRatio: Float = 4.5f
 )
 
 /**
- * 无障碍上下文提供者
+ * 无障碍状态
  */
-val LocalUnifyAccessibility = compositionLocalOf { UnifyAccessibilityConfig() }
+@Stable
+class AccessibilityState {
+    var isScreenReaderEnabled by mutableStateOf(false)
+    var isHighContrastEnabled by mutableStateOf(false)
+    var isLargeTextEnabled by mutableStateOf(false)
+    var isReducedMotionEnabled by mutableStateOf(false)
+    var currentFontScale by mutableStateOf(1.0f)
+    var currentColorContrast by mutableStateOf(1.0f)
+}
 
 /**
- * 无障碍配置提供者组件
+ * 无障碍管理器
+ */
+class UnifyAccessibilityManager {
+    private val _state = mutableStateOf(AccessibilityState())
+    val state: State<AccessibilityState> = _state
+    
+    private val _config = mutableStateOf(AccessibilityConfig())
+    val config: State<AccessibilityConfig> = _config
+    
+    /**
+     * 更新无障碍配置
+     */
+    fun updateConfig(config: AccessibilityConfig) {
+        _config.value = config
+        applyConfig(config)
+    }
+    
+    /**
+     * 应用配置
+     */
+    private fun applyConfig(config: AccessibilityConfig) {
+        _state.value = _state.value.apply {
+            isScreenReaderEnabled = config.enableScreenReader
+            isHighContrastEnabled = config.enableHighContrast
+            isLargeTextEnabled = config.enableLargeText
+            isReducedMotionEnabled = config.enableReducedMotion
+            currentFontScale = if (config.enableLargeText) 1.3f else 1.0f
+            currentColorContrast = if (config.enableHighContrast) 2.0f else 1.0f
+        }
+    }
+    
+    /**
+     * 检查颜色对比度
+     */
+    fun checkColorContrast(foreground: Color, background: Color): Float {
+        val foregroundLuminance = calculateLuminance(foreground)
+        val backgroundLuminance = calculateLuminance(background)
+        
+        val lighter = maxOf(foregroundLuminance, backgroundLuminance)
+        val darker = minOf(foregroundLuminance, backgroundLuminance)
+        
+        return (lighter + 0.05f) / (darker + 0.05f)
+    }
+    
+    /**
+     * 计算颜色亮度
+     */
+    private fun calculateLuminance(color: Color): Float {
+        val r = if (color.red <= 0.03928f) color.red / 12.92f else kotlin.math.pow((color.red + 0.055f) / 1.055f, 2.4f).toFloat()
+        val g = if (color.green <= 0.03928f) color.green / 12.92f else kotlin.math.pow((color.green + 0.055f) / 1.055f, 2.4f).toFloat()
+        val b = if (color.blue <= 0.03928f) color.blue / 12.92f else kotlin.math.pow((color.blue + 0.055f) / 1.055f, 2.4f).toFloat()
+        
+        return 0.2126f * r + 0.7152f * g + 0.0722f * b
+    }
+    
+    /**
+     * 获取建议的颜色
+     */
+    fun getSuggestedColor(originalColor: Color, backgroundColor: Color, targetContrast: Float = 4.5f): Color {
+        val currentContrast = checkColorContrast(originalColor, backgroundColor)
+        if (currentContrast >= targetContrast) {
+            return originalColor
+        }
+        
+        // 简化的颜色调整逻辑
+        val backgroundLuminance = calculateLuminance(backgroundColor)
+        return if (backgroundLuminance > 0.5f) {
+            // 浅色背景，使用深色文字
+            originalColor.copy(
+                red = originalColor.red * 0.7f,
+                green = originalColor.green * 0.7f,
+                blue = originalColor.blue * 0.7f
+            )
+        } else {
+            // 深色背景，使用浅色文字
+            originalColor.copy(
+                red = minOf(1.0f, originalColor.red * 1.3f),
+                green = minOf(1.0f, originalColor.green * 1.3f),
+                blue = minOf(1.0f, originalColor.blue * 1.3f)
+            )
+        }
+    }
+}
+
+/**
+ * 无障碍提供器
+ */
+val LocalAccessibilityManager = staticCompositionLocalOf<UnifyAccessibilityManager> {
+    error("AccessibilityManager not provided")
+}
+
+/**
+ * 无障碍提供器组件
  */
 @Composable
-fun UnifyAccessibilityProvider(
-    config: UnifyAccessibilityConfig = UnifyAccessibilityConfig(),
+fun AccessibilityProvider(
+    manager: UnifyAccessibilityManager = remember { UnifyAccessibilityManager() },
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(
-        LocalUnifyAccessibility provides config
+        LocalAccessibilityManager provides manager
     ) {
         content()
     }
 }
 
 /**
- * 无障碍语义化修饰符
- */
-fun Modifier.unifySemantics(
-    contentDescription: String? = null,
-    role: Role? = null,
-    stateDescription: String? = null,
-    onClick: (() -> Unit)? = null,
-    onLongClick: (() -> Unit)? = null,
-    selected: Boolean? = null,
-    toggleableState: ToggleableState? = null,
-    enabled: Boolean = true,
-    heading: Boolean = false,
-    error: String? = null,
-    testTag: String? = null
-): Modifier = this.semantics {
-    contentDescription?.let { this.contentDescription = it }
-    role?.let { this.role = it }
-    stateDescription?.let { this.stateDescription = it }
-    onClick?.let { this.onClick(label = contentDescription) { it(); true } }
-    onLongClick?.let { this.onLongClick(label = contentDescription) { it(); true } }
-    selected?.let { this.selected = it }
-    toggleableState?.let { this.toggleableState = it }
-    this.disabled = !enabled
-    if (heading) this.heading()
-    error?.let { this.error(it) }
-    testTag?.let { this.testTag = it }
-}
-
-/**
- * 焦点指示器修饰符
+ * 获取当前无障碍管理器
  */
 @Composable
-fun Modifier.unifyFocusIndicator(
-    enabled: Boolean = true,
-    color: Color = LocalUnifyTheme.current.colors.primary,
-    width: Dp = 2.dp
-): Modifier {
-    val accessibility = LocalUnifyAccessibility.current
-    
-    return if (accessibility.focusIndicatorEnabled && enabled) {
-        var isFocused by remember { mutableStateOf(false) }
-        
-        this
-            .onFocusChanged { isFocused = it.isFocused }
-            .then(
-                if (isFocused) {
-                    Modifier.border(width, color)
-                } else {
-                    Modifier
-                }
-            )
-    } else {
-        this
-    }
-}
+fun currentAccessibilityManager(): UnifyAccessibilityManager = LocalAccessibilityManager.current
 
 /**
- * 键盘导航修饰符
- */
-fun Modifier.unifyKeyboardNavigation(
-    enabled: Boolean = true,
-    focusRequester: FocusRequester? = null
-): Modifier {
-    return if (enabled) {
-        var modifier = this.focusable()
-        focusRequester?.let { modifier = modifier.focusRequester(it) }
-        modifier
-    } else {
-        this
-    }
-}
-
-/**
- * 高对比度文本组件
+ * 无障碍文本组件
  */
 @Composable
-fun UnifyAccessibleText(
+fun AccessibleText(
     text: String,
     modifier: Modifier = Modifier,
-    color: Color = Color.Unspecified,
-    fontSize: androidx.compose.ui.unit.TextUnit = androidx.compose.ui.unit.TextUnit.Unspecified,
-    fontWeight: FontWeight? = null,
     contentDescription: String? = null,
-    heading: Boolean = false
+    role: Role? = null,
+    fontSize: androidx.compose.ui.unit.TextUnit = 16.sp,
+    fontWeight: FontWeight? = null,
+    color: Color = Color.Unspecified,
+    maxLines: Int = Int.MAX_VALUE
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val theme = LocalUnifyTheme.current
+    val accessibilityManager = currentAccessibilityManager()
+    val state = accessibilityManager.state.value
+    val config = accessibilityManager.config.value
     
-    val adjustedColor = if (accessibility.highContrast) {
-        if (color == Color.Unspecified) {
-            theme.colors.onSurface
-        } else {
-            enhanceContrast(color, theme.colors.surface)
-        }
-    } else {
-        color
-    }
-    
-    val adjustedFontSize = if (accessibility.largeText && fontSize != androidx.compose.ui.unit.TextUnit.Unspecified) {
-        fontSize * 1.3f
-    } else {
-        fontSize
-    }
+    val adjustedFontSize = fontSize * state.currentFontScale
+    val adjustedColor = if (color != Color.Unspecified && config.enableHighContrast) {
+        accessibilityManager.getSuggestedColor(color, MaterialTheme.colorScheme.background)
+    } else color
     
     Text(
         text = text,
-        modifier = modifier.unifySemantics(
-            contentDescription = contentDescription,
-            heading = heading
-        ),
-        color = adjustedColor,
+        modifier = modifier.semantics {
+            contentDescription?.let { this.contentDescription = it }
+            role?.let { this.role = it }
+            if (config.enableScreenReader) {
+                this.text = AnnotatedString(text)
+            }
+        },
         fontSize = adjustedFontSize,
-        fontWeight = fontWeight
+        fontWeight = fontWeight,
+        color = adjustedColor,
+        maxLines = maxLines
     )
 }
 
@@ -187,32 +199,57 @@ fun UnifyAccessibleText(
  * 无障碍按钮组件
  */
 @Composable
-fun UnifyAccessibleButton(
+fun AccessibleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     contentDescription: String? = null,
-    stateDescription: String? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
     Button(
         onClick = onClick,
         modifier = modifier
-            .unifySemantics(
-                contentDescription = contentDescription,
-                stateDescription = stateDescription,
-                role = Role.Button,
-                onClick = onClick,
-                enabled = enabled
-            )
-            .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-            .unifyKeyboardNavigation(
-                enabled = accessibility.keyboardNavigationEnabled,
-                focusRequester = focusRequester
-            ),
+            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.Button
+                if (enabled) {
+                    this.onClick(label = contentDescription) { onClick(); true }
+                }
+            },
+        enabled = enabled,
+        content = content
+    )
+}
+
+/**
+ * 无障碍图标按钮组件
+ */
+@Composable
+fun AccessibleIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    contentDescription: String,
+    content: @Composable () -> Unit
+) {
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
+    
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                this.contentDescription = contentDescription
+                this.role = Role.Button
+                if (enabled) {
+                    this.onClick(label = contentDescription) { onClick(); true }
+                }
+            },
         enabled = enabled,
         content = content
     )
@@ -222,468 +259,368 @@ fun UnifyAccessibleButton(
  * 无障碍输入框组件
  */
 @Composable
-fun UnifyAccessibleTextField(
+fun AccessibleTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     readOnly: Boolean = false,
-    label: String? = null,
-    placeholder: String? = null,
-    helperText: String? = null,
-    errorText: String? = null,
-    contentDescription: String? = null
+    label: @Composable (() -> Unit)? = null,
+    placeholder: @Composable (() -> Unit)? = null,
+    leadingIcon: @Composable (() -> Unit)? = null,
+    trailingIcon: @Composable (() -> Unit)? = null,
+    supportingText: @Composable (() -> Unit)? = null,
+    isError: Boolean = false,
+    singleLine: Boolean = false,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    contentDescription: String? = null,
+    errorMessage: String? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    Column(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .unifySemantics(
-                    contentDescription = contentDescription ?: label,
-                    role = Role.TextInput,
-                    enabled = enabled,
-                    error = errorText
-                )
-                .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-                .unifyKeyboardNavigation(
-                    enabled = accessibility.keyboardNavigationEnabled,
-                    focusRequester = focusRequester
-                ),
-            enabled = enabled,
-            readOnly = readOnly,
-            label = label?.let { { Text(it) } },
-            placeholder = placeholder?.let { { Text(it) } },
-            isError = errorText != null
-        )
-        
-        // 辅助文本
-        helperText?.let { text ->
-            UnifyAccessibleText(
-                text = text,
-                fontSize = 12.sp,
-                color = LocalUnifyTheme.current.colors.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
-            )
-        }
-        
-        // 错误文本
-        errorText?.let { text ->
-            UnifyAccessibleText(
-                text = text,
-                fontSize = 12.sp,
-                color = LocalUnifyTheme.current.colors.error,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
-                contentDescription = "错误：$text"
-            )
-        }
-    }
+    TextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .sizeIn(minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.TextInput
+                if (isError && errorMessage != null) {
+                    this.error(errorMessage)
+                }
+                if (config.enableScreenReader) {
+                    this.text = AnnotatedString(value)
+                }
+            },
+        enabled = enabled,
+        readOnly = readOnly,
+        label = label,
+        placeholder = placeholder,
+        leadingIcon = leadingIcon,
+        trailingIcon = trailingIcon,
+        supportingText = supportingText,
+        isError = isError,
+        singleLine = singleLine,
+        maxLines = maxLines
+    )
 }
 
 /**
  * 无障碍复选框组件
  */
 @Composable
-fun UnifyAccessibleCheckbox(
+fun AccessibleCheckbox(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    label: String? = null,
     contentDescription: String? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    val stateDescription = when {
-        checked -> "已选中"
-        else -> "未选中"
-    }
-    
-    Row(
+    Checkbox(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
         modifier = modifier
-            .selectable(
-                selected = checked,
-                onClick = { onCheckedChange?.invoke(!checked) },
-                enabled = enabled,
-                role = Role.Checkbox
-            )
-            .unifySemantics(
-                contentDescription = contentDescription ?: label,
-                role = Role.Checkbox,
-                stateDescription = stateDescription,
-                toggleableState = ToggleableState(checked),
-                enabled = enabled
-            )
-            .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-            .unifyKeyboardNavigation(
-                enabled = accessibility.keyboardNavigationEnabled,
-                focusRequester = focusRequester
-            )
-            .padding(vertical = 8.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-    ) {
-        Checkbox(
-            checked = checked,
-            onCheckedChange = null, // 由父级处理
-            enabled = enabled
-        )
-        
-        label?.let { text ->
-            Spacer(modifier = Modifier.width(8.dp))
-            UnifyAccessibleText(
-                text = text,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
+            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.Checkbox
+                this.toggleableState = ToggleableState(checked)
+                if (enabled && onCheckedChange != null) {
+                    this.onClick(label = contentDescription) { 
+                        onCheckedChange(!checked)
+                        true 
+                    }
+                }
+            },
+        enabled = enabled
+    )
 }
 
 /**
  * 无障碍单选按钮组件
  */
 @Composable
-fun UnifyAccessibleRadioButton(
+fun AccessibleRadioButton(
     selected: Boolean,
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    label: String? = null,
     contentDescription: String? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    val stateDescription = when {
-        selected -> "已选择"
-        else -> "未选择"
-    }
-    
-    Row(
+    RadioButton(
+        selected = selected,
+        onClick = onClick,
         modifier = modifier
-            .selectable(
-                selected = selected,
-                onClick = { onClick?.invoke() },
-                enabled = enabled,
-                role = Role.RadioButton
-            )
-            .unifySemantics(
-                contentDescription = contentDescription ?: label,
-                role = Role.RadioButton,
-                stateDescription = stateDescription,
-                selected = selected,
-                enabled = enabled
-            )
-            .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-            .unifyKeyboardNavigation(
-                enabled = accessibility.keyboardNavigationEnabled,
-                focusRequester = focusRequester
-            )
-            .padding(vertical = 8.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-    ) {
-        RadioButton(
-            selected = selected,
-            onClick = null, // 由父级处理
-            enabled = enabled
-        )
-        
-        label?.let { text ->
-            Spacer(modifier = Modifier.width(8.dp))
-            UnifyAccessibleText(
-                text = text,
-                modifier = Modifier.weight(1f)
-            )
-        }
-    }
-}
-
-/**
- * 无障碍单选按钮组
- */
-@Composable
-fun UnifyAccessibleRadioGroup(
-    options: List<String>,
-    selectedOption: String?,
-    onOptionSelected: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    groupLabel: String? = null
-) {
-    Column(
-        modifier = modifier
-            .selectableGroup()
-            .unifySemantics(
-                contentDescription = groupLabel,
-                role = Role.RadioButton
-            )
-    ) {
-        groupLabel?.let { label ->
-            UnifyAccessibleText(
-                text = label,
-                fontWeight = FontWeight.Medium,
-                heading = true,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
-        
-        options.forEach { option ->
-            UnifyAccessibleRadioButton(
-                selected = option == selectedOption,
-                onClick = { onOptionSelected(option) },
-                enabled = enabled,
-                label = option,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
+            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.RadioButton
+                this.toggleableState = ToggleableState(selected)
+                if (enabled && onClick != null) {
+                    this.onClick(label = contentDescription) { 
+                        onClick()
+                        true 
+                    }
+                }
+            },
+        enabled = enabled
+    )
 }
 
 /**
  * 无障碍开关组件
  */
 @Composable
-fun UnifyAccessibleSwitch(
+fun AccessibleSwitch(
     checked: Boolean,
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    label: String? = null,
     contentDescription: String? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    val stateDescription = when {
-        checked -> "开启"
-        else -> "关闭"
-    }
-    
-    Row(
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
         modifier = modifier
-            .selectable(
-                selected = checked,
-                onClick = { onCheckedChange?.invoke(!checked) },
-                enabled = enabled,
-                role = Role.Switch
-            )
-            .unifySemantics(
-                contentDescription = contentDescription ?: label,
-                role = Role.Switch,
-                stateDescription = stateDescription,
-                toggleableState = ToggleableState(checked),
-                enabled = enabled
-            )
-            .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-            .unifyKeyboardNavigation(
-                enabled = accessibility.keyboardNavigationEnabled,
-                focusRequester = focusRequester
-            )
-            .padding(vertical = 8.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-    ) {
-        label?.let { text ->
-            UnifyAccessibleText(
-                text = text,
-                modifier = Modifier.weight(1f)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-        }
-        
-        Switch(
-            checked = checked,
-            onCheckedChange = null, // 由父级处理
-            enabled = enabled
-        )
-    }
+            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.Switch
+                this.toggleableState = ToggleableState(checked)
+                if (enabled && onCheckedChange != null) {
+                    this.onClick(label = contentDescription) { 
+                        onCheckedChange(!checked)
+                        true 
+                    }
+                }
+            },
+        enabled = enabled
+    )
 }
 
 /**
  * 无障碍滑块组件
  */
 @Composable
-fun UnifyAccessibleSlider(
+fun AccessibleSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
-    label: String? = null,
     contentDescription: String? = null,
-    valueDescription: ((Float) -> String)? = null
+    valueDescription: String? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    val stateDescription = valueDescription?.invoke(value) ?: "当前值：${(value * 100).toInt()}%"
-    
-    Column(modifier = modifier) {
-        label?.let { text ->
-            UnifyAccessibleText(
-                text = text,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-        }
-        
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            modifier = Modifier
-                .fillMaxWidth()
-                .unifySemantics(
-                    contentDescription = contentDescription ?: label,
-                    role = Role.Slider,
-                    stateDescription = stateDescription,
-                    enabled = enabled
-                )
-                .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-                .unifyKeyboardNavigation(
-                    enabled = accessibility.keyboardNavigationEnabled,
-                    focusRequester = focusRequester
-                ),
-            enabled = enabled,
-            valueRange = valueRange,
-            steps = steps
-        )
-    }
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .sizeIn(minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.Slider
+                this.setProgress(label = valueDescription) { targetValue ->
+                    val newValue = valueRange.start + (valueRange.endInclusive - valueRange.start) * targetValue
+                    onValueChange(newValue.coerceIn(valueRange))
+                    true
+                }
+            },
+        enabled = enabled,
+        valueRange = valueRange,
+        steps = steps
+    )
+}
+
+/**
+ * 无障碍图片组件
+ */
+@Composable
+fun AccessibleImage(
+    painter: androidx.compose.ui.graphics.painter.Painter,
+    contentDescription: String?,
+    modifier: Modifier = Modifier,
+    alignment: Alignment = Alignment.Center,
+    contentScale: androidx.compose.ui.layout.ContentScale = androidx.compose.ui.layout.ContentScale.Fit,
+    alpha: Float = 1.0f,
+    colorFilter: androidx.compose.ui.graphics.ColorFilter? = null
+) {
+    Image(
+        painter = painter,
+        contentDescription = contentDescription,
+        modifier = modifier.semantics {
+            contentDescription?.let { 
+                this.contentDescription = it
+                this.role = Role.Image
+            }
+        },
+        alignment = alignment,
+        contentScale = contentScale,
+        alpha = alpha,
+        colorFilter = colorFilter
+    )
 }
 
 /**
  * 无障碍列表项组件
  */
 @Composable
-fun UnifyAccessibleListItem(
-    onClick: (() -> Unit)? = null,
+fun AccessibleListItem(
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    selected: Boolean = false,
+    headlineContent: @Composable () -> Unit,
+    overlineContent: @Composable (() -> Unit)? = null,
+    supportingContent: @Composable (() -> Unit)? = null,
+    leadingContent: @Composable (() -> Unit)? = null,
+    trailingContent: @Composable (() -> Unit)? = null,
+    colors: ListItemColors = ListItemDefaults.colors(),
+    tonalElevation: androidx.compose.ui.unit.Dp = ListItemDefaults.Elevation,
+    shadowElevation: androidx.compose.ui.unit.Dp = ListItemDefaults.Elevation,
     contentDescription: String? = null,
-    stateDescription: String? = null,
-    content: @Composable RowScope.() -> Unit
+    onClick: (() -> Unit)? = null
 ) {
-    val accessibility = LocalUnifyAccessibility.current
-    val focusRequester = remember { FocusRequester() }
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    val itemStateDescription = when {
-        selected -> "已选中"
-        else -> stateDescription
-    }
-    
-    Row(
+    ListItem(
+        headlineContent = headlineContent,
         modifier = modifier
-            .fillMaxWidth()
+            .sizeIn(minHeight = config.minimumTouchTargetSize)
+            .semantics {
+                contentDescription?.let { this.contentDescription = it }
+                this.role = Role.Button
+                if (onClick != null) {
+                    this.onClick(label = contentDescription) { 
+                        onClick()
+                        true 
+                    }
+                }
+            }
             .then(
                 if (onClick != null) {
-                    Modifier.clickable(enabled = enabled) { onClick() }
-                } else {
-                    Modifier
-                }
-            )
-            .unifySemantics(
-                contentDescription = contentDescription,
-                role = Role.Button,
-                stateDescription = itemStateDescription,
-                onClick = onClick,
-                selected = selected,
-                enabled = enabled
-            )
-            .unifyFocusIndicator(enabled = accessibility.focusIndicatorEnabled)
-            .unifyKeyboardNavigation(
-                enabled = accessibility.keyboardNavigationEnabled,
-                focusRequester = focusRequester
-            )
-            .padding(16.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        content = content
+                    Modifier.clickable { onClick() }
+                } else Modifier
+            ),
+        overlineContent = overlineContent,
+        supportingContent = supportingContent,
+        leadingContent = leadingContent,
+        trailingContent = trailingContent,
+        colors = colors,
+        tonalElevation = tonalElevation,
+        shadowElevation = shadowElevation
     )
 }
 
 /**
- * 对比度增强辅助函数
- */
-private fun enhanceContrast(foreground: Color, background: Color): Color {
-    // 简化的对比度增强算法
-    val contrastRatio = calculateContrastRatio(foreground, background)
-    
-    return if (contrastRatio < 4.5f) {
-        // 如果对比度不足，调整颜色
-        if (isLightColor(background)) {
-            Color.Black
-        } else {
-            Color.White
-        }
-    } else {
-        foreground
-    }
-}
-
-/**
- * 计算对比度比值
- */
-private fun calculateContrastRatio(color1: Color, color2: Color): Float {
-    val luminance1 = calculateLuminance(color1)
-    val luminance2 = calculateLuminance(color2)
-    
-    val lighter = maxOf(luminance1, luminance2)
-    val darker = minOf(luminance1, luminance2)
-    
-    return (lighter + 0.05f) / (darker + 0.05f)
-}
-
-/**
- * 计算颜色亮度
- */
-private fun calculateLuminance(color: Color): Float {
-    fun adjustColorComponent(component: Float): Float {
-        return if (component <= 0.03928f) {
-            component / 12.92f
-        } else {
-            kotlin.math.pow((component + 0.055f) / 1.055f, 2.4f).toFloat()
-        }
-    }
-    
-    val r = adjustColorComponent(color.red)
-    val g = adjustColorComponent(color.green)
-    val b = adjustColorComponent(color.blue)
-    
-    return 0.2126f * r + 0.7152f * g + 0.0722f * b
-}
-
-/**
- * 判断是否为浅色
- */
-private fun isLightColor(color: Color): Boolean {
-    return calculateLuminance(color) > 0.5f
-}
-
-/**
- * 无障碍公告组件（用于动态内容变化通知）
+ * 无障碍焦点指示器
  */
 @Composable
-fun UnifyAccessibilityAnnouncement(
-    message: String,
-    priority: AnnouncementPriority = AnnouncementPriority.Polite
+fun AccessibilityFocusIndicator(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
 ) {
-    val accessibility = LocalUnifyAccessibility.current
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
     
-    if (accessibility.screenReaderEnabled) {
+    if (config.enableFocusIndicator) {
+        Box(
+            modifier = modifier
+                .border(
+                    width = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                    shape = RoundedCornerShape(4.dp)
+                )
+                .padding(2.dp)
+        ) {
+            content()
+        }
+    } else {
+        content()
+    }
+}
+
+/**
+ * 无障碍公告组件
+ */
+@Composable
+fun AccessibilityAnnouncement(
+    message: String,
+    priority: AccessibilityAnnouncementPriority = AccessibilityAnnouncementPriority.NORMAL
+) {
+    val accessibilityManager = currentAccessibilityManager()
+    val config = accessibilityManager.config.value
+    
+    if (config.enableScreenReader) {
         LaunchedEffect(message) {
-            // 这里会在平台特定实现中调用屏幕阅读器API
-            // 例如在Android中调用AccessibilityManager.announce()
+            // 在实际实现中，这里会调用平台特定的屏幕阅读器API
+            // 例如Android的AccessibilityManager.announce()
         }
     }
 }
 
 /**
- * 公告优先级枚举
+ * 无障碍公告优先级
  */
-enum class AnnouncementPriority {
-    Polite,     // 礼貌模式，等待当前语音结束
-    Assertive   // 断言模式，立即打断当前语音
+enum class AccessibilityAnnouncementPriority {
+    LOW,
+    NORMAL,
+    HIGH,
+    URGENT
+}
+
+/**
+ * 无障碍实用工具
+ */
+object AccessibilityUtils {
+    /**
+     * 检查是否满足WCAG AA标准
+     */
+    fun meetsWCAGAA(contrastRatio: Float): Boolean = contrastRatio >= 4.5f
+    
+    /**
+     * 检查是否满足WCAG AAA标准
+     */
+    fun meetsWCAGAAA(contrastRatio: Float): Boolean = contrastRatio >= 7.0f
+    
+    /**
+     * 获取建议的最小触摸目标大小
+     */
+    fun getMinimumTouchTargetSize(): androidx.compose.ui.unit.Dp = 48.dp
+    
+    /**
+     * 检查文本大小是否足够大
+     */
+    fun isTextSizeAccessible(fontSize: androidx.compose.ui.unit.TextUnit): Boolean {
+        return fontSize.value >= 14f // 最小14sp
+    }
+    
+    /**
+     * 生成无障碍内容描述
+     */
+    fun generateContentDescription(
+        type: String,
+        label: String? = null,
+        state: String? = null,
+        position: String? = null
+    ): String {
+        val parts = mutableListOf<String>()
+        parts.add(type)
+        label?.let { parts.add(it) }
+        state?.let { parts.add(it) }
+        position?.let { parts.add(it) }
+        return parts.joinToString(", ")
+    }
 }

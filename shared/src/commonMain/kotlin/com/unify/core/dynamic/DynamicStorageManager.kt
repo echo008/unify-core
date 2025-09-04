@@ -1,551 +1,560 @@
 package com.unify.core.dynamic
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-
-/**
- * 动态存储管理器
- * 负责本地数据持久化、缓存管理和数据同步
- */
-class DynamicStorageManager {
-    private val storageAdapter = createPlatformStorageAdapter()
-    private val encryptionManager = EncryptionManager()
-    private val compressionManager = CompressionManager()
-    
-    // 存储路径常量
-    private companion object {
-        const val CONFIG_PREFIX = "unify_config_"
-        const val COMPONENT_PREFIX = "unify_component_"
-        const val RESOURCE_PREFIX = "unify_resource_"
-        const val ROLLBACK_PREFIX = "unify_rollback_"
-        const val VERSION_KEY = "unify_current_version"
-        const val PENDING_UPDATE_KEY = "unify_pending_update"
-    }
-    
-    /**
-     * 保存配置
-     */
-    suspend fun saveConfig(key: String, value: String) {
-        try {
-            val encryptedValue = encryptionManager.encrypt(value)
-            storageAdapter.save("$CONFIG_PREFIX$key", encryptedValue)
-            
-            UnifyPerformanceMonitor.recordMetric("storage_config_saved", 1.0, "count",
-                mapOf("key" to key))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_config_save_error", 1.0, "count",
-                mapOf("key" to key, "error" to e.message.orEmpty()))
-            throw StorageException("保存配置失败: $key", e)
-        }
-    }
-    
-    /**
-     * 获取配置
-     */
-    suspend fun getConfig(key: String): String? {
-        return try {
-            val encryptedValue = storageAdapter.load("$CONFIG_PREFIX$key")
-            if (encryptedValue != null) {
-                encryptionManager.decrypt(encryptedValue)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_config_load_error", 1.0, "count",
-                mapOf("key" to key, "error" to e.message.orEmpty()))
-            null
-        }
-    }
-    
-    /**
-     * 获取所有配置
-     */
-    suspend fun getAllConfigs(): Map<String, String> {
-        return try {
-            val configs = mutableMapOf<String, String>()
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(CONFIG_PREFIX) }
-            
-            keys.forEach { fullKey ->
-                val key = fullKey.removePrefix(CONFIG_PREFIX)
-                val value = getConfig(key)
-                if (value != null) {
-                    configs[key] = value
-                }
-            }
-            
-            configs
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_configs_load_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-            emptyMap()
-        }
-    }
-    
-    /**
-     * 清除所有配置
-     */
-    suspend fun clearAllConfigs() {
-        try {
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(CONFIG_PREFIX) }
-            keys.forEach { key ->
-                storageAdapter.delete(key)
-            }
-            
-            UnifyPerformanceMonitor.recordMetric("storage_all_configs_cleared", 1.0, "count")
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_configs_clear_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-        }
-    }
-    
-    /**
-     * 保存组件
-     */
-    suspend fun saveComponent(componentId: String, component: RemoteComponent) {
-        try {
-            val componentData = Json.encodeToString(component)
-            val compressedData = compressionManager.compress(componentData.encodeToByteArray())
-            val encryptedData = encryptionManager.encrypt(compressedData.decodeToString())
-            
-            storageAdapter.save("$COMPONENT_PREFIX$componentId", encryptedData)
-            
-            UnifyPerformanceMonitor.recordMetric("storage_component_saved", 1.0, "count",
-                mapOf("component_id" to componentId))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_component_save_error", 1.0, "count",
-                mapOf("component_id" to componentId, "error" to e.message.orEmpty()))
-            throw StorageException("保存组件失败: $componentId", e)
-        }
-    }
-    
-    /**
-     * 获取组件
-     */
-    suspend fun getComponent(componentId: String): RemoteComponent? {
-        return try {
-            val encryptedData = storageAdapter.load("$COMPONENT_PREFIX$componentId")
-            if (encryptedData != null) {
-                val compressedData = encryptionManager.decrypt(encryptedData).encodeToByteArray()
-                val componentData = compressionManager.decompress(compressedData).decodeToString()
-                Json.decodeFromString<RemoteComponent>(componentData)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_component_load_error", 1.0, "count",
-                mapOf("component_id" to componentId, "error" to e.message.orEmpty()))
-            null
-        }
-    }
-    
-    /**
-     * 保存组件代码
-     */
-    suspend fun saveComponentCode(componentId: String, code: String) {
-        try {
-            val encryptedCode = encryptionManager.encrypt(code)
-            storageAdapter.save("${COMPONENT_PREFIX}${componentId}_code", encryptedCode)
-        } catch (e: Exception) {
-            throw StorageException("保存组件代码失败: $componentId", e)
-        }
-    }
-    
-    /**
-     * 获取组件代码
-     */
-    suspend fun getComponentCode(componentId: String): String? {
-        return try {
-            val encryptedCode = storageAdapter.load("${COMPONENT_PREFIX}${componentId}_code")
-            if (encryptedCode != null) {
-                encryptionManager.decrypt(encryptedCode)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    /**
-     * 保存组件资源
-     */
-    suspend fun saveComponentResources(componentId: String, resources: Map<String, String>) {
-        try {
-            val resourcesJson = Json.encodeToString(resources)
-            val encryptedResources = encryptionManager.encrypt(resourcesJson)
-            storageAdapter.save("${COMPONENT_PREFIX}${componentId}_resources", encryptedResources)
-        } catch (e: Exception) {
-            throw StorageException("保存组件资源失败: $componentId", e)
-        }
-    }
-    
-    /**
-     * 获取组件资源
-     */
-    suspend fun getComponentResources(componentId: String): Map<String, String>? {
-        return try {
-            val encryptedResources = storageAdapter.load("${COMPONENT_PREFIX}${componentId}_resources")
-            if (encryptedResources != null) {
-                val resourcesJson = encryptionManager.decrypt(encryptedResources)
-                Json.decodeFromString<Map<String, String>>(resourcesJson)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    /**
-     * 保存组件元数据
-     */
-    suspend fun saveComponentMetadata(componentId: String, metadata: ComponentMetadata) {
-        try {
-            val metadataJson = Json.encodeToString(metadata)
-            val encryptedMetadata = encryptionManager.encrypt(metadataJson)
-            storageAdapter.save("${COMPONENT_PREFIX}${componentId}_metadata", encryptedMetadata)
-        } catch (e: Exception) {
-            throw StorageException("保存组件元数据失败: $componentId", e)
-        }
-    }
-    
-    /**
-     * 清除所有组件
-     */
-    suspend fun clearAllComponents() {
-        try {
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(COMPONENT_PREFIX) }
-            keys.forEach { key ->
-                storageAdapter.delete(key)
-            }
-            
-            UnifyPerformanceMonitor.recordMetric("storage_all_components_cleared", 1.0, "count")
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_components_clear_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-        }
-    }
-    
-    /**
-     * 保存资源
-     */
-    suspend fun saveResource(path: String, data: ByteArray) {
-        try {
-            val compressedData = compressionManager.compress(data)
-            val encryptedData = encryptionManager.encrypt(compressedData.decodeToString())
-            storageAdapter.save("$RESOURCE_PREFIX$path", encryptedData)
-            
-            UnifyPerformanceMonitor.recordMetric("storage_resource_saved", 1.0, "count",
-                mapOf("path" to path, "size" to data.size.toString()))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_resource_save_error", 1.0, "count",
-                mapOf("path" to path, "error" to e.message.orEmpty()))
-            throw StorageException("保存资源失败: $path", e)
-        }
-    }
-    
-    /**
-     * 获取资源
-     */
-    suspend fun getResource(path: String): ByteArray? {
-        return try {
-            val encryptedData = storageAdapter.load("$RESOURCE_PREFIX$path")
-            if (encryptedData != null) {
-                val compressedData = encryptionManager.decrypt(encryptedData).encodeToByteArray()
-                compressionManager.decompress(compressedData)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_resource_load_error", 1.0, "count",
-                mapOf("path" to path, "error" to e.message.orEmpty()))
-            null
-        }
-    }
-    
-    /**
-     * 获取所有资源
-     */
-    suspend fun getAllResources(): Map<String, ByteArray> {
-        return try {
-            val resources = mutableMapOf<String, ByteArray>()
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(RESOURCE_PREFIX) }
-            
-            keys.forEach { fullKey ->
-                val path = fullKey.removePrefix(RESOURCE_PREFIX)
-                val data = getResource(path)
-                if (data != null) {
-                    resources[path] = data
-                }
-            }
-            
-            resources
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_resources_load_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-            emptyMap()
-        }
-    }
-    
-    /**
-     * 清除所有资源
-     */
-    suspend fun clearAllResources() {
-        try {
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(RESOURCE_PREFIX) }
-            keys.forEach { key ->
-                storageAdapter.delete(key)
-            }
-            
-            UnifyPerformanceMonitor.recordMetric("storage_all_resources_cleared", 1.0, "count")
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_resources_clear_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-        }
-    }
-    
-    /**
-     * 保存回滚点
-     */
-    suspend fun saveRollbackPoint(rollbackPoint: RollbackPoint) {
-        try {
-            val rollbackData = Json.encodeToString(rollbackPoint)
-            val compressedData = compressionManager.compress(rollbackData.encodeToByteArray())
-            val encryptedData = encryptionManager.encrypt(compressedData.decodeToString())
-            
-            storageAdapter.save("$ROLLBACK_PREFIX${rollbackPoint.id}", encryptedData)
-            
-            UnifyPerformanceMonitor.recordMetric("storage_rollback_point_saved", 1.0, "count",
-                mapOf("rollback_id" to rollbackPoint.id))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_rollback_point_save_error", 1.0, "count",
-                mapOf("rollback_id" to rollbackPoint.id, "error" to e.message.orEmpty()))
-            throw StorageException("保存回滚点失败: ${rollbackPoint.id}", e)
-        }
-    }
-    
-    /**
-     * 获取所有回滚点
-     */
-    suspend fun getAllRollbackPoints(): List<RollbackPoint> {
-        return try {
-            val rollbackPoints = mutableListOf<RollbackPoint>()
-            val keys = storageAdapter.getAllKeys().filter { it.startsWith(ROLLBACK_PREFIX) }
-            
-            keys.forEach { key ->
-                val encryptedData = storageAdapter.load(key)
-                if (encryptedData != null) {
-                    try {
-                        val compressedData = encryptionManager.decrypt(encryptedData).encodeToByteArray()
-                        val rollbackData = compressionManager.decompress(compressedData).decodeToString()
-                        val rollbackPoint = Json.decodeFromString<RollbackPoint>(rollbackData)
-                        rollbackPoints.add(rollbackPoint)
-                    } catch (e: Exception) {
-                        // 忽略损坏的回滚点
-                    }
-                }
-            }
-            
-            rollbackPoints
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_all_rollback_points_load_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-            emptyList()
-        }
-    }
-    
-    /**
-     * 删除回滚点
-     */
-    suspend fun deleteRollbackPoint(rollbackPointId: String) {
-        try {
-            storageAdapter.delete("$ROLLBACK_PREFIX$rollbackPointId")
-            
-            UnifyPerformanceMonitor.recordMetric("storage_rollback_point_deleted", 1.0, "count",
-                mapOf("rollback_id" to rollbackPointId))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_rollback_point_delete_error", 1.0, "count",
-                mapOf("rollback_id" to rollbackPointId, "error" to e.message.orEmpty()))
-        }
-    }
-    
-    /**
-     * 保存更新包
-     */
-    suspend fun saveUpdatePackage(version: String, packageData: ByteArray) {
-        try {
-            val compressedData = compressionManager.compress(packageData)
-            val encryptedData = encryptionManager.encrypt(compressedData.decodeToString())
-            storageAdapter.save("update_package_$version", encryptedData)
-            
-            UnifyPerformanceMonitor.recordMetric("storage_update_package_saved", 1.0, "count",
-                mapOf("version" to version, "size" to packageData.size.toString()))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_update_package_save_error", 1.0, "count",
-                mapOf("version" to version, "error" to e.message.orEmpty()))
-            throw StorageException("保存更新包失败: $version", e)
-        }
-    }
-    
-    /**
-     * 获取待处理更新
-     */
-    suspend fun getPendingUpdate(): HotUpdateInfo? {
-        return try {
-            val encryptedData = storageAdapter.load(PENDING_UPDATE_KEY)
-            if (encryptedData != null) {
-                val updateData = encryptionManager.decrypt(encryptedData)
-                Json.decodeFromString<HotUpdateInfo>(updateData)
-            } else {
-                null
-            }
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    /**
-     * 设置当前版本
-     */
-    suspend fun setCurrentVersion(version: String) {
-        try {
-            storageAdapter.save(VERSION_KEY, version)
-        } catch (e: Exception) {
-            throw StorageException("设置当前版本失败: $version", e)
-        }
-    }
-    
-    /**
-     * 获取当前版本
-     */
-    suspend fun getCurrentVersion(): String? {
-        return try {
-            storageAdapter.load(VERSION_KEY)
-        } catch (e: Exception) {
-            null
-        }
-    }
-    
-    /**
-     * 清理过期数据
-     */
-    suspend fun cleanupExpiredData(maxAge: Long = 7 * 24 * 60 * 60 * 1000) { // 7天
-        try {
-            val currentTime = System.currentTimeMillis()
-            val allKeys = storageAdapter.getAllKeys()
-            var cleanedCount = 0
-            
-            allKeys.forEach { key ->
-                val lastModified = storageAdapter.getLastModified(key)
-                if (lastModified != null && (currentTime - lastModified) > maxAge) {
-                    storageAdapter.delete(key)
-                    cleanedCount++
-                }
-            }
-            
-            UnifyPerformanceMonitor.recordMetric("storage_cleanup_completed", 1.0, "count",
-                mapOf("cleaned_count" to cleanedCount.toString()))
-        } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("storage_cleanup_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-        }
-    }
-    
-    /**
-     * 获取存储统计信息
-     */
-    suspend fun getStorageStats(): StorageStats {
-        return try {
-            val allKeys = storageAdapter.getAllKeys()
-            val configCount = allKeys.count { it.startsWith(CONFIG_PREFIX) }
-            val componentCount = allKeys.count { it.startsWith(COMPONENT_PREFIX) }
-            val resourceCount = allKeys.count { it.startsWith(RESOURCE_PREFIX) }
-            val rollbackCount = allKeys.count { it.startsWith(ROLLBACK_PREFIX) }
-            
-            val totalSize = storageAdapter.getTotalSize()
-            
-            StorageStats(
-                totalKeys = allKeys.size,
-                configCount = configCount,
-                componentCount = componentCount,
-                resourceCount = resourceCount,
-                rollbackCount = rollbackCount,
-                totalSize = totalSize
-            )
-        } catch (e: Exception) {
-            StorageStats()
-        }
-    }
-}
+import kotlinx.coroutines.*
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
 
 /**
  * 存储适配器接口
  */
 interface StorageAdapter {
-    suspend fun save(key: String, value: String)
+    suspend fun save(key: String, data: String): Boolean
     suspend fun load(key: String): String?
-    suspend fun delete(key: String)
-    suspend fun getAllKeys(): List<String>
-    suspend fun getLastModified(key: String): Long?
+    suspend fun delete(key: String): Boolean
+    suspend fun exists(key: String): Boolean
+    suspend fun listKeys(prefix: String = ""): List<String>
+    suspend fun clear(): Boolean
+    suspend fun getSize(key: String): Long
     suspend fun getTotalSize(): Long
 }
 
 /**
- * 加密管理器
+ * 存储配置
  */
-class EncryptionManager {
-    fun encrypt(data: String): String {
-        // 简化的加密实现，实际应使用AES等强加密算法
-        return data.reversed()
-    }
-    
-    fun decrypt(encryptedData: String): String {
-        // 简化的解密实现
-        return encryptedData.reversed()
-    }
-}
-
-/**
- * 压缩管理器
- */
-class CompressionManager {
-    fun compress(data: ByteArray): ByteArray {
-        // 简化的压缩实现，实际应使用GZIP等压缩算法
-        return data
-    }
-    
-    fun decompress(compressedData: ByteArray): ByteArray {
-        // 简化的解压实现
-        return compressedData
-    }
-}
+@Serializable
+data class StorageConfig(
+    val enableCompression: Boolean = true,
+    val enableEncryption: Boolean = true,
+    val maxCacheSize: Long = 100 * 1024 * 1024, // 100MB
+    val compressionLevel: Int = 6,
+    val encryptionKey: String = "",
+    val enableBackup: Boolean = true,
+    val backupInterval: Long = 24 * 60 * 60 * 1000L // 24小时
+)
 
 /**
  * 存储统计信息
  */
+@Serializable
 data class StorageStats(
-    val totalKeys: Int = 0,
-    val configCount: Int = 0,
-    val componentCount: Int = 0,
-    val resourceCount: Int = 0,
-    val rollbackCount: Int = 0,
-    val totalSize: Long = 0L
+    val totalSize: Long,
+    val itemCount: Int,
+    val compressionRatio: Double,
+    val cacheHitRate: Double,
+    val lastBackupTime: Long,
+    val availableSpace: Long
 )
 
 /**
- * 存储异常
+ * 动态存储管理器接口
  */
-class StorageException(message: String, cause: Throwable? = null) : Exception(message, cause)
+interface DynamicStorageManager {
+    // 组件存储
+    suspend fun storeComponent(component: DynamicComponent): Boolean
+    suspend fun loadComponent(componentId: String): DynamicComponent?
+    suspend fun removeComponent(componentId: String): Boolean
+    suspend fun listComponents(): List<String>
+    
+    // 配置存储
+    suspend fun saveConfig(key: String, value: String): Boolean
+    suspend fun getConfig(key: String): String?
+    suspend fun removeConfig(key: String): Boolean
+    suspend fun listConfigs(prefix: String = ""): List<String>
+    
+    // 缓存管理
+    suspend fun enableCache(maxSize: Long)
+    suspend fun disableCache()
+    suspend fun clearCache()
+    suspend fun getCacheStats(): Map<String, Any>
+    
+    // 压缩和加密
+    suspend fun compress(data: String): String
+    suspend fun decompress(data: String): String
+    suspend fun encrypt(data: String): String
+    suspend fun decrypt(data: String): String
+    
+    // 备份和恢复
+    suspend fun createBackup(): String?
+    suspend fun restoreFromBackup(backupData: String): Boolean
+    suspend fun listBackups(): List<String>
+    
+    // 存储统计
+    suspend fun getStorageStats(): StorageStats
+    suspend fun cleanup(): Int
+    
+    // 配置管理
+    fun updateConfig(config: StorageConfig)
+    fun getConfig(): StorageConfig
+}
 
 /**
- * 创建平台存储适配器
+ * 动态存储管理器实现
  */
-expect fun createPlatformStorageAdapter(): StorageAdapter
+class DynamicStorageManagerImpl(
+    private val adapter: StorageAdapter
+) : DynamicStorageManager {
+    
+    private var config = StorageConfig()
+    private val cache = mutableMapOf<String, String>()
+    private var cacheEnabled = false
+    private var maxCacheSize = 100 * 1024 * 1024L
+    private var cacheHits = 0L
+    private var cacheMisses = 0L
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    
+    companion object {
+        private const val COMPONENT_PREFIX = "component_"
+        private const val CONFIG_PREFIX = "config_"
+        private const val BACKUP_PREFIX = "backup_"
+        private const val STORAGE_CONFIG_KEY = "storage_config"
+        private const val COMPRESSION_MARKER = "COMPRESSED:"
+        private const val ENCRYPTION_MARKER = "ENCRYPTED:"
+    }
+    
+    override suspend fun storeComponent(component: DynamicComponent): Boolean {
+        return try {
+            val key = "$COMPONENT_PREFIX${component.id}"
+            var data = Json.encodeToString(component)
+            
+            // 压缩
+            if (config.enableCompression) {
+                data = compress(data)
+            }
+            
+            // 加密
+            if (config.enableEncryption) {
+                data = encrypt(data)
+            }
+            
+            val success = adapter.save(key, data)
+            
+            // 更新缓存
+            if (success && cacheEnabled) {
+                updateCache(key, data)
+            }
+            
+            success
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun loadComponent(componentId: String): DynamicComponent? {
+        return try {
+            val key = "$COMPONENT_PREFIX$componentId"
+            
+            // 先检查缓存
+            var data = if (cacheEnabled) {
+                cache[key]?.also { cacheHits++ }
+            } else null
+            
+            // 从存储加载
+            if (data == null) {
+                data = adapter.load(key)
+                if (cacheEnabled) cacheMisses++
+                
+                if (data != null && cacheEnabled) {
+                    updateCache(key, data)
+                }
+            }
+            
+            if (data != null) {
+                // 解密
+                var processedData = data
+                if (config.enableEncryption && processedData.startsWith(ENCRYPTION_MARKER)) {
+                    processedData = decrypt(processedData)
+                }
+                
+                // 解压缩
+                if (config.enableCompression && processedData.startsWith(COMPRESSION_MARKER)) {
+                    processedData = decompress(processedData)
+                }
+                
+                Json.decodeFromString<DynamicComponent>(processedData)
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun removeComponent(componentId: String): Boolean {
+        return try {
+            val key = "$COMPONENT_PREFIX$componentId"
+            val success = adapter.delete(key)
+            
+            // 从缓存删除
+            if (success && cacheEnabled) {
+                cache.remove(key)
+            }
+            
+            success
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun listComponents(): List<String> {
+        return try {
+            adapter.listKeys(COMPONENT_PREFIX).map { key ->
+                key.removePrefix(COMPONENT_PREFIX)
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    override suspend fun saveConfig(key: String, value: String): Boolean {
+        return try {
+            val storageKey = "$CONFIG_PREFIX$key"
+            var data = value
+            
+            // 压缩
+            if (config.enableCompression) {
+                data = compress(data)
+            }
+            
+            // 加密
+            if (config.enableEncryption) {
+                data = encrypt(data)
+            }
+            
+            val success = adapter.save(storageKey, data)
+            
+            // 更新缓存
+            if (success && cacheEnabled) {
+                updateCache(storageKey, data)
+            }
+            
+            success
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun getConfig(key: String): String? {
+        return try {
+            val storageKey = "$CONFIG_PREFIX$key"
+            
+            // 先检查缓存
+            var data = if (cacheEnabled) {
+                cache[storageKey]?.also { cacheHits++ }
+            } else null
+            
+            // 从存储加载
+            if (data == null) {
+                data = adapter.load(storageKey)
+                if (cacheEnabled) cacheMisses++
+                
+                if (data != null && cacheEnabled) {
+                    updateCache(storageKey, data)
+                }
+            }
+            
+            if (data != null) {
+                // 解密
+                var processedData = data
+                if (config.enableEncryption && processedData.startsWith(ENCRYPTION_MARKER)) {
+                    processedData = decrypt(processedData)
+                }
+                
+                // 解压缩
+                if (config.enableCompression && processedData.startsWith(COMPRESSION_MARKER)) {
+                    processedData = decompress(processedData)
+                }
+                
+                processedData
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun removeConfig(key: String): Boolean {
+        return try {
+            val storageKey = "$CONFIG_PREFIX$key"
+            val success = adapter.delete(storageKey)
+            
+            // 从缓存删除
+            if (success && cacheEnabled) {
+                cache.remove(storageKey)
+            }
+            
+            success
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun listConfigs(prefix: String): List<String> {
+        return try {
+            val searchPrefix = "$CONFIG_PREFIX$prefix"
+            adapter.listKeys(searchPrefix).map { key ->
+                key.removePrefix(CONFIG_PREFIX)
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    override suspend fun enableCache(maxSize: Long) {
+        cacheEnabled = true
+        maxCacheSize = maxSize
+        manageCacheSize()
+    }
+    
+    override suspend fun disableCache() {
+        cacheEnabled = false
+        cache.clear()
+    }
+    
+    override suspend fun clearCache() {
+        cache.clear()
+        cacheHits = 0
+        cacheMisses = 0
+    }
+    
+    override suspend fun getCacheStats(): Map<String, Any> {
+        val totalRequests = cacheHits + cacheMisses
+        val hitRate = if (totalRequests > 0) cacheHits.toDouble() / totalRequests else 0.0
+        
+        return mapOf(
+            "enabled" to cacheEnabled,
+            "size" to cache.size,
+            "maxSize" to maxCacheSize,
+            "hitRate" to hitRate,
+            "hits" to cacheHits,
+            "misses" to cacheMisses
+        )
+    }
+    
+    override suspend fun compress(data: String): String {
+        return try {
+            // 简化的压缩实现 - 实际应使用真正的压缩算法
+            val compressed = data.toByteArray().let { bytes ->
+                // 这里应该使用真正的压缩算法如GZIP
+                bytes.toString()
+            }
+            "$COMPRESSION_MARKER$compressed"
+        } catch (e: Exception) {
+            data
+        }
+    }
+    
+    override suspend fun decompress(data: String): String {
+        return try {
+            if (data.startsWith(COMPRESSION_MARKER)) {
+                val compressed = data.removePrefix(COMPRESSION_MARKER)
+                // 这里应该使用真正的解压缩算法
+                compressed
+            } else {
+                data
+            }
+        } catch (e: Exception) {
+            data
+        }
+    }
+    
+    override suspend fun encrypt(data: String): String {
+        return try {
+            // 简化的加密实现 - 实际应使用真正的加密算法
+            val encrypted = data.reversed() // 简单的字符串反转作为示例
+            "$ENCRYPTION_MARKER$encrypted"
+        } catch (e: Exception) {
+            data
+        }
+    }
+    
+    override suspend fun decrypt(data: String): String {
+        return try {
+            if (data.startsWith(ENCRYPTION_MARKER)) {
+                val encrypted = data.removePrefix(ENCRYPTION_MARKER)
+                // 简单的字符串反转解密
+                encrypted.reversed()
+            } else {
+                data
+            }
+        } catch (e: Exception) {
+            data
+        }
+    }
+    
+    override suspend fun createBackup(): String? {
+        return try {
+            val backupId = "backup_${System.currentTimeMillis()}"
+            val backupData = mutableMapOf<String, String>()
+            
+            // 备份所有组件
+            val componentKeys = adapter.listKeys(COMPONENT_PREFIX)
+            componentKeys.forEach { key ->
+                val data = adapter.load(key)
+                if (data != null) {
+                    backupData[key] = data
+                }
+            }
+            
+            // 备份所有配置
+            val configKeys = adapter.listKeys(CONFIG_PREFIX)
+            configKeys.forEach { key ->
+                val data = adapter.load(key)
+                if (data != null) {
+                    backupData[key] = data
+                }
+            }
+            
+            // 保存备份
+            val backupJson = Json.encodeToString(backupData)
+            val backupKey = "$BACKUP_PREFIX$backupId"
+            
+            if (adapter.save(backupKey, backupJson)) {
+                backupId
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun restoreFromBackup(backupData: String): Boolean {
+        return try {
+            val dataMap: Map<String, String> = Json.decodeFromString(backupData)
+            
+            var allSuccess = true
+            dataMap.forEach { (key, value) ->
+                if (!adapter.save(key, value)) {
+                    allSuccess = false
+                }
+            }
+            
+            // 清理缓存以确保数据一致性
+            if (allSuccess && cacheEnabled) {
+                clearCache()
+            }
+            
+            allSuccess
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun listBackups(): List<String> {
+        return try {
+            adapter.listKeys(BACKUP_PREFIX).map { key ->
+                key.removePrefix(BACKUP_PREFIX)
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+    
+    override suspend fun getStorageStats(): StorageStats {
+        return try {
+            val totalSize = adapter.getTotalSize()
+            val componentKeys = adapter.listKeys(COMPONENT_PREFIX)
+            val configKeys = adapter.listKeys(CONFIG_PREFIX)
+            val itemCount = componentKeys.size + configKeys.size
+            
+            val totalRequests = cacheHits + cacheMisses
+            val cacheHitRate = if (totalRequests > 0) cacheHits.toDouble() / totalRequests else 0.0
+            
+            StorageStats(
+                totalSize = totalSize,
+                itemCount = itemCount,
+                compressionRatio = 0.7, // 简化实现
+                cacheHitRate = cacheHitRate,
+                lastBackupTime = 0L, // 简化实现
+                availableSpace = Long.MAX_VALUE // 简化实现
+            )
+        } catch (e: Exception) {
+            StorageStats(
+                totalSize = 0L,
+                itemCount = 0,
+                compressionRatio = 1.0,
+                cacheHitRate = 0.0,
+                lastBackupTime = 0L,
+                availableSpace = 0L
+            )
+        }
+    }
+    
+    override suspend fun cleanup(): Int {
+        var cleanedCount = 0
+        
+        try {
+            // 清理过期的备份
+            val backupKeys = adapter.listKeys(BACKUP_PREFIX)
+            val cutoffTime = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L) // 7天前
+            
+            backupKeys.forEach { key ->
+                try {
+                    val backupId = key.removePrefix(BACKUP_PREFIX)
+                    val timestamp = backupId.removePrefix("backup_").toLongOrNull()
+                    
+                    if (timestamp != null && timestamp < cutoffTime) {
+                        if (adapter.delete(key)) {
+                            cleanedCount++
+                        }
+                    }
+                } catch (e: Exception) {
+                    // 忽略单个清理错误
+                }
+            }
+            
+            // 清理缓存中的过期项
+            if (cacheEnabled) {
+                manageCacheSize()
+            }
+            
+        } catch (e: Exception) {
+            // 忽略清理错误
+        }
+        
+        return cleanedCount
+    }
+    
+    override fun updateConfig(config: StorageConfig) {
+        this.config = config
+        
+        // 保存配置
+        scope.launch {
+            try {
+                val configJson = Json.encodeToString(config)
+                adapter.save(STORAGE_CONFIG_KEY, configJson)
+            } catch (e: Exception) {
+                // 忽略保存错误
+            }
+        }
+    }
+    
+    override fun getConfig(): StorageConfig = config
+    
+    // 私有辅助方法
+    private fun updateCache(key: String, data: String) {
+        if (!cacheEnabled) return
+        
+        cache[key] = data
+        manageCacheSize()
+    }
+    
+    private fun manageCacheSize() {
+        if (!cacheEnabled) return
+        
+        // 简化的缓存大小管理 - 按项目数量限制
+        val maxItems = (maxCacheSize / 1024).toInt() // 假设每项平均1KB
+        
+        while (cache.size > maxItems) {
+            // 移除最旧的项（简化实现）
+            val oldestKey = cache.keys.first()
+            cache.remove(oldestKey)
+        }
+    }
+}
+
+/**
+ * 平台特定存储适配器 - 需要在各平台实现
+ */
+expect class PlatformStorageAdapter() : StorageAdapter

@@ -1,63 +1,23 @@
 package com.unify.core.platform
 
-import android.Manifest
-import android.app.Activity
-import android.app.AlertDialog
 import android.content.Context
-import android.content.Intent
-import android.content.pm.PackageManager
-import android.content.res.Configuration
-import android.hardware.Sensor
-import android.hardware.SensorManager
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
 import android.os.Build
-import android.os.Environment
-import android.os.StatFs
-import android.os.VibrationEffect
-import android.os.Vibrator
 import android.provider.Settings
-import android.util.DisplayMetrics
-import android.view.WindowManager
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
-import java.io.File
-import kotlin.coroutines.resume
+import com.unify.core.types.PlatformType
+import com.unify.core.types.DeviceInfo
 
 /**
- * Android平台管理器生产级实现
- * 支持Android API 24+ (Android 7.0+)
+ * Android平台管理器实现
  */
-actual object PlatformManager {
+class AndroidPlatformManager(private val context: Context) : BasePlatformManager() {
     
-    private lateinit var context: Context
-    private var currentActivity: Activity? = null
+    override fun getPlatformType(): PlatformType = PlatformType.ANDROID
     
-    actual fun initialize() {
-        // Android初始化逻辑在setContext中完成
-    }
+    override fun getPlatformName(): String = "Android"
     
-    /**
-     * 设置应用上下文和当前Activity
-     */
-    fun setContext(context: Context, activity: Activity? = null) {
-        this.context = context.applicationContext
-        this.currentActivity = activity
-    }
+    override fun getPlatformVersion(): String = Build.VERSION.RELEASE
     
-    actual fun getPlatformType(): PlatformType = PlatformType.ANDROID
-    
-    actual fun getPlatformName(): String = "Android"
-    
-    actual fun getPlatformVersion(): String = Build.VERSION.RELEASE
-    
-    actual fun getDeviceInfo(): DeviceInfo {
+    override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = Build.MANUFACTURER,
             model = Build.MODEL,
@@ -68,6 +28,67 @@ actual object PlatformManager {
         )
     }
     
+    override fun hasCapability(capability: String): Boolean {
+        return when (capability) {
+            "camera" -> context.packageManager.hasSystemFeature("android.hardware.camera")
+            "gps" -> context.packageManager.hasSystemFeature("android.hardware.location.gps")
+            "bluetooth" -> context.packageManager.hasSystemFeature("android.hardware.bluetooth")
+            "wifi" -> context.packageManager.hasSystemFeature("android.hardware.wifi")
+            "nfc" -> context.packageManager.hasSystemFeature("android.hardware.nfc")
+            "fingerprint" -> context.packageManager.hasSystemFeature("android.hardware.fingerprint")
+            "accelerometer" -> context.packageManager.hasSystemFeature("android.hardware.sensor.accelerometer")
+            "gyroscope" -> context.packageManager.hasSystemFeature("android.hardware.sensor.gyroscope")
+            "magnetometer" -> context.packageManager.hasSystemFeature("android.hardware.sensor.compass")
+            "microphone" -> context.packageManager.hasSystemFeature("android.hardware.microphone")
+            "telephony" -> context.packageManager.hasSystemFeature("android.hardware.telephony")
+            "vibration" -> context.packageManager.hasSystemFeature("android.hardware.vibrator")
+            else -> false
+        }
+    }
+    
+    override fun getSupportedCapabilities(): List<String> {
+        val capabilities = mutableListOf<String>()
+        
+        if (hasCapability("camera")) capabilities.add("camera")
+        if (hasCapability("gps")) capabilities.add("gps")
+        if (hasCapability("bluetooth")) capabilities.add("bluetooth")
+        if (hasCapability("wifi")) capabilities.add("wifi")
+        if (hasCapability("nfc")) capabilities.add("nfc")
+        if (hasCapability("fingerprint")) capabilities.add("fingerprint")
+        if (hasCapability("accelerometer")) capabilities.add("accelerometer")
+        if (hasCapability("gyroscope")) capabilities.add("gyroscope")
+        if (hasCapability("magnetometer")) capabilities.add("magnetometer")
+        if (hasCapability("microphone")) capabilities.add("microphone")
+        if (hasCapability("telephony")) capabilities.add("telephony")
+        if (hasCapability("vibration")) capabilities.add("vibration")
+        
+        return capabilities
+    }
+    
+    override suspend fun performPlatformInitialization() {
+        // Android特定初始化
+        config["api_level"] = Build.VERSION.SDK_INT.toString()
+        config["manufacturer"] = Build.MANUFACTURER
+        config["model"] = Build.MODEL
+        config["brand"] = Build.BRAND
+        config["device"] = Build.DEVICE
+        config["product"] = Build.PRODUCT
+        config["hardware"] = Build.HARDWARE
+        config["board"] = Build.BOARD
+        config["bootloader"] = Build.BOOTLOADER
+        config["fingerprint"] = Build.FINGERPRINT
+        config["host"] = Build.HOST
+        config["id"] = Build.ID
+        config["tags"] = Build.TAGS
+        config["type"] = Build.TYPE
+        config["user"] = Build.USER
+    }
+    
+    override suspend fun performPlatformCleanup() {
+        // Android特定清理
+        config.clear()
+    }
+    
     private fun isEmulator(): Boolean {
         return (Build.FINGERPRINT.startsWith("generic")
                 || Build.FINGERPRINT.startsWith("unknown")
@@ -75,347 +96,48 @@ actual object PlatformManager {
                 || Build.MODEL.contains("Emulator")
                 || Build.MODEL.contains("Android SDK built for x86")
                 || Build.MANUFACTURER.contains("Genymotion")
-                || Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")
+                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
                 || "google_sdk" == Build.PRODUCT)
     }
-    
-    actual fun getScreenInfo(): ScreenInfo {
-        val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val displayMetrics = DisplayMetrics()
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val bounds = windowManager.currentWindowMetrics.bounds
-            displayMetrics.widthPixels = bounds.width()
-            displayMetrics.heightPixels = bounds.height()
-            displayMetrics.density = context.resources.displayMetrics.density
-        } else {
-            @Suppress("DEPRECATION")
-            windowManager.defaultDisplay.getMetrics(displayMetrics)
-        }
-        
-        val orientation = when (context.resources.configuration.orientation) {
-            Configuration.ORIENTATION_PORTRAIT -> Orientation.PORTRAIT
-            Configuration.ORIENTATION_LANDSCAPE -> Orientation.LANDSCAPE
-            else -> Orientation.UNKNOWN
-        }
-        
-        // 获取安全区域（刘海屏适配）
-        val safeAreaInsets = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            currentActivity?.window?.decorView?.rootWindowInsets?.let { insets ->
-                val displayCutout = insets.displayCutout
-                SafeAreaInsets(
-                    top = displayCutout?.safeInsetTop ?: 0,
-                    bottom = displayCutout?.safeInsetBottom ?: 0,
-                    left = displayCutout?.safeInsetLeft ?: 0,
-                    right = displayCutout?.safeInsetRight ?: 0
-                )
-            } ?: SafeAreaInsets()
-        } else {
-            SafeAreaInsets()
-        }
-        
-        return ScreenInfo(
-            width = displayMetrics.widthPixels,
-            height = displayMetrics.heightPixels,
-            density = displayMetrics.density,
-            orientation = orientation,
-            refreshRate = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                windowManager.defaultDisplay.refreshRate
-            } else {
-                60f
-            },
-            safeAreaInsets = safeAreaInsets
-        )
-    }
-    
-    actual fun getSystemCapabilities(): SystemCapabilities {
-        val packageManager = context.packageManager
-        val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
-        
-        return SystemCapabilities(
-            isTouchSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_TOUCHSCREEN),
-            isKeyboardSupported = context.resources.configuration.keyboard != Configuration.KEYBOARD_NOKEYS,
-            isMouseSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_FAKETOUCH),
-            isCameraSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY),
-            isMicrophoneSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_MICROPHONE),
-            isLocationSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION),
-            isNotificationSupported = true,
-            isFileSystemSupported = true,
-            isBiometricSupported = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                packageManager.hasSystemFeature(PackageManager.FEATURE_FINGERPRINT)
-            } else false,
-            isNFCSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_NFC),
-            isBluetoothSupported = packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH),
-            supportedSensors = getSupportedSensors(sensorManager)
-        )
-    }
-    
-    private fun getSupportedSensors(sensorManager: SensorManager): List<SensorType> {
-        val supportedSensors = mutableListOf<SensorType>()
-        
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
-            supportedSensors.add(SensorType.ACCELEROMETER)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE) != null) {
-            supportedSensors.add(SensorType.GYROSCOPE)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD) != null) {
-            supportedSensors.add(SensorType.MAGNETOMETER)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY) != null) {
-            supportedSensors.add(SensorType.PROXIMITY)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT) != null) {
-            supportedSensors.add(SensorType.LIGHT)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE) != null) {
-            supportedSensors.add(SensorType.PRESSURE)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE) != null) {
-            supportedSensors.add(SensorType.TEMPERATURE)
-        }
-        if (sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY) != null) {
-            supportedSensors.add(SensorType.HUMIDITY)
-        }
-        
-        return supportedSensors
-    }
-    
-    actual fun getNetworkStatus(): NetworkStatus {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val network = connectivityManager.activeNetwork
-            val capabilities = connectivityManager.getNetworkCapabilities(network)
-            
-            when {
-                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) == true -> NetworkStatus.CONNECTED_WIFI
-                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) == true -> NetworkStatus.CONNECTED_CELLULAR
-                capabilities?.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) == true -> NetworkStatus.CONNECTED_ETHERNET
-                capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true -> NetworkStatus.CONNECTED_UNKNOWN
-                else -> NetworkStatus.DISCONNECTED
-            }
-        } else {
-            @Suppress("DEPRECATION")
-            val networkInfo = connectivityManager.activeNetworkInfo
-            if (networkInfo?.isConnected == true) {
-                NetworkStatus.CONNECTED_UNKNOWN
-            } else {
-                NetworkStatus.DISCONNECTED
-            }
-        }
-    }
-    
-    actual fun observeNetworkStatus(): Flow<NetworkStatus> = callbackFlow {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
-        
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) {
-                trySend(getNetworkStatus())
-            }
-            
-            override fun onLost(network: Network) {
-                trySend(NetworkStatus.DISCONNECTED)
-            }
-            
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
-                trySend(getNetworkStatus())
-            }
-        }
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            connectivityManager.registerDefaultNetworkCallback(callback)
-        } else {
-            val request = NetworkRequest.Builder().build()
-            connectivityManager.registerNetworkCallback(request, callback)
-        }
-        
-        // 发送初始状态
-        trySend(getNetworkStatus())
-        
-        awaitClose {
-            connectivityManager.unregisterNetworkCallback(callback)
-        }
-    }
-    
-    actual fun getStorageInfo(): StorageInfo {
-        val internalDir = context.filesDir
-        val internalStat = StatFs(internalDir.path)
-        
-        val blockSize = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            internalStat.blockSizeLong
-        } else {
-            @Suppress("DEPRECATION")
-            internalStat.blockSize.toLong()
-        }
-        
-        val totalBlocks = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            internalStat.blockCountLong
-        } else {
-            @Suppress("DEPRECATION")
-            internalStat.blockCount.toLong()
-        }
-        
-        val availableBlocks = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            internalStat.availableBlocksLong
-        } else {
-            @Suppress("DEPRECATION")
-            internalStat.availableBlocks.toLong()
-        }
-        
-        val totalSpace = totalBlocks * blockSize
-        val availableSpace = availableBlocks * blockSize
-        val usedSpace = totalSpace - availableSpace
-        
-        return StorageInfo(
-            totalSpace = totalSpace,
-            availableSpace = availableSpace,
-            usedSpace = usedSpace,
-            isExternalStorageAvailable = Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED
-        )
-    }
-    
-    actual fun getPerformanceInfo(): PerformanceInfo {
-        val runtime = Runtime.getRuntime()
-        val totalMemory = runtime.totalMemory()
-        val freeMemory = runtime.freeMemory()
-        val usedMemory = totalMemory - freeMemory
-        val maxMemory = runtime.maxMemory()
-        
-        val memoryUsage = MemoryUsage(
-            totalMemory = maxMemory,
-            availableMemory = freeMemory,
-            usedMemory = usedMemory,
-            appMemoryUsage = usedMemory
-        )
-        
-        return PerformanceInfo(
-            cpuUsage = 0f, // CPU使用率需要更复杂的实现
-            memoryUsage = memoryUsage,
-            batteryLevel = getBatteryLevel(),
-            thermalState = ThermalState.NORMAL // 热状态需要更复杂的实现
-        )
-    }
-    
-    private fun getBatteryLevel(): Float {
-        return try {
-            val batteryIntent = context.registerReceiver(null, 
-                android.content.IntentFilter(Intent.ACTION_BATTERY_CHANGED))
-            val level = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1) ?: -1
-            val scale = batteryIntent?.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1) ?: -1
-            
-            if (level != -1 && scale != -1) {
-                level.toFloat() / scale.toFloat() * 100f
-            } else {
-                -1f
-            }
-        } catch (e: Exception) {
-            -1f
-        }
-    }
-    
-    actual suspend fun showNativeDialog(config: DialogConfig): DialogResult = suspendCancellableCoroutine { continuation ->
-        val activity = currentActivity ?: run {
-            continuation.resume(DialogResult(buttonIndex = -1, cancelled = true))
-            return@suspendCancellableCoroutine
-        }
-        
-        val builder = AlertDialog.Builder(activity)
-            .setTitle(config.title)
-            .setMessage(config.message)
-        
-        config.buttons.forEachIndexed { index, button ->
-            when (index) {
-                0 -> builder.setPositiveButton(button.text) { _, _ ->
-                    button.action()
-                    continuation.resume(DialogResult(buttonIndex = index))
-                }
-                1 -> builder.setNegativeButton(button.text) { _, _ ->
-                    button.action()
-                    continuation.resume(DialogResult(buttonIndex = index))
-                }
-                2 -> builder.setNeutralButton(button.text) { _, _ ->
-                    button.action()
-                    continuation.resume(DialogResult(buttonIndex = index))
-                }
-            }
-        }
-        
-        builder.setOnCancelListener {
-            continuation.resume(DialogResult(buttonIndex = -1, cancelled = true))
-        }
-        
-        val dialog = builder.create()
-        dialog.show()
-        
-        continuation.invokeOnCancellation {
-            dialog.dismiss()
-        }
-    }
-    
-    actual suspend fun invokePlatformFeature(feature: PlatformFeature): PlatformResult {
-        return try {
-            when (feature) {
-                is PlatformFeature.Vibrate -> {
-                    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        vibrator.vibrate(VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE))
-                    } else {
-                        @Suppress("DEPRECATION")
-                        vibrator.vibrate(100)
-                    }
-                    PlatformResult(success = true)
-                }
-                
-                is PlatformFeature.OpenUrl -> {
-                    val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse(feature.url))
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    PlatformResult(success = true)
-                }
-                
-                is PlatformFeature.ShareContent -> {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = feature.type
-                        putExtra(Intent.EXTRA_TEXT, feature.content)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    val chooser = Intent.createChooser(shareIntent, "分享")
-                    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(chooser)
-                    PlatformResult(success = true)
-                }
-                
-                is PlatformFeature.RequestPermission -> {
-                    val hasPermission = ContextCompat.checkSelfPermission(context, feature.permission) == PackageManager.PERMISSION_GRANTED
-                    PlatformResult(success = hasPermission, data = hasPermission)
-                }
-                
-                else -> PlatformResult(success = false, error = "不支持的功能: ${feature::class.simpleName}")
-            }
-        } catch (e: Exception) {
-            PlatformResult(success = false, error = e.message)
-        }
-    }
-    
-    actual fun getPlatformConfig(): PlatformConfig {
-        return PlatformConfig(
-            platformType = PlatformType.ANDROID,
-            supportedFeatures = setOf(
-                "vibration", "camera", "location", "notifications", 
-                "biometric", "nfc", "bluetooth", "file_system",
-                "share", "deep_links", "background_tasks"
-            ),
-            limitations = setOf(
-                "no_file_system_root_access",
-                "permission_based_features"
-            ),
-            optimizations = mapOf(
-                "material_design" to true,
-                "adaptive_icons" to true,
-                "edge_to_edge" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q),
-                "dynamic_colors" to (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-            )
-        )
-    }
+}
+
+/**
+ * 平台管理器创建函数实现
+ */
+actual fun getCurrentPlatformManager(): PlatformManager {
+    // 在Android中需要Context，这里返回一个默认实现
+    // 实际使用时应该通过依赖注入提供Context
+    throw UnsupportedOperationException("Android平台管理器需要Context参数，请使用AndroidPlatformManager(context)")
+}
+
+actual fun createAndroidPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Android平台管理器需要Context参数，请使用AndroidPlatformManager(context)")
+}
+
+actual fun createIOSPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("iOS平台管理器在Android平台不可用")
+}
+
+actual fun createWebPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Web平台管理器在Android平台不可用")
+}
+
+actual fun createDesktopPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Desktop平台管理器在Android平台不可用")
+}
+
+actual fun createHarmonyOSPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("HarmonyOS平台管理器在Android平台不可用")
+}
+
+actual fun createMiniProgramPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("MiniProgram平台管理器在Android平台不可用")
+}
+
+actual fun createWatchPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("Watch平台管理器在Android平台不可用")
+}
+
+actual fun createTVPlatformManager(): PlatformManager {
+    throw UnsupportedOperationException("TV平台管理器在Android平台不可用")
 }

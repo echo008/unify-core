@@ -1,400 +1,460 @@
 package com.unify.ui.components.wearable
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
- * Watch平台智能手表表盘组件
- * 实现可穿戴设备的表盘显示
+ * Watch平台特定组件实现
+ * 针对小屏幕和触摸操作优化
  */
+
+data class HealthMetric(
+    val type: HealthMetricType,
+    val value: String,
+    val unit: String,
+    val trend: HealthTrend = HealthTrend.STABLE
+)
+
+enum class HealthMetricType {
+    HEART_RATE, STEPS, CALORIES, DISTANCE, SLEEP, BLOOD_OXYGEN
+}
+
+enum class HealthTrend {
+    UP, DOWN, STABLE
+}
+
+data class WatchNotification(
+    val id: String,
+    val title: String,
+    val message: String,
+    val timestamp: Long,
+    val priority: NotificationPriority = NotificationPriority.NORMAL
+)
+
+enum class NotificationPriority {
+    LOW, NORMAL, HIGH, URGENT
+}
+
 @Composable
 actual fun UnifyWatchFace(
-    modifier: Modifier = Modifier,
-    time: Long = System.currentTimeMillis(),
-    style: WatchFaceStyle = WatchFaceStyle.CLASSIC
+    time: String,
+    date: String,
+    healthMetrics: List<HealthMetric>,
+    modifier: Modifier
 ) {
-    // Watch平台表盘实现
-    // 实现圆形表盘布局和时间显示
-    val calendar = java.util.Calendar.getInstance()
-    calendar.timeInMillis = time
-
-    val hour = calendar.get(java.util.Calendar.HOUR)
-    val minute = calendar.get(java.util.Calendar.MINUTE)
-    val second = calendar.get(java.util.Calendar.SECOND)
-
-    // 简单的数字表盘实现
-    androidx.compose.foundation.Canvas(
-        modifier = modifier.size(200.dp)
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // 绘制表盘背景
-        drawCircle(
-            color = androidx.compose.ui.graphics.Color.Black,
-            radius = size.minDimension / 2
-        )
-
-        // 绘制时间文本
-        val timeText = String.format("%02d:%02d:%02d", hour, minute, second)
-        // 注意：实际实现需要使用drawText或Text组件
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // 时间显示
+            Text(
+                text = time,
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+            
+            // 日期显示
+            Text(
+                text = date,
+                fontSize = 12.sp,
+                color = Color.White.copy(alpha = 0.8f),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+            
+            // 健康指标
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                healthMetrics.take(3).forEach { metric ->
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = metric.value,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = when (metric.type) {
+                                HealthMetricType.HEART_RATE -> Color.Red
+                                HealthMetricType.STEPS -> Color.Green
+                                HealthMetricType.CALORIES -> Color.Orange
+                                else -> Color.White
+                            }
+                        )
+                        Text(
+                            text = metric.unit,
+                            fontSize = 8.sp,
+                            color = Color.White.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
-/**
- * Watch平台健康数据监控组件
- * 实时监控心率、步数等健康数据
- */
 @Composable
 actual fun UnifyHealthMonitor(
-    modifier: Modifier = Modifier,
-    healthData: List<UnifyHealthData> = emptyList(),
-    onDataUpdate: ((UnifyHealthData) -> Unit)? = null
+    metrics: List<HealthMetric>,
+    onMetricSelected: (HealthMetric) -> Unit,
+    modifier: Modifier
 ) {
-    // Watch平台健康数据监控
-    // 集成心率传感器、计步器等
-    androidx.compose.foundation.lazy.LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+    LazyColumn(
+        modifier = modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        items(healthData) { data ->
-            androidx.compose.material3.Card(
-                modifier = androidx.compose.ui.Modifier.fillMaxWidth()
-            ) {
-                androidx.compose.foundation.layout.Row(
-                    modifier = androidx.compose.ui.Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp),
-                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween
-                ) {
-                    androidx.compose.foundation.layout.Column {
-                        androidx.compose.material3.Text(data.type.displayName)
-                        androidx.compose.material3.Text("${data.value} ${data.unit}")
-                    }
-                    androidx.compose.material3.Icon(
-                        imageVector = androidx.compose.material.icons.Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = androidx.compose.ui.graphics.Color.Red
-                    )
-                }
-            }
-        }
-    }
-}
-
-/**
- * Watch平台可穿戴通知组件
- * 优化显示在小屏幕上的通知
- */
-@Composable
-actual fun UnifyWearableNotification(
-    title: String,
-    content: String,
-    modifier: Modifier = Modifier,
-    type: NotificationType = NotificationType.INFO,
-    onDismiss: (() -> Unit)? = null
-) {
-    // Watch平台通知组件
-    // 针对小屏幕优化的通知显示
-    androidx.compose.material3.Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = androidx.compose.material3.CardDefaults.cardColors(
-            containerColor = when (type) {
-                NotificationType.INFO -> androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.1f)
-                NotificationType.WARNING -> androidx.compose.ui.graphics.Color.Yellow.copy(alpha = 0.1f)
-                NotificationType.ERROR -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.1f)
-                NotificationType.SUCCESS -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.1f)
-            }
-        )
-    ) {
-        androidx.compose.foundation.layout.Column(
-            modifier = androidx.compose.ui.Modifier.padding(8.dp)
-        ) {
-            androidx.compose.foundation.layout.Row(
-                modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
-                horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
-            ) {
-                androidx.compose.material3.Text(
-                    text = title,
-                    style = androidx.compose.material3.MaterialTheme.typography.titleSmall,
-                    maxLines = 1
+        items(metrics) { metric ->
+            Card(
+                onClick = { onMetricSelected(metric) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFF1E1E1E)
                 )
-                androidx.compose.material3.IconButton(
-                    onClick = { onDismiss?.invoke() },
-                    modifier = androidx.compose.ui.Modifier.size(24.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    androidx.compose.material3.Icon(
-                        androidx.compose.material.icons.Icons.Default.Close,
-                        contentDescription = "关闭"
+                    // 指标图标
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = when (metric.type) {
+                                HealthMetricType.HEART_RATE -> "♥"
+                                HealthMetricType.STEPS -> "👟"
+                                HealthMetricType.CALORIES -> "🔥"
+                                HealthMetricType.DISTANCE -> "📏"
+                                HealthMetricType.SLEEP -> "😴"
+                                HealthMetricType.BLOOD_OXYGEN -> "🫁"
+                            },
+                            fontSize = 16.sp
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(12.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "${metric.value} ${metric.unit}",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = metric.type.name.replace("_", " "),
+                            fontSize = 10.sp,
+                            color = Color.White.copy(alpha = 0.7f)
+                        )
+                    }
+                    
+                    // 趋势指示器
+                    Text(
+                        text = when (metric.trend) {
+                            HealthTrend.UP -> "↗"
+                            HealthTrend.DOWN -> "↘"
+                            HealthTrend.STABLE -> "→"
+                        },
+                        fontSize = 16.sp,
+                        color = when (metric.trend) {
+                            HealthTrend.UP -> Color.Green
+                            HealthTrend.DOWN -> Color.Red
+                            HealthTrend.STABLE -> Color.Gray
+                        }
                     )
                 }
             }
-            androidx.compose.material3.Text(
-                text = content,
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
-                maxLines = 2,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-            )
         }
     }
 }
 
-/**
- * Watch平台触觉反馈控制组件
- * 控制智能手表的振动反馈
- */
 @Composable
-actual fun UnifyHapticFeedback(
-    modifier: Modifier = Modifier,
-    pattern: List<Long> = listOf(0L, 100L, 50L, 100L),
-    intensity: Float = 1f
+actual fun UnifyWatchNotifications(
+    notifications: List<WatchNotification>,
+    onNotificationAction: (WatchNotification, NotificationAction) -> Unit,
+    modifier: Modifier
 ) {
-    // Watch平台触觉反馈实现
-    // 实现自定义振动模式
-    androidx.compose.runtime.LaunchedEffect(pattern, intensity) {
-        try {
-            // 模拟Watch平台触觉反馈
-            for (duration in pattern) {
-                // 执行振动
-                kotlinx.coroutines.delay(duration)
-            }
-        } catch (e: Exception) {
-            // 静默处理触觉反馈错误
-        }
-    }
-}
-
-/**
- * Watch平台心率监控组件
- */
-@Composable
-actual fun UnifyHeartRateMonitor(
-    modifier: Modifier = Modifier,
-    onHeartRateUpdate: ((Int) -> Unit)? = null,
-    onError: ((String) -> Unit)? = null
-) {
-    // Watch平台心率传感器集成
-    // 实时心率数据获取
-    var heartRate by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(70) }
-
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        try {
-            // 模拟心率数据更新
-            while (true) {
-                val newHeartRate = (60..100).random()
-                heartRate = newHeartRate
-                onHeartRateUpdate?.invoke(newHeartRate)
-                kotlinx.coroutines.delay(2000) // 每2秒更新一次
-            }
-        } catch (e: Exception) {
-            onError?.invoke("Heart rate monitoring error: ${e.message}")
-        }
-    }
-
-    androidx.compose.foundation.layout.Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+    LazyColumn(
+        modifier = modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        androidx.compose.material3.Text(
-            text = "$heartRate",
-            style = androidx.compose.material3.MaterialTheme.typography.displayLarge,
-            color = androidx.compose.ui.graphics.Color.Red
-        )
-        androidx.compose.material3.Text(
-            text = "BPM",
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
-        )
-    }
-}
-
-/**
- * Watch平台计步器组件
- */
-@Composable
-actual fun UnifyStepCounter(
-    modifier: Modifier = Modifier,
-    onStepCountUpdate: ((Int) -> Unit)? = null,
-    targetSteps: Int = 10000
-) {
-    // Watch平台步数统计
-    // 显示当前步数和目标进度
-    var stepCount by androidx.compose.runtime.remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val progress = stepCount.toFloat() / targetSteps.toFloat()
-
-    androidx.compose.runtime.LaunchedEffect(Unit) {
-        try {
-            // 模拟步数更新
-            while (true) {
-                val increment = (1..10).random()
-                stepCount = (stepCount + increment).coerceAtMost(targetSteps)
-                onStepCountUpdate?.invoke(stepCount)
-                kotlinx.coroutines.delay(5000) // 每5秒更新一次
+        items(notifications) { notification ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = when (notification.priority) {
+                        NotificationPriority.URGENT -> Color(0xFF8B0000)
+                        NotificationPriority.HIGH -> Color(0xFF4A4A4A)
+                        else -> Color(0xFF2A2A2A)
+                    }
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            text = notification.title,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                        
+                        Text(
+                            text = formatTimestamp(notification.timestamp),
+                            fontSize = 8.sp,
+                            color = Color.White.copy(alpha = 0.6f)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = notification.message,
+                        fontSize = 10.sp,
+                        color = Color.White.copy(alpha = 0.8f),
+                        maxLines = 2
+                    )
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { 
+                                onNotificationAction(notification, NotificationAction.DISMISS)
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF444444)
+                            )
+                        ) {
+                            Text("忽略", fontSize = 8.sp)
+                        }
+                        
+                        Button(
+                            onClick = { 
+                                onNotificationAction(notification, NotificationAction.VIEW)
+                            },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF0066CC)
+                            )
+                        ) {
+                            Text("查看", fontSize = 8.sp)
+                        }
+                    }
+                }
             }
-        } catch (e: Exception) {
-            // 静默处理步数更新错误
         }
     }
+}
 
-    androidx.compose.foundation.layout.Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+@Composable
+actual fun UnifyWatchWorkout(
+    workoutType: WorkoutType,
+    duration: Long,
+    metrics: Map<String, String>,
+    onWorkoutAction: (WorkoutAction) -> Unit,
+    modifier: Modifier
+) {
+    var isActive by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        androidx.compose.material3.Text(
-            text = "$stepCount",
-            style = androidx.compose.material3.MaterialTheme.typography.displayMedium,
-            color = androidx.compose.ui.graphics.Color.Blue
+        // 运动类型
+        Text(
+            text = workoutType.displayName,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
         )
-        androidx.compose.material3.Text(
-            text = "/ $targetSteps 步",
-            style = androidx.compose.material3.MaterialTheme.typography.titleMedium
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 运动时长
+        Text(
+            text = formatDuration(duration),
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Green
         )
-
-        androidx.compose.material3.LinearProgressIndicator(
-            progress = progress,
-            modifier = androidx.compose.ui.Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            color = if (progress >= 1.0f) androidx.compose.ui.graphics.Color.Green else androidx.compose.ui.graphics.Color.Blue
-        )
-
-        androidx.compose.material3.Text(
-            text = "${(progress * 100).toInt()}% 完成",
-            style = androidx.compose.material3.MaterialTheme.typography.bodyMedium
-        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 运动指标
+        metrics.forEach { (key, value) ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = key,
+                    fontSize = 10.sp,
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+                Text(
+                    text = value,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(24.dp))
+        
+        // 控制按钮
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Button(
+                onClick = {
+                    isActive = !isActive
+                    onWorkoutAction(
+                        if (isActive) WorkoutAction.START else WorkoutAction.PAUSE
+                    )
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (isActive) Color.Red else Color.Green
+                )
+            ) {
+                Text(
+                    text = if (isActive) "暂停" else "开始",
+                    fontSize = 10.sp
+                )
+            }
+            
+            Button(
+                onClick = { onWorkoutAction(WorkoutAction.STOP) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Gray
+                )
+            ) {
+                Text("结束", fontSize = 10.sp)
+            }
+        }
     }
 }
 
-/**
- * Watch平台睡眠监控组件
- */
 @Composable
-actual fun UnifySleepMonitor(
-    modifier: Modifier = Modifier,
-    onSleepDataUpdate: ((UnifySleepData) -> Unit)? = null
+actual fun UnifyWatchQuickActions(
+    actions: List<QuickAction>,
+    onActionSelected: (QuickAction) -> Unit,
+    modifier: Modifier
 ) {
-    // Watch平台睡眠数据监控
-    // 分析睡眠质量和时长
+    LazyColumn(
+        modifier = modifier.padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(actions) { action ->
+            Button(
+                onClick = { onActionSelected(action) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0066CC)
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = action.icon,
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = action.title,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+        }
+    }
 }
 
-/**
- * Watch平台运动追踪组件
- */
-@Composable
-actual fun UnifyWorkoutTracker(
-    workoutType: UnifyWorkoutType,
-    modifier: Modifier = Modifier,
-    onWorkoutUpdate: ((UnifyWorkoutData) -> Unit)? = null,
-    onComplete: (() -> Unit)? = null
-) {
-    // Watch平台运动追踪
-    // 支持跑步、骑行、游泳等多种运动
+enum class WorkoutType(val displayName: String) {
+    RUNNING("跑步"),
+    WALKING("步行"),
+    CYCLING("骑行"),
+    SWIMMING("游泳"),
+    YOGA("瑜伽"),
+    STRENGTH("力量训练")
 }
 
-/**
- * Watch平台天气显示组件
- */
-@Composable
-actual fun UnifyWeatherDisplay(
-    modifier: Modifier = Modifier,
-    location: String = "",
-    onWeatherUpdate: ((UnifyWeatherData) -> Unit)? = null
-) {
-    // Watch平台天气信息显示
-    // 简洁的天气展示
+enum class WorkoutAction {
+    START, PAUSE, STOP, RESUME
 }
 
-/**
- * Watch平台紧急联系组件
- */
-@Composable
-actual fun UnifyEmergencyContact(
-    modifier: Modifier = Modifier,
-    emergencyContacts: List<UnifyContact> = emptyList(),
-    onEmergencyCall: ((String) -> Unit)? = null
-) {
-    // Watch平台紧急联系功能
-    // 一键拨打紧急联系人
+enum class NotificationAction {
+    DISMISS, VIEW, REPLY
 }
 
-/**
- * Watch平台消息通知组件
- */
-@Composable
-actual fun UnifyMessageNotification(
-    modifier: Modifier = Modifier,
-    message: UnifyMessage? = null,
-    onReply: ((String) -> Unit)? = null,
-    onDismiss: (() -> Unit)? = null
-) {
-    // Watch平台消息通知
-    // 支持快速回复功能
+data class QuickAction(
+    val id: String,
+    val title: String,
+    val icon: String,
+    val action: () -> Unit = {}
+)
+
+private fun formatTimestamp(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val minutes = diff / (1000 * 60)
+    
+    return when {
+        minutes < 1 -> "刚刚"
+        minutes < 60 -> "${minutes}分钟前"
+        else -> "${minutes / 60}小时前"
+    }
 }
 
-/**
- * Watch平台音乐控制组件
- */
-@Composable
-actual fun UnifyMusicControl(
-    modifier: Modifier = Modifier,
-    isPlaying: Boolean = false,
-    currentSong: String = "",
-    onPlayPause: (() -> Unit)? = null,
-    onNext: (() -> Unit)? = null,
-    onPrevious: (() -> Unit)? = null
-) {
-    // Watch平台音乐播放控制
-    // 简单的播放控制界面
-}
-
-/**
- * Watch平台闹钟设置组件
- */
-@Composable
-actual fun UnifyAlarmClock(
-    modifier: Modifier = Modifier,
-    alarms: List<UnifyAlarm> = emptyList(),
-    onAlarmAdd: (() -> Unit)? = null,
-    onAlarmEdit: ((String) -> Unit)? = null,
-    onAlarmDelete: ((String) -> Unit)? = null
-) {
-    // Watch平台闹钟管理
-    // 设置和管理闹钟
-}
-
-/**
- * Watch平台定时器组件
- */
-@Composable
-actual fun UnifyTimer(
-    modifier: Modifier = Modifier,
-    duration: Long = 0,
-    isRunning: Boolean = false,
-    onStart: (() -> Unit)? = null,
-    onPause: (() -> Unit)? = null,
-    onReset: (() -> Unit)? = null,
-    onComplete: (() -> Unit)? = null
-) {
-    // Watch平台倒计时器
-    // 支持自定义时长
-}
-
-/**
- * Watch平台秒表组件
- */
-@Composable
-actual fun UnifyStopwatch(
-    modifier: Modifier = Modifier,
-    isRunning: Boolean = false,
-    elapsedTime: Long = 0,
-    laps: List<Long> = emptyList(),
-    onStart: (() -> Unit)? = null,
-    onStop: (() -> Unit)? = null,
-    onReset: (() -> Unit)? = null,
-    onLap: (() -> Unit)? = null
-) {
-    // Watch平台秒表功能
-    // 支持圈速记录
+private fun formatDuration(durationMs: Long): String {
+    val totalSeconds = durationMs / 1000
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+    
+    return if (hours > 0) {
+        String.format("%d:%02d:%02d", hours, minutes, seconds)
+    } else {
+        String.format("%d:%02d", minutes, seconds)
+    }
 }

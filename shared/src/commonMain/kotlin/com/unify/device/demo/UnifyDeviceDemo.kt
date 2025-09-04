@@ -1,49 +1,44 @@
 package com.unify.device.demo
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.unify.device.UnifyDeviceManager
-import com.unify.device.PermissionType
-import com.unify.device.PermissionStatus
-import com.unify.device.SensorType
-import com.unify.device.DeviceInfo
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * 统一设备功能演示应用
- * 展示权限管理、设备信息、传感器访问、系统功能和硬件访问
+ * 设备管理演示应用
+ * 展示跨平台设备信息获取、权限管理和传感器访问功能
  */
 @Composable
 fun UnifyDeviceDemo() {
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("权限管理", "设备信息", "传感器", "系统功能", "硬件访问")
+    var deviceState by remember { mutableStateOf(DeviceDemoState()) }
+    val scope = rememberCoroutineScope()
+    
+    LaunchedEffect(Unit) {
+        scope.launch {
+            // 模拟设备信息加载
+            deviceState = deviceState.copy(isLoading = true)
+            delay(1500)
+            deviceState = deviceState.copy(
+                isLoading = false,
+                deviceInfo = generateDeviceInfo(),
+                permissions = generatePermissions(),
+                sensors = generateSensors(),
+                systemFeatures = generateSystemFeatures()
+            )
+        }
+    }
     
     Column(
         modifier = Modifier
@@ -51,102 +46,101 @@ fun UnifyDeviceDemo() {
             .padding(16.dp)
     ) {
         Text(
-            text = "Unify Device 演示",
-            fontSize = 24.sp,
+            text = "设备管理演示",
+            style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(bottom = 16.dp)
         )
         
-        TabRow(selectedTabIndex = selectedTab) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title) }
-                )
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        when (selectedTab) {
-            0 -> PermissionDemo()
-            1 -> DeviceInfoDemo()
-            2 -> SensorDemo()
-            3 -> SystemFeaturesDemo()
-            4 -> HardwareDemo()
-        }
-    }
-}
-
-@Composable
-fun PermissionDemo() {
-    val scope = rememberCoroutineScope()
-    var permissionResults by remember { mutableStateOf<Map<UnifyPermission, UnifyPermissionStatus>>(emptyMap()) }
-    
-    val deviceManager = remember {
-        UnifyDeviceManagerFactory.create()
-    }
-    
-    LaunchedEffect(Unit) {
-        deviceManager.initialize()
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-    ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "权限管理",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            val permissions = listOf(
-                                UnifyPermission.CAMERA,
-                                UnifyPermission.MICROPHONE,
-                                UnifyPermission.LOCATION_FINE,
-                                UnifyPermission.STORAGE_READ,
-                                UnifyPermission.STORAGE_WRITE
-                            )
-                            permissionResults = deviceManager.permissions.checkPermissions(permissions)
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+        if (deviceState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("检查权限状态")
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("正在获取设备信息...")
+                }
+            }
+        } else {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    DeviceInfoCard(deviceInfo = deviceState.deviceInfo)
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                if (permissionResults.isNotEmpty()) {
-                    Text(
-                        text = "权限状态:",
-                        fontWeight = FontWeight.Bold
-                    )
-                    
-                    permissionResults.forEach { (permission, status) ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(permission.name)
-                            Text(
-                                text = status.name,
-                                color = when (status) {
-                                    UnifyPermissionStatus.GRANTED -> Color.Green
-                                    UnifyPermissionStatus.DENIED -> Color.Red
-                                    else -> Color.Gray
+                item {
+                    PermissionsCard(
+                        permissions = deviceState.permissions,
+                        onPermissionRequest = { permission ->
+                            scope.launch {
+                                val updatedPermissions = deviceState.permissions.map {
+                                    if (it.name == permission.name) {
+                                        it.copy(status = PermissionStatus.GRANTED)
+                                    } else it
                                 }
+                                deviceState = deviceState.copy(permissions = updatedPermissions)
+                            }
+                        }
+                    )
+                }
+                
+                item {
+                    SensorsCard(
+                        sensors = deviceState.sensors,
+                        onSensorToggle = { sensor, enabled ->
+                            val updatedSensors = deviceState.sensors.map {
+                                if (it.name == sensor.name) {
+                                    it.copy(isActive = enabled)
+                                } else it
+                            }
+                            deviceState = deviceState.copy(sensors = updatedSensors)
+                        }
+                    )
+                }
+                
+                item {
+                    SystemFeaturesCard(features = deviceState.systemFeatures)
+                }
+                
+                item {
+                    DeviceActionsCard(
+                        onVibrate = {
+                            scope.launch {
+                                // 模拟振动
+                                deviceState = deviceState.copy(lastAction = "设备振动")
+                            }
+                        },
+                        onTakePhoto = {
+                            scope.launch {
+                                deviceState = deviceState.copy(lastAction = "拍照完成")
+                            }
+                        },
+                        onGetLocation = {
+                            scope.launch {
+                                deviceState = deviceState.copy(lastAction = "获取位置: 北京市朝阳区")
+                            }
+                        }
+                    )
+                }
+                
+                if (deviceState.lastAction.isNotEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Text(
+                                text = "最后操作: ${deviceState.lastAction}",
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
@@ -157,88 +151,148 @@ fun PermissionDemo() {
 }
 
 @Composable
-fun DeviceInfoDemo() {
-    val scope = rememberCoroutineScope()
-    var deviceDetails by remember { mutableStateOf<UnifyDeviceDetails?>(null) }
-    var systemInfo by remember { mutableStateOf<UnifySystemInfo?>(null) }
-    var hardwareInfo by remember { mutableStateOf<UnifyHardwareInfo?>(null) }
-    
-    val deviceManager = remember {
-        UnifyDeviceManagerFactory.create()
-    }
-    
-    LaunchedEffect(Unit) {
-        deviceManager.initialize()
-        scope.launch {
-            deviceDetails = deviceManager.deviceInfo.getDeviceInfo()
-            systemInfo = deviceManager.deviceInfo.getSystemInfo()
-            hardwareInfo = deviceManager.deviceInfo.getHardwareInfo()
-        }
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+private fun DeviceInfoCard(deviceInfo: DeviceInfo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        deviceDetails?.let { details ->
-            DeviceInfoCard("设备信息", listOf(
-                "设备名称" to details.deviceName,
-                "制造商" to details.manufacturer,
-                "型号" to details.model,
-                "品牌" to details.brand,
-                "是否模拟器" to if (details.isEmulator) "是" else "否",
-                "是否Root" to if (details.isRooted) "是" else "否"
-            ))
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        systemInfo?.let { system ->
-            DeviceInfoCard("系统信息", listOf(
-                "操作系统" to system.osName,
-                "系统版本" to system.osVersion,
-                "API级别" to system.osApiLevel.toString(),
-                "语言环境" to system.locale,
-                "时区" to system.timezone
-            ))
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        hardwareInfo?.let { hardware ->
-            DeviceInfoCard("硬件信息", listOf(
-                "CPU架构" to hardware.cpuArchitecture,
-                "CPU核心数" to hardware.cpuCores.toString(),
-                "总内存" to formatBytes(hardware.totalMemory),
-                "可用内存" to formatBytes(hardware.availableMemory),
-                "屏幕分辨率" to "${hardware.screenWidth}x${hardware.screenHeight}",
-                "屏幕密度" to hardware.screenDensity.toString()
-            ))
-        }
-    }
-}
-
-@Composable
-fun DeviceInfoCard(title: String, items: List<Pair<String, String>>) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
             Text(
-                text = title,
-                fontSize = 18.sp,
+                text = "设备信息",
+                style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 12.dp)
             )
             
-            items.forEach { (key, value) ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+            DeviceInfoItem("设备型号", deviceInfo.model)
+            DeviceInfoItem("操作系统", deviceInfo.platform)
+            DeviceInfoItem("系统版本", deviceInfo.version)
+            DeviceInfoItem("设备ID", deviceInfo.deviceId)
+            DeviceInfoItem("屏幕分辨率", "${deviceInfo.screenWidth}x${deviceInfo.screenHeight}")
+            DeviceInfoItem("内存", "${deviceInfo.totalMemory}GB")
+            DeviceInfoItem("存储空间", "${deviceInfo.totalStorage}GB")
+            DeviceInfoItem("电池电量", "${deviceInfo.batteryLevel}%")
+        }
+    }
+}
+
+@Composable
+private fun DeviceInfoItem(label: String, value: String) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun PermissionsCard(
+    permissions: List<DevicePermission>,
+    onPermissionRequest: (DevicePermission) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "权限管理",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            permissions.forEach { permission ->
+                PermissionItem(
+                    permission = permission,
+                    onRequest = { onPermissionRequest(permission) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PermissionItem(
+    permission: DevicePermission,
+    onRequest: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = permission.icon,
+                contentDescription = permission.name,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
+                Text(
+                    text = permission.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = permission.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        when (permission.status) {
+            PermissionStatus.GRANTED -> {
+                Surface(
+                    color = Color.Green,
+                    shape = MaterialTheme.shapes.small
                 ) {
-                    Text(key, modifier = Modifier.weight(1f))
-                    Text(value, modifier = Modifier.weight(1f))
+                    Text(
+                        text = "已授权",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White
+                    )
+                }
+            }
+            PermissionStatus.DENIED -> {
+                TextButton(onClick = onRequest) {
+                    Text("请求权限")
+                }
+            }
+            PermissionStatus.NOT_DETERMINED -> {
+                Surface(
+                    color = Color.Gray,
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = "未确定",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White
+                    )
                 }
             }
         }
@@ -246,255 +300,360 @@ fun DeviceInfoCard(title: String, items: List<Pair<String, String>>) {
 }
 
 @Composable
-fun SensorDemo() {
-    val scope = rememberCoroutineScope()
-    var availableSensors by remember { mutableStateOf<List<UnifySensorInfo>>(emptyList()) }
-    var sensorData by remember { mutableStateOf<UnifySensorData?>(null) }
-    var isListening by remember { mutableStateOf(false) }
-    
-    val deviceManager = remember {
-        UnifyDeviceManagerFactory.create()
-    }
-    
-    LaunchedEffect(Unit) {
-        deviceManager.initialize()
-        scope.launch {
-            availableSensors = deviceManager.sensors.getAvailableSensors()
-        }
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+private fun SensorsCard(
+    sensors: List<DeviceSensor>,
+    onSensorToggle: (DeviceSensor, Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "传感器管理",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "传感器管理",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            sensors.forEach { sensor ->
+                SensorItem(
+                    sensor = sensor,
+                    onToggle = { enabled -> onSensorToggle(sensor, enabled) }
                 )
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            if (!isListening) {
-                                deviceManager.sensors.startSensorListening(
-                                    UnifySensorType.ACCELEROMETER
-                                ).collect { data ->
-                                    sensorData = data
-                                }
-                                isListening = true
-                            } else {
-                                deviceManager.sensors.stopSensorListening(UnifySensorType.ACCELEROMETER)
-                                isListening = false
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isListening) "停止监听加速度计" else "开始监听加速度计")
-                }
-                
-                sensorData?.let { data ->
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("加速度计数据:", fontWeight = FontWeight.Bold)
-                    Text("X: ${data.values.getOrNull(0) ?: 0f}")
-                    Text("Y: ${data.values.getOrNull(1) ?: 0f}")
-                    Text("Z: ${data.values.getOrNull(2) ?: 0f}")
-                    Text("精度: ${data.accuracy}")
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "可用传感器",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                LazyColumn(modifier = Modifier.height(200.dp)) {
-                    items(availableSensors) { sensor ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 2.dp)
-                        ) {
-                            Column(modifier = Modifier.padding(8.dp)) {
-                                Text(
-                                    text = sensor.name,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp
-                                )
-                                Text(
-                                    text = "类型: ${sensor.type.name}",
-                                    fontSize = 12.sp
-                                )
-                                Text(
-                                    text = "厂商: ${sensor.vendor}",
-                                    fontSize = 12.sp
-                                )
-                            }
-                        }
-                    }
-                }
             }
         }
     }
 }
 
 @Composable
-fun SystemFeaturesDemo() {
-    val scope = rememberCoroutineScope()
-    val deviceManager = remember {
-        UnifyDeviceManagerFactory.create()
-    }
-    
-    LaunchedEffect(Unit) {
-        deviceManager.initialize()
-    }
-    
-    Column(
+private fun SensorItem(
+    sensor: DeviceSensor,
+    onToggle: (Boolean) -> Unit
+) {
+    Row(
         modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f)
+        ) {
+            Icon(
+                imageVector = sensor.icon,
+                contentDescription = sensor.name,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Column {
                 Text(
-                    text = "系统功能",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    text = sensor.name,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
                 )
-                
+                Text(
+                    text = if (sensor.isActive) "当前值: ${sensor.currentValue}" else "未激活",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        Switch(
+            checked = sensor.isActive,
+            onCheckedChange = onToggle
+        )
+    }
+}
+
+@Composable
+private fun SystemFeaturesCard(features: List<SystemFeature>) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "系统功能",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            features.chunked(2).forEach { rowFeatures ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                deviceManager.systemFeatures.vibrate(500)
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("振动")
+                    rowFeatures.forEach { feature ->
+                        SystemFeatureChip(
+                            feature = feature,
+                            modifier = Modifier.weight(1f)
+                        )
                     }
-                    
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                deviceManager.systemFeatures.copyToClipboard("测试文本")
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("复制文本")
+                    if (rowFeatures.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                 }
-                
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                Button(
-                    onClick = {
-                        scope.launch {
-                            val clipboardText = deviceManager.systemFeatures.getFromClipboard()
-                            // 显示剪贴板内容
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("读取剪贴板")
-                }
             }
         }
     }
 }
 
 @Composable
-fun HardwareDemo() {
-    val scope = rememberCoroutineScope()
-    var hardwareStatus by remember { mutableStateOf<Map<String, Boolean>>(emptyMap()) }
-    
-    val deviceManager = remember {
-        UnifyDeviceManagerFactory.create()
-    }
-    
-    LaunchedEffect(Unit) {
-        deviceManager.initialize()
-        scope.launch {
-            hardwareStatus = mapOf(
-                "相机" to deviceManager.hardware.isCameraAvailable(),
-                "麦克风" to deviceManager.hardware.isMicrophoneAvailable(),
-                "位置服务" to deviceManager.hardware.isLocationAvailable(),
-                "蓝牙" to deviceManager.hardware.isBluetoothAvailable(),
-                "NFC" to deviceManager.hardware.isNFCAvailable(),
-                "生物识别" to deviceManager.hardware.isBiometricAvailable()
+private fun SystemFeatureChip(
+    feature: SystemFeature,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        color = if (feature.isSupported) 
+            MaterialTheme.colorScheme.primaryContainer 
+        else 
+            MaterialTheme.colorScheme.surfaceVariant,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier.padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = feature.icon,
+                contentDescription = feature.name,
+                modifier = Modifier.size(16.dp),
+                tint = if (feature.isSupported) 
+                    MaterialTheme.colorScheme.onPrimaryContainer 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = feature.name,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (feature.isSupported) 
+                    MaterialTheme.colorScheme.onPrimaryContainer 
+                else 
+                    MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+}
+
+@Composable
+private fun DeviceActionsCard(
+    onVibrate: () -> Unit,
+    onTakePhoto: () -> Unit,
+    onGetLocation: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "硬件功能",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
-                )
-                
-                hardwareStatus.forEach { (feature, available) ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(feature)
-                        Text(
-                            text = if (available) "可用" else "不可用",
-                            color = if (available) Color.Green else Color.Red
-                        )
-                    }
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "设备操作",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onVibrate,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Vibration,
+                        contentDescription = "振动",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("振动")
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Button(
+                    onClick = onTakePhoto,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CameraAlt,
+                        contentDescription = "拍照",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("拍照")
+                }
                 
                 Button(
-                    onClick = {
-                        scope.launch {
-                            val result = deviceManager.hardware.takePicture()
-                            // 处理拍照结果
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = onGetLocation,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    Text("拍照")
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "定位",
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("定位")
                 }
             }
         }
     }
 }
 
-private fun formatBytes(bytes: Long): String {
-    return when {
-        bytes >= 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024 * 1024)} GB"
-        bytes >= 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-        bytes >= 1024 -> "${bytes / 1024} KB"
-        else -> "${bytes} B"
-    }
+// 数据生成函数
+private fun generateDeviceInfo(): DeviceInfo {
+    return DeviceInfo(
+        model = "Unify Device Pro",
+        platform = "Unify OS",
+        version = "1.0.0",
+        deviceId = "unify-${System.currentTimeMillis().hashCode()}",
+        screenWidth = 1080,
+        screenHeight = 2340,
+        totalMemory = 8,
+        totalStorage = 128,
+        batteryLevel = (60..100).random()
+    )
 }
+
+private fun generatePermissions(): List<DevicePermission> {
+    return listOf(
+        DevicePermission(
+            name = "相机",
+            description = "访问设备相机",
+            icon = Icons.Default.CameraAlt,
+            status = PermissionStatus.GRANTED
+        ),
+        DevicePermission(
+            name = "麦克风",
+            description = "录制音频",
+            icon = Icons.Default.Mic,
+            status = PermissionStatus.DENIED
+        ),
+        DevicePermission(
+            name = "位置",
+            description = "获取设备位置",
+            icon = Icons.Default.LocationOn,
+            status = PermissionStatus.GRANTED
+        ),
+        DevicePermission(
+            name = "存储",
+            description = "读写文件",
+            icon = Icons.Default.Storage,
+            status = PermissionStatus.NOT_DETERMINED
+        ),
+        DevicePermission(
+            name = "通知",
+            description = "发送推送通知",
+            icon = Icons.Default.Notifications,
+            status = PermissionStatus.GRANTED
+        )
+    )
+}
+
+private fun generateSensors(): List<DeviceSensor> {
+    return listOf(
+        DeviceSensor(
+            name = "加速度计",
+            icon = Icons.Default.Speed,
+            isActive = true,
+            currentValue = "X: 0.2, Y: 9.8, Z: 0.1"
+        ),
+        DeviceSensor(
+            name = "陀螺仪",
+            icon = Icons.Default.RotateRight,
+            isActive = false,
+            currentValue = ""
+        ),
+        DeviceSensor(
+            name = "磁力计",
+            icon = Icons.Default.Explore,
+            isActive = true,
+            currentValue = "45.2°"
+        ),
+        DeviceSensor(
+            name = "光线传感器",
+            icon = Icons.Default.LightMode,
+            isActive = true,
+            currentValue = "350 lux"
+        ),
+        DeviceSensor(
+            name = "距离传感器",
+            icon = Icons.Default.Straighten,
+            isActive = false,
+            currentValue = ""
+        )
+    )
+}
+
+private fun generateSystemFeatures(): List<SystemFeature> {
+    return listOf(
+        SystemFeature("蓝牙", Icons.Default.Bluetooth, true),
+        SystemFeature("WiFi", Icons.Default.Wifi, true),
+        SystemFeature("NFC", Icons.Default.Nfc, true),
+        SystemFeature("GPS", Icons.Default.GpsFixed, true),
+        SystemFeature("指纹", Icons.Default.Fingerprint, false),
+        SystemFeature("面部识别", Icons.Default.Face, true),
+        SystemFeature("双卡", Icons.Default.SimCard, false),
+        SystemFeature("无线充电", Icons.Default.BatteryChargingFull, true)
+    )
+}
+
+// 数据类定义
+data class DeviceDemoState(
+    val isLoading: Boolean = false,
+    val deviceInfo: DeviceInfo = DeviceInfo(),
+    val permissions: List<DevicePermission> = emptyList(),
+    val sensors: List<DeviceSensor> = emptyList(),
+    val systemFeatures: List<SystemFeature> = emptyList(),
+    val lastAction: String = ""
+)
+
+data class DeviceInfo(
+    val model: String = "",
+    val platform: String = "",
+    val version: String = "",
+    val deviceId: String = "",
+    val screenWidth: Int = 0,
+    val screenHeight: Int = 0,
+    val totalMemory: Int = 0,
+    val totalStorage: Int = 0,
+    val batteryLevel: Int = 0
+)
+
+data class DevicePermission(
+    val name: String,
+    val description: String,
+    val icon: ImageVector,
+    val status: PermissionStatus
+)
+
+enum class PermissionStatus {
+    GRANTED, DENIED, NOT_DETERMINED
+}
+
+data class DeviceSensor(
+    val name: String,
+    val icon: ImageVector,
+    val isActive: Boolean,
+    val currentValue: String
+)
+
+data class SystemFeature(
+    val name: String,
+    val icon: ImageVector,
+    val isSupported: Boolean
+)

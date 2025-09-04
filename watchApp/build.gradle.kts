@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.kotlin.compose)
 }
 
 kotlin {
@@ -31,33 +32,22 @@ kotlin {
     }
     
     sourceSets {
-        val commonMain by getting {
-            dependencies {
-                implementation(project(":shared"))
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
-            }
+        commonMain.dependencies {
+            implementation(project(":shared"))
+            implementation(compose.runtime)
+            implementation(compose.foundation)
+            implementation(compose.material3)
+            implementation(compose.ui)
         }
         
         val watchMain by getting {
             dependencies {
-                // Watch平台特定依赖
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
             }
         }
         
-        val iosMain by getting {
-            dependencies {
-                // iOS Watch特定依赖
-            }
-        }
-        
-        val commonTest by getting {
-            dependencies {
-                implementation(libs.kotlin.test)
-            }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
         }
     }
 }

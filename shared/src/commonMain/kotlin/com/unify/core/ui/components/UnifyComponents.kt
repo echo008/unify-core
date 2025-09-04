@@ -1,277 +1,546 @@
 package com.unify.core.ui.components
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyItemScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
- * Unify-Core 跨平台响应式 UI 组件库
- * 100% 纯 Compose 实现，支持所有平台
+ * Unify核心UI组件集合
+ * 提供跨平台统一的基础UI组件
  */
 
 /**
- * 1. 自适应卡片组件
+ * Unify主题颜色
+ */
+object UnifyColors {
+    val Primary = Color(0xFF6200EE)
+    val PrimaryVariant = Color(0xFF3700B3)
+    val Secondary = Color(0xFF03DAC6)
+    val SecondaryVariant = Color(0xFF018786)
+    val Background = Color(0xFFFFFFFF)
+    val Surface = Color(0xFFFFFFFF)
+    val Error = Color(0xFFB00020)
+    val OnPrimary = Color(0xFFFFFFFF)
+    val OnSecondary = Color(0xFF000000)
+    val OnBackground = Color(0xFF000000)
+    val OnSurface = Color(0xFF000000)
+    val OnError = Color(0xFFFFFFFF)
+    
+    // 扩展颜色
+    val Success = Color(0xFF4CAF50)
+    val Warning = Color(0xFFFF9800)
+    val Info = Color(0xFF2196F3)
+    val Light = Color(0xFFF5F5F5)
+    val Dark = Color(0xFF212121)
+}
+
+/**
+ * Unify间距系统
+ */
+object UnifySpacing {
+    val xs = 4.dp
+    val sm = 8.dp
+    val md = 16.dp
+    val lg = 24.dp
+    val xl = 32.dp
+    val xxl = 48.dp
+}
+
+/**
+ * Unify字体大小
+ */
+object UnifyFontSizes {
+    val xs = 10.sp
+    val sm = 12.sp
+    val md = 14.sp
+    val lg = 16.sp
+    val xl = 18.sp
+    val xxl = 20.sp
+    val h6 = 20.sp
+    val h5 = 24.sp
+    val h4 = 34.sp
+    val h3 = 48.sp
+    val h2 = 60.sp
+    val h1 = 96.sp
+}
+
+/**
+ * Unify圆角系统
+ */
+object UnifyCornerRadius {
+    val none = 0.dp
+    val xs = 2.dp
+    val sm = 4.dp
+    val md = 8.dp
+    val lg = 12.dp
+    val xl = 16.dp
+    val xxl = 24.dp
+    val full = 50.dp
+}
+
+/**
+ * Unify阴影系统
+ */
+object UnifyElevation {
+    val none = 0.dp
+    val xs = 1.dp
+    val sm = 2.dp
+    val md = 4.dp
+    val lg = 8.dp
+    val xl = 12.dp
+    val xxl = 16.dp
+}
+
+/**
+ * Unify容器组件
  */
 @Composable
-fun UnifyCard(
+fun UnifyContainer(
     modifier: Modifier = Modifier,
-    elevation: Dp = 4.dp,
-    colors: CardColors = CardDefaults.cardColors(),
+    backgroundColor: Color = UnifyColors.Background,
+    padding: PaddingValues = PaddingValues(UnifySpacing.md),
+    elevation: androidx.compose.ui.unit.Dp = UnifyElevation.none,
+    cornerRadius: androidx.compose.ui.unit.Dp = UnifyCornerRadius.none,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Card(
-        modifier = modifier.platformSpecific(),
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = colors
+        shape = RoundedCornerShape(cornerRadius)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(padding),
             content = content
         )
     }
 }
 
 /**
- * 2. 自适应按钮组件
+ * Unify卡片组件
  */
 @Composable
-fun UnifyButton(
-    onClick: () -> Unit,
+fun UnifyCard(
     modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    colors: ButtonColors = ButtonDefaults.buttonColors(),
-    text: String
+    title: String? = null,
+    subtitle: String? = null,
+    backgroundColor: Color = UnifyColors.Surface,
+    elevation: androidx.compose.ui.unit.Dp = UnifyElevation.sm,
+    cornerRadius: androidx.compose.ui.unit.Dp = UnifyCornerRadius.md,
+    padding: PaddingValues = PaddingValues(UnifySpacing.md),
+    onClick: (() -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit = {}
 ) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.platformButtonStyle(),
-        enabled = enabled,
-        colors = colors
+    Card(
+        modifier = modifier.then(
+            if (onClick != null) {
+                Modifier.clickable { onClick() }
+            } else Modifier
+        ),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation),
+        shape = RoundedCornerShape(cornerRadius)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelLarge
-        )
-    }
-}
-
-/**
- * 3. 自适应文本输入框
- */
-@Composable
-fun UnifyTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    label: String? = null,
-    placeholder: String? = null,
-    enabled: Boolean = true,
-    singleLine: Boolean = true,
-    isError: Boolean = false
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier.platformTextFieldStyle(),
-        label = label?.let { { Text(it) } },
-        placeholder = placeholder?.let { { Text(it) } },
-        enabled = enabled,
-        singleLine = singleLine,
-        isError = isError,
-        colors = OutlinedTextFieldDefaults.colors()
-    )
-}
-
-/**
- * 4. 自适应列表组件
- */
-@Composable
-fun <T> UnifyLazyList(
-    items: List<T>,
-    modifier: Modifier = Modifier,
-    key: ((T) -> Any)? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
-    verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
-    itemContent: @Composable LazyItemScope.(T) -> Unit
-) {
-    LazyColumn(
-        modifier = modifier,
-        contentPadding = contentPadding,
-        verticalArrangement = verticalArrangement
-    ) {
-        items(
-            items = items,
-            key = key
-        ) { item ->
-            itemContent(item)
+        Column(
+            modifier = Modifier.padding(padding)
+        ) {
+            title?.let {
+                Text(
+                    text = it,
+                    fontSize = UnifyFontSizes.lg,
+                    fontWeight = FontWeight.Bold,
+                    color = UnifyColors.OnSurface
+                )
+            }
+            
+            subtitle?.let {
+                Text(
+                    text = it,
+                    fontSize = UnifyFontSizes.md,
+                    color = UnifyColors.OnSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(top = UnifySpacing.xs)
+                )
+            }
+            
+            if (title != null || subtitle != null) {
+                Spacer(modifier = Modifier.height(UnifySpacing.sm))
+            }
+            
+            content()
         }
     }
 }
 
 /**
- * 5. 响应式网格布局
+ * Unify分隔线组件
  */
 @Composable
-fun UnifyGrid(
+fun UnifyDivider(
     modifier: Modifier = Modifier,
-    columns: Int = 2,
-    spacing: Dp = 8.dp,
-    content: @Composable () -> Unit
+    color: Color = UnifyColors.OnSurface.copy(alpha = 0.12f),
+    thickness: androidx.compose.ui.unit.Dp = 1.dp,
+    startIndent: androidx.compose.ui.unit.Dp = 0.dp
 ) {
-    // 使用 FlowRow 实现响应式网格
+    HorizontalDivider(
+        modifier = modifier,
+        color = color,
+        thickness = thickness
+    )
+}
+
+/**
+ * Unify垂直分隔线组件
+ */
+@Composable
+fun UnifyVerticalDivider(
+    modifier: Modifier = Modifier,
+    color: Color = UnifyColors.OnSurface.copy(alpha = 0.12f),
+    thickness: androidx.compose.ui.unit.Dp = 1.dp
+) {
+    VerticalDivider(
+        modifier = modifier,
+        color = color,
+        thickness = thickness
+    )
+}
+
+/**
+ * Unify间距组件
+ */
+@Composable
+fun UnifySpacer(
+    height: androidx.compose.ui.unit.Dp = 0.dp,
+    width: androidx.compose.ui.unit.Dp = 0.dp
+) {
+    Spacer(
+        modifier = Modifier
+            .height(height)
+            .width(width)
+    )
+}
+
+/**
+ * Unify行布局组件
+ */
+@Composable
+fun UnifyRow(
+    modifier: Modifier = Modifier,
+    horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    content: @Composable RowScope.() -> Unit
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = horizontalArrangement,
+        verticalAlignment = verticalAlignment,
+        content = content
+    )
+}
+
+/**
+ * Unify列布局组件
+ */
+@Composable
+fun UnifyColumn(
+    modifier: Modifier = Modifier,
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
+    horizontalAlignment: Alignment.Horizontal = Alignment.Start,
+    content: @Composable ColumnScope.() -> Unit
+) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(spacing)
+        verticalArrangement = verticalArrangement,
+        horizontalAlignment = horizontalAlignment,
+        content = content
+    )
+}
+
+/**
+ * Unify盒子布局组件
+ */
+@Composable
+fun UnifyBox(
+    modifier: Modifier = Modifier,
+    contentAlignment: Alignment = Alignment.TopStart,
+    propagateMinConstraints: Boolean = false,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = contentAlignment,
+        propagateMinConstraints = propagateMinConstraints,
+        content = content
+    )
+}
+
+/**
+ * Unify居中组件
+ */
+@Composable
+fun UnifyCenter(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+        content = content
+    )
+}
+
+/**
+ * Unify标签组件
+ */
+@Composable
+fun UnifyChip(
+    text: String,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+    backgroundColor: Color = if (selected) UnifyColors.Primary else UnifyColors.Surface,
+    contentColor: Color = if (selected) UnifyColors.OnPrimary else UnifyColors.OnSurface,
+    onClick: (() -> Unit)? = null
+) {
+    FilterChip(
+        selected = selected,
+        onClick = { onClick?.invoke() },
+        label = {
+            Text(
+                text = text,
+                color = contentColor,
+                fontSize = UnifyFontSizes.sm
+            )
+        },
+        modifier = modifier,
+        enabled = enabled,
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = backgroundColor,
+            labelColor = contentColor,
+            selectedContainerColor = UnifyColors.Primary,
+            selectedLabelColor = UnifyColors.OnPrimary
+        )
+    )
+}
+
+/**
+ * Unify徽章组件
+ */
+@Composable
+fun UnifyBadge(
+    modifier: Modifier = Modifier,
+    backgroundColor: Color = UnifyColors.Error,
+    contentColor: Color = UnifyColors.OnError,
+    content: @Composable (RowScope.() -> Unit)? = null
+) {
+    Badge(
+        modifier = modifier,
+        containerColor = backgroundColor,
+        contentColor = contentColor,
+        content = content
+    )
+}
+
+/**
+ * Unify带徽章的组件
+ */
+@Composable
+fun UnifyBadgedBox(
+    badge: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    BadgedBox(
+        badge = badge,
+        modifier = modifier,
+        content = content
+    )
+}
+
+/**
+ * Unify工具提示组件
+ */
+@Composable
+fun UnifyTooltip(
+    tooltip: String,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+        tooltip = {
+            PlainTooltip {
+                Text(tooltip)
+            }
+        },
+        state = rememberTooltipState()
     ) {
         content()
     }
 }
 
 /**
- * 6. 加载状态组件
+ * Unify滑动删除组件
  */
 @Composable
-fun UnifyLoadingIndicator(
+fun UnifySwipeToDismiss(
+    state: DismissState,
     modifier: Modifier = Modifier,
-    text: String = "加载中..."
+    directions: Set<DismissDirection> = setOf(DismissDirection.EndToStart),
+    dismissThresholds: (DismissDirection) -> ThresholdConfig = { FractionalThreshold(0.5f) },
+    background: @Composable RowScope.() -> Unit,
+    dismissContent: @Composable RowScope.() -> Unit
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        CircularProgressIndicator()
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
-    }
+    SwipeToDismiss(
+        state = state,
+        modifier = modifier,
+        directions = directions,
+        background = background,
+        dismissContent = dismissContent
+    )
 }
 
 /**
- * 7. 错误状态组件
+ * Unify可展开组件
  */
 @Composable
-fun UnifyErrorState(
-    error: String,
+fun UnifyExpandable(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    onRetry: (() -> Unit)? = null
+    header: @Composable () -> Unit,
+    content: @Composable () -> Unit
 ) {
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "❌ 出现错误",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.error
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center
-        )
-        
-        onRetry?.let { retry ->
-            Spacer(modifier = Modifier.height(16.dp))
-            UnifyButton(
-                onClick = retry,
-                text = "重试"
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onExpandedChange(!expanded) },
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                header()
+            }
+            Icon(
+                imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                contentDescription = if (expanded) "收起" else "展开"
             )
+        }
+        
+        AnimatedVisibility(visible = expanded) {
+            content()
         }
     }
 }
 
 /**
- * 8. 空状态组件
+ * Unify空状态组件
  */
 @Composable
 fun UnifyEmptyState(
-    message: String = "暂无数据",
     modifier: Modifier = Modifier,
-    action: (@Composable () -> Unit)? = null
+    title: String,
+    description: String? = null,
+    icon: @Composable (() -> Unit)? = null,
+    action: @Composable (() -> Unit)? = null
 ) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(UnifySpacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
+        icon?.invoke()
+        
+        Spacer(modifier = Modifier.height(UnifySpacing.md))
+        
         Text(
-            text = "📭",
-            style = MaterialTheme.typography.displayMedium
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
+            text = title,
+            fontSize = UnifyFontSizes.lg,
+            fontWeight = FontWeight.Bold,
+            color = UnifyColors.OnSurface
         )
         
+        description?.let {
+            Spacer(modifier = Modifier.height(UnifySpacing.sm))
+            Text(
+                text = it,
+                fontSize = UnifyFontSizes.md,
+                color = UnifyColors.OnSurface.copy(alpha = 0.7f)
+            )
+        }
+        
         action?.let {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(UnifySpacing.lg))
             it()
         }
     }
 }
 
 /**
- * 9. 平台特定修饰符 - expect/actual 实现
+ * Unify错误状态组件
  */
-expect fun Modifier.platformSpecific(): Modifier
-expect fun Modifier.platformButtonStyle(): Modifier  
-expect fun Modifier.platformTextFieldStyle(): Modifier
+@Composable
+fun UnifyErrorState(
+    modifier: Modifier = Modifier,
+    title: String = "出错了",
+    description: String? = null,
+    onRetry: (() -> Unit)? = null
+) {
+    UnifyEmptyState(
+        modifier = modifier,
+        title = title,
+        description = description,
+        icon = {
+            Icon(
+                imageVector = Icons.Default.Error,
+                contentDescription = "错误",
+                tint = UnifyColors.Error,
+                modifier = Modifier.size(48.dp)
+            )
+        },
+        action = onRetry?.let {
+            {
+                Button(onClick = it) {
+                    Text("重试")
+                }
+            }
+        }
+    )
+}
 
 /**
- * 10. 组件状态管理
+ * Unify加载状态组件
  */
-data class UnifyComponentState(
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val isEmpty: Boolean = false
-)
-
 @Composable
-fun <T> UnifyStatefulContent(
-    state: UnifyComponentState,
-    data: T?,
+fun UnifyLoadingState(
     modifier: Modifier = Modifier,
-    onRetry: (() -> Unit)? = null,
-    emptyMessage: String = "暂无数据",
-    content: @Composable (T) -> Unit
+    message: String = "加载中..."
 ) {
-    when {
-        state.isLoading -> {
-            UnifyLoadingIndicator(modifier = modifier)
-        }
-        state.error != null -> {
-            UnifyErrorState(
-                error = state.error,
-                modifier = modifier,
-                onRetry = onRetry
-            )
-        }
-        state.isEmpty || data == null -> {
-            UnifyEmptyState(
-                message = emptyMessage,
-                modifier = modifier
-            )
-        }
-        else -> {
-            content(data)
-        }
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(UnifySpacing.xl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator(
+            color = UnifyColors.Primary
+        )
+        
+        Spacer(modifier = Modifier.height(UnifySpacing.md))
+        
+        Text(
+            text = message,
+            fontSize = UnifyFontSizes.md,
+            color = UnifyColors.OnSurface.copy(alpha = 0.7f)
+        )
     }
 }

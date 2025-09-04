@@ -2,456 +2,299 @@ package com.unify.core.data
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
-import kotlinx.coroutines.Dispatchers
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import java.io.File
-import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.lang.reflect.Type
 
 /**
- * Android平台的数据管理器实现
+ * Android平台UnifyDataManager实现
+ * 基于SharedPreferences和内存缓存
  */
-actual class UnifyDataManagerImpl : UnifyDataManager {
+class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
+    private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
+        "unify_data_manager", Context.MODE_PRIVATE
+    )
+    private val gson = Gson()
+    private val mutex = Mutex()
     
-    override val storage: UnifyStorage = AndroidStorage()
-    override val secureStorage: UnifySecureStorage = AndroidSecureStorage()
-    override val cache: UnifyCacheManager = AndroidCacheManager()
-    override val state: UnifyStateManager = AndroidStateManager()
-    override val database: UnifyDatabaseManager = AndroidDatabaseManager()
+    // 响应式数据流管理
+    private val dataFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    private var context: Context? = null
-    private var initialized = false
+    // 缓存过期时间管理
+    private val cacheExpiryMap = mutableMapOf<String, Long>()
     
-    fun setContext(context: Context) {
-        this.context = context
-        (storage as AndroidStorage).setContext(context)
-        (secureStorage as AndroidSecureStorage).setContext(context)
-        (cache as AndroidCacheManager).setContext(context)
-        (database as AndroidDatabaseManager).setContext(context)
+    // 同步设置
+    private var syncEnabled = false
+    
+    override suspend fun getString(key: String, defaultValue: String?): String? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        sharedPreferences.getString(key, defaultValue)
     }
     
-    override suspend fun initialize() {
-        if (initialized) return
-        
-        cache.setMaxSize(50 * 1024 * 1024) // 50MB默认缓存
-        database.initialize("unify_database", 1)
-        
-        initialized = true
+    override suspend fun setString(key: String, value: String) = mutex.withLock {
+        sharedPreferences.edit().putString(key, value).apply()
+        updateDataFlow(key, value)
     }
     
-    override suspend fun clearAllData() {
-        storage.clear()
-        cache.clear()
-        state.clearAllStates()
+    override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        sharedPreferences.getInt(key, defaultValue)
     }
     
-    override suspend fun backupData(): BackupResult {
-        return try {
-            val data = mutableMapOf<String, Any>()
-            
-            // 备份存储数据
-            val storageKeys = storage.getAllKeys()
-            val storageData = mutableMapOf<String, String?>()
-            storageKeys.forEach { key ->
-                storageData[key] = storage.getString(key)
-            }
-            data["storage"] = storageData
-            
-            val jsonData = Json.encodeToString(data)
-            val bytes = jsonData.toByteArray()
-            
-            BackupResult(
-                success = true,
-                data = bytes,
-                size = bytes.size.toLong()
-            )
+    override suspend fun setInt(key: String, value: Int) = mutex.withLock {
+        sharedPreferences.edit().putInt(key, value).apply()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        sharedPreferences.getBoolean(key, defaultValue)
+    }
+    
+    override suspend fun setBoolean(key: String, value: Boolean) = mutex.withLock {
+        sharedPreferences.edit().putBoolean(key, value).apply()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        sharedPreferences.getLong(key, defaultValue)
+    }
+    
+    override suspend fun setLong(key: String, value: Long) = mutex.withLock {
+        sharedPreferences.edit().putLong(key, value).apply()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return defaultValue
+        }
+        sharedPreferences.getFloat(key, defaultValue)
+    }
+    
+    override suspend fun setFloat(key: String, value: Float) = mutex.withLock {
+        sharedPreferences.edit().putFloat(key, value).apply()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return null
+        }
+        val json = sharedPreferences.getString(key, null) ?: return null
+        try {
+            gson.fromJson(json, clazz)
         } catch (e: Exception) {
-            BackupResult(
-                success = false,
-                error = e.message
-            )
+            null
         }
     }
     
-    override suspend fun restoreData(backupData: ByteArray): RestoreResult {
-        return try {
-            val jsonData = String(backupData)
-            val data = Json.decodeFromString<Map<String, Any>>(jsonData)
+    override suspend fun <T> setObject(key: String, value: T) = mutex.withLock {
+        val json = gson.toJson(value)
+        sharedPreferences.edit().putString(key, json).apply()
+        updateDataFlow(key, value)
+    }
+    
+    override suspend fun clear() = mutex.withLock {
+        sharedPreferences.edit().clear().apply()
+        cacheExpiryMap.clear()
+        dataFlows.values.forEach { it.value = null }
+    }
+    
+    override suspend fun remove(key: String) = mutex.withLock {
+        sharedPreferences.edit().remove(key).apply()
+        cacheExpiryMap.remove(key)
+        updateDataFlow(key, null)
+    }
+    
+    override suspend fun contains(key: String): Boolean = mutex.withLock {
+        if (isCacheExpired(key)) {
+            remove(key)
+            return false
+        }
+        sharedPreferences.contains(key)
+    }
+    
+    override suspend fun getAllKeys(): Set<String> = mutex.withLock {
+        val allKeys = sharedPreferences.all.keys
+        // 过滤掉过期的键
+        allKeys.filter { !isCacheExpired(it) }.toSet()
+    }
+    
+    override fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?> {
+        return getOrCreateDataFlow(key).map { value ->
+            when {
+                value == null -> null
+                clazz.isInstance(value) -> clazz.cast(value)
+                value is String -> {
+                    try {
+                        gson.fromJson(value, clazz)
+                    } catch (e: Exception) {
+                        null
+                    }
+                }
+                else -> null
+            }
+        }
+    }
+    
+    override fun observeStringKey(key: String): Flow<String?> {
+        return getOrCreateDataFlow(key).map { it as? String }
+    }
+    
+    override fun observeIntKey(key: String): Flow<Int> {
+        return getOrCreateDataFlow(key).map { (it as? Int) ?: 0 }
+    }
+    
+    override fun observeBooleanKey(key: String): Flow<Boolean> {
+        return getOrCreateDataFlow(key).map { (it as? Boolean) ?: false }
+    }
+    
+    override suspend fun setCacheExpiry(key: String, expiryMillis: Long) = mutex.withLock {
+        val expiryTime = System.currentTimeMillis() + expiryMillis
+        cacheExpiryMap[key] = expiryTime
+    }
+    
+    override suspend fun isCacheExpired(key: String): Boolean {
+        val expiryTime = cacheExpiryMap[key] ?: return false
+        return System.currentTimeMillis() > expiryTime
+    }
+    
+    override suspend fun clearExpiredCache() = mutex.withLock {
+        val currentTime = System.currentTimeMillis()
+        val expiredKeys = cacheExpiryMap.filter { (_, expiryTime) ->
+            currentTime > expiryTime
+        }.keys
+        
+        expiredKeys.forEach { key ->
+            sharedPreferences.edit().remove(key).apply()
+            cacheExpiryMap.remove(key)
+            updateDataFlow(key, null)
+        }
+    }
+    
+    override suspend fun syncToCloud() {
+        if (!syncEnabled) return
+        
+        try {
+            // 收集所有数据进行云端同步
+            val allData = sharedPreferences.all
+            val syncData = mutableMapOf<String, Any?>()
             
-            var restoredItems = 0
-            
-            // 恢复存储数据
-            @Suppress("UNCHECKED_CAST")
-            val storageData = data["storage"] as? Map<String, String?>
-            storageData?.forEach { (key, value) ->
-                if (value != null) {
-                    storage.putString(key, value)
-                    restoredItems++
+            allData.forEach { (key, value) ->
+                if (!isCacheExpired(key)) {
+                    syncData[key] = value
                 }
             }
             
-            RestoreResult(
-                success = true,
-                restoredItems = restoredItems
-            )
+            // 将同步数据保存到应用私有存储（模拟云端存储）
+            val syncJson = gson.toJson(syncData)
+            val syncFile = context.getFileStreamPath("cloud_sync_backup.json")
+            syncFile.writeText(syncJson)
+            
         } catch (e: Exception) {
-            RestoreResult(
-                success = false,
-                error = e.message
-            )
+            android.util.Log.e("UnifyDataManager", "Cloud sync failed: ${e.message}")
         }
     }
     
-    override suspend fun getDataUsageStats(): DataUsageStats {
-        val cacheSize = cache.getSize()
-        val storageSize = calculateStorageSize()
+    override suspend fun syncFromCloud() {
+        if (!syncEnabled) return
         
-        return DataUsageStats(
-            totalStorageUsed = storageSize + cacheSize,
-            cacheSize = cacheSize,
-            databaseSize = calculateDatabaseSize(),
-            secureStorageSize = calculateSecureStorageSize()
-        )
-    }
-    
-    private suspend fun calculateStorageSize(): Long {
-        return try {
-            context?.let { ctx ->
-                val prefs = ctx.getSharedPreferences("unify_storage", Context.MODE_PRIVATE)
-                val prefsFile = File(ctx.applicationInfo.dataDir + "/shared_prefs/unify_storage.xml")
-                if (prefsFile.exists()) prefsFile.length() else 0L
-            } ?: 0L
-        } catch (e: Exception) {
-            0L
-        }
-    }
-    
-    private suspend fun calculateDatabaseSize(): Long {
-        return try {
-            context?.let { ctx ->
-                val dbFile = ctx.getDatabasePath("unify_database")
-                if (dbFile.exists()) dbFile.length() else 0L
-            } ?: 0L
-        } catch (e: Exception) {
-            0L
-        }
-    }
-    
-    private suspend fun calculateSecureStorageSize(): Long {
-        return try {
-            context?.let { ctx ->
-                val prefsFile = File(ctx.applicationInfo.dataDir + "/shared_prefs/unify_secure_storage.xml")
-                if (prefsFile.exists()) prefsFile.length() else 0L
-            } ?: 0L
-        } catch (e: Exception) {
-            0L
-        }
-    }
-}
-
-/**
- * Android存储实现
- */
-class AndroidStorage : UnifyStorage {
-    private var context: Context? = null
-    private val prefs: SharedPreferences?
-        get() = context?.getSharedPreferences("unify_storage", Context.MODE_PRIVATE)
-    
-    fun setContext(context: Context) {
-        this.context = context
-    }
-    
-    override suspend fun putString(key: String, value: String) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.putString(key, value)?.apply()
-    }
-    
-    override suspend fun getString(key: String): String? = withContext(Dispatchers.IO) {
-        prefs?.getString(key, null)
-    }
-    
-    override suspend fun putInt(key: String, value: Int) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.putInt(key, value)?.apply()
-    }
-    
-    override suspend fun getInt(key: String): Int? = withContext(Dispatchers.IO) {
-        prefs?.let { if (it.contains(key)) it.getInt(key, 0) else null }
-    }
-    
-    override suspend fun putLong(key: String, value: Long) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.putLong(key, value)?.apply()
-    }
-    
-    override suspend fun getLong(key: String): Long? = withContext(Dispatchers.IO) {
-        prefs?.let { if (it.contains(key)) it.getLong(key, 0L) else null }
-    }
-    
-    override suspend fun putFloat(key: String, value: Float) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.putFloat(key, value)?.apply()
-    }
-    
-    override suspend fun getFloat(key: String): Float? = withContext(Dispatchers.IO) {
-        prefs?.let { if (it.contains(key)) it.getFloat(key, 0f) else null }
-    }
-    
-    override suspend fun putBoolean(key: String, value: Boolean) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.putBoolean(key, value)?.apply()
-    }
-    
-    override suspend fun getBoolean(key: String): Boolean? = withContext(Dispatchers.IO) {
-        prefs?.let { if (it.contains(key)) it.getBoolean(key, false) else null }
-    }
-    
-    override suspend fun putByteArray(key: String, value: ByteArray) = withContext(Dispatchers.IO) {
-        val encoded = android.util.Base64.encodeToString(value, android.util.Base64.DEFAULT)
-        prefs?.edit()?.putString(key, encoded)?.apply()
-    }
-    
-    override suspend fun getByteArray(key: String): ByteArray? = withContext(Dispatchers.IO) {
-        prefs?.getString(key, null)?.let { encoded ->
-            android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
-        }
-    }
-    
-    override suspend fun remove(key: String) = withContext(Dispatchers.IO) {
-        prefs?.edit()?.remove(key)?.apply()
-    }
-    
-    override suspend fun clear() = withContext(Dispatchers.IO) {
-        prefs?.edit()?.clear()?.apply()
-    }
-    
-    override suspend fun contains(key: String): Boolean = withContext(Dispatchers.IO) {
-        prefs?.contains(key) ?: false
-    }
-    
-    override suspend fun getAllKeys(): Set<String> = withContext(Dispatchers.IO) {
-        prefs?.all?.keys ?: emptySet()
-    }
-}
-
-/**
- * Android安全存储实现
- */
-class AndroidSecureStorage : AndroidStorage(), UnifySecureStorage {
-    private var context: Context? = null
-    private val securePrefs: SharedPreferences?
-        get() = context?.let { ctx ->
-            try {
-                val masterKey = MasterKey.Builder(ctx)
-                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-                    .build()
-                
-                EncryptedSharedPreferences.create(
-                    ctx,
-                    "unify_secure_storage",
-                    masterKey,
-                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-                )
-            } catch (e: Exception) {
-                null
+        try {
+            // 从应用私有存储读取同步数据（模拟从云端获取）
+            val syncFile = context.getFileStreamPath("cloud_sync_backup.json")
+            if (!syncFile.exists()) return
+            
+            val syncJson = syncFile.readText()
+            val type: Type = object : TypeToken<Map<String, Any>>() {}.type
+            val syncData: Map<String, Any> = gson.fromJson(syncJson, type)
+            
+            val editor = sharedPreferences.edit()
+            syncData.forEach { (key, value) ->
+                when (value) {
+                    is String -> {
+                        editor.putString(key, value)
+                        updateDataFlow(key, value)
+                    }
+                    is Int -> {
+                        editor.putInt(key, value)
+                        updateDataFlow(key, value)
+                    }
+                    is Boolean -> {
+                        editor.putBoolean(key, value)
+                        updateDataFlow(key, value)
+                    }
+                    is Long -> {
+                        editor.putLong(key, value)
+                        updateDataFlow(key, value)
+                    }
+                    is Float -> {
+                        editor.putFloat(key, value)
+                        updateDataFlow(key, value)
+                    }
+                    else -> {
+                        // 处理其他类型，转换为JSON字符串
+                        val jsonValue = gson.toJson(value)
+                        editor.putString(key, jsonValue)
+                        updateDataFlow(key, value)
+                    }
+                }
             }
-        }
-    
-    override fun setContext(context: Context) {
-        super.setContext(context)
-        this.context = context
-    }
-    
-    override suspend fun putSecureString(key: String, value: String) = withContext(Dispatchers.IO) {
-        securePrefs?.edit()?.putString(key, value)?.apply()
-    }
-    
-    override suspend fun getSecureString(key: String): String? = withContext(Dispatchers.IO) {
-        securePrefs?.getString(key, null)
-    }
-    
-    override suspend fun putEncrypted(key: String, value: ByteArray) = withContext(Dispatchers.IO) {
-        val encoded = android.util.Base64.encodeToString(value, android.util.Base64.DEFAULT)
-        securePrefs?.edit()?.putString(key, encoded)?.apply()
-    }
-    
-    override suspend fun getDecrypted(key: String): ByteArray? = withContext(Dispatchers.IO) {
-        securePrefs?.getString(key, null)?.let { encoded ->
-            android.util.Base64.decode(encoded, android.util.Base64.DEFAULT)
+            editor.apply()
+            
+        } catch (e: Exception) {
+            android.util.Log.e("UnifyDataManager", "Cloud sync from failed: ${e.message}")
         }
     }
     
-    override suspend fun setEncryptionKey(key: String) {
-        // Android EncryptedSharedPreferences 自动处理加密密钥
+    override fun isSyncEnabled(): Boolean = syncEnabled
+    
+    override fun setSyncEnabled(enabled: Boolean) {
+        syncEnabled = enabled
     }
     
-    override suspend fun authenticateWithBiometric(): Boolean {
-        // 生物识别认证实现（使用BiometricPrompt API）
-        return false
+    private fun getOrCreateDataFlow(key: String): Flow<Any?> {
+        return dataFlows.getOrPut(key) {
+            MutableStateFlow(sharedPreferences.all[key])
+        }.asStateFlow()
+    }
+    
+    private fun updateDataFlow(key: String, value: Any?) {
+        dataFlows.getOrPut(key) { MutableStateFlow(null) }.value = value
     }
 }
 
-/**
- * Android缓存管理器实现
- */
-class AndroidCacheManager : UnifyCacheManager {
-    private var context: Context? = null
-    private val cache = ConcurrentHashMap<String, CacheEntry>()
-    private var maxSize: Long = 50 * 1024 * 1024 // 50MB
-    
-    fun setContext(context: Context) {
-        this.context = context
-    }
-    
-    override suspend fun <T> put(key: String, value: T, ttl: Long?) {
-        val entry = CacheEntry(
-            value = value,
-            timestamp = System.currentTimeMillis(),
-            ttl = ttl
-        )
-        cache[key] = entry
-        
-        if (getSize() > maxSize) {
-            cleanupExpired()
-        }
-    }
-    
-    override suspend fun <T> get(key: String, type: Class<T>): T? {
-        val entry = cache[key] ?: return null
-        
-        if (entry.ttl != null && System.currentTimeMillis() - entry.timestamp > entry.ttl) {
-            cache.remove(key)
-            return null
-        }
-        
-        return try {
-            type.cast(entry.value)
-        } catch (e: ClassCastException) {
-            null
-        }
-    }
-    
-    override suspend fun remove(key: String) {
-        cache.remove(key)
-    }
-    
-    override suspend fun clear() {
-        cache.clear()
-    }
-    
-    override suspend fun isValid(key: String): Boolean {
-        val entry = cache[key] ?: return false
-        return entry.ttl == null || System.currentTimeMillis() - entry.timestamp <= entry.ttl
-    }
-    
-    override suspend fun getSize(): Long {
-        return cache.size.toLong() * 1024 // 粗略估算
-    }
-    
-    override suspend fun setMaxSize(maxSize: Long) {
-        this.maxSize = maxSize
-    }
-    
-    override suspend fun cleanupExpired() {
-        val currentTime = System.currentTimeMillis()
-        val expiredKeys = cache.entries.filter { (_, entry) ->
-            entry.ttl != null && currentTime - entry.timestamp > entry.ttl
-        }.map { it.key }
-        
-        expiredKeys.forEach { cache.remove(it) }
-    }
-    
-    private data class CacheEntry(
-        val value: Any?,
-        val timestamp: Long,
-        val ttl: Long? = null
-    )
-}
-
-/**
- * Android状态管理器实现
- */
-class AndroidStateManager : UnifyStateManager {
-    private val states = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
-    
-    override fun <T> setState(key: String, value: T) {
-        val stateFlow = states.getOrPut(key) { MutableStateFlow(null) }
-        stateFlow.value = value
-    }
-    
-    override fun <T> getState(key: String, type: Class<T>): T? {
-        val stateFlow = states[key] ?: return null
-        return try {
-            type.cast(stateFlow.value)
-        } catch (e: ClassCastException) {
-            null
-        }
-    }
-    
-    override fun <T> observeState(key: String, type: Class<T>): Flow<T?> {
-        val stateFlow = states.getOrPut(key) { MutableStateFlow(null) }
-        return stateFlow.asStateFlow()
-    }
-    
-    override fun removeState(key: String) {
-        states.remove(key)
-    }
-    
-    override fun clearAllStates() {
-        states.clear()
-    }
-    
-    override suspend fun persistState() {
-        // 状态持久化实现（使用SharedPreferences）
-    }
-    
-    override suspend fun restoreState() {
-        // 状态恢复实现（从本地存储读取）
-    }
-}
-
-/**
- * Android数据库管理器实现
- */
-class AndroidDatabaseManager : UnifyDatabaseManager {
+actual object UnifyDataManagerFactory {
     private var context: Context? = null
     
-    fun setContext(context: Context) {
-        this.context = context
+    fun initialize(context: Context) {
+        this.context = context.applicationContext
     }
     
-    override suspend fun initialize(databaseName: String, version: Int) {
-        // SQLite数据库初始化实现（使用Room或SQLDelight）
-    }
-    
-    override suspend fun query(sql: String, args: Array<Any>?): List<Map<String, Any?>> {
-        // SQL查询实现（使用数据库驱动）
-        return emptyList()
-    }
-    
-    override suspend fun execute(sql: String, args: Array<Any>?): Int {
-        // SQL执行实现（使用数据库驱动）
-        return 0
-    }
-    
-    override suspend fun beginTransaction(): TransactionHandle {
-        return TransactionHandle(
-            id = java.util.UUID.randomUUID().toString(),
-            timestamp = System.currentTimeMillis()
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl(
+            context ?: throw IllegalStateException("UnifyDataManagerFactory not initialized. Call initialize(context) first.")
         )
-    }
-    
-    override suspend fun commitTransaction(handle: TransactionHandle) {
-        // 事务提交实现（使用数据库事务API）
-    }
-    
-    override suspend fun rollbackTransaction(handle: TransactionHandle) {
-        // 事务回滚实现（使用数据库事务API）
-    }
-    
-    override suspend fun close() {
-        // 数据库关闭实现（释放连接资源）
     }
 }

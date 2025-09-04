@@ -1,324 +1,104 @@
 package com.unify.ui.components.miniapp
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.LocalUnifyTheme
-import com.unify.ui.components.foundation.*
+import androidx.compose.ui.unit.sp
 
 /**
- * 小程序平台类型
+ * 跨平台统一小程序组件系统
+ * 支持小程序容器、API桥接、生命周期管理等功能
  */
-enum class UnifyMiniAppPlatform {
-    WECHAT,         // 微信小程序
-    ALIPAY,         // 支付宝小程序
-    BAIDU,          // 百度小程序
-    TOUTIAO,        // 字节跳动小程序
-    QQ,             // QQ小程序
-    KUAISHOU,       // 快手小程序
-    XIAOMI,         // 小米小程序
-    HUAWEI          // 华为快应用
-}
 
 /**
- * 小程序API类型
- */
-enum class UnifyMiniAppAPI {
-    USER_INFO,      // 用户信息
-    PAYMENT,        // 支付
-    LOCATION,       // 位置
-    CAMERA,         // 相机
-    ALBUM,          // 相册
-    CONTACTS,       // 通讯录
-    CALENDAR,       // 日历
-    BLUETOOTH,      // 蓝牙
-    WIFI,           // WiFi
-    NFC,            // NFC
-    BIOMETRIC,      // 生物识别
-    DEVICE_INFO,    // 设备信息
-    NETWORK,        // 网络状态
-    STORAGE,        // 本地存储
-    CLIPBOARD,      // 剪贴板
-    SHARE,          // 分享
-    DOWNLOAD,       // 下载
-    UPLOAD,         // 上传
-    WEBSOCKET,      // WebSocket
-    REQUEST         // 网络请求
-}
-
-/**
- * 小程序API调用配置
- */
-data class UnifyMiniAppAPIConfig(
-    val platform: UnifyMiniAppPlatform,
-    val api: UnifyMiniAppAPI,
-    val params: Map<String, Any> = emptyMap(),
-    val timeout: Long = 10000L
-)
-
-/**
- * 小程序API调用结果
- */
-data class UnifyMiniAppAPIResult(
-    val success: Boolean,
-    val data: Map<String, Any>? = null,
-    val errorCode: String? = null,
-    val errorMessage: String? = null
-)
-
-/**
- * 小程序API调用组件
+ * 小程序容器组件
  */
 @Composable
-fun UnifyMiniAppAPI(
-    config: UnifyMiniAppAPIConfig,
-    modifier: Modifier = Modifier,
-    onResult: ((UnifyMiniAppAPIResult) -> Unit)? = null,
-    onError: ((String) -> Unit)? = null,
-    contentDescription: String? = null
+fun UnifyMiniAppContainer(
+    appId: String,
+    appConfig: MiniAppConfig,
+    onAppEvent: (MiniAppEvent) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    var isLoading by remember { mutableStateOf(false) }
-    var lastResult by remember { mutableStateOf<UnifyMiniAppAPIResult?>(null) }
+    var appState by remember { mutableStateOf(MiniAppState.LOADING) }
+    var appData by remember { mutableStateOf<MiniAppData?>(null) }
     
-    LaunchedEffect(config) {
-        isLoading = true
+    LaunchedEffect(appId) {
         try {
-            // 模拟API调用
-            kotlinx.coroutines.delay(1000)
+            appState = MiniAppState.LOADING
+            onAppEvent(MiniAppEvent.Loading(appId))
             
-            val result = when (config.api) {
-                UnifyMiniAppAPI.USER_INFO -> {
-                    UnifyMiniAppAPIResult(
-                        success = true,
-                        data = mapOf(
-                            "nickName" to "小程序用户",
-                            "avatarUrl" to "https://example.com/avatar.jpg",
-                            "gender" to 1,
-                            "city" to "北京",
-                            "province" to "北京",
-                            "country" to "中国"
-                        )
-                    )
-                }
-                
-                UnifyMiniAppAPI.PAYMENT -> {
-                    UnifyMiniAppAPIResult(
-                        success = true,
-                        data = mapOf(
-                            "transactionId" to "tx_${System.currentTimeMillis()}",
-                            "amount" to config.params["amount"] ?: 0,
-                            "status" to "success"
-                        )
-                    )
-                }
-                
-                UnifyMiniAppAPI.LOCATION -> {
-                    UnifyMiniAppAPIResult(
-                        success = true,
-                        data = mapOf(
-                            "latitude" to 39.9042,
-                            "longitude" to 116.4074,
-                            "accuracy" to 20.0,
-                            "address" to "北京市朝阳区"
-                        )
-                    )
-                }
-                
-                UnifyMiniAppAPI.DEVICE_INFO -> {
-                    UnifyMiniAppAPIResult(
-                        success = true,
-                        data = mapOf(
-                            "model" to "iPhone 15 Pro",
-                            "system" to "iOS 17.0",
-                            "platform" to getPlatformName(config.platform),
-                            "version" to "8.0.0",
-                            "screenWidth" to 393,
-                            "screenHeight" to 852
-                        )
-                    )
-                }
-                
-                else -> {
-                    UnifyMiniAppAPIResult(
-                        success = false,
-                        errorCode = "API_NOT_IMPLEMENTED",
-                        errorMessage = "API ${config.api} not implemented"
-                    )
-                }
-            }
-            
-            lastResult = result
-            onResult?.invoke(result)
+            // 加载小程序
+            val data = loadMiniApp(appId, appConfig)
+            appData = data
+            appState = MiniAppState.LOADED
+            onAppEvent(MiniAppEvent.Loaded(appId, data))
         } catch (e: Exception) {
-            val errorResult = UnifyMiniAppAPIResult(
-                success = false,
-                errorCode = "CALL_FAILED",
-                errorMessage = e.message
-            )
-            lastResult = errorResult
-            onError?.invoke(e.message ?: "Unknown error")
-        } finally {
-            isLoading = false
+            appState = MiniAppState.ERROR
+            onAppEvent(MiniAppEvent.Error(appId, e.message ?: "Unknown error"))
         }
     }
     
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
+        modifier = modifier.fillMaxSize(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = getPlatformIcon(config.platform),
-                    contentDescription = null,
-                    tint = theme.colors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                UnifyText(
-                    text = "${getPlatformName(config.platform)} API",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // API信息
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                UnifyText(
-                    text = "API类型:",
-                    variant = UnifyTextVariant.BODY_MEDIUM,
-                    fontWeight = FontWeight.Medium
-                )
-                UnifyText(
-                    text = getAPIName(config.api),
-                    variant = UnifyTextVariant.BODY_MEDIUM
-                )
-            }
-            
-            if (config.params.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                UnifyText(
-                    text = "参数:",
-                    variant = UnifyTextVariant.BODY_MEDIUM,
-                    fontWeight = FontWeight.Medium
-                )
-                config.params.forEach { (key, value) ->
-                    Row(
-                        modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+        when (appState) {
+            MiniAppState.LOADING -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        UnifyText(
-                            text = "$key: ",
-                            variant = UnifyTextVariant.BODY_SMALL,
-                            color = theme.colors.onSurfaceVariant
-                        )
-                        UnifyText(
-                            text = value.toString(),
-                            variant = UnifyTextVariant.BODY_SMALL
+                        CircularProgressIndicator()
+                        Text(
+                            text = "加载小程序中...",
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 }
             }
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 调用状态
-            if (isLoading) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    UnifyText(
-                        text = "调用中...",
-                        variant = UnifyTextVariant.BODY_MEDIUM
+            MiniAppState.LOADED -> {
+                appData?.let { data ->
+                    MiniAppContent(
+                        appData = data,
+                        onEvent = onAppEvent,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
-            } else {
-                lastResult?.let { result ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (result.success) 
-                                Color.Green.copy(alpha = 0.1f) 
-                            else 
-                                Color.Red.copy(alpha = 0.1f)
-                        )
+            }
+            
+            MiniAppState.ERROR -> {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp)
+                        Text(
+                            text = "小程序加载失败",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(
+                            onClick = {
+                                appState = MiniAppState.LOADING
+                            }
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (result.success) Icons.Default.CheckCircle else Icons.Default.Error,
-                                    contentDescription = null,
-                                    tint = if (result.success) Color.Green else Color.Red,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                UnifyText(
-                                    text = if (result.success) "调用成功" else "调用失败",
-                                    variant = UnifyTextVariant.BODY_SMALL,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (result.success) Color.Green else Color.Red
-                                )
-                            }
-                            
-                            if (result.success && result.data != null) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                result.data.forEach { (key, value) ->
-                                    UnifyText(
-                                        text = "$key: $value",
-                                        variant = UnifyTextVariant.CAPTION,
-                                        color = theme.colors.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            
-                            if (!result.success) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                UnifyText(
-                                    text = "错误码: ${result.errorCode}",
-                                    variant = UnifyTextVariant.CAPTION,
-                                    color = Color.Red
-                                )
-                                result.errorMessage?.let { message ->
-                                    UnifyText(
-                                        text = "错误信息: $message",
-                                        variant = UnifyTextVariant.CAPTION,
-                                        color = Color.Red
-                                    )
-                                }
-                            }
+                            Text("重试")
                         }
                     }
                 }
@@ -328,506 +108,677 @@ fun UnifyMiniAppAPI(
 }
 
 /**
- * 小程序分享组件
+ * 小程序内容组件
  */
 @Composable
-fun UnifyMiniAppShare(
-    title: String,
-    description: String,
-    imageUrl: String? = null,
-    path: String? = null,
-    modifier: Modifier = Modifier,
-    onShare: ((UnifyMiniAppPlatform) -> Unit)? = null,
-    contentDescription: String? = null
+private fun MiniAppContent(
+    appData: MiniAppData,
+    onEvent: (MiniAppEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    var showShareDialog by remember { mutableStateOf(false) }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { showShareDialog = true }
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                imageVector = Icons.Default.Share,
-                contentDescription = null,
-                tint = theme.colors.primary,
-                modifier = Modifier.size(24.dp)
-            )
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(modifier = Modifier.weight(1f)) {
-                UnifyText(
-                    text = title,
-                    variant = UnifyTextVariant.BODY_MEDIUM,
-                    fontWeight = FontWeight.Medium
-                )
-                UnifyText(
-                    text = description,
-                    variant = UnifyTextVariant.BODY_SMALL,
-                    color = theme.colors.onSurfaceVariant,
-                    maxLines = 2
-                )
-            }
-            
-            Icon(
-                imageVector = Icons.Default.ArrowForward,
-                contentDescription = null,
-                tint = theme.colors.onSurfaceVariant,
-                modifier = Modifier.size(20.dp)
-            )
-        }
-    }
-    
-    // 分享对话框
-    if (showShareDialog) {
-        AlertDialog(
-            onDismissRequest = { showShareDialog = false },
-            title = {
-                UnifyText(
-                    text = "选择分享平台",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            text = {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.height(200.dp)
-                ) {
-                    UnifyMiniAppPlatform.values().forEach { platform ->
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(80.dp)
-                                    .clickable {
-                                        onShare?.invoke(platform)
-                                        showShareDialog = false
-                                    }
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxSize(),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.Center
-                                ) {
-                                    Icon(
-                                        imageVector = getPlatformIcon(platform),
-                                        contentDescription = null,
-                                        tint = getPlatformColor(platform),
-                                        modifier = Modifier.size(32.dp)
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    UnifyText(
-                                        text = getPlatformName(platform),
-                                        variant = UnifyTextVariant.CAPTION,
-                                        maxLines = 1
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showShareDialog = false }) {
-                    UnifyText(text = "取消")
-                }
-            }
+        // 小程序头部信息
+        MiniAppHeader(
+            appData = appData,
+            onEvent = onEvent
+        )
+        
+        // 小程序主体内容
+        MiniAppBody(
+            appData = appData,
+            onEvent = onEvent,
+            modifier = Modifier.weight(1f)
+        )
+        
+        // 小程序底部操作
+        MiniAppFooter(
+            appData = appData,
+            onEvent = onEvent
         )
     }
 }
 
 /**
- * 小程序登录组件
+ * 小程序头部组件
  */
 @Composable
-fun UnifyMiniAppLogin(
-    platform: UnifyMiniAppPlatform,
-    modifier: Modifier = Modifier,
-    onLoginSuccess: ((Map<String, Any>) -> Unit)? = null,
-    onLoginFailed: ((String) -> Unit)? = null,
-    contentDescription: String? = null
+private fun MiniAppHeader(
+    appData: MiniAppData,
+    onEvent: (MiniAppEvent) -> Unit
 ) {
-    val theme = LocalUnifyTheme.current
-    var isLoggingIn by remember { mutableStateOf(false) }
-    var isLoggedIn by remember { mutableStateOf(false) }
-    var userInfo by remember { mutableStateOf<Map<String, Any>?>(null) }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                imageVector = getPlatformIcon(platform),
-                contentDescription = null,
-                tint = getPlatformColor(platform),
-                modifier = Modifier.size(48.dp)
-            )
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            UnifyText(
-                text = "${getPlatformName(platform)}登录",
-                variant = UnifyTextVariant.H6,
+        Column {
+            Text(
+                text = appData.name,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            if (!isLoggedIn) {
-                Button(
-                    onClick = {
-                        isLoggingIn = true
-                        // 模拟登录过程
-                    },
-                    enabled = !isLoggingIn,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    if (isLoggingIn) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            strokeWidth = 2.dp,
-                            color = theme.colors.onPrimary
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    UnifyText(
-                        text = if (isLoggingIn) "登录中..." else "授权登录",
-                        color = theme.colors.onPrimary
-                    )
-                }
-            } else {
-                // 显示用户信息
-                userInfo?.let { info ->
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color.Green.copy(alpha = 0.1f)
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(12.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = Color.Green,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                UnifyText(
-                                    text = "登录成功",
-                                    variant = UnifyTextVariant.BODY_MEDIUM,
-                                    fontWeight = FontWeight.Medium,
-                                    color = Color.Green
-                                )
-                            }
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            info.forEach { (key, value) ->
-                                UnifyText(
-                                    text = "$key: $value",
-                                    variant = UnifyTextVariant.CAPTION,
-                                    color = theme.colors.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    OutlinedButton(
-                        onClick = {
-                            isLoggedIn = false
-                            userInfo = null
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        UnifyText(text = "退出登录")
-                    }
-                }
-            }
-        }
-    }
-    
-    LaunchedEffect(isLoggingIn) {
-        if (isLoggingIn) {
-            kotlinx.coroutines.delay(2000)
-            
-            val mockUserInfo = mapOf(
-                "nickName" to "小程序用户",
-                "avatarUrl" to "https://example.com/avatar.jpg",
-                "openid" to "openid_${System.currentTimeMillis()}"
+            Text(
+                text = "版本 ${appData.version}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(
+                onClick = {
+                    onEvent(MiniAppEvent.Refresh(appData.appId))
+                }
+            ) {
+                Text("🔄")
+            }
             
-            userInfo = mockUserInfo
-            isLoggedIn = true
-            isLoggingIn = false
-            onLoginSuccess?.invoke(mockUserInfo)
+            IconButton(
+                onClick = {
+                    onEvent(MiniAppEvent.Close(appData.appId))
+                }
+            ) {
+                Text("✕")
+            }
         }
     }
 }
 
 /**
- * 小程序支付组件
+ * 小程序主体组件
  */
 @Composable
-fun UnifyMiniAppPayment(
-    amount: Double,
-    orderInfo: String,
-    platform: UnifyMiniAppPlatform,
-    modifier: Modifier = Modifier,
-    onPaymentSuccess: ((String) -> Unit)? = null,
-    onPaymentFailed: ((String) -> Unit)? = null,
-    contentDescription: String? = null
+private fun MiniAppBody(
+    appData: MiniAppData,
+    onEvent: (MiniAppEvent) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    var isProcessing by remember { mutableStateOf(false) }
-    var paymentResult by remember { mutableStateOf<String?>(null) }
-    
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            }
+    LazyColumn(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        // 小程序页面列表
+        items(appData.pages) { page ->
+            MiniAppPageItem(
+                page = page,
+                onPageClick = { pageId ->
+                    onEvent(MiniAppEvent.NavigateTo(appData.appId, pageId))
+                }
+            )
+        }
+        
+        // 小程序功能列表
+        items(appData.features) { feature ->
+            MiniAppFeatureItem(
+                feature = feature,
+                onFeatureClick = { featureId ->
+                    onEvent(MiniAppEvent.UseFeature(appData.appId, featureId))
+                }
+            )
+        }
+    }
+}
+
+/**
+ * 小程序页面项组件
+ */
+@Composable
+private fun MiniAppPageItem(
+    page: MiniAppPage,
+    onPageClick: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp),
+        onClick = { onPageClick(page.pageId) }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            Text(
+                text = page.icon,
+                fontSize = 24.sp
+            )
+            
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Payment,
-                    contentDescription = null,
-                    tint = theme.colors.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                UnifyText(
-                    text = "${getPlatformName(platform)}支付",
-                    variant = UnifyTextVariant.H6,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 订单信息
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = theme.colors.surfaceVariant
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(12.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        UnifyText(
-                            text = "订单信息:",
-                            variant = UnifyTextVariant.BODY_MEDIUM,
-                            fontWeight = FontWeight.Medium
-                        )
-                        UnifyText(
-                            text = orderInfo,
-                            variant = UnifyTextVariant.BODY_MEDIUM
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        UnifyText(
-                            text = "支付金额:",
-                            variant = UnifyTextVariant.BODY_MEDIUM,
-                            fontWeight = FontWeight.Medium
-                        )
-                        UnifyText(
-                            text = "¥${String.format("%.2f", amount)}",
-                            variant = UnifyTextVariant.H6,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Red
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // 支付按钮
-            Button(
-                onClick = {
-                    isProcessing = true
-                    // 模拟支付过程
-                },
-                enabled = !isProcessing,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = getPlatformColor(platform)
-                )
-            ) {
-                if (isProcessing) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp,
-                        color = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-                UnifyText(
-                    text = if (isProcessing) "支付中..." else "立即支付",
-                    color = Color.White,
+                Text(
+                    text = page.title,
+                    style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Medium
                 )
+                Text(
+                    text = page.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             
-            // 支付结果
-            paymentResult?.let { result ->
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (result.startsWith("success")) 
-                            Color.Green.copy(alpha = 0.1f) 
-                        else 
-                            Color.Red.copy(alpha = 0.1f)
+            Text("▶")
+        }
+    }
+}
+
+/**
+ * 小程序功能项组件
+ */
+@Composable
+private fun MiniAppFeatureItem(
+    feature: MiniAppFeature,
+    onFeatureClick: (String) -> Unit
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { onFeatureClick(feature.featureId) }
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = feature.icon,
+                fontSize = 20.sp
+            )
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = feature.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = feature.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            if (feature.isEnabled) {
+                Text("✓", color = Color.Green)
+            } else {
+                Text("✗", color = Color.Red)
+            }
+        }
+    }
+}
+
+/**
+ * 小程序底部组件
+ */
+@Composable
+private fun MiniAppFooter(
+    appData: MiniAppData,
+    onEvent: (MiniAppEvent) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Button(
+            onClick = {
+                onEvent(MiniAppEvent.Share(appData.appId))
+            }
+        ) {
+            Text("分享")
+        }
+        
+        OutlinedButton(
+            onClick = {
+                onEvent(MiniAppEvent.Settings(appData.appId))
+            }
+        ) {
+            Text("设置")
+        }
+        
+        OutlinedButton(
+            onClick = {
+                onEvent(MiniAppEvent.About(appData.appId))
+            }
+        ) {
+            Text("关于")
+        }
+    }
+}
+
+/**
+ * 小程序API桥接组件
+ */
+@Composable
+fun UnifyMiniAppBridge(
+    appId: String,
+    apiConfig: MiniAppApiConfig,
+    onApiCall: (MiniAppApiCall) -> MiniAppApiResult = { MiniAppApiResult.Success("") },
+    modifier: Modifier = Modifier
+) {
+    var apiCalls by remember { mutableStateOf<List<MiniAppApiCall>>(emptyList()) }
+    var apiResults by remember { mutableStateOf<Map<String, MiniAppApiResult>>(emptyMap()) }
+    
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "小程序API桥接",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        
+        // API调用历史
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(apiCalls) { apiCall ->
+                ApiCallItem(
+                    apiCall = apiCall,
+                    result = apiResults[apiCall.callId],
+                    onRetry = { call ->
+                        val result = onApiCall(call)
+                        apiResults = apiResults + (call.callId to result)
+                    }
+                )
+            }
+        }
+        
+        // 测试API调用
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    val testCall = MiniAppApiCall(
+                        callId = "test_${System.currentTimeMillis()}",
+                        appId = appId,
+                        method = "getUserInfo",
+                        params = mapOf("scope" to "userInfo")
                     )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = if (result.startsWith("success")) 
-                                Icons.Default.CheckCircle 
-                            else 
-                                Icons.Default.Error,
-                            contentDescription = null,
-                            tint = if (result.startsWith("success")) Color.Green else Color.Red,
-                            modifier = Modifier.size(20.dp)
+                    apiCalls = apiCalls + testCall
+                    val result = onApiCall(testCall)
+                    apiResults = apiResults + (testCall.callId to result)
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("测试API")
+            }
+            
+            OutlinedButton(
+                onClick = {
+                    apiCalls = emptyList()
+                    apiResults = emptyMap()
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("清空记录")
+            }
+        }
+    }
+}
+
+/**
+ * API调用项组件
+ */
+@Composable
+private fun ApiCallItem(
+    apiCall: MiniAppApiCall,
+    result: MiniAppApiResult?,
+    onRetry: (MiniAppApiCall) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = apiCall.method,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                
+                when (result) {
+                    is MiniAppApiResult.Success -> Text("✓", color = Color.Green)
+                    is MiniAppApiResult.Error -> Text("✗", color = Color.Red)
+                    null -> CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+            
+            Text(
+                text = "参数: ${apiCall.params}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            result?.let { res ->
+                when (res) {
+                    is MiniAppApiResult.Success -> {
+                        Text(
+                            text = "结果: ${res.data}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Green
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        UnifyText(
-                            text = result,
-                            variant = UnifyTextVariant.BODY_MEDIUM,
-                            color = if (result.startsWith("success")) Color.Green else Color.Red
+                    }
+                    is MiniAppApiResult.Error -> {
+                        Text(
+                            text = "错误: ${res.message}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Red
                         )
+                        TextButton(
+                            onClick = { onRetry(apiCall) }
+                        ) {
+                            Text("重试")
+                        }
                     }
                 }
             }
         }
     }
+}
+
+/**
+ * 小程序生命周期管理器
+ */
+@Composable
+fun UnifyMiniAppLifecycleManager(
+    appId: String,
+    onLifecycleEvent: (MiniAppLifecycleEvent) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var lifecycleState by remember { mutableStateOf(MiniAppLifecycleState.CREATED) }
+    var lifecycleHistory by remember { mutableStateOf<List<MiniAppLifecycleEvent>>(emptyList()) }
     
-    LaunchedEffect(isProcessing) {
-        if (isProcessing) {
-            kotlinx.coroutines.delay(3000)
-            
-            val success = (0..1).random() == 1
-            if (success) {
-                val transactionId = "tx_${System.currentTimeMillis()}"
-                paymentResult = "success: 支付成功，交易号: $transactionId"
-                onPaymentSuccess?.invoke(transactionId)
-            } else {
-                paymentResult = "failed: 支付失败，请重试"
-                onPaymentFailed?.invoke("Payment failed")
+    LaunchedEffect(appId) {
+        // 模拟生命周期事件
+        val events = listOf(
+            MiniAppLifecycleEvent.OnCreate(appId),
+            MiniAppLifecycleEvent.OnStart(appId),
+            MiniAppLifecycleEvent.OnResume(appId)
+        )
+        
+        events.forEach { event ->
+            lifecycleHistory = lifecycleHistory + event
+            onLifecycleEvent(event)
+            lifecycleState = when (event) {
+                is MiniAppLifecycleEvent.OnCreate -> MiniAppLifecycleState.CREATED
+                is MiniAppLifecycleEvent.OnStart -> MiniAppLifecycleState.STARTED
+                is MiniAppLifecycleEvent.OnResume -> MiniAppLifecycleState.RESUMED
+                is MiniAppLifecycleEvent.OnPause -> MiniAppLifecycleState.PAUSED
+                is MiniAppLifecycleEvent.OnStop -> MiniAppLifecycleState.STOPPED
+                is MiniAppLifecycleEvent.OnDestroy -> MiniAppLifecycleState.DESTROYED
+            }
+        }
+    }
+    
+    Column(
+        modifier = modifier.padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "小程序生命周期",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold
+        )
+        
+        // 当前状态
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "当前状态",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = lifecycleState.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+        
+        // 生命周期历史
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(lifecycleHistory.reversed()) { event ->
+                LifecycleEventItem(event = event)
+            }
+        }
+        
+        // 生命周期控制按钮
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    val event = MiniAppLifecycleEvent.OnPause(appId)
+                    lifecycleHistory = lifecycleHistory + event
+                    onLifecycleEvent(event)
+                    lifecycleState = MiniAppLifecycleState.PAUSED
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("暂停")
             }
             
-            isProcessing = false
+            Button(
+                onClick = {
+                    val event = MiniAppLifecycleEvent.OnResume(appId)
+                    lifecycleHistory = lifecycleHistory + event
+                    onLifecycleEvent(event)
+                    lifecycleState = MiniAppLifecycleState.RESUMED
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("恢复")
+            }
+            
+            OutlinedButton(
+                onClick = {
+                    val event = MiniAppLifecycleEvent.OnDestroy(appId)
+                    lifecycleHistory = lifecycleHistory + event
+                    onLifecycleEvent(event)
+                    lifecycleState = MiniAppLifecycleState.DESTROYED
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("销毁")
+            }
         }
     }
 }
 
-// 辅助函数
-private fun getPlatformIcon(platform: UnifyMiniAppPlatform): ImageVector {
-    return when (platform) {
-        UnifyMiniAppPlatform.WECHAT -> Icons.Default.Chat
-        UnifyMiniAppPlatform.ALIPAY -> Icons.Default.Payment
-        UnifyMiniAppPlatform.BAIDU -> Icons.Default.Search
-        UnifyMiniAppPlatform.TOUTIAO -> Icons.Default.Article
-        UnifyMiniAppPlatform.QQ -> Icons.Default.Forum
-        UnifyMiniAppPlatform.KUAISHOU -> Icons.Default.VideoLibrary
-        UnifyMiniAppPlatform.XIAOMI -> Icons.Default.PhoneAndroid
-        UnifyMiniAppPlatform.HUAWEI -> Icons.Default.Smartphone
+/**
+ * 生命周期事件项组件
+ */
+@Composable
+private fun LifecycleEventItem(
+    event: MiniAppLifecycleEvent
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = event.javaClass.simpleName,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "AppId: ${event.appId}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Text(
+                text = System.currentTimeMillis().toString().takeLast(6),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
-private fun getPlatformName(platform: UnifyMiniAppPlatform): String {
-    return when (platform) {
-        UnifyMiniAppPlatform.WECHAT -> "微信"
-        UnifyMiniAppPlatform.ALIPAY -> "支付宝"
-        UnifyMiniAppPlatform.BAIDU -> "百度"
-        UnifyMiniAppPlatform.TOUTIAO -> "字节跳动"
-        UnifyMiniAppPlatform.QQ -> "QQ"
-        UnifyMiniAppPlatform.KUAISHOU -> "快手"
-        UnifyMiniAppPlatform.XIAOMI -> "小米"
-        UnifyMiniAppPlatform.HUAWEI -> "华为"
-    }
+/**
+ * 加载小程序数据（平台特定实现）
+ */
+expect suspend fun loadMiniApp(appId: String, config: MiniAppConfig): MiniAppData
+
+/**
+ * 小程序配置
+ */
+data class MiniAppConfig(
+    val version: String = "1.0.0",
+    val enableDebug: Boolean = false,
+    val maxMemoryMB: Int = 512,
+    val allowedApis: List<String> = emptyList()
+)
+
+/**
+ * 小程序数据
+ */
+data class MiniAppData(
+    val appId: String,
+    val name: String,
+    val version: String,
+    val description: String,
+    val icon: String,
+    val pages: List<MiniAppPage>,
+    val features: List<MiniAppFeature>
+)
+
+/**
+ * 小程序页面
+ */
+data class MiniAppPage(
+    val pageId: String,
+    val title: String,
+    val description: String,
+    val icon: String,
+    val path: String
+)
+
+/**
+ * 小程序功能
+ */
+data class MiniAppFeature(
+    val featureId: String,
+    val name: String,
+    val description: String,
+    val icon: String,
+    val isEnabled: Boolean
+)
+
+/**
+ * 小程序状态
+ */
+enum class MiniAppState {
+    LOADING, LOADED, ERROR
 }
 
-private fun getPlatformColor(platform: UnifyMiniAppPlatform): Color {
-    return when (platform) {
-        UnifyMiniAppPlatform.WECHAT -> Color(0xFF07C160)
-        UnifyMiniAppPlatform.ALIPAY -> Color(0xFF1677FF)
-        UnifyMiniAppPlatform.BAIDU -> Color(0xFF2932E1)
-        UnifyMiniAppPlatform.TOUTIAO -> Color(0xFFFF6600)
-        UnifyMiniAppPlatform.QQ -> Color(0xFF12B7F5)
-        UnifyMiniAppPlatform.KUAISHOU -> Color(0xFFFF6B35)
-        UnifyMiniAppPlatform.XIAOMI -> Color(0xFFFF6900)
-        UnifyMiniAppPlatform.HUAWEI -> Color(0xFFFF0000)
-    }
+/**
+ * 小程序事件
+ */
+sealed class MiniAppEvent {
+    data class Loading(val appId: String) : MiniAppEvent()
+    data class Loaded(val appId: String, val data: MiniAppData) : MiniAppEvent()
+    data class Error(val appId: String, val message: String) : MiniAppEvent()
+    data class NavigateTo(val appId: String, val pageId: String) : MiniAppEvent()
+    data class UseFeature(val appId: String, val featureId: String) : MiniAppEvent()
+    data class Share(val appId: String) : MiniAppEvent()
+    data class Settings(val appId: String) : MiniAppEvent()
+    data class About(val appId: String) : MiniAppEvent()
+    data class Refresh(val appId: String) : MiniAppEvent()
+    data class Close(val appId: String) : MiniAppEvent()
 }
 
-private fun getAPIName(api: UnifyMiniAppAPI): String {
-    return when (api) {
-        UnifyMiniAppAPI.USER_INFO -> "用户信息"
-        UnifyMiniAppAPI.PAYMENT -> "支付"
-        UnifyMiniAppAPI.LOCATION -> "位置信息"
-        UnifyMiniAppAPI.CAMERA -> "相机"
-        UnifyMiniAppAPI.ALBUM -> "相册"
-        UnifyMiniAppAPI.CONTACTS -> "通讯录"
-        UnifyMiniAppAPI.CALENDAR -> "日历"
-        UnifyMiniAppAPI.BLUETOOTH -> "蓝牙"
-        UnifyMiniAppAPI.WIFI -> "WiFi"
-        UnifyMiniAppAPI.NFC -> "NFC"
-        UnifyMiniAppAPI.BIOMETRIC -> "生物识别"
-        UnifyMiniAppAPI.DEVICE_INFO -> "设备信息"
-        UnifyMiniAppAPI.NETWORK -> "网络状态"
-        UnifyMiniAppAPI.STORAGE -> "本地存储"
-        UnifyMiniAppAPI.CLIPBOARD -> "剪贴板"
-        UnifyMiniAppAPI.SHARE -> "分享"
-        UnifyMiniAppAPI.DOWNLOAD -> "下载"
-        UnifyMiniAppAPI.UPLOAD -> "上传"
-        UnifyMiniAppAPI.WEBSOCKET -> "WebSocket"
-        UnifyMiniAppAPI.REQUEST -> "网络请求"
-    }
+/**
+ * 小程序API配置
+ */
+data class MiniAppApiConfig(
+    val baseUrl: String = "",
+    val timeout: Long = 30000,
+    val retryCount: Int = 3,
+    val enableLogging: Boolean = false
+)
+
+/**
+ * 小程序API调用
+ */
+data class MiniAppApiCall(
+    val callId: String,
+    val appId: String,
+    val method: String,
+    val params: Map<String, Any>
+)
+
+/**
+ * 小程序API结果
+ */
+sealed class MiniAppApiResult {
+    data class Success(val data: String) : MiniAppApiResult()
+    data class Error(val message: String) : MiniAppApiResult()
+}
+
+/**
+ * 小程序生命周期状态
+ */
+enum class MiniAppLifecycleState {
+    CREATED, STARTED, RESUMED, PAUSED, STOPPED, DESTROYED
+}
+
+/**
+ * 小程序生命周期事件
+ */
+sealed class MiniAppLifecycleEvent {
+    abstract val appId: String
+    
+    data class OnCreate(override val appId: String) : MiniAppLifecycleEvent()
+    data class OnStart(override val appId: String) : MiniAppLifecycleEvent()
+    data class OnResume(override val appId: String) : MiniAppLifecycleEvent()
+    data class OnPause(override val appId: String) : MiniAppLifecycleEvent()
+    data class OnStop(override val appId: String) : MiniAppLifecycleEvent()
+    data class OnDestroy(override val appId: String) : MiniAppLifecycleEvent()
 }

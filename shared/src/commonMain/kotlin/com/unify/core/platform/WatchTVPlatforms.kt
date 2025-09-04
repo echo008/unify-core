@@ -1,400 +1,151 @@
 package com.unify.core.platform
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.serialization.Serializable
+import com.unify.core.types.PlatformType
+import com.unify.core.types.DeviceInfo
 
 /**
- * Watch和TV平台扩展支持
- * 为可穿戴设备和智能电视提供专门的平台适配
+ * Watch平台管理器实现
  */
-
-/**
- * Watch平台管理器接口
- */
-interface WatchPlatformManager : PlatformManager {
+class WatchPlatformManager : BasePlatformManager() {
     
-    /**
-     * 获取手表特定信息
-     */
-    suspend fun getWatchInfo(): WatchInfo
+    override fun getPlatformType(): PlatformType = PlatformType.WATCH
     
-    /**
-     * 获取健康数据
-     */
-    suspend fun getHealthData(): WatchHealthData
+    override fun getPlatformName(): String = "Watch"
     
-    /**
-     * 监听健康数据变化
-     */
-    fun observeHealthData(): Flow<WatchHealthData>
+    override fun getPlatformVersion(): String = getWatchOSVersion()
     
-    /**
-     * 获取运动数据
-     */
-    suspend fun getWorkoutData(): WatchWorkoutData
+    override suspend fun getDeviceInfo(): DeviceInfo {
+        return DeviceInfo(
+            manufacturer = "Apple",
+            model = getWatchModel(),
+            systemName = "watchOS",
+            systemVersion = getWatchOSVersion(),
+            deviceId = getWatchDeviceId(),
+            isEmulator = isWatchSimulator()
+        )
+    }
     
-    /**
-     * 开始运动追踪
-     */
-    suspend fun startWorkoutTracking(type: WorkoutType): Boolean
+    override fun hasCapability(capability: String): Boolean {
+        return when (capability) {
+            "heart_rate" -> true
+            "accelerometer" -> true
+            "gyroscope" -> true
+            "gps" -> hasGPS()
+            "cellular" -> hasCellular()
+            "wifi" -> true
+            "bluetooth" -> true
+            "nfc" -> true
+            "haptic" -> true
+            "crown" -> true
+            "microphone" -> true
+            "speaker" -> true
+            "always_on" -> hasAlwaysOnDisplay()
+            else -> false
+        }
+    }
     
-    /**
-     * 停止运动追踪
-     */
-    suspend fun stopWorkoutTracking(): Boolean
+    override fun getSupportedCapabilities(): List<String> {
+        val capabilities = mutableListOf("heart_rate", "accelerometer", "gyroscope", "wifi", "bluetooth", "nfc", "haptic", "crown", "microphone", "speaker")
+        if (hasGPS()) capabilities.add("gps")
+        if (hasCellular()) capabilities.add("cellular")
+        if (hasAlwaysOnDisplay()) capabilities.add("always_on")
+        return capabilities
+    }
     
-    /**
-     * 发送触觉反馈
-     */
-    suspend fun sendHapticFeedback(type: HapticFeedbackType): Boolean
+    override suspend fun performPlatformInitialization() {
+        config["watch_model"] = getWatchModel()
+        config["watch_size"] = getWatchSize()
+        config["has_gps"] = hasGPS().toString()
+        config["has_cellular"] = hasCellular().toString()
+        config["has_always_on"] = hasAlwaysOnDisplay().toString()
+    }
     
-    /**
-     * 显示手表通知
-     */
-    suspend fun showWatchNotification(notification: WatchNotification): Boolean
+    override suspend fun performPlatformCleanup() {
+        config.clear()
+    }
     
-    /**
-     * 获取表冠旋转事件
-     */
-    fun observeCrownRotation(): Flow<CrownRotationEvent>
-    
-    /**
-     * 控制手表屏幕亮度
-     */
-    suspend fun setScreenBrightness(brightness: Float): Boolean
-    
-    /**
-     * 获取配对手机信息
-     */
-    suspend fun getPairedPhoneInfo(): PhoneInfo?
+    private fun getWatchOSVersion(): String = "10.0"
+    private fun getWatchModel(): String = "Apple Watch"
+    private fun getWatchSize(): String = "44mm"
+    private fun getWatchDeviceId(): String = "watch-device-id"
+    private fun isWatchSimulator(): Boolean = false
+    private fun hasGPS(): Boolean = true
+    private fun hasCellular(): Boolean = false
+    private fun hasAlwaysOnDisplay(): Boolean = true
 }
 
 /**
- * TV平台管理器接口
+ * TV平台管理器实现
  */
-interface TVPlatformManager : PlatformManager {
+class TVPlatformManager : BasePlatformManager() {
     
-    /**
-     * 获取TV特定信息
-     */
-    suspend fun getTVInfo(): TVInfo
+    override fun getPlatformType(): PlatformType = PlatformType.TV
     
-    /**
-     * 获取遥控器状态
-     */
-    suspend fun getRemoteControlStatus(): RemoteControlStatus
+    override fun getPlatformName(): String = "TV"
     
-    /**
-     * 监听遥控器事件
-     */
-    fun observeRemoteControlEvents(): Flow<RemoteControlEvent>
+    override fun getPlatformVersion(): String = getTVOSVersion()
     
-    /**
-     * 控制TV音量
-     */
-    suspend fun setVolume(volume: Int): Boolean
+    override suspend fun getDeviceInfo(): DeviceInfo {
+        return DeviceInfo(
+            manufacturer = getTVManufacturer(),
+            model = getTVModel(),
+            systemName = getTVSystemName(),
+            systemVersion = getTVOSVersion(),
+            deviceId = getTVDeviceId(),
+            isEmulator = isTVSimulator()
+        )
+    }
     
-    /**
-     * 获取当前音量
-     */
-    suspend fun getVolume(): Int
+    override fun hasCapability(capability: String): Boolean {
+        return when (capability) {
+            "4k" -> has4K()
+            "hdr" -> hasHDR()
+            "dolby_vision" -> hasDolbyVision()
+            "dolby_atmos" -> hasDolbyAtmos()
+            "wifi" -> true
+            "ethernet" -> true
+            "bluetooth" -> true
+            "remote" -> true
+            "voice_control" -> hasVoiceControl()
+            "game_controller" -> hasGameController()
+            else -> false
+        }
+    }
     
-    /**
-     * 切换频道
-     */
-    suspend fun changeChannel(channel: Int): Boolean
+    override fun getSupportedCapabilities(): List<String> {
+        val capabilities = mutableListOf("wifi", "ethernet", "bluetooth", "remote")
+        if (has4K()) capabilities.add("4k")
+        if (hasHDR()) capabilities.add("hdr")
+        if (hasDolbyVision()) capabilities.add("dolby_vision")
+        if (hasDolbyAtmos()) capabilities.add("dolby_atmos")
+        if (hasVoiceControl()) capabilities.add("voice_control")
+        if (hasGameController()) capabilities.add("game_controller")
+        return capabilities
+    }
     
-    /**
-     * 获取频道列表
-     */
-    suspend fun getChannelList(): List<TVChannel>
+    override suspend fun performPlatformInitialization() {
+        config["tv_manufacturer"] = getTVManufacturer()
+        config["tv_model"] = getTVModel()
+        config["screen_resolution"] = getScreenResolution()
+        config["has_4k"] = has4K().toString()
+        config["has_hdr"] = hasHDR().toString()
+    }
     
-    /**
-     * 显示TV通知
-     */
-    suspend fun showTVNotification(notification: TVNotification): Boolean
+    override suspend fun performPlatformCleanup() {
+        config.clear()
+    }
     
-    /**
-     * 控制TV电源
-     */
-    suspend fun setPowerState(on: Boolean): Boolean
-    
-    /**
-     * 获取HDMI输入状态
-     */
-    suspend fun getHDMIInputs(): List<HDMIInput>
-    
-    /**
-     * 切换HDMI输入
-     */
-    suspend fun switchHDMIInput(inputId: String): Boolean
-    
-    /**
-     * 启动应用
-     */
-    suspend fun launchApp(appId: String): Boolean
-    
-    /**
-     * 获取已安装应用列表
-     */
-    suspend fun getInstalledApps(): List<TVApp>
+    private fun getTVOSVersion(): String = "17.0"
+    private fun getTVManufacturer(): String = "Apple"
+    private fun getTVModel(): String = "Apple TV 4K"
+    private fun getTVSystemName(): String = "tvOS"
+    private fun getTVDeviceId(): String = "tv-device-id"
+    private fun isTVSimulator(): Boolean = false
+    private fun getScreenResolution(): String = "3840x2160"
+    private fun has4K(): Boolean = true
+    private fun hasHDR(): Boolean = true
+    private fun hasDolbyVision(): Boolean = true
+    private fun hasDolbyAtmos(): Boolean = true
+    private fun hasVoiceControl(): Boolean = true
+    private fun hasGameController(): Boolean = true
 }
-
-/**
- * 手表信息
- */
-@Serializable
-data class WatchInfo(
-    val watchModel: String,
-    val watchOS: String,
-    val watchOSVersion: String,
-    val batteryLevel: Float,
-    val isCharging: Boolean,
-    val crownAvailable: Boolean,
-    val hapticEngineAvailable: Boolean,
-    val heartRateSensorAvailable: Boolean,
-    val gpsAvailable: Boolean,
-    val cellularAvailable: Boolean,
-    val pairedPhoneId: String?
-)
-
-/**
- * 健康数据
- */
-@Serializable
-data class WatchHealthData(
-    val heartRate: Int? = null,
-    val stepCount: Int = 0,
-    val caloriesBurned: Float = 0f,
-    val distanceWalked: Float = 0f,
-    val activeMinutes: Int = 0,
-    val standHours: Int = 0,
-    val sleepData: SleepData? = null,
-    val bloodOxygen: Float? = null,
-    val stressLevel: Float? = null,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
- * 睡眠数据
- */
-@Serializable
-data class SleepData(
-    val totalSleepTime: Int, // 分钟
-    val deepSleepTime: Int,
-    val lightSleepTime: Int,
-    val remSleepTime: Int,
-    val awakeTime: Int,
-    val sleepQuality: Float // 0-100
-)
-
-/**
- * 运动数据
- */
-@Serializable
-data class WatchWorkoutData(
-    val workoutType: WorkoutType,
-    val duration: Int, // 秒
-    val caloriesBurned: Float,
-    val averageHeartRate: Int,
-    val maxHeartRate: Int,
-    val distance: Float,
-    val pace: Float,
-    val isActive: Boolean
-)
-
-/**
- * 运动类型
- */
-enum class WorkoutType {
-    WALKING,
-    RUNNING,
-    CYCLING,
-    SWIMMING,
-    YOGA,
-    STRENGTH_TRAINING,
-    CARDIO,
-    HIKING,
-    DANCING,
-    OTHER
-}
-
-/**
- * 触觉反馈类型
- */
-enum class HapticFeedbackType {
-    LIGHT,
-    MEDIUM,
-    HEAVY,
-    SUCCESS,
-    WARNING,
-    ERROR,
-    SELECTION
-}
-
-/**
- * 手表通知
- */
-@Serializable
-data class WatchNotification(
-    val title: String,
-    val message: String,
-    val category: String = "default",
-    val actionButtons: List<NotificationAction> = emptyList(),
-    val hapticFeedback: HapticFeedbackType = HapticFeedbackType.LIGHT
-)
-
-/**
- * 通知动作
- */
-@Serializable
-data class NotificationAction(
-    val id: String,
-    val title: String,
-    val isDestructive: Boolean = false
-)
-
-/**
- * 表冠旋转事件
- */
-@Serializable
-data class CrownRotationEvent(
-    val delta: Float,
-    val velocity: Float,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
- * 配对手机信息
- */
-@Serializable
-data class PhoneInfo(
-    val phoneModel: String,
-    val phoneOS: String,
-    val phoneOSVersion: String,
-    val isConnected: Boolean,
-    val connectionType: String // bluetooth, wifi
-)
-
-/**
- * TV信息
- */
-@Serializable
-data class TVInfo(
-    val tvModel: String,
-    val tvOS: String,
-    val tvOSVersion: String,
-    val screenSize: String,
-    val resolution: String,
-    val hdrSupport: Boolean,
-    val dolbyVisionSupport: Boolean,
-    val hdmiInputCount: Int,
-    val usbPortCount: Int,
-    val wirelessConnectivity: List<String>
-)
-
-/**
- * 遥控器状态
- */
-@Serializable
-data class RemoteControlStatus(
-    val isConnected: Boolean,
-    val batteryLevel: Float?,
-    val remoteType: String,
-    val supportedFeatures: List<String>
-)
-
-/**
- * 遥控器事件
- */
-sealed class RemoteControlEvent {
-    data class KeyPressed(val keyCode: Int, val keyName: String) : RemoteControlEvent()
-    data class KeyReleased(val keyCode: Int, val keyName: String) : RemoteControlEvent()
-    data class TouchpadEvent(val x: Float, val y: Float, val type: TouchType) : RemoteControlEvent()
-    data class VoiceCommand(val command: String, val confidence: Float) : RemoteControlEvent()
-}
-
-/**
- * 触摸类型
- */
-enum class TouchType {
-    DOWN,
-    MOVE,
-    UP,
-    SWIPE_LEFT,
-    SWIPE_RIGHT,
-    SWIPE_UP,
-    SWIPE_DOWN
-}
-
-/**
- * TV频道
- */
-@Serializable
-data class TVChannel(
-    val channelNumber: Int,
-    val channelName: String,
-    val logoUrl: String?,
-    val isHD: Boolean,
-    val category: String
-)
-
-/**
- * TV通知
- */
-@Serializable
-data class TVNotification(
-    val title: String,
-    val message: String,
-    val duration: Int = 5000, // 毫秒
-    val position: NotificationPosition = NotificationPosition.TOP_RIGHT,
-    val priority: NotificationPriority = NotificationPriority.NORMAL
-)
-
-/**
- * 通知位置
- */
-enum class NotificationPosition {
-    TOP_LEFT,
-    TOP_RIGHT,
-    TOP_CENTER,
-    BOTTOM_LEFT,
-    BOTTOM_RIGHT,
-    BOTTOM_CENTER,
-    CENTER
-}
-
-/**
- * 通知优先级
- */
-enum class NotificationPriority {
-    LOW,
-    NORMAL,
-    HIGH,
-    URGENT
-}
-
-/**
- * HDMI输入
- */
-@Serializable
-data class HDMIInput(
-    val inputId: String,
-    val inputName: String,
-    val isActive: Boolean,
-    val isConnected: Boolean,
-    val deviceName: String?
-)
-
-/**
- * TV应用
- */
-@Serializable
-data class TVApp(
-    val appId: String,
-    val appName: String,
-    val version: String,
-    val iconUrl: String?,
-    val isInstalled: Boolean,
-    val canLaunch: Boolean
-)

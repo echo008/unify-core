@@ -1,318 +1,361 @@
 package com.unify.core.dynamic
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.request.get
-import io.ktor.client.request.post
-import io.ktor.client.request.setBody
-import io.ktor.client.statement.HttpResponse
-import io.ktor.client.statement.bodyAsText
-import io.ktor.http.ContentType
-import io.ktor.http.contentType
+import kotlinx.coroutines.*
+import kotlinx.serialization.*
+import kotlinx.serialization.json.*
+import io.ktor.client.*
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
 
 /**
- * 动态网络客户端
- * 负责与远程服务器通信，获取配置、组件和更新信息
+ * 网络请求配置
  */
-class DynamicNetworkClient {
-    private val httpClient = createHttpClient()
-    private val requestTimeout = 30000L // 30秒超时
-    private val maxRetryCount = 3
+@Serializable
+data class NetworkConfig(
+    val baseUrl: String = "",
+    val timeout: Long = 30000L,
+    val retryAttempts: Int = 3,
+    val retryDelay: Long = 1000L,
+    val enableCache: Boolean = true,
+    val cacheTimeout: Long = 300000L, // 5分钟
+    val userAgent: String = "UnifyCore/1.0",
+    val headers: Map<String, String> = emptyMap()
+)
+
+/**
+ * 网络响应结果
+ */
+@Serializable
+data class NetworkResponse<T>(
+    val success: Boolean,
+    val data: T? = null,
+    val error: String? = null,
+    val statusCode: Int = 0,
+    val headers: Map<String, String> = emptyMap(),
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+/**
+ * 组件更新信息
+ */
+@Serializable
+data class ComponentUpdateInfo(
+    val componentId: String,
+    val currentVersion: String,
+    val latestVersion: String,
+    val updateUrl: String,
+    val changelog: String = "",
+    val size: Long = 0L,
+    val checksum: String = "",
+    val signature: String = "",
+    val releaseDate: Long = 0L,
+    val isRequired: Boolean = false
+)
+
+/**
+ * 动态网络客户端接口
+ */
+interface DynamicNetworkClient {
+    // 组件管理
+    suspend fun getComponentInfo(componentId: String): DynamicComponent?
+    suspend fun downloadComponent(componentId: String, version: String): NetworkResponse<DynamicComponent>
+    suspend fun uploadComponent(component: DynamicComponent): NetworkResponse<String>
     
-    /**
-     * 检查更新
-     */
-    suspend fun checkUpdate(
-        configUrl: String,
-        apiKey: String,
-        request: UpdateCheckRequest
-    ): UpdateCheckResponse {
-        return withTimeout(requestTimeout) {
-            retry(maxRetryCount) {
-                val response = httpClient.post("$configUrl/api/v1/check-update") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                        append("Content-Type", "application/json")
-                    }
-                    setBody(Json.encodeToString(request))
-                }
-                
-                if (response.status.isSuccess()) {
-                    val responseBody = response.bodyAsText()
-                    Json.decodeFromString<UpdateCheckResponse>(responseBody)
-                } else {
-                    throw NetworkException("检查更新失败: ${response.status}")
-                }
-            }
-        }
+    // 更新检查
+    suspend fun checkForUpdates(componentIds: List<String>): NetworkResponse<List<ComponentUpdateInfo>>
+    suspend fun getLatestVersion(componentId: String): NetworkResponse<String>
+    
+    // 配置同步
+    suspend fun syncConfiguration(configId: String): NetworkResponse<DynamicConfiguration>
+    suspend fun uploadConfiguration(config: DynamicConfiguration): NetworkResponse<String>
+    
+    // 批量操作
+    suspend fun batchDownload(requests: List<String>): NetworkResponse<List<DynamicComponent>>
+    suspend fun batchUpload(components: List<DynamicComponent>): NetworkResponse<List<String>>
+    
+    // 网络配置
+    fun updateNetworkConfig(config: NetworkConfig)
+    fun getNetworkConfig(): NetworkConfig
+    
+    // 缓存管理
+    suspend fun clearCache()
+    suspend fun getCacheStats(): Map<String, Any>
+    
+    // 连接状态
+    suspend fun checkConnection(): Boolean
+    suspend fun getNetworkStatus(): NetworkStatus
+}
+
+@Serializable
+enum class NetworkStatus {
+    CONNECTED,
+    DISCONNECTED,
+    LIMITED,
+    UNKNOWN
+}
+
+/**
+ * 动态网络客户端实现
+ */
+class DynamicNetworkClientImpl(
+    private val httpClient: HttpClient
+) : DynamicNetworkClient {
+    
+    private var config = NetworkConfig()
+    private val responseCache = mutableMapOf<String, Pair<String, Long>>()
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    
+    companion object {
+        private const val API_VERSION = "v1"
+        private const val COMPONENTS_ENDPOINT = "components"
+        private const val CONFIGURATIONS_ENDPOINT = "configurations"
+        private const val UPDATES_ENDPOINT = "updates"
     }
     
-    /**
-     * 下载更新包
-     */
-    suspend fun downloadPackage(downloadUrl: String, apiKey: String): ByteArray {
-        return withTimeout(requestTimeout * 3) { // 下载允许更长时间
-            retry(maxRetryCount) {
-                val response = httpClient.get(downloadUrl) {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                    }
-                }
-                
-                if (response.status.isSuccess()) {
-                    response.readBytes()
-                } else {
-                    throw NetworkException("下载更新包失败: ${response.status}")
-                }
-            }
-        }
-    }
-    
-    /**
-     * 获取配置列表
-     */
-    suspend fun fetchConfigurations(configUrl: String, apiKey: String): Map<String, String> {
-        return withTimeout(requestTimeout) {
-            retry(maxRetryCount) {
-                val response = httpClient.get("$configUrl/api/v1/configurations") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                    }
-                }
-                
-                if (response.status.isSuccess()) {
-                    val responseBody = response.bodyAsText()
-                    Json.decodeFromString<Map<String, String>>(responseBody)
-                } else {
-                    throw NetworkException("获取配置失败: ${response.status}")
-                }
-            }
-        }
-    }
-    
-    /**
-     * 获取单个配置
-     */
-    suspend fun fetchConfig(configUrl: String, apiKey: String, key: String): String? {
-        return withTimeout(requestTimeout) {
-            try {
-                retry(maxRetryCount) {
-                    val response = httpClient.get("$configUrl/api/v1/configuration/$key") {
-                        headers {
-                            append("Authorization", "Bearer $apiKey")
-                        }
-                    }
-                    
-                    if (response.status.isSuccess()) {
-                        val responseBody = response.bodyAsText()
-                        val configResponse = Json.decodeFromString<ConfigResponse>(responseBody)
-                        configResponse.value
-                    } else if (response.status == HttpStatusCode.NotFound) {
-                        null
-                    } else {
-                        throw NetworkException("获取配置失败: ${response.status}")
-                    }
-                }
-            } catch (e: Exception) {
-                UnifyPerformanceMonitor.recordMetric("network_config_fetch_error", 1.0, "count",
-                    mapOf("key" to key, "error" to e.message.orEmpty()))
-                null
-            }
-        }
-    }
-    
-    /**
-     * 获取组件
-     */
-    suspend fun fetchComponent(configUrl: String, apiKey: String, componentId: String): ComponentData {
-        return withTimeout(requestTimeout) {
-            retry(maxRetryCount) {
-                val response = httpClient.get("$configUrl/api/v1/component/$componentId") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                    }
-                }
-                
-                if (response.status.isSuccess()) {
-                    val responseBody = response.bodyAsText()
-                    Json.decodeFromString<ComponentData>(responseBody)
-                } else {
-                    throw NetworkException("获取组件失败: ${response.status}")
-                }
-            }
-        }
-    }
-    
-    /**
-     * 上传使用统计
-     */
-    suspend fun uploadUsageStats(configUrl: String, apiKey: String, stats: UsageStats): Boolean {
+    override suspend fun getComponentInfo(componentId: String): DynamicComponent? {
         return try {
-            withTimeout(requestTimeout) {
-                val response = httpClient.post("$configUrl/api/v1/usage-stats") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                        append("Content-Type", "application/json")
-                    }
-                    setBody(Json.encodeToString(stats))
-                }
-                
-                response.status.isSuccess()
+            val response = performRequest<DynamicComponent> {
+                get("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/$componentId")
             }
+            response.data
         } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("network_stats_upload_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
+            null
+        }
+    }
+    
+    override suspend fun downloadComponent(componentId: String, version: String): NetworkResponse<DynamicComponent> {
+        return performRequest {
+            get("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/$componentId/$version")
+        }
+    }
+    
+    override suspend fun uploadComponent(component: DynamicComponent): NetworkResponse<String> {
+        return performRequest {
+            post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT") {
+                contentType(ContentType.Application.Json)
+                setBody(Json.encodeToString(component))
+            }
+        }
+    }
+    
+    override suspend fun checkForUpdates(componentIds: List<String>): NetworkResponse<List<ComponentUpdateInfo>> {
+        return performRequest {
+            post("${config.baseUrl}/$API_VERSION/$UPDATES_ENDPOINT/check") {
+                contentType(ContentType.Application.Json)
+                setBody(Json.encodeToString(componentIds))
+            }
+        }
+    }
+    
+    override suspend fun getLatestVersion(componentId: String): NetworkResponse<String> {
+        return performRequest {
+            get("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/$componentId/latest")
+        }
+    }
+    
+    override suspend fun syncConfiguration(configId: String): NetworkResponse<DynamicConfiguration> {
+        return performRequest {
+            get("${config.baseUrl}/$API_VERSION/$CONFIGURATIONS_ENDPOINT/$configId")
+        }
+    }
+    
+    override suspend fun uploadConfiguration(config: DynamicConfiguration): NetworkResponse<String> {
+        return performRequest {
+            post("${this@DynamicNetworkClientImpl.config.baseUrl}/$API_VERSION/$CONFIGURATIONS_ENDPOINT") {
+                contentType(ContentType.Application.Json)
+                setBody(Json.encodeToString(config))
+            }
+        }
+    }
+    
+    override suspend fun batchDownload(requests: List<String>): NetworkResponse<List<DynamicComponent>> {
+        return performRequest {
+            post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/batch") {
+                contentType(ContentType.Application.Json)
+                setBody(Json.encodeToString(requests))
+            }
+        }
+    }
+    
+    override suspend fun batchUpload(components: List<DynamicComponent>): NetworkResponse<List<String>> {
+        return performRequest {
+            post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/batch/upload") {
+                contentType(ContentType.Application.Json)
+                setBody(Json.encodeToString(components))
+            }
+        }
+    }
+    
+    override fun updateNetworkConfig(config: NetworkConfig) {
+        this.config = config
+    }
+    
+    override fun getNetworkConfig(): NetworkConfig = config
+    
+    override suspend fun clearCache() {
+        responseCache.clear()
+    }
+    
+    override suspend fun getCacheStats(): Map<String, Any> {
+        val now = System.currentTimeMillis()
+        val validEntries = responseCache.values.count { (_, timestamp) ->
+            now - timestamp < config.cacheTimeout
+        }
+        
+        return mapOf(
+            "totalEntries" to responseCache.size,
+            "validEntries" to validEntries,
+            "hitRate" to 0.0, // 简化实现
+            "cacheTimeout" to config.cacheTimeout
+        )
+    }
+    
+    override suspend fun checkConnection(): Boolean {
+        return try {
+            val response = httpClient.get("${config.baseUrl}/health")
+            response.status.isSuccess()
+        } catch (e: Exception) {
             false
         }
     }
     
-    /**
-     * 上传错误报告
-     */
-    suspend fun uploadErrorReport(configUrl: String, apiKey: String, errorReport: ErrorReport): Boolean {
+    override suspend fun getNetworkStatus(): NetworkStatus {
         return try {
-            withTimeout(requestTimeout) {
-                val response = httpClient.post("$configUrl/api/v1/error-report") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                        append("Content-Type", "application/json")
-                    }
-                    setBody(Json.encodeToString(errorReport))
-                }
-                
-                response.status.isSuccess()
+            if (checkConnection()) {
+                NetworkStatus.CONNECTED
+            } else {
+                NetworkStatus.DISCONNECTED
             }
         } catch (e: Exception) {
-            UnifyPerformanceMonitor.recordMetric("network_error_report_upload_error", 1.0, "count",
-                mapOf("error" to e.message.orEmpty()))
-            false
+            NetworkStatus.UNKNOWN
         }
     }
     
-    /**
-     * 验证API密钥
-     */
-    suspend fun validateApiKey(configUrl: String, apiKey: String): Boolean {
-        return try {
-            withTimeout(requestTimeout) {
-                val response = httpClient.get("$configUrl/api/v1/validate") {
-                    headers {
-                        append("Authorization", "Bearer $apiKey")
-                    }
-                }
-                
-                response.status.isSuccess()
-            }
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    /**
-     * 重试机制
-     */
-    private suspend fun <T> retry(maxRetries: Int, block: suspend () -> T): T {
+    // 私有辅助方法
+    private suspend inline fun <reified T> performRequest(
+        crossinline requestBuilder: suspend HttpClient.() -> HttpResponse
+    ): NetworkResponse<T> {
         var lastException: Exception? = null
         
-        repeat(maxRetries) { attempt ->
+        repeat(config.retryAttempts) { attempt ->
             try {
-                return block()
+                // 检查缓存
+                val cacheKey = generateCacheKey(requestBuilder.toString())
+                if (config.enableCache) {
+                    val cachedResponse = getCachedResponse<T>(cacheKey)
+                    if (cachedResponse != null) {
+                        return cachedResponse
+                    }
+                }
+                
+                // 执行请求
+                val response = withTimeout(config.timeout) {
+                    httpClient.requestBuilder()
+                }
+                
+                if (response.status.isSuccess()) {
+                    val responseText = response.bodyAsText()
+                    val data = Json.decodeFromString<T>(responseText)
+                    
+                    val networkResponse = NetworkResponse(
+                        success = true,
+                        data = data,
+                        statusCode = response.status.value,
+                        headers = response.headers.toMap()
+                    )
+                    
+                    // 缓存响应
+                    if (config.enableCache) {
+                        cacheResponse(cacheKey, networkResponse)
+                    }
+                    
+                    return networkResponse
+                } else {
+                    val errorMessage = response.bodyAsText()
+                    return NetworkResponse(
+                        success = false,
+                        error = errorMessage,
+                        statusCode = response.status.value,
+                        headers = response.headers.toMap()
+                    )
+                }
+                
             } catch (e: Exception) {
                 lastException = e
-                if (attempt < maxRetries - 1) {
-                    val delay = (1000L * (attempt + 1)) // 递增延迟
-                    delay(delay)
-                    
-                    UnifyPerformanceMonitor.recordMetric("network_retry_attempt", 1.0, "count",
-                        mapOf("attempt" to (attempt + 1).toString()))
+                
+                // 如果不是最后一次尝试，等待后重试
+                if (attempt < config.retryAttempts - 1) {
+                    delay(config.retryDelay * (attempt + 1))
                 }
             }
         }
         
-        throw lastException ?: NetworkException("重试失败")
+        // 所有重试都失败了
+        return NetworkResponse(
+            success = false,
+            error = lastException?.message ?: "网络请求失败"
+        )
     }
     
-    /**
-     * 创建HTTP客户端
-     */
-    private fun createHttpClient(): HttpClient {
-        return HttpClient {
-            // 配置HTTP客户端
-            expectSuccess = false
+    private fun generateCacheKey(request: String): String {
+        return request.hashCode().toString()
+    }
+    
+    private suspend fun <T> getCachedResponse(cacheKey: String): NetworkResponse<T>? {
+        val cached = responseCache[cacheKey] ?: return null
+        val (responseJson, timestamp) = cached
+        
+        // 检查缓存是否过期
+        if (System.currentTimeMillis() - timestamp > config.cacheTimeout) {
+            responseCache.remove(cacheKey)
+            return null
+        }
+        
+        return try {
+            Json.decodeFromString<NetworkResponse<T>>(responseJson)
+        } catch (e: Exception) {
+            responseCache.remove(cacheKey)
+            null
+        }
+    }
+    
+    private fun <T> cacheResponse(cacheKey: String, response: NetworkResponse<T>) {
+        try {
+            val responseJson = Json.encodeToString(response)
+            responseCache[cacheKey] = responseJson to System.currentTimeMillis()
             
-            // 添加请求拦截器
-            install(io.ktor.client.plugins.contentnegotiation.ContentNegotiation) {
-                json(Json {
-                    ignoreUnknownKeys = true
-                    coerceInputValues = true
-                })
-            }
-            
-            // 添加日志插件
-            install(io.ktor.client.plugins.logging.Logging) {
-                level = io.ktor.client.plugins.logging.LogLevel.INFO
-            }
-            
-            // 添加超时配置
-            install(io.ktor.client.plugins.HttpTimeout) {
-                requestTimeoutMillis = requestTimeout
-                connectTimeoutMillis = 10000L
-                socketTimeoutMillis = requestTimeout
-            }
+            // 清理过期缓存
+            cleanupExpiredCache()
+        } catch (e: Exception) {
+            // 忽略缓存错误
+        }
+    }
+    
+    private fun cleanupExpiredCache() {
+        val now = System.currentTimeMillis()
+        val expiredKeys = responseCache.filter { (_, pair) ->
+            now - pair.second > config.cacheTimeout
+        }.keys
+        
+        expiredKeys.forEach { key ->
+            responseCache.remove(key)
         }
     }
 }
 
 /**
- * 配置响应
+ * 网络客户端工厂
  */
-@Serializable
-data class ConfigResponse(
-    val key: String,
-    val value: String,
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
- * 使用统计
- */
-@Serializable
-data class UsageStats(
-    val deviceId: String,
-    val platform: String,
-    val version: String,
-    val componentUsage: Map<String, Int> = emptyMap(),
-    val featureUsage: Map<String, Int> = emptyMap(),
-    val performanceMetrics: Map<String, Double> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
- * 错误报告
- */
-@Serializable
-data class ErrorReport(
-    val deviceId: String,
-    val platform: String,
-    val version: String,
-    val errorType: String,
-    val errorMessage: String,
-    val stackTrace: String,
-    val context: Map<String, String> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis()
-)
-
-/**
- * 网络异常
- */
-class NetworkException(message: String, cause: Throwable? = null) : Exception(message, cause)
+object DynamicNetworkClientFactory {
+    fun create(httpClient: HttpClient): DynamicNetworkClient {
+        return DynamicNetworkClientImpl(httpClient)
+    }
+    
+    fun createDefault(): DynamicNetworkClient {
+        val httpClient = HttpClient {
+            // 基础配置
+        }
+        return DynamicNetworkClientImpl(httpClient)
+    }
+}

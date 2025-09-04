@@ -1,397 +1,722 @@
 package com.unify.data.demo
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Card
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.data.UnifyDataManager
-import com.unify.data.DataSyncStatus
-import com.unify.data.CacheStrategy
-import com.unify.data.StorageType
+import androidx.compose.ui.unit.sp
+import com.unify.core.data.UnifyDataManager
+import com.unify.core.providers.currentDataManager
+import com.unify.data.enhanced.UnifyDataEnhanced
+import com.unify.data.sync.UnifyDataSyncImpl
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * 统一数据管理系统演示应用
- * 展示跨平台数据存储、状态管理、缓存和同步功能
+ * Unify数据管理演示应用
+ * 展示跨平台数据存储、同步和管理功能
  */
-@Composable
-fun UnifyDataDemo() {
-    var selectedTab by remember { mutableStateOf(0) }
-    val tabs = listOf("存储管理", "状态管理", "缓存管理", "数据同步", "性能监控")
+
+/**
+ * 演示数据模型
+ */
+@Serializable
+data class DemoUser(
+    val id: String,
+    val name: String,
+    val email: String,
+    val age: Int,
+    val avatar: String? = null,
+    val preferences: UserPreferences = UserPreferences(),
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+@Serializable
+data class UserPreferences(
+    val theme: String = "light",
+    val language: String = "zh-CN",
+    val notifications: Boolean = true,
+    val autoSync: Boolean = true,
+    val dataUsage: DataUsageSettings = DataUsageSettings()
+)
+
+@Serializable
+data class DataUsageSettings(
+    val allowCellularSync: Boolean = false,
+    val compressData: Boolean = true,
+    val maxCacheSize: Long = 100 * 1024 * 1024 // 100MB
+)
+
+@Serializable
+data class DemoNote(
+    val id: String,
+    val title: String,
+    val content: String,
+    val tags: List<String> = emptyList(),
+    val userId: String,
+    val isPrivate: Boolean = false,
+    val createdAt: Long = System.currentTimeMillis(),
+    val updatedAt: Long = System.currentTimeMillis()
+)
+
+/**
+ * 数据演示状态
+ */
+@Stable
+class DataDemoState {
+    var users by mutableStateOf<List<DemoUser>>(emptyList())
+    var notes by mutableStateOf<List<DemoNote>>(emptyList())
+    var currentUser by mutableStateOf<DemoUser?>(null)
+    var isLoading by mutableStateOf(false)
+    var errorMessage by mutableStateOf<String?>(null)
+    var syncStatus by mutableStateOf("未同步")
+    var storageInfo by mutableStateOf<StorageInfo?>(null)
+}
+
+@Serializable
+data class StorageInfo(
+    val totalSize: Long,
+    val usedSize: Long,
+    val availableSize: Long,
+    val itemCount: Int,
+    val lastSyncTime: Long?
+)
+
+/**
+ * 数据演示管理器
+ */
+class UnifyDataDemoManager(
+    private val dataManager: UnifyDataManager,
+    private val enhancedData: UnifyDataEnhanced,
+    private val syncManager: UnifyDataSyncImpl
+) {
+    private val _state = DataDemoState()
+    val state: DataDemoState = _state
     
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        // 标题
-        Text(
-            text = "Unify 数据管理系统演示",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
+    private val json = Json { 
+        prettyPrint = true
+        ignoreUnknownKeys = true
+    }
+    
+    /**
+     * 初始化演示数据
+     */
+    suspend fun initialize() {
+        _state.isLoading = true
+        _state.errorMessage = null
+        
+        try {
+            // 加载用户数据
+            loadUsers()
+            
+            // 加载笔记数据
+            loadNotes()
+            
+            // 获取存储信息
+            updateStorageInfo()
+            
+            // 检查同步状态
+            checkSyncStatus()
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "初始化失败: ${e.message}"
+        } finally {
+            _state.isLoading = false
+        }
+    }
+    
+    /**
+     * 创建示例用户
+     */
+    suspend fun createSampleUsers() {
+        val sampleUsers = listOf(
+            DemoUser(
+                id = "user_001",
+                name = "张三",
+                email = "zhangsan@example.com",
+                age = 25,
+                preferences = UserPreferences(
+                    theme = "dark",
+                    language = "zh-CN",
+                    notifications = true
+                )
+            ),
+            DemoUser(
+                id = "user_002",
+                name = "李四",
+                email = "lisi@example.com",
+                age = 30,
+                preferences = UserPreferences(
+                    theme = "light",
+                    language = "en-US",
+                    notifications = false
+                )
+            ),
+            DemoUser(
+                id = "user_003",
+                name = "王五",
+                email = "wangwu@example.com",
+                age = 28,
+                preferences = UserPreferences(
+                    theme = "auto",
+                    language = "zh-CN",
+                    notifications = true,
+                    autoSync = false
+                )
+            )
         )
         
-        // 选项卡
-        ScrollableTabRow(
-            selectedTabIndex = selectedTab,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            tabs.forEachIndexed { index, title ->
-                Tab(
-                    selected = selectedTab == index,
-                    onClick = { selectedTab = index },
-                    text = { Text(title) }
-                )
-            }
+        sampleUsers.forEach { user ->
+            saveUser(user)
         }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        loadUsers()
+    }
+    
+    /**
+     * 创建示例笔记
+     */
+    suspend fun createSampleNotes() {
+        val sampleNotes = listOf(
+            DemoNote(
+                id = "note_001",
+                title = "Unify框架学习笔记",
+                content = "Unify是一个强大的跨平台开发框架，支持Android、iOS、Web等多个平台。",
+                tags = listOf("学习", "技术", "框架"),
+                userId = "user_001"
+            ),
+            DemoNote(
+                id = "note_002",
+                title = "今日待办事项",
+                content = "1. 完成项目文档\n2. 参加团队会议\n3. 代码审查",
+                tags = listOf("工作", "待办"),
+                userId = "user_001",
+                isPrivate = true
+            ),
+            DemoNote(
+                id = "note_003",
+                title = "Kotlin Multiplatform最佳实践",
+                content = "使用expect/actual机制处理平台差异，保持代码复用率在85%以上。",
+                tags = listOf("Kotlin", "技术", "最佳实践"),
+                userId = "user_002"
+            )
+        )
         
-        // 内容区域
-        when (selectedTab) {
-            0 -> StorageManagementDemo()
-            1 -> StateManagementDemo()
-            2 -> CacheManagementDemo()
-            3 -> DataSyncDemo()
-            4 -> PerformanceMonitoringDemo()
+        sampleNotes.forEach { note ->
+            saveNote(note)
+        }
+        
+        loadNotes()
+    }
+    
+    /**
+     * 保存用户
+     */
+    suspend fun saveUser(user: DemoUser) {
+        try {
+            val userJson = json.encodeToString(DemoUser.serializer(), user)
+            dataManager.store("user_${user.id}", userJson)
+            
+            // 使用增强数据管理器进行额外处理
+            enhancedData.processUserData(user.id, userJson)
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "保存用户失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 保存笔记
+     */
+    suspend fun saveNote(note: DemoNote) {
+        try {
+            val noteJson = json.encodeToString(DemoNote.serializer(), note)
+            dataManager.store("note_${note.id}", noteJson)
+            
+            // 使用增强数据管理器进行索引
+            enhancedData.indexNoteContent(note.id, note.title, note.content, note.tags)
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "保存笔记失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 加载用户列表
+     */
+    private suspend fun loadUsers() {
+        try {
+            val userKeys = dataManager.getKeys().filter { it.startsWith("user_") }
+            val users = mutableListOf<DemoUser>()
+            
+            userKeys.forEach { key ->
+                val userJson = dataManager.retrieve(key)
+                if (userJson != null) {
+                    val user = json.decodeFromString(DemoUser.serializer(), userJson)
+                    users.add(user)
+                }
+            }
+            
+            _state.users = users.sortedBy { it.name }
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "加载用户失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 加载笔记列表
+     */
+    private suspend fun loadNotes() {
+        try {
+            val noteKeys = dataManager.getKeys().filter { it.startsWith("note_") }
+            val notes = mutableListOf<DemoNote>()
+            
+            noteKeys.forEach { key ->
+                val noteJson = dataManager.retrieve(key)
+                if (noteJson != null) {
+                    val note = json.decodeFromString(DemoNote.serializer(), noteJson)
+                    notes.add(note)
+                }
+            }
+            
+            _state.notes = notes.sortedByDescending { it.updatedAt }
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "加载笔记失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 删除用户
+     */
+    suspend fun deleteUser(userId: String) {
+        try {
+            dataManager.remove("user_$userId")
+            
+            // 删除用户相关的笔记
+            val userNotes = _state.notes.filter { it.userId == userId }
+            userNotes.forEach { note ->
+                deleteNote(note.id)
+            }
+            
+            loadUsers()
+            loadNotes()
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "删除用户失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 删除笔记
+     */
+    suspend fun deleteNote(noteId: String) {
+        try {
+            dataManager.remove("note_$noteId")
+            enhancedData.removeNoteIndex(noteId)
+            loadNotes()
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "删除笔记失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 搜索笔记
+     */
+    suspend fun searchNotes(query: String): List<DemoNote> {
+        return try {
+            val searchResults = enhancedData.searchNotes(query)
+            _state.notes.filter { note ->
+                searchResults.contains(note.id) ||
+                note.title.contains(query, ignoreCase = true) ||
+                note.content.contains(query, ignoreCase = true) ||
+                note.tags.any { it.contains(query, ignoreCase = true) }
+            }
+        } catch (e: Exception) {
+            _state.errorMessage = "搜索失败: ${e.message}"
+            emptyList()
+        }
+    }
+    
+    /**
+     * 同步数据
+     */
+    suspend fun syncData() {
+        try {
+            _state.syncStatus = "同步中..."
+            
+            // 上传本地数据
+            val allData = mutableMapOf<String, String>()
+            
+            _state.users.forEach { user ->
+                val userJson = json.encodeToString(DemoUser.serializer(), user)
+                allData["user_${user.id}"] = userJson
+            }
+            
+            _state.notes.forEach { note ->
+                val noteJson = json.encodeToString(DemoNote.serializer(), note)
+                allData["note_${note.id}"] = noteJson
+            }
+            
+            val syncResult = syncManager.syncData(allData)
+            
+            if (syncResult.isSuccess) {
+                _state.syncStatus = "同步成功"
+                updateStorageInfo()
+            } else {
+                _state.syncStatus = "同步失败: ${syncResult.error}"
+            }
+            
+        } catch (e: Exception) {
+            _state.syncStatus = "同步异常: ${e.message}"
+        }
+    }
+    
+    /**
+     * 检查同步状态
+     */
+    private suspend fun checkSyncStatus() {
+        try {
+            val lastSyncTime = syncManager.getLastSyncTime()
+            _state.syncStatus = if (lastSyncTime != null) {
+                val timeDiff = System.currentTimeMillis() - lastSyncTime
+                when {
+                    timeDiff < 60000 -> "刚刚同步"
+                    timeDiff < 3600000 -> "${timeDiff / 60000}分钟前同步"
+                    timeDiff < 86400000 -> "${timeDiff / 3600000}小时前同步"
+                    else -> "${timeDiff / 86400000}天前同步"
+                }
+            } else {
+                "从未同步"
+            }
+        } catch (e: Exception) {
+            _state.syncStatus = "状态未知"
+        }
+    }
+    
+    /**
+     * 更新存储信息
+     */
+    private suspend fun updateStorageInfo() {
+        try {
+            val keys = dataManager.getKeys()
+            var totalSize = 0L
+            
+            keys.forEach { key ->
+                val data = dataManager.retrieve(key)
+                if (data != null) {
+                    totalSize += data.length
+                }
+            }
+            
+            _state.storageInfo = StorageInfo(
+                totalSize = totalSize,
+                usedSize = totalSize,
+                availableSize = Long.MAX_VALUE - totalSize,
+                itemCount = keys.size,
+                lastSyncTime = syncManager.getLastSyncTime()
+            )
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "获取存储信息失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 清空所有数据
+     */
+    suspend fun clearAllData() {
+        try {
+            dataManager.clear()
+            enhancedData.clearAllIndexes()
+            _state.users = emptyList()
+            _state.notes = emptyList()
+            _state.currentUser = null
+            updateStorageInfo()
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "清空数据失败: ${e.message}"
+        }
+    }
+    
+    /**
+     * 导出数据
+     */
+    suspend fun exportData(): String {
+        return try {
+            val exportData = mapOf(
+                "users" to _state.users,
+                "notes" to _state.notes,
+                "exportTime" to System.currentTimeMillis(),
+                "version" to "1.0"
+            )
+            
+            json.encodeToString(kotlinx.serialization.json.JsonElement.serializer(), 
+                Json.parseToJsonElement(json.encodeToString(kotlinx.serialization.serializer(), exportData)))
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "导出数据失败: ${e.message}"
+            ""
+        }
+    }
+    
+    /**
+     * 导入数据
+     */
+    suspend fun importData(jsonData: String) {
+        try {
+            // 这里应该解析JSON并导入数据
+            // 简化实现，实际项目中需要完整的导入逻辑
+            _state.errorMessage = null
+            
+        } catch (e: Exception) {
+            _state.errorMessage = "导入数据失败: ${e.message}"
         }
     }
 }
 
 /**
- * 存储管理演示
+ * 数据演示主界面
  */
 @Composable
-fun StorageManagementDemo() {
+fun UnifyDataDemo() {
+    val dataManager = currentDataManager()
+    val enhancedData = remember { UnifyDataEnhanced() }
+    val syncManager = remember { UnifyDataSyncImpl() }
+    val demoManager = remember { UnifyDataDemoManager(dataManager, enhancedData, syncManager) }
     val scope = rememberCoroutineScope()
-    val dataManager = remember { 
-        UnifyDataManagerFactory.create(
-            UnifyDataManagerConfig(
-                enableStorage = true,
-                storageEncryption = true,
-                maxStorageSize = 50 * 1024 * 1024 // 50MB
-            )
-        )
-    }
     
-    var key by remember { mutableStateOf("") }
-    var value by remember { mutableStateOf("") }
-    var result by remember { mutableStateOf("") }
-    var storageKeys by remember { mutableStateOf<Set<String>>(emptySet()) }
-    var storageSize by remember { mutableStateOf(0L) }
+    var selectedTab by remember { mutableStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf<List<DemoNote>>(emptyList()) }
     
     LaunchedEffect(Unit) {
-        dataManager.initialize()
-        refreshStorageInfo()
+        demoManager.initialize()
     }
     
-    suspend fun refreshStorageInfo() {
-        storageKeys = dataManager.storage.keys()
-        storageSize = dataManager.storage.size()
-    }
-    
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
+        // 顶部标题栏
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "存储操作",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = key,
-                        onValueChange = { key = it },
-                        label = { Text("键 (Key)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = value,
-                        onValueChange = { value = it },
-                        label = { Text("值 (Value)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        minLines = 3
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
+                Text(
+                    text = "Unify数据管理演示",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                
+                Text(
+                    text = "跨平台数据存储、同步和管理功能展示",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                // 存储信息
+                demoManager.state.storageInfo?.let { info ->
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val userData = UserData(
-                                            name = value,
-                                            timestamp = System.currentTimeMillis()
-                                        )
-                                        dataManager.storage.put(key, userData)
-                                        result = "存储成功: $key"
-                                        refreshStorageInfo()
-                                    } catch (e: Exception) {
-                                        result = "存储失败: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = key.isNotBlank() && value.isNotBlank()
-                        ) {
-                            Text("存储")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val userData = dataManager.storage.get<UserData>(key)
-                                        result = if (userData != null) {
-                                            "读取成功: ${userData.name} (${userData.timestamp})"
-                                        } else {
-                                            "未找到数据: $key"
-                                        }
-                                    } catch (e: Exception) {
-                                        result = "读取失败: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = key.isNotBlank()
-                        ) {
-                            Text("读取")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val removed = dataManager.storage.remove(key)
-                                        result = if (removed) {
-                                            "删除成功: $key"
-                                        } else {
-                                            "删除失败: $key"
-                                        }
-                                        refreshStorageInfo()
-                                    } catch (e: Exception) {
-                                        result = "删除失败: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = key.isNotBlank()
-                        ) {
-                            Text("删除")
-                        }
-                    }
-                    
-                    if (result.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = result,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (result.contains("成功")) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            }
+                            text = "数据项: ${info.itemCount}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "存储: ${info.usedSize / 1024}KB",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        )
+                        Text(
+                            text = "同步: ${demoManager.state.syncStatus}",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                         )
                     }
                 }
             }
         }
         
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "存储信息",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text("存储大小: ${formatBytes(storageSize)}")
-                    Text("键数量: ${storageKeys.size}")
-                    
-                    if (storageKeys.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("存储的键:")
-                        storageKeys.forEach { storageKey ->
-                            Text("• $storageKey", style = MaterialTheme.typography.bodySmall)
-                        }
+        // 操作按钮行
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(
+                onClick = {
+                    scope.launch {
+                        demoManager.createSampleUsers()
                     }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("创建用户", fontSize = 12.sp)
+            }
+            
+            Button(
+                onClick = {
+                    scope.launch {
+                        demoManager.createSampleNotes()
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("创建笔记", fontSize = 12.sp)
+            }
+            
+            Button(
+                onClick = {
+                    scope.launch {
+                        demoManager.syncData()
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("同步数据", fontSize = 12.sp)
+            }
+            
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        demoManager.clearAllData()
+                    }
+                },
+                modifier = Modifier.weight(1f)
+            ) {
+                Text("清空", fontSize = 12.sp)
+            }
+        }
+        
+        // 标签页
+        TabRow(selectedTabIndex = selectedTab) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = { Text("用户 (${demoManager.state.users.size})") }
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = { Text("笔记 (${demoManager.state.notes.size})") }
+            )
+            Tab(
+                selected = selectedTab == 2,
+                onClick = { selectedTab = 2 },
+                text = { Text("搜索") }
+            )
+        }
+        
+        // 内容区域
+        Box(modifier = Modifier.weight(1f)) {
+            when (selectedTab) {
+                0 -> UserListContent(demoManager, scope)
+                1 -> NoteListContent(demoManager, scope)
+                2 -> SearchContent(demoManager, scope, searchQuery, searchResults) { query, results ->
+                    searchQuery = query
+                    searchResults = results
                 }
+            }
+            
+            // 加载指示器
+            if (demoManager.state.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+        
+        // 错误消息
+        demoManager.state.errorMessage?.let { error ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            ) {
+                Text(
+                    text = error,
+                    modifier = Modifier.padding(16.dp),
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
             }
         }
     }
 }
 
-/**
- * 状态管理演示
- */
 @Composable
-fun StateManagementDemo() {
-    val dataManager = remember { 
-        UnifyDataManagerFactory.create(UnifyDataManagerConfig(enableState = true))
-    }
-    
-    var counter by remember { mutableStateOf(0) }
-    var userName by remember { mutableStateOf("") }
-    var theme by remember { mutableStateOf("Light") }
-    
-    // 观察状态变化
-    val observedCounter by dataManager.state.observeState<Int>("counter").collectAsState(initial = 0)
-    val observedUserName by dataManager.state.observeState<String>("userName").collectAsState(initial = "")
-    val observedTheme by dataManager.state.observeState<String>("theme").collectAsState(initial = "Light")
-    
-    LaunchedEffect(Unit) {
-        dataManager.initialize()
-    }
-    
+private fun UserListContent(
+    demoManager: UnifyDataDemoManager,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        item {
+        items(demoManager.state.users) { user ->
             Card(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = "状态管理",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // 计数器状态
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("计数器: $observedCounter")
-                        Row {
-                            Button(
-                                onClick = {
-                                    counter = observedCounter - 1
-                                    dataManager.state.setState("counter", counter)
-                                }
-                            ) {
-                                Text("-")
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    counter = observedCounter + 1
-                                    dataManager.state.setState("counter", counter)
-                                }
-                            ) {
-                                Text("+")
-                            }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = user.name,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = user.email,
+                                fontSize = 14.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "年龄: ${user.age} | 主题: ${user.preferences.theme}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
                         }
-                    }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // 用户名状态
-                    OutlinedTextField(
-                        value = userName,
-                        onValueChange = { 
-                            userName = it
-                            dataManager.state.setState("userName", it)
-                        },
-                        label = { Text("用户名") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Text(
-                        text = "当前用户名: $observedUserName",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // 主题状态
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("主题: ")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        listOf("Light", "Dark", "Auto").forEach { themeOption ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                RadioButton(
-                                    selected = observedTheme == themeOption,
-                                    onClick = {
-                                        theme = themeOption
-                                        dataManager.state.setState("theme", themeOption)
-                                    }
-                                )
-                                Text(themeOption)
+                        
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    demoManager.deleteUser(user.id)
+                                }
                             }
-                        }
-                    }
-                }
-            }
-        }
-        
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "状态信息",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    val stateKeys = dataManager.state.getStateKeys()
-                    Text("状态数量: ${stateKeys.size}")
-                    
-                    if (stateKeys.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text("状态键:")
-                        stateKeys.forEach { stateKey ->
-                            Text("• $stateKey", style = MaterialTheme.typography.bodySmall)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "删除用户"
+                            )
                         }
                     }
                 }
@@ -400,520 +725,181 @@ fun StateManagementDemo() {
     }
 }
 
-/**
- * 缓存管理演示
- */
 @Composable
-fun CacheManagementDemo() {
-    val scope = rememberCoroutineScope()
-    val dataManager = remember { 
-        UnifyDataManagerFactory.create(
-            UnifyDataManagerConfig(
-                enableCache = true,
-                cachePolicy = UnifyCachePolicy(
-                    maxSize = 10 * 1024 * 1024, // 10MB
-                    defaultTtl = 300000, // 5分钟
-                    evictionPolicy = UnifyCacheEvictionPolicy.LRU
-                )
+private fun NoteListContent(
+    demoManager: UnifyDataDemoManager,
+    scope: kotlinx.coroutines.CoroutineScope
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        items(demoManager.state.notes) { note ->
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = note.title,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            Spacer(modifier = Modifier.height(4.dp))
+                            
+                            Text(
+                                text = note.content,
+                                fontSize = 14.sp,
+                                maxLines = 2,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                            
+                            if (note.tags.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    note.tags.take(3).forEach { tag ->
+                                        AssistChip(
+                                            onClick = { },
+                                            label = { Text(tag, fontSize = 10.sp) }
+                                        )
+                                    }
+                                }
+                            }
+                            
+                            Spacer(modifier = Modifier.height(4.dp))
+                            
+                            Text(
+                                text = "用户: ${note.userId} ${if (note.isPrivate) "🔒" else ""}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            )
+                        }
+                        
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    demoManager.deleteNote(note.id)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "删除笔记"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchContent(
+    demoManager: UnifyDataDemoManager,
+    scope: kotlinx.coroutines.CoroutineScope,
+    searchQuery: String,
+    searchResults: List<DemoNote>,
+    onSearchUpdate: (String, List<DemoNote>) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { query ->
+                onSearchUpdate(query, searchResults)
+                if (query.isNotBlank()) {
+                    scope.launch {
+                        val results = demoManager.searchNotes(query)
+                        onSearchUpdate(query, results)
+                    }
+                } else {
+                    onSearchUpdate(query, emptyList())
+                }
+            },
+            label = { Text("搜索笔记") },
+            placeholder = { Text("输入关键词搜索标题、内容或标签") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        if (searchQuery.isNotBlank()) {
+            Text(
+                text = "搜索结果 (${searchResults.size})",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
             )
-        )
-    }
-    
-    var cacheKey by remember { mutableStateOf("") }
-    var cacheValue by remember { mutableStateOf("") }
-    var cacheTtl by remember { mutableStateOf("300") }
-    var cacheResult by remember { mutableStateOf("") }
-    var cacheStats by remember { mutableStateOf<UnifyCacheStats?>(null) }
-    
-    LaunchedEffect(Unit) {
-        dataManager.initialize()
-        refreshCacheStats()
-    }
-    
-    suspend fun refreshCacheStats() {
-        cacheStats = dataManager.cache.getCacheStats()
-    }
-    
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "缓存操作",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = cacheKey,
-                        onValueChange = { cacheKey = it },
-                        label = { Text("缓存键") },
+                items(searchResults) { note ->
+                    Card(
                         modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = cacheValue,
-                        onValueChange = { cacheValue = it },
-                        label = { Text("缓存值") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = cacheTtl,
-                        onValueChange = { cacheTtl = it },
-                        label = { Text("过期时间(秒)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val ttlMs = (cacheTtl.toLongOrNull() ?: 300) * 1000
-                                        dataManager.cache.cache(cacheKey, cacheValue, ttlMs)
-                                        cacheResult = "缓存成功: $cacheKey"
-                                        refreshCacheStats()
-                                    } catch (e: Exception) {
-                                        cacheResult = "缓存失败: ${e.message}"
+                        Column(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            Text(
+                                text = note.title,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            Spacer(modifier = Modifier.height(4.dp))
+                            
+                            Text(
+                                text = note.content,
+                                fontSize = 14.sp,
+                                maxLines = 3,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
+                            )
+                            
+                            if (note.tags.isNotEmpty()) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    note.tags.forEach { tag ->
+                                        AssistChip(
+                                            onClick = { },
+                                            label = { Text(tag, fontSize = 10.sp) }
+                                        )
                                     }
                                 }
-                            },
-                            enabled = cacheKey.isNotBlank() && cacheValue.isNotBlank()
-                        ) {
-                            Text("缓存")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val cached = dataManager.cache.getCache<String>(cacheKey)
-                                        cacheResult = if (cached != null) {
-                                            "缓存命中: $cached"
-                                        } else {
-                                            "缓存未命中: $cacheKey"
-                                        }
-                                        refreshCacheStats()
-                                    } catch (e: Exception) {
-                                        cacheResult = "获取失败: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = cacheKey.isNotBlank()
-                        ) {
-                            Text("获取")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val removed = dataManager.cache.removeCache(cacheKey)
-                                        cacheResult = if (removed) {
-                                            "删除成功: $cacheKey"
-                                        } else {
-                                            "删除失败: $cacheKey"
-                                        }
-                                        refreshCacheStats()
-                                    } catch (e: Exception) {
-                                        cacheResult = "删除失败: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = cacheKey.isNotBlank()
-                        ) {
-                            Text("删除")
-                        }
-                    }
-                    
-                    if (cacheResult.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = cacheResult,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (cacheResult.contains("成功") || cacheResult.contains("命中")) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
                             }
-                        )
+                        }
                     }
                 }
             }
-        }
-        
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
+        } else {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "缓存统计",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    cacheStats?.let { stats ->
-                        Text("命中次数: ${stats.hitCount}")
-                        Text("未命中次数: ${stats.missCount}")
-                        Text("淘汰次数: ${stats.evictionCount}")
-                        Text("命中率: ${"%.2f".format(stats.hitRate * 100)}%")
-                        Text("当前大小: ${formatBytes(stats.totalSize)}")
-                        Text("最大大小: ${formatBytes(stats.maxSize)}")
-                    } ?: Text("加载中...")
-                }
-            }
-        }
-    }
-}
-
-/**
- * 数据同步演示
- */
-@Composable
-fun DataSyncDemo() {
-    val scope = rememberCoroutineScope()
-    val dataManager = remember { 
-        UnifyDataManagerFactory.create(
-            UnifyDataManagerConfig(
-                enableSync = true,
-                syncPolicy = UnifySyncPolicy(
-                    autoSync = true,
-                    syncInterval = 60000, // 1分钟
-                    conflictResolution = UnifyConflictResolution.REMOTE_WINS
+                Text(
+                    text = "输入关键词开始搜索",
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
-            )
-        )
-    }
-    
-    var syncKey by remember { mutableStateOf("") }
-    var syncResult by remember { mutableStateOf("") }
-    val syncStatus by dataManager.sync.observeSyncStatus().collectAsState(
-        initial = UnifySyncStatus(
-            isOnline = false,
-            isSyncing = false,
-            lastSyncTime = 0L,
-            pendingSyncCount = 0,
-            failedSyncCount = 0
-        )
-    )
-    
-    LaunchedEffect(Unit) {
-        dataManager.initialize()
-    }
-    
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "数据同步",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    OutlinedTextField(
-                        value = syncKey,
-                        onValueChange = { syncKey = it },
-                        label = { Text("同步键") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val result = dataManager.sync.syncToRemote(syncKey)
-                                        syncResult = if (result.success) {
-                                            "上传成功: ${result.key}"
-                                        } else {
-                                            "上传失败: ${result.error}"
-                                        }
-                                    } catch (e: Exception) {
-                                        syncResult = "上传异常: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = syncKey.isNotBlank() && syncStatus.isOnline
-                        ) {
-                            Text("上传")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val result = dataManager.sync.syncFromRemote(syncKey)
-                                        syncResult = if (result.success) {
-                                            "下载成功: ${result.key}"
-                                        } else {
-                                            "下载失败: ${result.error}"
-                                        }
-                                    } catch (e: Exception) {
-                                        syncResult = "下载异常: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = syncKey.isNotBlank() && syncStatus.isOnline
-                        ) {
-                            Text("下载")
-                        }
-                        
-                        Button(
-                            onClick = {
-                                scope.launch {
-                                    try {
-                                        val result = dataManager.sync.bidirectionalSync(syncKey)
-                                        syncResult = if (result.success) {
-                                            "双向同步成功: ${result.key}"
-                                        } else {
-                                            "双向同步失败: ${result.error}"
-                                        }
-                                    } catch (e: Exception) {
-                                        syncResult = "双向同步异常: ${e.message}"
-                                    }
-                                }
-                            },
-                            enabled = syncKey.isNotBlank() && syncStatus.isOnline
-                        ) {
-                            Text("双向同步")
-                        }
-                    }
-                    
-                    if (syncResult.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = syncResult,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (syncResult.contains("成功")) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            }
-                        )
-                    }
-                }
             }
         }
-        
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "同步状态",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("网络状态: ")
-                        Text(
-                            text = if (syncStatus.isOnline) "在线" else "离线",
-                            color = if (syncStatus.isOnline) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.error
-                            }
-                        )
-                    }
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("同步状态: ")
-                        Text(
-                            text = if (syncStatus.isSyncing) "同步中" else "空闲",
-                            color = if (syncStatus.isSyncing) {
-                                MaterialTheme.colorScheme.secondary
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
-                    }
-                    
-                    Text("上次同步: ${formatTimestamp(syncStatus.lastSyncTime)}")
-                    Text("待同步数量: ${syncStatus.pendingSyncCount}")
-                    Text("失败数量: ${syncStatus.failedSyncCount}")
-                }
-            }
-        }
-    }
-}
-
-/**
- * 性能监控演示
- */
-@Composable
-fun PerformanceMonitoringDemo() {
-    val scope = rememberCoroutineScope()
-    val dataManager = remember { 
-        UnifyDataManagerFactory.create(UnifyDataManagerConfig())
-    }
-    
-    var performanceData by remember { mutableStateOf<PerformanceData?>(null) }
-    
-    LaunchedEffect(Unit) {
-        dataManager.initialize()
-        // 模拟性能监控数据收集
-        scope.launch {
-            while (true) {
-                performanceData = collectPerformanceData(dataManager)
-                kotlinx.coroutines.delay(1000) // 每秒更新
-            }
-        }
-    }
-    
-    LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        item {
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "性能监控",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    performanceData?.let { data ->
-                        Text("存储使用率: ${"%.1f".format(data.storageUsagePercent)}%")
-                        Text("缓存命中率: ${"%.1f".format(data.cacheHitRate)}%")
-                        Text("同步成功率: ${"%.1f".format(data.syncSuccessRate)}%")
-                        Text("平均响应时间: ${data.averageResponseTime}ms")
-                        Text("内存使用: ${formatBytes(data.memoryUsage)}")
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        LinearProgressIndicator(
-                            progress = data.storageUsagePercent / 100f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text("存储使用率", style = MaterialTheme.typography.bodySmall)
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        LinearProgressIndicator(
-                            progress = data.cacheHitRate / 100f,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Text("缓存命中率", style = MaterialTheme.typography.bodySmall)
-                        
-                    } ?: Text("收集性能数据中...")
-                }
-            }
-        }
-    }
-}
-
-/**
- * 用户数据模型
- */
-@Serializable
-data class UserData(
-    val name: String,
-    val timestamp: Long
-)
-
-/**
- * 性能数据模型
- */
-data class PerformanceData(
-    val storageUsagePercent: Float,
-    val cacheHitRate: Float,
-    val syncSuccessRate: Float,
-    val averageResponseTime: Long,
-    val memoryUsage: Long
-)
-
-/**
- * 收集性能数据
- */
-suspend fun collectPerformanceData(dataManager: UnifyDataManager): PerformanceData {
-    val cacheStats = dataManager.cache.getCacheStats()
-    val storageSize = dataManager.storage.size()
-    val maxStorageSize = 50 * 1024 * 1024L // 50MB
-    
-    return PerformanceData(
-        storageUsagePercent = (storageSize.toFloat() / maxStorageSize * 100).coerceAtMost(100f),
-        cacheHitRate = (cacheStats.hitRate * 100).toFloat(),
-        syncSuccessRate = 95.5f, // 模拟数据
-        averageResponseTime = (50..200).random().toLong(), // 模拟数据
-        memoryUsage = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
-    )
-}
-
-/**
- * 格式化字节数
- */
-fun formatBytes(bytes: Long): String {
-    val units = arrayOf("B", "KB", "MB", "GB")
-    var size = bytes.toDouble()
-    var unitIndex = 0
-    
-    while (size >= 1024 && unitIndex < units.size - 1) {
-        size /= 1024
-        unitIndex++
-    }
-    
-    return "${"%.1f".format(size)} ${units[unitIndex]}"
-}
-
-/**
- * 格式化时间戳
- */
-fun formatTimestamp(timestamp: Long): String {
-    if (timestamp == 0L) return "从未"
-    
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    
-    return when {
-        diff < 60000 -> "刚刚"
-        diff < 3600000 -> "${diff / 60000}分钟前"
-        diff < 86400000 -> "${diff / 3600000}小时前"
-        else -> "${diff / 86400000}天前"
     }
 }

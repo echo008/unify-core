@@ -1,519 +1,655 @@
 package com.unify.core.security
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * Unify安全管理器
- * 提供全面的安全验证、加密、权限控制和威胁检测
+ * 提供跨平台的安全功能，包括加密、认证、权限管理等
  */
-class UnifySecurityManager {
-    private val _securityStatus = MutableStateFlow(SecurityStatus.INITIALIZING)
-    val securityStatus: StateFlow<SecurityStatus> = _securityStatus
-    
-    private val _threats = MutableStateFlow<List<SecurityThreat>>(emptyList())
-    val threats: StateFlow<List<SecurityThreat>> = _threats
-    
-    private val encryptionService = EncryptionService()
-    private val permissionManager = PermissionManager()
-    private val threatDetector = ThreatDetector()
-    private val auditLogger = SecurityAuditLogger()
-    
+expect class UnifySecurityManager {
     /**
      * 初始化安全管理器
      */
-    suspend fun initialize(config: SecurityConfig = SecurityConfig()) {
-        _securityStatus.value = SecurityStatus.INITIALIZING
-        
-        // 初始化加密服务
-        encryptionService.initialize(config.encryptionConfig)
-        
-        // 初始化权限管理
-        permissionManager.initialize(config.permissionConfig)
-        
-        // 启动威胁检测
-        threatDetector.initialize(config.threatDetectionConfig)
-        
-        // 初始化审计日志
-        auditLogger.initialize(config.auditConfig)
-        
-        _securityStatus.value = SecurityStatus.ACTIVE
-        auditLogger.log(SecurityEvent.SYSTEM_INITIALIZED, "安全管理器初始化完成")
-    }
+    suspend fun initialize(config: SecurityConfig): SecurityInitResult
     
     /**
-     * 验证用户身份
+     * 加密数据
      */
-    suspend fun authenticateUser(credentials: UserCredentials): AuthenticationResult {
-        auditLogger.log(SecurityEvent.AUTHENTICATION_ATTEMPT, "用户认证尝试: ${credentials.username}")
-        
-        // 检查账户锁定状态
-        if (isAccountLocked(credentials.username)) {
-            auditLogger.log(SecurityEvent.AUTHENTICATION_FAILED, "账户已锁定: ${credentials.username}")
-            return AuthenticationResult(false, "账户已锁定", null)
-        }
-        
-        // 验证凭据
-        val isValid = validateCredentials(credentials)
-        
-        if (isValid) {
-            val token = generateSecureToken(credentials.username)
-            auditLogger.log(SecurityEvent.AUTHENTICATION_SUCCESS, "用户认证成功: ${credentials.username}")
-            return AuthenticationResult(true, "认证成功", token)
-        } else {
-            recordFailedAttempt(credentials.username)
-            auditLogger.log(SecurityEvent.AUTHENTICATION_FAILED, "用户认证失败: ${credentials.username}")
-            return AuthenticationResult(false, "凭据无效", null)
-        }
-    }
+    suspend fun encrypt(data: String, key: String? = null): EncryptionResult
     
     /**
-     * 授权检查
+     * 解密数据
      */
-    fun authorize(token: String, resource: String, action: String): AuthorizationResult {
-        val user = validateToken(token)
-        if (user == null) {
-            auditLogger.log(SecurityEvent.AUTHORIZATION_FAILED, "无效令牌访问: $resource")
-            return AuthorizationResult(false, "令牌无效")
-        }
-        
-        val hasPermission = permissionManager.checkPermission(user.username, resource, action)
-        
-        if (hasPermission) {
-            auditLogger.log(SecurityEvent.AUTHORIZATION_SUCCESS, "授权成功: ${user.username} -> $resource:$action")
-            return AuthorizationResult(true, "授权成功")
-        } else {
-            auditLogger.log(SecurityEvent.AUTHORIZATION_FAILED, "权限不足: ${user.username} -> $resource:$action")
-            return AuthorizationResult(false, "权限不足")
-        }
-    }
+    suspend fun decrypt(encryptedData: String, key: String? = null): DecryptionResult
     
     /**
-     * 加密敏感数据
+     * 生成安全密钥
      */
-    fun encryptData(data: String, keyId: String = "default"): EncryptionResult {
-        return try {
-            val encryptedData = encryptionService.encrypt(data, keyId)
-            auditLogger.log(SecurityEvent.DATA_ENCRYPTED, "数据加密成功")
-            EncryptionResult(true, encryptedData, null)
-        } catch (e: Exception) {
-            auditLogger.log(SecurityEvent.ENCRYPTION_FAILED, "数据加密失败: ${e.message}")
-            EncryptionResult(false, null, e.message)
-        }
-    }
+    suspend fun generateKey(keyType: KeyType = KeyType.AES256): KeyGenerationResult
     
     /**
-     * 解密敏感数据
+     * 哈希数据
      */
-    fun decryptData(encryptedData: String, keyId: String = "default"): DecryptionResult {
-        return try {
-            val decryptedData = encryptionService.decrypt(encryptedData, keyId)
-            auditLogger.log(SecurityEvent.DATA_DECRYPTED, "数据解密成功")
-            DecryptionResult(true, decryptedData, null)
-        } catch (e: Exception) {
-            auditLogger.log(SecurityEvent.DECRYPTION_FAILED, "数据解密失败: ${e.message}")
-            DecryptionResult(false, null, e.message)
-        }
-    }
+    suspend fun hash(data: String, algorithm: HashAlgorithm = HashAlgorithm.SHA256): HashResult
     
     /**
-     * 输入验证和清理
+     * 验证哈希
      */
-    fun validateAndSanitizeInput(input: String, type: InputType): InputValidationResult {
-        val threats = threatDetector.detectInputThreats(input, type)
-        
-        if (threats.isNotEmpty()) {
-            auditLogger.log(SecurityEvent.MALICIOUS_INPUT_DETECTED, "检测到恶意输入: ${threats.joinToString()}")
-            return InputValidationResult(false, null, threats)
-        }
-        
-        val sanitizedInput = sanitizeInput(input, type)
-        return InputValidationResult(true, sanitizedInput, emptyList())
-    }
+    suspend fun verifyHash(data: String, hash: String, algorithm: HashAlgorithm = HashAlgorithm.SHA256): Boolean
     
     /**
-     * 检测安全威胁
+     * 生成数字签名
      */
-    suspend fun scanForThreats(): ThreatScanResult {
-        val detectedThreats = threatDetector.performFullScan()
-        _threats.value = detectedThreats
-        
-        val criticalThreats = detectedThreats.filter { it.severity == ThreatSeverity.CRITICAL }
-        
-        if (criticalThreats.isNotEmpty()) {
-            _securityStatus.value = SecurityStatus.UNDER_ATTACK
-            auditLogger.log(SecurityEvent.CRITICAL_THREAT_DETECTED, "检测到严重威胁: ${criticalThreats.size}个")
-        }
-        
-        return ThreatScanResult(
-            totalThreats = detectedThreats.size,
-            criticalThreats = criticalThreats.size,
-            threats = detectedThreats,
-            scanTime = System.currentTimeMillis()
-        )
-    }
+    suspend fun sign(data: String, privateKey: String): SignatureResult
     
     /**
-     * 生成安全报告
+     * 验证数字签名
      */
-    fun generateSecurityReport(): SecurityReport {
-        val auditLogs = auditLogger.getRecentLogs(24 * 60 * 60 * 1000L) // 24小时
-        val currentThreats = _threats.value
-        
-        return SecurityReport(
-            timestamp = System.currentTimeMillis(),
-            securityStatus = _securityStatus.value,
-            threatCount = currentThreats.size,
-            criticalThreatCount = currentThreats.count { it.severity == ThreatSeverity.CRITICAL },
-            auditEventCount = auditLogs.size,
-            recommendations = generateSecurityRecommendations(currentThreats, auditLogs)
-        )
-    }
+    suspend fun verifySignature(data: String, signature: String, publicKey: String): Boolean
     
-    private fun isAccountLocked(username: String): Boolean {
-        return permissionManager.isAccountLocked(username)
-    }
+    /**
+     * 生成随机数
+     */
+    suspend fun generateSecureRandom(length: Int = 32): String
     
-    private suspend fun validateCredentials(credentials: UserCredentials): Boolean {
-        // 模拟凭据验证
-        return credentials.password.length >= 8 && credentials.username.isNotEmpty()
-    }
+    /**
+     * 生成UUID
+     */
+    suspend fun generateUUID(): String
     
-    private fun generateSecureToken(username: String): String {
-        return encryptionService.generateToken(username)
-    }
+    /**
+     * 密码强度检查
+     */
+    fun checkPasswordStrength(password: String): PasswordStrengthResult
     
-    private fun validateToken(token: String): User? {
-        return encryptionService.validateToken(token)
-    }
+    /**
+     * 生成安全密码
+     */
+    suspend fun generateSecurePassword(
+        length: Int = 12,
+        includeUppercase: Boolean = true,
+        includeLowercase: Boolean = true,
+        includeNumbers: Boolean = true,
+        includeSymbols: Boolean = true
+    ): String
     
-    private fun recordFailedAttempt(username: String) {
-        permissionManager.recordFailedAttempt(username)
-    }
+    /**
+     * 获取设备指纹
+     */
+    suspend fun getDeviceFingerprint(): DeviceFingerprintResult
     
-    private fun sanitizeInput(input: String, type: InputType): String {
-        return when (type) {
-            InputType.HTML -> input.replace("<", "&lt;").replace(">", "&gt;")
-            InputType.SQL -> input.replace("'", "''").replace(";", "")
-            InputType.COMMAND -> input.replace("|", "").replace("&", "").replace(";", "")
-            InputType.GENERAL -> input.trim()
-        }
-    }
+    /**
+     * 检查应用完整性
+     */
+    suspend fun checkAppIntegrity(): AppIntegrityResult
     
-    private fun generateSecurityRecommendations(threats: List<SecurityThreat>, auditLogs: List<AuditLog>): List<SecurityRecommendation> {
-        val recommendations = mutableListOf<SecurityRecommendation>()
-        
-        if (threats.any { it.type == ThreatType.BRUTE_FORCE }) {
-            recommendations.add(SecurityRecommendation(
-                type = "authentication",
-                description = "启用账户锁定机制防止暴力破解",
-                priority = RecommendationPriority.HIGH
-            ))
-        }
-        
-        if (threats.any { it.type == ThreatType.SQL_INJECTION }) {
-            recommendations.add(SecurityRecommendation(
-                type = "input_validation",
-                description = "加强SQL注入防护",
-                priority = RecommendationPriority.CRITICAL
-            ))
-        }
-        
-        val failedLogins = auditLogs.count { it.event == SecurityEvent.AUTHENTICATION_FAILED }
-        if (failedLogins > 10) {
-            recommendations.add(SecurityRecommendation(
-                type = "monitoring",
-                description = "异常登录尝试过多，建议加强监控",
-                priority = RecommendationPriority.MEDIUM
-            ))
-        }
-        
-        return recommendations
-    }
+    /**
+     * 检测Root/越狱
+     */
+    suspend fun detectRootJailbreak(): RootJailbreakResult
+    
+    /**
+     * 安全存储数据
+     */
+    suspend fun secureStore(key: String, value: String): SecureStorageResult
+    
+    /**
+     * 安全读取数据
+     */
+    suspend fun secureRetrieve(key: String): SecureRetrievalResult
+    
+    /**
+     * 删除安全存储的数据
+     */
+    suspend fun secureDelete(key: String): Boolean
+    
+    /**
+     * 清除所有安全存储
+     */
+    suspend fun secureClear(): Boolean
+    
+    /**
+     * 生物识别认证
+     */
+    suspend fun authenticateWithBiometric(
+        title: String = "生物识别认证",
+        subtitle: String = "请使用指纹或面部识别进行认证"
+    ): BiometricAuthResult
+    
+    /**
+     * 检查生物识别可用性
+     */
+    suspend fun isBiometricAvailable(): BiometricAvailabilityResult
+    
+    /**
+     * 网络安全检查
+     */
+    suspend fun checkNetworkSecurity(url: String): NetworkSecurityResult
+    
+    /**
+     * SSL证书验证
+     */
+    suspend fun validateSSLCertificate(url: String): SSLValidationResult
+    
+    /**
+     * 获取安全事件流
+     */
+    fun getSecurityEvents(): Flow<SecurityEvent>
+    
+    /**
+     * 报告安全事件
+     */
+    suspend fun reportSecurityEvent(event: SecurityEvent)
+    
+    /**
+     * 获取安全状态
+     */
+    fun getSecurityStatus(): StateFlow<SecurityStatus>
+    
+    /**
+     * 执行安全扫描
+     */
+    suspend fun performSecurityScan(): SecurityScanResult
 }
 
-// 加密服务
-class EncryptionService {
-    private val keys = mutableMapOf<String, String>()
-    
-    fun initialize(config: EncryptionConfig) {
-        keys["default"] = generateKey()
-    }
-    
-    fun encrypt(data: String, keyId: String): String {
-        val key = keys[keyId] ?: throw SecurityException("密钥不存在: $keyId")
-        return "encrypted_${data}_with_$key"
-    }
-    
-    fun decrypt(encryptedData: String, keyId: String): String {
-        val key = keys[keyId] ?: throw SecurityException("密钥不存在: $keyId")
-        return encryptedData.removePrefix("encrypted_").removeSuffix("_with_$key")
-    }
-    
-    fun generateToken(username: String): String {
-        return "token_${username}_${System.currentTimeMillis()}"
-    }
-    
-    fun validateToken(token: String): User? {
-        if (token.startsWith("token_")) {
-            val parts = token.split("_")
-            if (parts.size >= 3) {
-                return User(parts[1], emptyList())
-            }
-        }
-        return null
-    }
-    
-    private fun generateKey(): String = "secure_key_${System.currentTimeMillis()}"
-}
-
-// 权限管理器
-class PermissionManager {
-    private val userPermissions = mutableMapOf<String, Set<String>>()
-    private val lockedAccounts = mutableSetOf<String>()
-    private val failedAttempts = mutableMapOf<String, Int>()
-    
-    fun initialize(config: PermissionConfig) {
-        // 初始化默认权限
-        userPermissions["admin"] = setOf("read", "write", "delete", "admin")
-        userPermissions["user"] = setOf("read", "write")
-    }
-    
-    fun checkPermission(username: String, resource: String, action: String): Boolean {
-        val permissions = userPermissions[username] ?: emptySet()
-        return permissions.contains(action) || permissions.contains("admin")
-    }
-    
-    fun isAccountLocked(username: String): Boolean {
-        return lockedAccounts.contains(username)
-    }
-    
-    fun recordFailedAttempt(username: String) {
-        val attempts = failedAttempts.getOrDefault(username, 0) + 1
-        failedAttempts[username] = attempts
-        
-        if (attempts >= 5) {
-            lockedAccounts.add(username)
-        }
-    }
-}
-
-// 威胁检测器
-class ThreatDetector {
-    fun initialize(config: ThreatDetectionConfig) {
-        // 初始化威胁检测规则
-    }
-    
-    fun detectInputThreats(input: String, type: InputType): List<String> {
-        val threats = mutableListOf<String>()
-        
-        when (type) {
-            InputType.HTML -> {
-                if (input.contains("<script>")) threats.add("XSS")
-                if (input.contains("javascript:")) threats.add("XSS")
-            }
-            InputType.SQL -> {
-                if (input.contains("DROP TABLE")) threats.add("SQL_INJECTION")
-                if (input.contains("UNION SELECT")) threats.add("SQL_INJECTION")
-            }
-            InputType.COMMAND -> {
-                if (input.contains("rm -rf")) threats.add("COMMAND_INJECTION")
-                if (input.contains("sudo")) threats.add("PRIVILEGE_ESCALATION")
-            }
-            else -> {}
-        }
-        
-        return threats
-    }
-    
-    suspend fun performFullScan(): List<SecurityThreat> {
-        return listOf(
-            SecurityThreat(
-                id = "threat_1",
-                type = ThreatType.BRUTE_FORCE,
-                severity = ThreatSeverity.MEDIUM,
-                description = "检测到暴力破解尝试",
-                source = "192.168.1.100",
-                timestamp = System.currentTimeMillis()
-            )
-        )
-    }
-}
-
-// 安全审计日志
-class SecurityAuditLogger {
-    private val logs = mutableListOf<AuditLog>()
-    
-    fun initialize(config: AuditConfig) {
-        // 初始化审计配置
-    }
-    
-    fun log(event: SecurityEvent, details: String) {
-        logs.add(AuditLog(
-            timestamp = System.currentTimeMillis(),
-            event = event,
-            details = details,
-            source = "UnifySecurityManager"
-        ))
-        
-        // 保持日志大小在合理范围内
-        if (logs.size > 10000) {
-            logs.removeAt(0)
-        }
-    }
-    
-    fun getRecentLogs(timeWindow: Long): List<AuditLog> {
-        val cutoff = System.currentTimeMillis() - timeWindow
-        return logs.filter { it.timestamp >= cutoff }
-    }
-}
-
-// 数据类和枚举
+/**
+ * 安全配置
+ */
 @Serializable
 data class SecurityConfig(
-    val encryptionConfig: EncryptionConfig = EncryptionConfig(),
-    val permissionConfig: PermissionConfig = PermissionConfig(),
-    val threatDetectionConfig: ThreatDetectionConfig = ThreatDetectionConfig(),
-    val auditConfig: AuditConfig = AuditConfig()
+    val enableEncryption: Boolean = true,
+    val encryptionAlgorithm: EncryptionAlgorithm = EncryptionAlgorithm.AES256,
+    val keyDerivationIterations: Int = 10000,
+    val enableBiometric: Boolean = true,
+    val enableRootDetection: Boolean = true,
+    val enableAppIntegrityCheck: Boolean = true,
+    val enableNetworkSecurityCheck: Boolean = true,
+    val secureStorageEnabled: Boolean = true,
+    val logSecurityEvents: Boolean = true,
+    val autoLockTimeout: Long = 300000, // 5分钟
+    val maxFailedAttempts: Int = 5
 )
 
+/**
+ * 加密算法
+ */
+enum class EncryptionAlgorithm {
+    AES128,
+    AES192,
+    AES256,
+    RSA2048,
+    RSA4096,
+    CHACHA20_POLY1305
+}
+
+/**
+ * 密钥类型
+ */
+enum class KeyType {
+    AES128,
+    AES192,
+    AES256,
+    RSA2048,
+    RSA4096,
+    ECDSA_P256,
+    ECDSA_P384,
+    ECDSA_P521
+}
+
+/**
+ * 哈希算法
+ */
+enum class HashAlgorithm {
+    MD5,
+    SHA1,
+    SHA256,
+    SHA384,
+    SHA512,
+    BLAKE2B,
+    ARGON2
+}
+
+/**
+ * 安全初始化结果
+ */
+sealed class SecurityInitResult {
+    object Success : SecurityInitResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : SecurityInitResult()
+}
+
+/**
+ * 加密结果
+ */
+sealed class EncryptionResult {
+    data class Success(val encryptedData: String, val iv: String? = null) : EncryptionResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : EncryptionResult()
+}
+
+/**
+ * 解密结果
+ */
+sealed class DecryptionResult {
+    data class Success(val decryptedData: String) : DecryptionResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : DecryptionResult()
+}
+
+/**
+ * 密钥生成结果
+ */
+sealed class KeyGenerationResult {
+    data class Success(val key: String, val publicKey: String? = null) : KeyGenerationResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : KeyGenerationResult()
+}
+
+/**
+ * 哈希结果
+ */
+sealed class HashResult {
+    data class Success(val hash: String, val salt: String? = null) : HashResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : HashResult()
+}
+
+/**
+ * 签名结果
+ */
+sealed class SignatureResult {
+    data class Success(val signature: String) : SignatureResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : SignatureResult()
+}
+
+/**
+ * 密码强度结果
+ */
 @Serializable
-data class EncryptionConfig(
-    val algorithm: String = "AES-256",
-    val keyRotationInterval: Long = 24 * 60 * 60 * 1000L // 24小时
+data class PasswordStrengthResult(
+    val score: Int, // 0-100
+    val strength: PasswordStrength,
+    val feedback: List<String>,
+    val estimatedCrackTime: String,
+    val hasUppercase: Boolean,
+    val hasLowercase: Boolean,
+    val hasNumbers: Boolean,
+    val hasSymbols: Boolean,
+    val length: Int,
+    val commonPassword: Boolean
 )
 
+/**
+ * 密码强度等级
+ */
+enum class PasswordStrength {
+    VERY_WEAK,
+    WEAK,
+    FAIR,
+    GOOD,
+    STRONG,
+    VERY_STRONG
+}
+
+/**
+ * 设备指纹结果
+ */
+sealed class DeviceFingerprintResult {
+    data class Success(val fingerprint: DeviceFingerprint) : DeviceFingerprintResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : DeviceFingerprintResult()
+}
+
+/**
+ * 设备指纹
+ */
 @Serializable
-data class PermissionConfig(
-    val maxFailedAttempts: Int = 5,
-    val lockoutDuration: Long = 30 * 60 * 1000L // 30分钟
+data class DeviceFingerprint(
+    val deviceId: String,
+    val platform: String,
+    val osVersion: String,
+    val appVersion: String,
+    val screenResolution: String,
+    val timezone: String,
+    val language: String,
+    val hardwareInfo: String,
+    val installedApps: List<String> = emptyList(),
+    val networkInfo: String,
+    val timestamp: Long
 )
 
+/**
+ * 应用完整性结果
+ */
+sealed class AppIntegrityResult {
+    data class Success(val isIntact: Boolean, val details: AppIntegrityDetails) : AppIntegrityResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : AppIntegrityResult()
+}
+
+/**
+ * 应用完整性详情
+ */
 @Serializable
-data class ThreatDetectionConfig(
-    val scanInterval: Long = 60 * 1000L, // 1分钟
-    val enableRealTimeDetection: Boolean = true
+data class AppIntegrityDetails(
+    val signatureValid: Boolean,
+    val checksumValid: Boolean,
+    val debuggingDetected: Boolean,
+    val tamperingDetected: Boolean,
+    val installerPackage: String?,
+    val installSource: String?
 )
 
+/**
+ * Root/越狱检测结果
+ */
+sealed class RootJailbreakResult {
+    data class Success(val isRootedJailbroken: Boolean, val details: RootJailbreakDetails) : RootJailbreakResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : RootJailbreakResult()
+}
+
+/**
+ * Root/越狱详情
+ */
 @Serializable
-data class AuditConfig(
-    val logLevel: String = "INFO",
-    val retentionPeriod: Long = 30 * 24 * 60 * 60 * 1000L // 30天
+data class RootJailbreakDetails(
+    val rootDetected: Boolean,
+    val jailbreakDetected: Boolean,
+    val suspiciousApps: List<String>,
+    val suspiciousFiles: List<String>,
+    val suspiciousBehavior: List<String>
 )
 
+/**
+ * 安全存储结果
+ */
+sealed class SecureStorageResult {
+    object Success : SecureStorageResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : SecureStorageResult()
+}
+
+/**
+ * 安全检索结果
+ */
+sealed class SecureRetrievalResult {
+    data class Success(val value: String) : SecureRetrievalResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : SecureRetrievalResult()
+    object NotFound : SecureRetrievalResult()
+}
+
+/**
+ * 生物识别认证结果
+ */
+sealed class BiometricAuthResult {
+    object Success : BiometricAuthResult()
+    object UserCancel : BiometricAuthResult()
+    object AuthenticationFailed : BiometricAuthResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : BiometricAuthResult()
+}
+
+/**
+ * 生物识别可用性结果
+ */
+sealed class BiometricAvailabilityResult {
+    object Available : BiometricAvailabilityResult()
+    object NotAvailable : BiometricAvailabilityResult()
+    object NotEnrolled : BiometricAvailabilityResult()
+    object HardwareNotAvailable : BiometricAvailabilityResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : BiometricAvailabilityResult()
+}
+
+/**
+ * 网络安全结果
+ */
+sealed class NetworkSecurityResult {
+    data class Success(val isSecure: Boolean, val details: NetworkSecurityDetails) : NetworkSecurityResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : NetworkSecurityResult()
+}
+
+/**
+ * 网络安全详情
+ */
 @Serializable
-data class UserCredentials(
-    val username: String,
-    val password: String,
-    val additionalFactors: Map<String, String> = emptyMap()
+data class NetworkSecurityDetails(
+    val httpsEnabled: Boolean,
+    val certificateValid: Boolean,
+    val tlsVersion: String?,
+    val cipherSuite: String?,
+    val certificateChain: List<String>,
+    val pinningEnabled: Boolean,
+    val mitm: Boolean
 )
 
+/**
+ * SSL验证结果
+ */
+sealed class SSLValidationResult {
+    data class Success(val isValid: Boolean, val certificate: SSLCertificateInfo) : SSLValidationResult()
+    data class Error(val message: String, val errorCode: SecurityErrorCode) : SSLValidationResult()
+}
+
+/**
+ * SSL证书信息
+ */
 @Serializable
-data class User(
-    val username: String,
-    val roles: List<String>
+data class SSLCertificateInfo(
+    val subject: String,
+    val issuer: String,
+    val serialNumber: String,
+    val notBefore: Long,
+    val notAfter: Long,
+    val fingerprint: String,
+    val algorithm: String,
+    val keySize: Int
 )
 
+/**
+ * 安全事件
+ */
 @Serializable
-data class AuthenticationResult(
-    val success: Boolean,
+data class SecurityEvent(
+    val id: String,
+    val type: SecurityEventType,
+    val severity: SecurityEventSeverity,
     val message: String,
-    val token: String?
+    val details: Map<String, String> = emptyMap(),
+    val timestamp: Long,
+    val source: String
 )
 
+/**
+ * 安全事件类型
+ */
+enum class SecurityEventType {
+    AUTHENTICATION_SUCCESS,
+    AUTHENTICATION_FAILURE,
+    ENCRYPTION_SUCCESS,
+    ENCRYPTION_FAILURE,
+    DECRYPTION_SUCCESS,
+    DECRYPTION_FAILURE,
+    KEY_GENERATION,
+    BIOMETRIC_AUTH_SUCCESS,
+    BIOMETRIC_AUTH_FAILURE,
+    ROOT_JAILBREAK_DETECTED,
+    APP_TAMPERING_DETECTED,
+    NETWORK_SECURITY_VIOLATION,
+    SUSPICIOUS_ACTIVITY,
+    DATA_BREACH_ATTEMPT,
+    UNAUTHORIZED_ACCESS_ATTEMPT
+}
+
+/**
+ * 安全事件严重程度
+ */
+enum class SecurityEventSeverity {
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL
+}
+
+/**
+ * 安全状态
+ */
 @Serializable
-data class AuthorizationResult(
-    val authorized: Boolean,
-    val message: String
+data class SecurityStatus(
+    val isSecure: Boolean,
+    val threatLevel: ThreatLevel,
+    val activeThreats: List<SecurityThreat>,
+    val lastScanTime: Long,
+    val securityScore: Int, // 0-100
+    val recommendations: List<String>
 )
 
-@Serializable
-data class EncryptionResult(
-    val success: Boolean,
-    val encryptedData: String?,
-    val error: String?
-)
+/**
+ * 威胁等级
+ */
+enum class ThreatLevel {
+    NONE,
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL
+}
 
-@Serializable
-data class DecryptionResult(
-    val success: Boolean,
-    val decryptedData: String?,
-    val error: String?
-)
-
-@Serializable
-data class InputValidationResult(
-    val valid: Boolean,
-    val sanitizedInput: String?,
-    val threats: List<String>
-)
-
+/**
+ * 安全威胁
+ */
 @Serializable
 data class SecurityThreat(
     val id: String,
     val type: ThreatType,
-    val severity: ThreatSeverity,
+    val severity: SecurityEventSeverity,
     val description: String,
-    val source: String,
-    val timestamp: Long
+    val detectedAt: Long,
+    val mitigated: Boolean
 )
 
+/**
+ * 威胁类型
+ */
+enum class ThreatType {
+    MALWARE,
+    PHISHING,
+    MAN_IN_THE_MIDDLE,
+    DATA_LEAKAGE,
+    UNAUTHORIZED_ACCESS,
+    TAMPERING,
+    ROOT_JAILBREAK,
+    NETWORK_ATTACK,
+    SOCIAL_ENGINEERING
+}
+
+/**
+ * 安全扫描结果
+ */
 @Serializable
-data class ThreatScanResult(
-    val totalThreats: Int,
-    val criticalThreats: Int,
+data class SecurityScanResult(
+    val scanId: String,
+    val startTime: Long,
+    val endTime: Long,
+    val duration: Long,
+    val threatsFound: Int,
+    val vulnerabilitiesFound: Int,
+    val securityScore: Int,
     val threats: List<SecurityThreat>,
-    val scanTime: Long
-)
-
-@Serializable
-data class SecurityReport(
-    val timestamp: Long,
-    val securityStatus: SecurityStatus,
-    val threatCount: Int,
-    val criticalThreatCount: Int,
-    val auditEventCount: Int,
+    val vulnerabilities: List<SecurityVulnerability>,
     val recommendations: List<SecurityRecommendation>
 )
 
+/**
+ * 安全漏洞
+ */
+@Serializable
+data class SecurityVulnerability(
+    val id: String,
+    val type: VulnerabilityType,
+    val severity: SecurityEventSeverity,
+    val description: String,
+    val location: String,
+    val cveId: String? = null,
+    val cvssScore: Double? = null,
+    val fixAvailable: Boolean,
+    val fixDescription: String? = null
+)
+
+/**
+ * 漏洞类型
+ */
+enum class VulnerabilityType {
+    INJECTION,
+    BROKEN_AUTHENTICATION,
+    SENSITIVE_DATA_EXPOSURE,
+    XML_EXTERNAL_ENTITIES,
+    BROKEN_ACCESS_CONTROL,
+    SECURITY_MISCONFIGURATION,
+    CROSS_SITE_SCRIPTING,
+    INSECURE_DESERIALIZATION,
+    VULNERABLE_COMPONENTS,
+    INSUFFICIENT_LOGGING
+}
+
+/**
+ * 安全建议
+ */
 @Serializable
 data class SecurityRecommendation(
-    val type: String,
+    val id: String,
+    val priority: RecommendationPriority,
+    val category: String,
+    val title: String,
     val description: String,
-    val priority: RecommendationPriority
+    val actionRequired: String,
+    val estimatedEffort: String
 )
 
-@Serializable
-data class AuditLog(
-    val timestamp: Long,
-    val event: SecurityEvent,
-    val details: String,
-    val source: String
-)
-
-enum class SecurityStatus {
-    INITIALIZING, ACTIVE, WARNING, UNDER_ATTACK, COMPROMISED
-}
-
-enum class InputType {
-    HTML, SQL, COMMAND, GENERAL
-}
-
-enum class ThreatType {
-    BRUTE_FORCE, SQL_INJECTION, XSS, COMMAND_INJECTION, PRIVILEGE_ESCALATION, DATA_BREACH
-}
-
-enum class ThreatSeverity {
-    LOW, MEDIUM, HIGH, CRITICAL
-}
-
-enum class SecurityEvent {
-    SYSTEM_INITIALIZED, AUTHENTICATION_ATTEMPT, AUTHENTICATION_SUCCESS, AUTHENTICATION_FAILED,
-    AUTHORIZATION_SUCCESS, AUTHORIZATION_FAILED, DATA_ENCRYPTED, DATA_DECRYPTED,
-    ENCRYPTION_FAILED, DECRYPTION_FAILED, MALICIOUS_INPUT_DETECTED, CRITICAL_THREAT_DETECTED
-}
-
+/**
+ * 建议优先级
+ */
 enum class RecommendationPriority {
-    LOW, MEDIUM, HIGH, CRITICAL
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL
+}
+
+/**
+ * 安全错误代码
+ */
+enum class SecurityErrorCode {
+    INITIALIZATION_FAILED,
+    ENCRYPTION_FAILED,
+    DECRYPTION_FAILED,
+    KEY_GENERATION_FAILED,
+    HASH_FAILED,
+    SIGNATURE_FAILED,
+    VERIFICATION_FAILED,
+    BIOMETRIC_NOT_AVAILABLE,
+    BIOMETRIC_AUTH_FAILED,
+    SECURE_STORAGE_FAILED,
+    NETWORK_SECURITY_CHECK_FAILED,
+    APP_INTEGRITY_CHECK_FAILED,
+    ROOT_DETECTION_FAILED,
+    INVALID_PARAMETERS,
+    PERMISSION_DENIED,
+    HARDWARE_NOT_SUPPORTED,
+    SERVICE_UNAVAILABLE,
+    TIMEOUT,
+    UNKNOWN_ERROR
+}
+
+/**
+ * 安全管理器工厂
+ */
+object UnifySecurityManagerFactory {
+    private var instance: UnifySecurityManager? = null
+    
+    fun getInstance(): UnifySecurityManager {
+        return instance ?: createSecurityManager().also { instance = it }
+    }
+    
+    private fun createSecurityManager(): UnifySecurityManager {
+        return UnifySecurityManager()
+    }
+    
+    fun reset() {
+        instance = null
+    }
 }

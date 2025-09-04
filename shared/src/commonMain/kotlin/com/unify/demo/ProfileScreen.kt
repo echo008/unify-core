@@ -1,324 +1,347 @@
 package com.unify.demo
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.core.ui.components.*
-import com.unify.core.mvi.*
-import com.unify.core.performance.UnifyComposeOptimizer.PerformanceTracker
-import kotlinx.coroutines.CoroutineScope
+import com.unify.ui.components.container.UnifySection
+import com.unify.ui.components.input.UnifySwitchWithLabel
 
 /**
- * 用户资料屏幕 - 展示表单处理和数据验证
+ * Unify用户配置文件演示界面
+ * 展示跨平台用户配置功能
  */
+
+data class UserProfile(
+    val name: String,
+    val email: String,
+    val avatar: String,
+    val joinDate: String,
+    val level: Int,
+    val points: Int
+)
+
+data class UserPreference(
+    val id: String,
+    val title: String,
+    val description: String,
+    val enabled: Boolean
+)
+
 @Composable
 fun ProfileScreen(
-    onNavigateBack: () -> Unit
+    modifier: Modifier = Modifier
 ) {
-    val scope = rememberCoroutineScope()
-    val viewModel = remember { ProfileViewModel(scope) }
+    var userProfile by remember { 
+        mutableStateOf(
+            UserProfile(
+                name = "张三",
+                email = "zhangsan@example.com",
+                avatar = "👤",
+                joinDate = "2023年1月",
+                level = 15,
+                points = 2580
+            )
+        )
+    }
     
-    PerformanceTracker("ProfileScreen") {
-        UnifyMVIContainer(
-            stateManager = viewModel,
-            onEffect = { effect ->
-                when (effect) {
-                    is ProfileEffect.ShowMessage -> {
-                        // 显示消息
-                    }
-                    is ProfileEffect.ValidationError -> {
-                        // 显示验证错误
-                    }
+    var preferences by remember { mutableStateOf(getDefaultPreferences()) }
+    
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            ProfileHeader(profile = userProfile)
+        }
+        
+        item {
+            ProfileStats(profile = userProfile)
+        }
+        
+        item {
+            UnifySection(
+                title = "个人设置",
+                subtitle = "自定义您的应用体验"
+            ) {
+                preferences.forEach { preference ->
+                    UnifySwitchWithLabel(
+                        checked = preference.enabled,
+                        onCheckedChange = { enabled ->
+                            preferences = preferences.map { pref ->
+                                if (pref.id == preference.id) {
+                                    pref.copy(enabled = enabled)
+                                } else pref
+                            }
+                        },
+                        label = preference.title,
+                        description = preference.description,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
                 }
             }
-        ) { state, isLoading, onIntent ->
-            Column(
+        }
+        
+        item {
+            ProfileActions()
+        }
+    }
+}
+
+@Composable
+private fun ProfileHeader(
+    profile: UserProfile,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 头像
+            Surface(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .size(80.dp)
+                    .clip(CircleShape),
+                color = MaterialTheme.colorScheme.primary
             ) {
-                // 顶部栏
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    contentAlignment = Alignment.Center
                 ) {
-                    UnifyButton(
-                        onClick = onNavigateBack,
-                        text = "← 返回"
-                    )
                     Text(
-                        text = "用户资料",
-                        style = MaterialTheme.typography.headlineSmall
+                        text = profile.avatar,
+                        style = MaterialTheme.typography.displaySmall
                     )
-                    Spacer(modifier = Modifier.width(80.dp))
                 }
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            // 用户信息
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = profile.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
                 
-                // 头像区域
-                UnifyCard {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "👤",
-                            style = MaterialTheme.typography.displayLarge
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "用户头像",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        UnifyButton(
-                            onClick = { onIntent(ProfileIntent.ChangeAvatar) },
-                            text = "更换头像"
-                        )
-                    }
-                }
+                Text(
+                    text = profile.email,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                )
                 
-                // 基本信息表单
-                UnifyCard {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "📝 基本信息",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        
-                        UnifyTextField(
-                            value = state.profile.name,
-                            onValueChange = { onIntent(ProfileIntent.UpdateName(it)) },
-                            label = "姓名",
-                            isError = state.nameError != null
-                        )
-                        
-                        state.nameError?.let { error ->
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        
-                        UnifyTextField(
-                            value = state.profile.email,
-                            onValueChange = { onIntent(ProfileIntent.UpdateEmail(it)) },
-                            label = "邮箱",
-                            isError = state.emailError != null
-                        )
-                        
-                        state.emailError?.let { error ->
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                        
-                        UnifyTextField(
-                            value = state.profile.phone,
-                            onValueChange = { onIntent(ProfileIntent.UpdatePhone(it)) },
-                            label = "手机号",
-                            isError = state.phoneError != null
-                        )
-                        
-                        state.phoneError?.let { error ->
-                            Text(
-                                text = error,
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                }
-                
-                // 个人简介
-                UnifyCard {
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        Text(
-                            text = "📄 个人简介",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        
-                        UnifyTextField(
-                            value = state.profile.bio,
-                            onValueChange = { onIntent(ProfileIntent.UpdateBio(it)) },
-                            placeholder = "介绍一下自己吧...",
-                            singleLine = false
-                        )
-                    }
-                }
-                
-                // 保存按钮
-                UnifyButton(
-                    onClick = { onIntent(ProfileIntent.SaveProfile) },
-                    text = if (isLoading) "保存中..." else "保存资料",
-                    enabled = !isLoading,
-                    modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = "加入时间: ${profile.joinDate}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                 )
             }
         }
     }
 }
 
-/**
- * 用户资料 MVI 实现
- */
-data class ProfileState(
-    val profile: UserProfile = UserProfile(),
-    val nameError: String? = null,
-    val emailError: String? = null,
-    val phoneError: String? = null
-) : UnifyState
-
-sealed class ProfileIntent : UnifyIntent {
-    data class UpdateName(val name: String) : ProfileIntent()
-    data class UpdateEmail(val email: String) : ProfileIntent()
-    data class UpdatePhone(val phone: String) : ProfileIntent()
-    data class UpdateBio(val bio: String) : ProfileIntent()
-    object ChangeAvatar : ProfileIntent()
-    object SaveProfile : ProfileIntent()
-    object LoadProfile : ProfileIntent()
-}
-
-sealed class ProfileEffect : UnifyEffect {
-    data class ShowMessage(val message: String) : ProfileEffect()
-    data class ValidationError(val field: String, val error: String) : ProfileEffect()
-}
-
-data class UserProfile(
-    val id: String = "",
-    val name: String = "",
-    val email: String = "",
-    val phone: String = "",
-    val bio: String = "",
-    val avatarUrl: String = ""
-)
-
-class ProfileViewModel(scope: CoroutineScope) : UnifyViewModel<ProfileIntent, ProfileState, ProfileEffect>(
-    initialState = ProfileState(),
-    scope = scope
+@Composable
+private fun ProfileStats(
+    profile: UserProfile,
+    modifier: Modifier = Modifier
 ) {
-    
-    init {
-        handleIntent(ProfileIntent.LoadProfile)
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "统计信息",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                StatItem(
+                    label = "等级",
+                    value = "Lv.${profile.level}",
+                    color = Color(0xFF4CAF50)
+                )
+                
+                StatItem(
+                    label = "积分",
+                    value = "${profile.points}",
+                    color = Color(0xFF2196F3)
+                )
+                
+                StatItem(
+                    label = "徽章",
+                    value = "12",
+                    color = Color(0xFFFF9800)
+                )
+            }
+        }
     }
-    
-    override fun handleIntent(intent: ProfileIntent) {
-        when (intent) {
-            is ProfileIntent.UpdateName -> {
-                updateState { state ->
-                    state.copy(
-                        profile = state.profile.copy(name = intent.name),
-                        nameError = validateName(intent.name)
-                    )
+}
+
+@Composable
+private fun StatItem(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = color
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun ProfileActions(
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(
+                text = "账户操作",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+            
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedButton(
+                    onClick = { /* 编辑资料 */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("编辑资料")
                 }
-            }
-            
-            is ProfileIntent.UpdateEmail -> {
-                updateState { state ->
-                    state.copy(
-                        profile = state.profile.copy(email = intent.email),
-                        emailError = validateEmail(intent.email)
-                    )
+                
+                OutlinedButton(
+                    onClick = { /* 更改密码 */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("更改密码")
                 }
-            }
-            
-            is ProfileIntent.UpdatePhone -> {
-                updateState { state ->
-                    state.copy(
-                        profile = state.profile.copy(phone = intent.phone),
-                        phoneError = validatePhone(intent.phone)
-                    )
+                
+                OutlinedButton(
+                    onClick = { /* 隐私设置 */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("隐私设置")
                 }
-            }
-            
-            is ProfileIntent.UpdateBio -> {
-                updateState { state ->
-                    state.copy(
-                        profile = state.profile.copy(bio = intent.bio)
-                    )
+                
+                OutlinedButton(
+                    onClick = { /* 数据导出 */ },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("数据导出")
                 }
-            }
-            
-            ProfileIntent.ChangeAvatar -> {
-                sendEffect(ProfileEffect.ShowMessage("头像更换功能开发中"))
-            }
-            
-            ProfileIntent.SaveProfile -> {
-                val currentState = state.value
-                if (isValidProfile(currentState)) {
-                    handleAsyncIntent(intent) {
-                        // 模拟保存
-                        kotlinx.coroutines.delay(2000)
-                        sendEffect(ProfileEffect.ShowMessage("资料保存成功"))
-                    }
-                } else {
-                    sendEffect(ProfileEffect.ShowMessage("请检查输入信息"))
-                }
-            }
-            
-            ProfileIntent.LoadProfile -> {
-                handleAsyncIntent(intent) {
-                    // 模拟加载用户资料
-                    kotlinx.coroutines.delay(1000)
-                    val profile = UserProfile(
-                        id = "1",
-                        name = "张三",
-                        email = "zhangsan@example.com",
-                        phone = "13800138000",
-                        bio = "这是一个示例用户资料"
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = { /* 退出登录 */ },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
                     )
-                    updateState { state ->
-                        state.copy(profile = profile)
-                    }
+                ) {
+                    Text("退出登录")
                 }
             }
         }
     }
-    
-    private fun validateName(name: String): String? {
-        return when {
-            name.isBlank() -> "姓名不能为空"
-            name.length < 2 -> "姓名至少需要2个字符"
-            name.length > 20 -> "姓名不能超过20个字符"
-            else -> null
-        }
-    }
-    
-    private fun validateEmail(email: String): String? {
-        return when {
-            email.isBlank() -> "邮箱不能为空"
-            !email.contains("@") -> "邮箱格式不正确"
-            !email.contains(".") -> "邮箱格式不正确"
-            else -> null
-        }
-    }
-    
-    private fun validatePhone(phone: String): String? {
-        return when {
-            phone.isBlank() -> "手机号不能为空"
-            phone.length != 11 -> "手机号必须是11位数字"
-            !phone.all { it.isDigit() } -> "手机号只能包含数字"
-            else -> null
-        }
-    }
-    
-    private fun isValidProfile(state: ProfileState): Boolean {
-        return state.nameError == null && 
-               state.emailError == null && 
-               state.phoneError == null &&
-               state.profile.name.isNotBlank() &&
-               state.profile.email.isNotBlank() &&
-               state.profile.phone.isNotBlank()
-    }
+}
+
+private fun getDefaultPreferences(): List<UserPreference> {
+    return listOf(
+        UserPreference(
+            id = "notifications",
+            title = "推送通知",
+            description = "接收应用推送消息",
+            enabled = true
+        ),
+        UserPreference(
+            id = "dark_mode",
+            title = "深色模式",
+            description = "使用深色主题界面",
+            enabled = false
+        ),
+        UserPreference(
+            id = "auto_sync",
+            title = "自动同步",
+            description = "自动同步数据到云端",
+            enabled = true
+        ),
+        UserPreference(
+            id = "location",
+            title = "位置服务",
+            description = "允许获取位置信息",
+            enabled = false
+        ),
+        UserPreference(
+            id = "analytics",
+            title = "数据分析",
+            description = "帮助改进应用体验",
+            enabled = true
+        ),
+        UserPreference(
+            id = "biometric",
+            title = "生物识别",
+            description = "使用指纹或面部识别",
+            enabled = true
+        ),
+        UserPreference(
+            id = "offline_mode",
+            title = "离线模式",
+            description = "无网络时继续使用",
+            enabled = false
+        ),
+        UserPreference(
+            id = "high_quality",
+            title = "高质量模式",
+            description = "使用更高质量的内容",
+            enabled = false
+        )
+    )
 }

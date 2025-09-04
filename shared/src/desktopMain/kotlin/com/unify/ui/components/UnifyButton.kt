@@ -1,129 +1,119 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.ElevatedButtonDefaults
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilledTonalButtonDefaults
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedButtonDefaults
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextButtonDefaults
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.unify.ui.LocalUnifyTheme
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
- * Desktop平台特定的按钮实现
- */
-actual class UnifyPlatformButton
-
-/**
- * Desktop平台按钮适配器
+ * Desktop平台统一按钮组件
+ * 针对桌面端优化的按钮实现
  */
 @Composable
-actual fun UnifyNativeButton(
+actual fun UnifyButton(
+    text: String,
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,
-    variant: UnifyButtonVariant,
-    size: UnifyButtonSize,
-    content: @Composable RowScope.() -> Unit
+    variant: ButtonVariant,
+    size: ButtonSize
 ) {
-    val theme = LocalUnifyTheme.current
-    val buttonColors = UnifyButtonDefaults.colors(variant, theme.colors)
-    val buttonShape = UnifyButtonDefaults.shape(size)
-    val buttonPadding = UnifyButtonDefaults.contentPadding(size)
+    val buttonColors = when (variant) {
+        ButtonVariant.PRIMARY -> ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF2196F3),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFBDBDBD),
+            disabledContentColor = Color(0xFF757575)
+        )
+        ButtonVariant.SECONDARY -> ButtonDefaults.outlinedButtonColors(
+            contentColor = Color(0xFF2196F3),
+            disabledContentColor = Color(0xFF757575)
+        )
+        ButtonVariant.TERTIARY -> ButtonDefaults.textButtonColors(
+            contentColor = Color(0xFF2196F3),
+            disabledContentColor = Color(0xFF757575)
+        )
+        ButtonVariant.DANGER -> ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFE53E3E),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFBDBDBD),
+            disabledContentColor = Color(0xFF757575)
+        )
+    }
     
-    // Desktop平台音频反馈
-    val handleClick = {
-        // 使用Java Sound API播放系统音效
-        // Toolkit.getDefaultToolkit().beep()
-        onClick()
+    val buttonHeight = when (size) {
+        ButtonSize.SMALL -> 32.dp
+        ButtonSize.MEDIUM -> 40.dp
+        ButtonSize.LARGE -> 48.dp
+    }
+    
+    val fontSize = when (size) {
+        ButtonSize.SMALL -> 12.sp
+        ButtonSize.MEDIUM -> 14.sp
+        ButtonSize.LARGE -> 16.sp
+    }
+    
+    val horizontalPadding = when (size) {
+        ButtonSize.SMALL -> 12.dp
+        ButtonSize.MEDIUM -> 16.dp
+        ButtonSize.LARGE -> 20.dp
     }
     
     when (variant) {
-        UnifyButtonVariant.Primary -> {
+        ButtonVariant.PRIMARY, ButtonVariant.DANGER -> {
             Button(
-                onClick = handleClick,
-                modifier = modifier,
+                onClick = onClick,
+                modifier = modifier.height(buttonHeight),
                 enabled = enabled,
-                shape = buttonShape,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
+                colors = buttonColors,
+                shape = RoundedCornerShape(6.dp),
+                contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 0.dp)
+            ) {
+                Text(
+                    text = text,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
-        UnifyButtonVariant.Secondary -> {
+        ButtonVariant.SECONDARY -> {
             OutlinedButton(
-                onClick = handleClick,
-                modifier = modifier,
+                onClick = onClick,
+                modifier = modifier.height(buttonHeight),
                 enabled = enabled,
-                shape = buttonShape,
-                colors = OutlinedButtonDefaults.buttonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
+                colors = buttonColors,
+                shape = RoundedCornerShape(6.dp),
+                contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 0.dp)
+            ) {
+                Text(
+                    text = text,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
-        UnifyButtonVariant.Text -> {
+        ButtonVariant.TERTIARY -> {
             TextButton(
-                onClick = handleClick,
-                modifier = modifier,
+                onClick = onClick,
+                modifier = modifier.height(buttonHeight),
                 enabled = enabled,
-                shape = buttonShape,
-                colors = TextButtonDefaults.textButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Elevated -> {
-            ElevatedButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = ElevatedButtonDefaults.elevatedButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
-        }
-        UnifyButtonVariant.Tonal -> {
-            FilledTonalButton(
-                onClick = handleClick,
-                modifier = modifier,
-                enabled = enabled,
-                shape = buttonShape,
-                colors = FilledTonalButtonDefaults.filledTonalButtonColors(
-                    containerColor = buttonColors.containerColor,
-                    contentColor = buttonColors.contentColor,
-                    disabledContainerColor = buttonColors.disabledContainerColor,
-                    disabledContentColor = buttonColors.disabledContentColor
-                ),
-                contentPadding = buttonPadding,
-                content = content
-            )
+                colors = buttonColors,
+                shape = RoundedCornerShape(6.dp),
+                contentPadding = PaddingValues(horizontal = horizontalPadding, vertical = 0.dp)
+            ) {
+                Text(
+                    text = text,
+                    fontSize = fontSize,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
     }
 }

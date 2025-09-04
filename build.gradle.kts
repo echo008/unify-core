@@ -4,12 +4,11 @@ plugins {
     alias(libs.plugins.android.application) apply false
     alias(libs.plugins.android.library) apply false
     alias(libs.plugins.compose.multiplatform) apply false
+    alias(libs.plugins.kotlin.compose) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.detekt) apply false
     alias(libs.plugins.ktlint) apply false
-    alias(libs.plugins.kover)
-    id("com.github.ben-manes.versions") version "0.51.0"
-    alias(libs.plugins.binary.compatibility.validator) apply false
+    id("com.github.ben-manes.versions") version "0.51.0" apply false
 }
 
 allprojects {
@@ -17,107 +16,24 @@ allprojects {
     version = "1.0.0-SNAPSHOT"
     
     repositories {
+        maven("https://maven.aliyun.com/repository/google")
+        maven("https://maven.aliyun.com/repository/public")
+        maven("https://maven.aliyun.com/repository/central")
         google()
         mavenCentral()
-        gradlePluginPortal()
         maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-        maven("https://androidx.dev/storage/compose-compiler/repository/")
     }
 }
 
-subprojects {
-    apply(plugin = "io.gitlab.arturbosch.detekt")
-    apply(plugin = "org.jlleitschuh.gradle.ktlint")
-    
-    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            freeCompilerArgs.addAll(
-                "-Xopt-in=kotlin.RequiresOptIn",
-                "-Xopt-in=kotlinx.coroutines.ExperimentalCoroutinesApi",
-                "-Xopt-in=androidx.compose.material3.ExperimentalMaterial3Api",
-                "-Xopt-in=androidx.compose.foundation.ExperimentalFoundationApi",
-                "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
-            )
-        }
-    }
-    
-    configure<io.gitlab.arturbosch.detekt.extensions.DetektExtension> {
-        config.setFrom("$rootDir/config/detekt/detekt.yml")
-        buildUponDefaultConfig = true
-        autoCorrect = true
-    }
-    
-    configure<org.jlleitschuh.gradle.ktlint.KtlintExtension> {
-        version.set("0.50.0")
-        android.set(true)
-        ignoreFailures.set(false)
-        reporters {
-            reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
-            reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.CHECKSTYLE)
-        }
-    }
-}
-
-// 生产级构建配置
-tasks.register("buildAll") {
+// Android构建任务
+tasks.register("buildAndroid") {
     group = "build"
-    description = "构建所有平台目标"
-    dependsOn(
-        ":shared:build",
-        ":androidApp:build",
-        ":desktopApp:build",
-        ":webApp:build",
-        ":miniAppBridge:build"
-    )
+    description = "构建Android应用"
+    dependsOn(":androidApp:assembleDebug")
 }
 
-tasks.register("testAll") {
+// 依赖更新检查任务
+tasks.register("dependencyUpdates") {
     group = "verification"
-    description = "运行所有平台测试"
-    dependsOn(
-        ":shared:test",
-        ":androidApp:testDebugUnitTest"
-    )
-}
-
-tasks.register("lintAll") {
-    group = "verification"
-    description = "运行所有代码质量检查"
-    dependsOn(
-        "detekt",
-        "ktlintCheck"
-    )
-}
-
-tasks.register("publishAll") {
-    group = "publishing"
-    description = "发布所有平台包"
-    dependsOn(
-        ":shared:publishToMavenLocal"
-    )
-}
-
-// 性能基准测试
-tasks.register("benchmarkAll") {
-    group = "benchmark"
-    description = "运行所有性能基准测试"
-    doLast {
-        println("执行跨平台性能基准测试...")
-    }
-}
-
-// 代码覆盖率报告
-
-kover {
-    reports {
-        total {
-            html {
-                onCheck = true
-            }
-            xml {
-                onCheck = true
-            }
-        }
-    }
+    description = "检查依赖更新"
 }

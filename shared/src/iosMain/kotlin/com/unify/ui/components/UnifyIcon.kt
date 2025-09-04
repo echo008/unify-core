@@ -1,141 +1,92 @@
 package com.unify.ui.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 
-/**
- * iOS平台的图标实现
- */
-actual class UnifyPlatformIcon {
-    companion object {
-        fun getSystemIconName(icon: UnifyIconType): String? {
-            return when (icon) {
-                UnifyIconType.Add -> "plus"
-                UnifyIconType.Remove -> "minus"
-                UnifyIconType.Edit -> "pencil"
-                UnifyIconType.Delete -> "trash"
-                UnifyIconType.Save -> "square.and.arrow.down"
-                UnifyIconType.Cancel -> "xmark"
-                UnifyIconType.Check -> "checkmark"
-                UnifyIconType.Close -> "xmark"
-                UnifyIconType.Menu -> "line.horizontal.3"
-                UnifyIconType.More -> "ellipsis"
-                UnifyIconType.Search -> "magnifyingglass"
-                UnifyIconType.Filter -> "line.3.horizontal.decrease"
-                UnifyIconType.Sort -> "arrow.up.arrow.down"
-                UnifyIconType.Refresh -> "arrow.clockwise"
-                UnifyIconType.Settings -> "gearshape"
-                UnifyIconType.Info -> "info.circle"
-                UnifyIconType.Warning -> "exclamationmark.triangle"
-                UnifyIconType.Error -> "xmark.circle"
-                UnifyIconType.Success -> "checkmark.circle"
-                UnifyIconType.Home -> "house"
-                UnifyIconType.Back -> "chevron.left"
-                UnifyIconType.Forward -> "chevron.right"
-                UnifyIconType.Up -> "chevron.up"
-                UnifyIconType.Down -> "chevron.down"
-                UnifyIconType.Left -> "chevron.left"
-                UnifyIconType.Right -> "chevron.right"
-                UnifyIconType.Favorite -> "heart.fill"
-                UnifyIconType.FavoriteBorder -> "heart"
-                UnifyIconType.Share -> "square.and.arrow.up"
-                UnifyIconType.Download -> "square.and.arrow.down"
-                UnifyIconType.Upload -> "square.and.arrow.up"
-                UnifyIconType.Copy -> "doc.on.doc"
-                UnifyIconType.Paste -> "doc.on.clipboard"
-                UnifyIconType.Cut -> "scissors"
-                UnifyIconType.Undo -> "arrow.uturn.backward"
-                UnifyIconType.Redo -> "arrow.uturn.forward"
-                UnifyIconType.Visibility -> "eye"
-                UnifyIconType.VisibilityOff -> "eye.slash"
-                UnifyIconType.Lock -> "lock"
-                UnifyIconType.LockOpen -> "lock.open"
-                UnifyIconType.Person -> "person"
-                UnifyIconType.Group -> "person.2"
-                UnifyIconType.Email -> "envelope"
-                UnifyIconType.Phone -> "phone"
-                UnifyIconType.Location -> "location"
-                UnifyIconType.Calendar -> "calendar"
-                UnifyIconType.Time -> "clock"
-                UnifyIconType.Camera -> "camera"
-                UnifyIconType.Image -> "photo"
-                UnifyIconType.Video -> "video"
-                UnifyIconType.Audio -> "waveform"
-                UnifyIconType.File -> "doc"
-                UnifyIconType.Folder -> "folder"
-                UnifyIconType.Cloud -> "icloud"
-                UnifyIconType.Wifi -> "wifi"
-                UnifyIconType.Bluetooth -> "bluetooth"
-                UnifyIconType.Battery -> "battery.100"
-                UnifyIconType.Signal -> "antenna.radiowaves.left.and.right"
-                UnifyIconType.Volume -> "speaker.2"
-                UnifyIconType.VolumeOff -> "speaker.slash"
-                UnifyIconType.Brightness -> "sun.max"
-                UnifyIconType.DarkMode -> "moon"
-                UnifyIconType.LightMode -> "sun.max"
-            }
-        }
-        
-        fun supportsSFSymbols(): Boolean {
-            // 检查是否支持SF Symbols
-            return true // iOS 13+支持SF Symbols
-        }
-        
-        fun getIconWeight(): String {
-            return "regular" // ultraLight, thin, light, regular, medium, semibold, bold, heavy, black
-        }
-        
-        fun getIconScale(): String {
-            return "medium" // small, medium, large
-        }
-        
-        fun supportsMulticolor(): Boolean {
-            // 检查是否支持多色图标
-            return true // iOS 15+支持多色SF Symbols
-        }
-        
-        fun isAccessibilityBoldTextEnabled(): Boolean {
-            // 检查是否启用粗体文本辅助功能
-            return false // 实际实现需要调用iOS API
-        }
-    }
-}
-
-/**
- * iOS平台的原生图标组件适配器
- */
 @Composable
-actual fun UnifyNativeIcon(
-    icon: UnifyIconType,
+actual fun UnifyIcon(
+    iconName: String,
     contentDescription: String?,
     modifier: Modifier,
     tint: Color,
-    size: UnifyIconSize
+    size: Dp
 ) {
-    val systemIconName = UnifyPlatformIcon.getSystemIconName(icon)
-    
-    if (systemIconName != null && UnifyPlatformIcon.supportsSFSymbols()) {
-        // 使用SF Symbols（实际实现需要调用iOS原生API）
-        // 这里回退到Material图标
-        UnifyIcon(
-            icon = icon,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            tint = tint,
-            size = size
-        )
-    } else {
-        // 使用Material图标
-        UnifyIcon(
-            icon = icon,
-            contentDescription = contentDescription,
-            modifier = modifier,
-            tint = tint,
-            size = size
-        )
+    // iOS平台图标实现
+    Icon(
+        imageVector = Icons.Default.Info,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
+}
+
+@Composable
+actual fun UnifyVectorIcon(
+    vectorPath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
+) {
+    Icon(
+        imageVector = Icons.Default.Star,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
+}
+
+@Composable
+actual fun UnifySystemIcon(
+    systemIconType: SystemIconType,
+    contentDescription: String?,
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
+) {
+    val imageVector = when (systemIconType) {
+        SystemIconType.HOME -> Icons.Default.Home
+        SystemIconType.BACK -> Icons.Default.ArrowBack
+        SystemIconType.MENU -> Icons.Default.Menu
+        SystemIconType.SEARCH -> Icons.Default.Search
+        SystemIconType.SETTINGS -> Icons.Default.Settings
+        SystemIconType.PROFILE -> Icons.Default.Person
+        SystemIconType.FAVORITE -> Icons.Default.Favorite
+        SystemIconType.SHARE -> Icons.Default.Share
+        SystemIconType.DELETE -> Icons.Default.Delete
+        SystemIconType.EDIT -> Icons.Default.Edit
+        SystemIconType.ADD -> Icons.Default.Add
+        SystemIconType.CLOSE -> Icons.Default.Close
+        SystemIconType.CHECK -> Icons.Default.Check
+        SystemIconType.ARROW_UP -> Icons.Default.KeyboardArrowUp
+        SystemIconType.ARROW_DOWN -> Icons.Default.KeyboardArrowDown
+        SystemIconType.ARROW_LEFT -> Icons.Default.KeyboardArrowLeft
+        SystemIconType.ARROW_RIGHT -> Icons.Default.KeyboardArrowRight
+        SystemIconType.REFRESH -> Icons.Default.Refresh
+        SystemIconType.DOWNLOAD -> Icons.Default.Download
+        SystemIconType.UPLOAD -> Icons.Default.Upload
+        SystemIconType.CAMERA -> Icons.Default.CameraAlt
+        SystemIconType.GALLERY -> Icons.Default.PhotoLibrary
+        SystemIconType.PHONE -> Icons.Default.Phone
+        SystemIconType.EMAIL -> Icons.Default.Email
+        SystemIconType.LOCATION -> Icons.Default.LocationOn
+        SystemIconType.CALENDAR -> Icons.Default.CalendarToday
+        SystemIconType.CLOCK -> Icons.Default.Schedule
+        SystemIconType.NOTIFICATION -> Icons.Default.Notifications
+        SystemIconType.VOLUME_UP -> Icons.Default.VolumeUp
+        SystemIconType.VOLUME_DOWN -> Icons.Default.VolumeDown
+        SystemIconType.VOLUME_OFF -> Icons.Default.VolumeOff
     }
+    
+    Icon(
+        imageVector = imageVector,
+        contentDescription = contentDescription,
+        modifier = modifier,
+        tint = tint
+    )
 }

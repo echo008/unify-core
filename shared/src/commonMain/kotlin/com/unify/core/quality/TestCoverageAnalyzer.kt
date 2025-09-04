@@ -1,244 +1,203 @@
 package com.unify.core.quality
 
-import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
- * 测试覆盖率分析器 - 提升测试覆盖率到95%+
+ * 测试覆盖率分析器
+ * 提供跨平台的测试覆盖率统计和分析功能
  */
-object TestCoverageAnalyzer {
+class TestCoverageAnalyzer {
+    private val _coverageData = MutableStateFlow(TestCoverageData())
+    val coverageData: StateFlow<TestCoverageData> = _coverageData
     
-    // 测试覆盖率常量
-    private const val DYNAMIC_ENGINE_TOTAL_LINES = 850
-    private const val DYNAMIC_ENGINE_COVERED_LINES = 823
-    private const val DYNAMIC_ENGINE_TOTAL_METHODS = 45
-    private const val DYNAMIC_ENGINE_COVERED_METHODS = 44
-    private const val DYNAMIC_ENGINE_TOTAL_BRANCHES = 120
-    private const val DYNAMIC_ENGINE_COVERED_BRANCHES = 115
-    
-    private const val AI_COMPONENTS_TOTAL_LINES = 420
-    private const val AI_COMPONENTS_COVERED_LINES = 410
-    private const val AI_COMPONENTS_TOTAL_METHODS = 28
-    private const val AI_COMPONENTS_COVERED_METHODS = 28
-    private const val AI_COMPONENTS_TOTAL_BRANCHES = 65
-    private const val AI_COMPONENTS_COVERED_BRANCHES = 63
-    
-    private const val UI_COMPONENTS_TOTAL_LINES = 1250
-    private const val UI_COMPONENTS_COVERED_LINES = 1200
-    private const val UI_COMPONENTS_TOTAL_METHODS = 85
-    private const val UI_COMPONENTS_COVERED_METHODS = 82
-    private const val UI_COMPONENTS_TOTAL_BRANCHES = 180
-    private const val UI_COMPONENTS_COVERED_BRANCHES = 172
-    
-    private val moduleMetrics = mutableMapOf<String, ModuleCoverage>()
-    private val overallMetrics = OverallCoverage()
-    
-    /**
-     * 初始化覆盖率分析
-     */
-    fun initialize() {
-        // 核心模块覆盖率统计
-        moduleMetrics["dynamic_engine"] = ModuleCoverage(
-            moduleName = "UnifyDynamicEngine",
-            totalLines = DYNAMIC_ENGINE_TOTAL_LINES,
-            coveredLines = DYNAMIC_ENGINE_COVERED_LINES,
-            totalMethods = DYNAMIC_ENGINE_TOTAL_METHODS,
-            coveredMethods = DYNAMIC_ENGINE_COVERED_METHODS,
-            totalBranches = DYNAMIC_ENGINE_TOTAL_BRANCHES,
-            coveredBranches = DYNAMIC_ENGINE_COVERED_BRANCHES,
-            testFiles = listOf(
-                "ComprehensiveTestSuite.kt",
-                "DynamicEngineTest.kt"
-            )
-        )
+    // 覆盖率常量定义
+    companion object {
+        private const val EXCELLENT_COVERAGE_THRESHOLD = 90.0
+        private const val GOOD_COVERAGE_THRESHOLD = 80.0
+        private const val FAIR_COVERAGE_THRESHOLD = 70.0
+        private const val POOR_COVERAGE_THRESHOLD = 60.0
         
-        moduleMetrics["ai_components"] = ModuleCoverage(
-            moduleName = "UnifyAIComponents",
-            totalLines = AI_COMPONENTS_TOTAL_LINES,
-            coveredLines = AI_COMPONENTS_COVERED_LINES,
-            totalMethods = AI_COMPONENTS_TOTAL_METHODS,
-            coveredMethods = AI_COMPONENTS_COVERED_METHODS,
-            totalBranches = AI_COMPONENTS_TOTAL_BRANCHES,
-            coveredBranches = AI_COMPONENTS_COVERED_BRANCHES,
-            testFiles = listOf(
-                "UnifyAIComponentsTest.kt"
-            )
-        )
+        // 模块覆盖率目标
+        private const val CORE_MODULE_TARGET = 95.0
+        private const val UI_MODULE_TARGET = 85.0
+        private const val DATA_MODULE_TARGET = 90.0
+        private const val NETWORK_MODULE_TARGET = 88.0
+        private const val DEVICE_MODULE_TARGET = 82.0
+        private const val PLATFORM_MODULE_TARGET = 75.0
+        private const val PERFORMANCE_MODULE_TARGET = 85.0
+        private const val SECURITY_MODULE_TARGET = 95.0
         
-        moduleMetrics["ui_components"] = ModuleCoverage(
-            moduleName = "UnifyUIComponents",
-            totalLines = UI_COMPONENTS_TOTAL_LINES,
-            coveredLines = UI_COMPONENTS_COVERED_LINES,
-            totalMethods = UI_COMPONENTS_TOTAL_METHODS,
-            coveredMethods = UI_COMPONENTS_COVERED_METHODS,
-            totalBranches = UI_COMPONENTS_TOTAL_BRANCHES,
-            coveredBranches = UI_COMPONENTS_COVERED_BRANCHES,
-            testFiles = listOf(
-                "UnifyUIComponentsTest.kt",
-                "ResponsiveDesignTest.kt",
-                "AccessibilityTest.kt"
-            )
-        )
-        
-        moduleMetrics["performance_monitor"] = ModuleCoverage(
-            moduleName = "UnifyPerformanceMonitor",
-            totalLines = 680,
-            coveredLines = 655,
-            totalMethods = 35,
-            coveredMethods = 34,
-            totalBranches = 95,
-            coveredBranches = 91,
-            testFiles = listOf(
-                "PerformanceMonitorTest.kt"
-            )
-        )
-        
-        moduleMetrics["memory_manager"] = ModuleCoverage(
-            moduleName = "UnifyMemoryManager",
-            totalLines = 590,
-            coveredLines = 570,
-            totalMethods = 32,
-            coveredMethods = 31,
-            totalBranches = 78,
-            coveredBranches = 75,
-            testFiles = listOf(
-                "MemoryManagerTest.kt"
-            )
-        )
-        
-        moduleMetrics["security_validator"] = ModuleCoverage(
-            moduleName = "HotUpdateSecurityValidator",
-            totalLines = 380,
-            coveredLines = 368,
-            totalMethods = 22,
-            coveredMethods = 22,
-            totalBranches = 58,
-            coveredBranches = 56,
-            testFiles = listOf(
-                "SecurityValidatorTest.kt"
-            )
-        )
-        
-        moduleMetrics["platform_adapters"] = ModuleCoverage(
-            moduleName = "PlatformAdapters",
-            totalLines = 920,
-            coveredLines = 885,
-            totalMethods = 56,
-            coveredMethods = 54,
-            totalBranches = 135,
-            coveredBranches = 129,
-            testFiles = listOf(
-                "PlatformAdapterTest.kt"
-            )
-        )
-        
-        moduleMetrics["configuration_manager"] = ModuleCoverage(
-            moduleName = "DynamicConfigurationManager",
-            totalLines = 310,
-            coveredLines = 298,
-            totalMethods = 18,
-            coveredMethods = 18,
-            totalBranches = 42,
-            coveredBranches = 40,
-            testFiles = listOf(
-                "ConfigurationManagerTest.kt"
-            )
-        )
-        
-        calculateOverallCoverage()
+        // 平台覆盖率权重
+        private const val ANDROID_WEIGHT = 0.25
+        private const val IOS_WEIGHT = 0.25
+        private const val WEB_WEIGHT = 0.20
+        private const val DESKTOP_WEIGHT = 0.15
+        private const val HARMONY_WEIGHT = 0.10
+        private const val MINIAPP_WEIGHT = 0.03
+        private const val WATCH_WEIGHT = 0.01
+        private const val TV_WEIGHT = 0.01
     }
     
     /**
-     * 计算整体覆盖率
+     * 分析测试覆盖率
      */
-    private fun calculateOverallCoverage() {
-        var totalLines = 0
-        var coveredLines = 0
-        var totalMethods = 0
-        var coveredMethods = 0
-        var totalBranches = 0
-        var coveredBranches = 0
+    suspend fun analyzeCoverage(testResults: List<TestResult>): TestCoverageReport {
+        val modulesCoverage = analyzeModulesCoverage(testResults)
+        val platformsCoverage = analyzePlatformsCoverage(testResults)
+        val overallCoverage = calculateOverallCoverage(modulesCoverage, platformsCoverage)
         
-        moduleMetrics.values.forEach { module ->
-            totalLines += module.totalLines
-            coveredLines += module.coveredLines
-            totalMethods += module.totalMethods
-            coveredMethods += module.coveredMethods
-            totalBranches += module.totalBranches
-            coveredBranches += module.coveredBranches
-        }
+        val report = TestCoverageReport(
+            overallCoverage = overallCoverage,
+            modulesCoverage = modulesCoverage,
+            platformsCoverage = platformsCoverage,
+            recommendations = generateRecommendations(modulesCoverage, platformsCoverage),
+            timestamp = System.currentTimeMillis()
+        )
         
-        overallMetrics.apply {
-            this.totalLines = totalLines
-            this.coveredLines = coveredLines
-            this.totalMethods = totalMethods
-            this.coveredMethods = coveredMethods
-            this.totalBranches = totalBranches
-            this.coveredBranches = coveredBranches
+        _coverageData.value = _coverageData.value.copy(
+            latestReport = report,
+            totalTests = testResults.size,
+            passedTests = testResults.count { it.passed },
+            failedTests = testResults.count { !it.passed }
+        )
+        
+        return report
+    }
+    
+    /**
+     * 分析模块覆盖率
+     */
+    private fun analyzeModulesCoverage(testResults: List<TestResult>): Map<String, ModuleCoverageInfo> {
+        val modules = mapOf(
+            "core" to CORE_MODULE_TARGET,
+            "ui" to UI_MODULE_TARGET,
+            "data" to DATA_MODULE_TARGET,
+            "network" to NETWORK_MODULE_TARGET,
+            "device" to DEVICE_MODULE_TARGET,
+            "platform" to PLATFORM_MODULE_TARGET,
+            "performance" to PERFORMANCE_MODULE_TARGET,
+            "security" to SECURITY_MODULE_TARGET
+        )
+        
+        return modules.mapValues { (moduleName, target) ->
+            val moduleTests = testResults.filter { it.module == moduleName }
+            val totalLines = moduleTests.sumOf { it.totalLines }
+            val coveredLines = moduleTests.sumOf { it.coveredLines }
+            val coverage = if (totalLines > 0) (coveredLines.toDouble() / totalLines) * 100 else 0.0
             
-            lineCoverage = if (totalLines > 0) (coveredLines * 100.0) / totalLines else 0.0
-            methodCoverage = if (totalMethods > 0) (coveredMethods * 100.0) / totalMethods else 0.0
-            branchCoverage = if (totalBranches > 0) (coveredBranches * 100.0) / totalBranches else 0.0
-            
-            overallCoverage = (lineCoverage + methodCoverage + branchCoverage) / 3.0
+            ModuleCoverageInfo(
+                moduleName = moduleName,
+                coverage = coverage,
+                target = target,
+                totalLines = totalLines,
+                coveredLines = coveredLines,
+                uncoveredLines = totalLines - coveredLines,
+                testCount = moduleTests.size,
+                passedTests = moduleTests.count { it.passed },
+                failedTests = moduleTests.count { !it.passed }
+            )
         }
     }
     
     /**
-     * 生成覆盖率报告
+     * 分析平台覆盖率
      */
-    fun generateCoverageReport(): CoverageReport {
-        return CoverageReport(
-            timestamp = System.currentTimeMillis(),
-            overallCoverage = overallMetrics,
-            moduleCoverages = moduleMetrics.values.toList(),
-            recommendations = generateRecommendations(),
-            qualityGate = evaluateQualityGate()
+    private fun analyzePlatformsCoverage(testResults: List<TestResult>): Map<String, PlatformCoverageInfo> {
+        val platforms = listOf("android", "ios", "web", "desktop", "harmony", "miniapp", "watch", "tv")
+        
+        return platforms.associateWith { platformName ->
+            val platformTests = testResults.filter { it.platform == platformName }
+            val totalLines = platformTests.sumOf { it.totalLines }
+            val coveredLines = platformTests.sumOf { it.coveredLines }
+            val coverage = if (totalLines > 0) (coveredLines.toDouble() / totalLines) * 100 else 0.0
+            
+            PlatformCoverageInfo(
+                platformName = platformName,
+                coverage = coverage,
+                totalLines = totalLines,
+                coveredLines = coveredLines,
+                testCount = platformTests.size,
+                passedTests = platformTests.count { it.passed },
+                failedTests = platformTests.count { !it.passed }
+            )
+        }
+    }
+    
+    /**
+     * 计算总体覆盖率
+     */
+    private fun calculateOverallCoverage(
+        modulesCoverage: Map<String, ModuleCoverageInfo>,
+        platformsCoverage: Map<String, PlatformCoverageInfo>
+    ): Double {
+        val moduleWeightedCoverage = modulesCoverage.values.sumOf { it.coverage } / modulesCoverage.size
+        
+        val platformWeights = mapOf(
+            "android" to ANDROID_WEIGHT,
+            "ios" to IOS_WEIGHT,
+            "web" to WEB_WEIGHT,
+            "desktop" to DESKTOP_WEIGHT,
+            "harmony" to HARMONY_WEIGHT,
+            "miniapp" to MINIAPP_WEIGHT,
+            "watch" to WATCH_WEIGHT,
+            "tv" to TV_WEIGHT
         )
+        
+        val platformWeightedCoverage = platformsCoverage.entries.sumOf { (platform, info) ->
+            info.coverage * (platformWeights[platform] ?: 0.0)
+        }
+        
+        return (moduleWeightedCoverage + platformWeightedCoverage) / 2.0
     }
     
     /**
      * 生成改进建议
      */
-    private fun generateRecommendations(): List<CoverageRecommendation> {
+    private fun generateRecommendations(
+        modulesCoverage: Map<String, ModuleCoverageInfo>,
+        platformsCoverage: Map<String, PlatformCoverageInfo>
+    ): List<CoverageRecommendation> {
         val recommendations = mutableListOf<CoverageRecommendation>()
         
-        moduleMetrics.values.forEach { module ->
-            val lineCoverage = (module.coveredLines * 100.0) / module.totalLines
-            val methodCoverage = (module.coveredMethods * 100.0) / module.totalMethods
-            val branchCoverage = (module.coveredBranches * 100.0) / module.totalBranches
-            
-            if (lineCoverage < 95.0) {
-                recommendations.add(
-                    CoverageRecommendation(
-                        module = module.moduleName,
-                        type = RecommendationType.LINE_COVERAGE,
-                        priority = if (lineCoverage < 90.0) Priority.HIGH else Priority.MEDIUM,
-                        description = "行覆盖率 ${lineCoverage.roundToInt()}% 需要提升到95%+",
-                        suggestion = "增加 ${((module.totalLines * 0.95) - module.coveredLines).toInt()} 行测试覆盖"
+        // 模块覆盖率建议
+        modulesCoverage.values.forEach { module ->
+            when {
+                module.coverage < POOR_COVERAGE_THRESHOLD -> {
+                    recommendations.add(
+                        CoverageRecommendation(
+                            type = RecommendationType.CRITICAL,
+                            module = module.moduleName,
+                            message = "模块 ${module.moduleName} 覆盖率过低 (${String.format("%.1f", module.coverage)}%)，需要紧急增加测试用例",
+                            priority = RecommendationPriority.HIGH
+                        )
                     )
-                )
-            }
-            
-            if (methodCoverage < 95.0) {
-                recommendations.add(
-                    CoverageRecommendation(
-                        module = module.moduleName,
-                        type = RecommendationType.METHOD_COVERAGE,
-                        priority = if (methodCoverage < 90.0) Priority.HIGH else Priority.MEDIUM,
-                        description = "方法覆盖率 ${methodCoverage.roundToInt()}% 需要提升到95%+",
-                        suggestion = "增加 ${((module.totalMethods * 0.95) - module.coveredMethods).toInt()} 个方法测试"
+                }
+                module.coverage < module.target -> {
+                    recommendations.add(
+                        CoverageRecommendation(
+                            type = RecommendationType.IMPROVEMENT,
+                            module = module.moduleName,
+                            message = "模块 ${module.moduleName} 未达到目标覆盖率 (当前: ${String.format("%.1f", module.coverage)}%, 目标: ${String.format("%.1f", module.target)}%)",
+                            priority = RecommendationPriority.MEDIUM
+                        )
                     )
-                )
+                }
             }
-            
-            if (branchCoverage < 90.0) {
+        }
+        
+        // 平台覆盖率建议
+        platformsCoverage.values.forEach { platform ->
+            if (platform.coverage < FAIR_COVERAGE_THRESHOLD) {
                 recommendations.add(
                     CoverageRecommendation(
-                        module = module.moduleName,
-                        type = RecommendationType.BRANCH_COVERAGE,
-                        priority = Priority.HIGH,
-                        description = "分支覆盖率 ${branchCoverage.roundToInt()}% 需要提升到90%+",
-                        suggestion = "增加 ${((module.totalBranches * 0.90) - module.coveredBranches).toInt()} 个分支测试"
+                        type = RecommendationType.PLATFORM_SPECIFIC,
+                        platform = platform.platformName,
+                        message = "平台 ${platform.platformName} 覆盖率较低 (${String.format("%.1f", platform.coverage)}%)，建议增加平台特定测试",
+                        priority = RecommendationPriority.MEDIUM
                     )
                 )
             }
@@ -248,174 +207,203 @@ object TestCoverageAnalyzer {
     }
     
     /**
-     * 评估质量门禁
+     * 获取覆盖率趋势
      */
-    private fun evaluateQualityGate(): QualityGate {
-        val lineCoveragePass = overallMetrics.lineCoverage >= 95.0
-        val methodCoveragePass = overallMetrics.methodCoverage >= 95.0
-        val branchCoveragePass = overallMetrics.branchCoverage >= 90.0
-        val overallCoveragePass = overallMetrics.overallCoverage >= 93.0
-        
-        val passedChecks = listOfNotNull(
-            if (lineCoveragePass) "行覆盖率 ≥ 95%" else null,
-            if (methodCoveragePass) "方法覆盖率 ≥ 95%" else null,
-            if (branchCoveragePass) "分支覆盖率 ≥ 90%" else null,
-            if (overallCoveragePass) "整体覆盖率 ≥ 93%" else null
-        )
-        
-        val failedChecks = listOfNotNull(
-            if (!lineCoveragePass) "行覆盖率 ${overallMetrics.lineCoverage.roundToInt()}% < 95%" else null,
-            if (!methodCoveragePass) "方法覆盖率 ${overallMetrics.methodCoverage.roundToInt()}% < 95%" else null,
-            if (!branchCoveragePass) "分支覆盖率 ${overallMetrics.branchCoverage.roundToInt()}% < 90%" else null,
-            if (!overallCoveragePass) "整体覆盖率 ${overallMetrics.overallCoverage.roundToInt()}% < 93%" else null
-        )
-        
-        val passed = lineCoveragePass && methodCoveragePass && branchCoveragePass && overallCoveragePass
-        
-        return QualityGate(
-            passed = passed,
-            score = overallMetrics.overallCoverage,
-            passedChecks = passedChecks,
-            failedChecks = failedChecks,
-            status = if (passed) "PASSED" else "FAILED"
-        )
+    fun getCoverageTrend(): Flow<List<CoverageTrendPoint>> {
+        // 实现覆盖率趋势分析
+        return MutableStateFlow(emptyList())
     }
     
     /**
-     * 获取模块覆盖率详情
+     * 导出覆盖率报告
      */
-    fun getModuleCoverage(moduleName: String): ModuleCoverage? {
-        return moduleMetrics.values.find { it.moduleName == moduleName }
-    }
-    
-    /**
-     * 获取整体覆盖率
-     */
-    fun getOverallCoverage(): OverallCoverage {
-        return overallMetrics
-    }
-    
-    /**
-     * 获取低覆盖率模块
-     */
-    fun getLowCoverageModules(threshold: Double = 95.0): List<ModuleCoverage> {
-        return moduleMetrics.values.filter { module ->
-            val lineCoverage = (module.coveredLines * 100.0) / module.totalLines
-            lineCoverage < threshold
+    suspend fun exportReport(format: ReportFormat): String {
+        val report = _coverageData.value.latestReport ?: return ""
+        
+        return when (format) {
+            ReportFormat.JSON -> Json.encodeToString(TestCoverageReport.serializer(), report)
+            ReportFormat.HTML -> generateHtmlReport(report)
+            ReportFormat.CSV -> generateCsvReport(report)
         }
     }
     
-    /**
-     * 获取测试文件统计
-     */
-    fun getTestFileStats(): TestFileStats {
-        val allTestFiles = moduleMetrics.values.flatMap { it.testFiles }.distinct()
-        val totalTestFiles = allTestFiles.size
-        val modulesCovered = moduleMetrics.size
-        val avgTestsPerModule = totalTestFiles.toDouble() / modulesCovered
-        
-        return TestFileStats(
-            totalTestFiles = totalTestFiles,
-            modulesCovered = modulesCovered,
-            averageTestsPerModule = avgTestsPerModule,
-            testFiles = allTestFiles
-        )
+    private fun generateHtmlReport(report: TestCoverageReport): String {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Unify-Core 测试覆盖率报告</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .header { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+                    .coverage-high { color: #4CAF50; }
+                    .coverage-medium { color: #FF9800; }
+                    .coverage-low { color: #F44336; }
+                    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                    th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Unify-Core 测试覆盖率报告</h1>
+                    <p>总体覆盖率: <span class="${getCoverageClass(report.overallCoverage)}">${String.format("%.1f", report.overallCoverage)}%</span></p>
+                    <p>生成时间: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(java.util.Date(report.timestamp))}</p>
+                </div>
+                
+                <h2>模块覆盖率</h2>
+                <table>
+                    <tr><th>模块</th><th>覆盖率</th><th>目标</th><th>测试数量</th><th>状态</th></tr>
+                    ${report.modulesCoverage.values.joinToString("") { module ->
+                        "<tr><td>${module.moduleName}</td><td>${String.format("%.1f", module.coverage)}%</td><td>${String.format("%.1f", module.target)}%</td><td>${module.testCount}</td><td>${if (module.coverage >= module.target) "✅" else "❌"}</td></tr>"
+                    }}
+                </table>
+                
+                <h2>平台覆盖率</h2>
+                <table>
+                    <tr><th>平台</th><th>覆盖率</th><th>测试数量</th><th>通过/失败</th></tr>
+                    ${report.platformsCoverage.values.joinToString("") { platform ->
+                        "<tr><td>${platform.platformName}</td><td>${String.format("%.1f", platform.coverage)}%</td><td>${platform.testCount}</td><td>${platform.passedTests}/${platform.failedTests}</td></tr>"
+                    }}
+                </table>
+            </body>
+            </html>
+        """.trimIndent()
+    }
+    
+    private fun generateCsvReport(report: TestCoverageReport): String {
+        val csv = StringBuilder()
+        csv.appendLine("模块,覆盖率,目标,测试数量,通过,失败")
+        report.modulesCoverage.values.forEach { module ->
+            csv.appendLine("${module.moduleName},${module.coverage},${module.target},${module.testCount},${module.passedTests},${module.failedTests}")
+        }
+        return csv.toString()
+    }
+    
+    private fun getCoverageClass(coverage: Double): String {
+        return when {
+            coverage >= EXCELLENT_COVERAGE_THRESHOLD -> "coverage-high"
+            coverage >= GOOD_COVERAGE_THRESHOLD -> "coverage-medium"
+            else -> "coverage-low"
+        }
     }
 }
 
 /**
- * 模块覆盖率数据
+ * 测试结果数据
  */
-data class ModuleCoverage(
-    val moduleName: String,
+@Serializable
+data class TestResult(
+    val testName: String,
+    val module: String,
+    val platform: String,
+    val passed: Boolean,
     val totalLines: Int,
     val coveredLines: Int,
-    val totalMethods: Int,
-    val coveredMethods: Int,
-    val totalBranches: Int,
-    val coveredBranches: Int,
-    val testFiles: List<String>
-) {
-    val lineCoverage: Double
-        get() = if (totalLines > 0) (coveredLines * 100.0) / totalLines else 0.0
-    
-    val methodCoverage: Double
-        get() = if (totalMethods > 0) (coveredMethods * 100.0) / totalMethods else 0.0
-    
-    val branchCoverage: Double
-        get() = if (totalBranches > 0) (coveredBranches * 100.0) / totalBranches else 0.0
-    
-    val overallCoverage: Double
-        get() = (lineCoverage + methodCoverage + branchCoverage) / 3.0
-}
-
-/**
- * 整体覆盖率数据
- */
-data class OverallCoverage(
-    var totalLines: Int = 0,
-    var coveredLines: Int = 0,
-    var totalMethods: Int = 0,
-    var coveredMethods: Int = 0,
-    var totalBranches: Int = 0,
-    var coveredBranches: Int = 0,
-    var lineCoverage: Double = 0.0,
-    var methodCoverage: Double = 0.0,
-    var branchCoverage: Double = 0.0,
-    var overallCoverage: Double = 0.0
+    val executionTime: Long,
+    val errorMessage: String? = null
 )
 
 /**
- * 覆盖率报告
+ * 测试覆盖率数据
  */
-data class CoverageReport(
-    val timestamp: Long,
-    val overallCoverage: OverallCoverage,
-    val moduleCoverages: List<ModuleCoverage>,
+@Serializable
+data class TestCoverageData(
+    val latestReport: TestCoverageReport? = null,
+    val totalTests: Int = 0,
+    val passedTests: Int = 0,
+    val failedTests: Int = 0,
+    val lastAnalysisTime: Long = 0
+)
+
+/**
+ * 测试覆盖率报告
+ */
+@Serializable
+data class TestCoverageReport(
+    val overallCoverage: Double,
+    val modulesCoverage: Map<String, ModuleCoverageInfo>,
+    val platformsCoverage: Map<String, PlatformCoverageInfo>,
     val recommendations: List<CoverageRecommendation>,
-    val qualityGate: QualityGate
+    val timestamp: Long
 )
 
 /**
- * 覆盖率改进建议
+ * 模块覆盖率信息
  */
+@Serializable
+data class ModuleCoverageInfo(
+    val moduleName: String,
+    val coverage: Double,
+    val target: Double,
+    val totalLines: Int,
+    val coveredLines: Int,
+    val uncoveredLines: Int,
+    val testCount: Int,
+    val passedTests: Int,
+    val failedTests: Int
+)
+
+/**
+ * 平台覆盖率信息
+ */
+@Serializable
+data class PlatformCoverageInfo(
+    val platformName: String,
+    val coverage: Double,
+    val totalLines: Int,
+    val coveredLines: Int,
+    val testCount: Int,
+    val passedTests: Int,
+    val failedTests: Int
+)
+
+/**
+ * 覆盖率建议
+ */
+@Serializable
 data class CoverageRecommendation(
-    val module: String,
     val type: RecommendationType,
-    val priority: Priority,
-    val description: String,
-    val suggestion: String
+    val module: String? = null,
+    val platform: String? = null,
+    val message: String,
+    val priority: RecommendationPriority
 )
 
+/**
+ * 建议类型
+ */
 enum class RecommendationType {
-    LINE_COVERAGE,
-    METHOD_COVERAGE,
-    BRANCH_COVERAGE,
-    INTEGRATION_TESTING,
-    EDGE_CASE_TESTING
-}
-
-enum class Priority {
-    HIGH, MEDIUM, LOW
+    CRITICAL,
+    IMPROVEMENT,
+    PLATFORM_SPECIFIC,
+    OPTIMIZATION
 }
 
 /**
- * 质量门禁
+ * 建议优先级
  */
-data class QualityGate(
-    val passed: Boolean,
-    val score: Double,
-    val passedChecks: List<String>,
-    val failedChecks: List<String>,
-    val status: String
+enum class RecommendationPriority {
+    HIGH,
+    MEDIUM,
+    LOW
+}
+
+/**
+ * 覆盖率趋势点
+ */
+@Serializable
+data class CoverageTrendPoint(
+    val timestamp: Long,
+    val overallCoverage: Double,
+    val modulesCoverage: Map<String, Double>
 )
 
 /**
- * 测试文件统计
+ * 报告格式
  */
-data class TestFileStats(
-    val totalTestFiles: Int,
-    val modulesCovered: Int,
-    val averageTestsPerModule: Double,
-    val testFiles: List<String>
-)
+enum class ReportFormat {
+    JSON,
+    HTML,
+    CSV
+}

@@ -2,656 +2,318 @@ package com.unify.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
 /**
  * HarmonyOS平台数据管理器实现
+ * 基于HarmonyOS分布式数据管理和本地存储实现
  */
-class HarmonyUnifyDataManager(
-    private val config: UnifyDataManagerConfig
-) : UnifyDataManager {
+class HarmonyUnifyDataManager : UnifyDataManager {
     
-    override val storage: UnifyStorage = HarmonyUnifyStorage(config)
-    override val state: UnifyStateManager = HarmonyUnifyStateManager()
-    override val cache: UnifyCacheManager = HarmonyUnifyCacheManager(config.cachePolicy)
-    override val sync: UnifyDataSync = HarmonyUnifyDataSync(config.syncPolicy)
-    
-    override suspend fun initialize() {
-        (storage as HarmonyUnifyStorage).initialize()
-        (cache as HarmonyUnifyCacheManager).initialize()
-        (sync as HarmonyUnifyDataSync).initialize()
-    }
-    
-    override suspend fun cleanup() {
-        (cache as HarmonyUnifyCacheManager).cleanup()
-        (sync as HarmonyUnifyDataSync).cleanup()
-    }
-}
-
-/**
- * HarmonyOS存储实现 - 基于分布式数据管理
- */
-class HarmonyUnifyStorage(
-    private val config: UnifyDataManagerConfig
-) : UnifyStorage {
-    
-    private val json = Json { 
-        ignoreUnknownKeys = true
-        encodeDefaults = true
-    }
-    
-    // HarmonyOS分布式数据存储占位符
+    private val localStorage = mutableMapOf<String, String>()
     private val distributedStorage = mutableMapOf<String, String>()
+    private val _connectionState = MutableStateFlow(DataConnectionState.CONNECTED)
     
-    suspend fun initialize() {
-        // 初始化HarmonyOS分布式数据管理服务
-        initializeDistributedDataService()
-        
-        // 检查存储配额
-        checkStorageQuota()
+    companion object {
+        private const val DISTRIBUTED_PREFIX = "distributed_"
+        private const val LOCAL_PREFIX = "local_"
     }
     
-    override suspend fun <T> put(key: String, value: T) {
+    override suspend fun <T> save(key: String, value: T, serializer: kotlinx.serialization.KSerializer<T>) {
         try {
-            val jsonString = json.encodeToString(value)
-            val finalData = if (config.storageEncryption) {
-                encryptDataWithHarmonyKMS(jsonString)
-            } else {
-                jsonString
+            val jsonString = Json.encodeToString(serializer, value)
+            
+            // 根据key前缀决定存储位置
+            when {
+                key.startsWith(DISTRIBUTED_PREFIX) -> {
+                    // 存储到分布式数据库
+                    distributedStorage[key] = jsonString
+                    // 模拟分布式同步
+                    syncToDistributedDevices(key, jsonString)
+                }
+                else -> {
+                    // 存储到本地
+                    localStorage[key] = jsonString
+                }
             }
-            
-            // 使用HarmonyOS分布式数据存储
-            storeToDistributedDatabase(key, finalData)
-            
-            // 存储元数据
-            val metadata = HarmonyStorageMetadata(
-                timestamp = System.currentTimeMillis(),
-                size = jsonString.length.toLong(),
-                encrypted = config.storageEncryption,
-                deviceId = getCurrentDeviceId(),
-                distributed = true
-            )
-            storeToDistributedDatabase("${key}_meta", json.encodeToString(metadata))
-            
         } catch (e: Exception) {
-            throw RuntimeException("Failed to store data for key: $key", e)
+            throw DataException("Failed to save data for key: $key", e)
         }
     }
     
-    override suspend fun <T> get(key: String, type: KClass<T>): T? {
+    override suspend fun <T> load(key: String, serializer: kotlinx.serialization.KSerializer<T>): T? {
         return try {
-            val storedData = getFromDistributedDatabase(key) ?: return null
-            
-            val jsonString = if (config.storageEncryption) {
-                decryptDataWithHarmonyKMS(storedData)
-            } else {
-                storedData
+            val jsonString = when {
+                key.startsWith(DISTRIBUTED_PREFIX) -> distributedStorage[key]
+                else -> localStorage[key]
             }
             
-            json.decodeFromString(type.java, jsonString) as T
+            jsonString?.let { Json.decodeFromString(serializer, it) }
         } catch (e: Exception) {
             null
         }
     }
     
-    override suspend fun remove(key: String): Boolean {
-        return try {
-            removeFromDistributedDatabase(key)
-            removeFromDistributedDatabase("${key}_meta")
-            true
+    override suspend fun delete(key: String) {
+        try {
+            when {
+                key.startsWith(DISTRIBUTED_PREFIX) -> {
+                    distributedStorage.remove(key)
+                    // 同步删除到分布式设备
+                    syncDeleteToDistributedDevices(key)
+                }
+                else -> {
+                    localStorage.remove(key)
+                }
+            }
         } catch (e: Exception) {
-            false
+            throw DataException("Failed to delete data for key: $key", e)
         }
     }
     
     override suspend fun clear() {
         try {
-            clearDistributedDatabase()
+            localStorage.clear()
+            distributedStorage.clear()
+            // 清空分布式数据
+            clearDistributedData()
         } catch (e: Exception) {
-            // 忽略清理错误
+            throw DataException("Failed to clear all data", e)
         }
     }
     
-    override suspend fun contains(key: String): Boolean {
-        return getFromDistributedDatabase(key) != null
+    override suspend fun exists(key: String): Boolean {
+        return when {
+            key.startsWith(DISTRIBUTED_PREFIX) -> distributedStorage.containsKey(key)
+            else -> localStorage.containsKey(key)
+        }
     }
     
-    override suspend fun keys(): Set<String> {
+    override suspend fun getAllKeys(): Set<String> {
+        return localStorage.keys + distributedStorage.keys
+    }
+    
+    override fun observeConnectionState(): Flow<DataConnectionState> {
+        return _connectionState.asStateFlow()
+    }
+    
+    override suspend fun sync() {
+        try {
+            _connectionState.value = DataConnectionState.SYNCING
+            
+            // 同步分布式数据
+            syncDistributedData()
+            
+            // 检查设备连接状态
+            val connectedDevices = getConnectedHarmonyDevices()
+            if (connectedDevices.isNotEmpty()) {
+                _connectionState.value = DataConnectionState.CONNECTED
+            } else {
+                _connectionState.value = DataConnectionState.OFFLINE
+            }
+        } catch (e: Exception) {
+            _connectionState.value = DataConnectionState.ERROR
+            throw DataException("Failed to sync data", e)
+        }
+    }
+    
+    override suspend fun backup(): String {
         return try {
-            getDistributedDatabaseKeys()
-                .filter { !it.endsWith("_meta") }
-                .toSet()
+            val backupData = mapOf(
+                "local" to localStorage,
+                "distributed" to distributedStorage,
+                "timestamp" to System.currentTimeMillis().toString(),
+                "platform" to "HarmonyOS"
+            )
+            
+            val backupJson = Json.encodeToString(backupData)
+            val backupId = "harmony_backup_${System.currentTimeMillis()}"
+            
+            // 存储备份到HarmonyOS云服务
+            storeToHarmonyCloud(backupId, backupJson)
+            
+            backupId
         } catch (e: Exception) {
-            emptySet()
+            throw DataException("Failed to create backup", e)
         }
     }
     
-    override suspend fun size(): Long {
+    override suspend fun restore(backupPath: String) {
+        try {
+            // 从HarmonyOS云服务恢复
+            val backupJson = loadFromHarmonyCloud(backupPath)
+            val backupData = Json.decodeFromString<Map<String, Map<String, String>>>(backupJson)
+            
+            // 恢复本地数据
+            backupData["local"]?.let { localData ->
+                localStorage.clear()
+                localStorage.putAll(localData)
+            }
+            
+            // 恢复分布式数据
+            backupData["distributed"]?.let { distributedData ->
+                distributedStorage.clear()
+                distributedStorage.putAll(distributedData)
+            }
+            
+            // 同步到其他设备
+            sync()
+        } catch (e: Exception) {
+            throw DataException("Failed to restore from backup: $backupPath", e)
+        }
+    }
+    
+    override suspend fun getStorageInfo(): StorageInfo {
         return try {
-            calculateDistributedDatabaseSize()
+            val localSize = calculateDataSize(localStorage)
+            val distributedSize = calculateDataSize(distributedStorage)
+            val totalSize = localSize + distributedSize
+            
+            StorageInfo(
+                totalSpace = 1024 * 1024 * 1024, // 1GB 模拟总空间
+                usedSpace = totalSize,
+                freeSpace = 1024 * 1024 * 1024 - totalSize,
+                cacheSize = calculateCacheSize()
+            )
         } catch (e: Exception) {
-            0L
+            StorageInfo(0, 0, 0, 0)
         }
     }
     
-    private fun initializeDistributedDataService() {
-        // 初始化HarmonyOS分布式数据管理服务
-        // 这里是占位符实现，实际需要使用HarmonyOS SDK
-    }
+    // HarmonyOS特有功能
     
-    private fun checkStorageQuota() {
-        // 检查HarmonyOS存储配额
-        // 可以通过分布式数据管理服务查询配额信息
-    }
-    
-    private suspend fun storeToDistributedDatabase(key: String, value: String) {
-        // 存储到HarmonyOS分布式数据库
-        // 占位符实现
-        distributedStorage[key] = value
-    }
-    
-    private suspend fun getFromDistributedDatabase(key: String): String? {
-        // 从HarmonyOS分布式数据库获取
-        // 占位符实现
-        return distributedStorage[key]
-    }
-    
-    private suspend fun removeFromDistributedDatabase(key: String): Boolean {
-        // 从HarmonyOS分布式数据库删除
-        // 占位符实现
-        return distributedStorage.remove(key) != null
-    }
-    
-    private suspend fun clearDistributedDatabase() {
-        // 清空HarmonyOS分布式数据库
-        // 占位符实现
-        distributedStorage.clear()
-    }
-    
-    private suspend fun getDistributedDatabaseKeys(): List<String> {
-        // 获取HarmonyOS分布式数据库所有键
-        // 占位符实现
-        return distributedStorage.keys.toList()
-    }
-    
-    private suspend fun calculateDistributedDatabaseSize(): Long {
-        // 计算HarmonyOS分布式数据库大小
-        // 占位符实现
-        return distributedStorage.values.sumOf { it.length.toLong() }
-    }
-    
-    private fun getCurrentDeviceId(): String {
-        // 获取当前HarmonyOS设备ID
-        // 占位符实现
-        return "harmony_device_001"
-    }
-    
-    private fun encryptDataWithHarmonyKMS(data: String): String {
-        // 使用HarmonyOS KMS加密数据
-        // 占位符实现
-        return data
-    }
-    
-    private fun decryptDataWithHarmonyKMS(data: String): String {
-        // 使用HarmonyOS KMS解密数据
-        // 占位符实现
-        return data
-    }
-}
-
-/**
- * HarmonyOS状态管理实现 - 支持分布式状态同步
- */
-class HarmonyUnifyStateManager : UnifyStateManager {
-    
-    private val states = ConcurrentHashMap<String, Any?>()
-    private val stateFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
-    private val distributedStates = ConcurrentHashMap<String, Any?>()
-    
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value
-        
-        // 同步到分布式状态
-        syncToDistributedState(key, value)
-        
-        val flow = stateFlows.getOrPut(key) { MutableStateFlow(null) }
-        flow.value = value
-    }
-    
-    override fun <T> getState(key: String, type: KClass<T>): T? {
-        // 优先从本地获取，然后从分布式状态获取
-        return states[key] as? T ?: distributedStates[key] as? T
-    }
-    
-    override fun <T> observeState(key: String, type: KClass<T>): Flow<T?> {
-        val flow = stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
-        
-        // 监听分布式状态变化
-        observeDistributedState(key) { newValue ->
-            flow.value = newValue
-            states[key] = newValue
-        }
-        
-        return flow.map { it as? T }
-    }
-    
-    override fun removeState(key: String) {
-        states.remove(key)
-        distributedStates.remove(key)
-        removeFromDistributedState(key)
-        stateFlows[key]?.value = null
-    }
-    
-    override fun clearStates() {
-        states.clear()
-        distributedStates.clear()
-        clearDistributedStates()
-        stateFlows.values.forEach { it.value = null }
-        stateFlows.clear()
-    }
-    
-    override fun getStateKeys(): Set<String> {
-        return (states.keys + distributedStates.keys).toSet()
-    }
-    
-    private fun <T> syncToDistributedState(key: String, value: T) {
-        // 同步状态到HarmonyOS分布式状态管理
-        // 占位符实现
-        distributedStates[key] = value
-    }
-    
-    private fun observeDistributedState(key: String, callback: (Any?) -> Unit) {
-        // 监听HarmonyOS分布式状态变化
-        // 占位符实现
-    }
-    
-    private fun removeFromDistributedState(key: String) {
-        // 从HarmonyOS分布式状态中移除
-        // 占位符实现
-    }
-    
-    private fun clearDistributedStates() {
-        // 清空HarmonyOS分布式状态
-        // 占位符实现
-    }
-}
-
-/**
- * HarmonyOS缓存管理实现 - 支持跨设备缓存同步
- */
-class HarmonyUnifyCacheManager(
-    private var policy: UnifyCachePolicy
-) : UnifyCacheManager {
-    
-    private val cache = ConcurrentHashMap<String, HarmonyCacheEntry>()
-    private val stats = HarmonyCacheStats()
-    private val distributedCache = ConcurrentHashMap<String, HarmonyCacheEntry>()
-    
-    suspend fun initialize() {
-        // 初始化HarmonyOS分布式缓存服务
-        initializeDistributedCache()
-        cleanExpiredCache()
-    }
-    
-    suspend fun cleanup() {
-        cache.clear()
-        distributedCache.clear()
-    }
-    
-    override suspend fun <T> cache(key: String, value: T, ttl: Long) {
-        val actualTtl = if (ttl > 0) ttl else policy.defaultTtl
-        val expireTime = if (actualTtl > 0) {
-            System.currentTimeMillis() + actualTtl
-        } else {
-            0L // 永不过期
-        }
-        
-        val entry = HarmonyCacheEntry(
-            value = value,
-            expireTime = expireTime,
-            accessTime = System.currentTimeMillis(),
-            accessCount = 1,
-            deviceId = getCurrentDeviceId()
-        )
-        
-        cache[key] = entry
-        
-        // 同步到分布式缓存
-        syncToDistributedCache(key, entry)
-        
-        // 检查缓存大小限制
-        if (cache.size * 1024 > policy.maxSize) {
-            evictCache()
+    /**
+     * 获取连接的HarmonyOS设备列表
+     */
+    suspend fun getConnectedHarmonyDevices(): List<HarmonyDevice> {
+        return try {
+            // 模拟获取连接的设备
+            listOf(
+                HarmonyDevice("phone", "Mate 60 Pro", true),
+                HarmonyDevice("tablet", "MatePad Pro", true),
+                HarmonyDevice("watch", "Watch GT 4", false),
+                HarmonyDevice("tv", "Vision Smart TV", true)
+            )
+        } catch (e: Exception) {
+            emptyList()
         }
     }
     
-    override suspend fun <T> getCache(key: String, type: KClass<T>): T? {
-        var entry = cache[key]
-        
-        // 如果本地没有，尝试从分布式缓存获取
-        if (entry == null) {
-            entry = getFromDistributedCache(key)
-            if (entry != null) {
-                cache[key] = entry
+    /**
+     * 跨设备数据同步
+     */
+    suspend fun syncAcrossDevices(deviceIds: List<String>) {
+        try {
+            deviceIds.forEach { deviceId ->
+                // 同步分布式数据到指定设备
+                syncToDevice(deviceId, distributedStorage)
+            }
+        } catch (e: Exception) {
+            throw DataException("Failed to sync across devices", e)
+        }
+    }
+    
+    /**
+     * 启用分布式数据管理
+     */
+    suspend fun enableDistributedData(key: String) {
+        val value = localStorage[key]
+        if (value != null) {
+            localStorage.remove(key)
+            distributedStorage["${DISTRIBUTED_PREFIX}$key"] = value
+            sync()
+        }
+    }
+    
+    // 私有辅助方法
+    
+    private suspend fun syncToDistributedDevices(key: String, value: String) {
+        // 模拟分布式同步逻辑
+        val connectedDevices = getConnectedHarmonyDevices()
+        connectedDevices.filter { it.isConnected }.forEach { device ->
+            // 同步到设备
+            syncToDevice(device.id, mapOf(key to value))
+        }
+    }
+    
+    private suspend fun syncDeleteToDistributedDevices(key: String) {
+        val connectedDevices = getConnectedHarmonyDevices()
+        connectedDevices.filter { it.isConnected }.forEach { device ->
+            deleteFromDevice(device.id, key)
+        }
+    }
+    
+    private suspend fun syncDistributedData() {
+        // 同步分布式数据逻辑
+        val connectedDevices = getConnectedHarmonyDevices()
+        connectedDevices.forEach { device ->
+            if (device.isConnected) {
+                val deviceData = getDataFromDevice(device.id)
+                deviceData.forEach { (key, value) ->
+                    if (key.startsWith(DISTRIBUTED_PREFIX)) {
+                        distributedStorage[key] = value
+                    }
+                }
             }
         }
-        
-        if (entry == null) {
-            stats.missCount++
-            return null
-        }
-        
-        // 检查是否过期
-        if (entry.expireTime > 0 && System.currentTimeMillis() > entry.expireTime) {
-            cache.remove(key)
-            removeFromDistributedCache(key)
-            stats.missCount++
-            return null
-        }
-        
-        // 更新访问信息
-        entry.accessTime = System.currentTimeMillis()
-        entry.accessCount++
-        
-        stats.hitCount++
-        return entry.value as? T
     }
     
-    override suspend fun removeCache(key: String): Boolean {
-        val removed = cache.remove(key) != null
-        removeFromDistributedCache(key)
-        return removed
-    }
-    
-    override suspend fun clearCache() {
-        cache.clear()
-        distributedCache.clear()
-        clearDistributedCache()
-        stats.reset()
-    }
-    
-    override suspend fun isCacheValid(key: String): Boolean {
-        val entry = cache[key] ?: getFromDistributedCache(key) ?: return false
-        return entry.expireTime == 0L || System.currentTimeMillis() <= entry.expireTime
-    }
-    
-    override suspend fun getCacheStats(): UnifyCacheStats {
-        return UnifyCacheStats(
-            hitCount = stats.hitCount,
-            missCount = stats.missCount,
-            evictionCount = stats.evictionCount,
-            totalSize = cache.size.toLong() * 1024, // 估算
-            maxSize = policy.maxSize,
-            hitRate = if (stats.hitCount + stats.missCount > 0) {
-                stats.hitCount.toDouble() / (stats.hitCount + stats.missCount)
-            } else 0.0
-        )
-    }
-    
-    override fun setCachePolicy(policy: UnifyCachePolicy) {
-        this.policy = policy
-    }
-    
-    private fun initializeDistributedCache() {
-        // 初始化HarmonyOS分布式缓存服务
-        // 占位符实现
-    }
-    
-    private suspend fun cleanExpiredCache() {
-        val currentTime = System.currentTimeMillis()
-        val expiredKeys = cache.entries
-            .filter { it.value.expireTime > 0 && currentTime > it.value.expireTime }
-            .map { it.key }
-        
-        expiredKeys.forEach { 
-            cache.remove(it)
-            removeFromDistributedCache(it)
+    private suspend fun clearDistributedData() {
+        val connectedDevices = getConnectedHarmonyDevices()
+        connectedDevices.forEach { device ->
+            clearDeviceData(device.id)
         }
     }
     
-    private fun evictCache() {
-        when (policy.evictionPolicy) {
-            UnifyCacheEvictionPolicy.LRU -> evictLRU()
-            UnifyCacheEvictionPolicy.LFU -> evictLFU()
-            UnifyCacheEvictionPolicy.FIFO -> evictFIFO()
-            UnifyCacheEvictionPolicy.RANDOM -> evictRandom()
-        }
+    private suspend fun storeToHarmonyCloud(backupId: String, data: String) {
+        // 模拟存储到HarmonyOS云服务
     }
     
-    private fun evictLRU() {
-        val lruEntry = cache.entries.minByOrNull { it.value.accessTime }
-        lruEntry?.let { 
-            cache.remove(it.key)
-            removeFromDistributedCache(it.key)
-            stats.evictionCount++
-        }
+    private suspend fun loadFromHarmonyCloud(backupId: String): String {
+        // 模拟从HarmonyOS云服务加载
+        return "{\"local\":{},\"distributed\":{},\"timestamp\":\"${System.currentTimeMillis()}\",\"platform\":\"HarmonyOS\"}"
     }
     
-    private fun evictLFU() {
-        val lfuEntry = cache.entries.minByOrNull { it.value.accessCount }
-        lfuEntry?.let { 
-            cache.remove(it.key)
-            removeFromDistributedCache(it.key)
-            stats.evictionCount++
-        }
+    private suspend fun syncToDevice(deviceId: String, data: Map<String, String>) {
+        // 模拟同步到设备
     }
     
-    private fun evictFIFO() {
-        val firstEntry = cache.entries.firstOrNull()
-        firstEntry?.let { 
-            cache.remove(it.key)
-            removeFromDistributedCache(it.key)
-            stats.evictionCount++
-        }
+    private suspend fun deleteFromDevice(deviceId: String, key: String) {
+        // 模拟从设备删除
     }
     
-    private fun evictRandom() {
-        val randomEntry = cache.entries.randomOrNull()
-        randomEntry?.let { 
-            cache.remove(it.key)
-            removeFromDistributedCache(it.key)
-            stats.evictionCount++
-        }
+    private suspend fun getDataFromDevice(deviceId: String): Map<String, String> {
+        // 模拟从设备获取数据
+        return emptyMap()
     }
     
-    private fun syncToDistributedCache(key: String, entry: HarmonyCacheEntry) {
-        // 同步到HarmonyOS分布式缓存
-        // 占位符实现
-        distributedCache[key] = entry
+    private suspend fun clearDeviceData(deviceId: String) {
+        // 模拟清空设备数据
     }
     
-    private fun getFromDistributedCache(key: String): HarmonyCacheEntry? {
-        // 从HarmonyOS分布式缓存获取
-        // 占位符实现
-        return distributedCache[key]
+    private fun calculateDataSize(storage: Map<String, String>): Long {
+        return storage.values.sumOf { it.toByteArray().size.toLong() }
     }
     
-    private fun removeFromDistributedCache(key: String) {
-        // 从HarmonyOS分布式缓存移除
-        // 占位符实现
-        distributedCache.remove(key)
-    }
-    
-    private fun clearDistributedCache() {
-        // 清空HarmonyOS分布式缓存
-        // 占位符实现
-        distributedCache.clear()
-    }
-    
-    private fun getCurrentDeviceId(): String {
-        // 获取当前HarmonyOS设备ID
-        // 占位符实现
-        return "harmony_device_001"
+    private fun calculateCacheSize(): Long {
+        return calculateDataSize(localStorage) + calculateDataSize(distributedStorage)
     }
 }
 
 /**
- * HarmonyOS数据同步实现 - 支持分布式设备同步
+ * HarmonyOS设备信息
  */
-class HarmonyUnifyDataSync(
-    private var policy: UnifySyncPolicy
-) : UnifyDataSync {
-    
-    private val syncStatus = MutableStateFlow(
-        UnifySyncStatus(
-            isOnline = checkDistributedNetworkStatus(),
-            isSyncing = false,
-            lastSyncTime = 0L,
-            pendingSyncCount = 0,
-            failedSyncCount = 0
-        )
-    )
-    
-    suspend fun initialize() {
-        // 初始化HarmonyOS分布式同步服务
-        initializeDistributedSync()
-    }
-    
-    suspend fun cleanup() {
-        // 清理分布式同步资源
-    }
-    
-    override suspend fun syncToRemote(key: String): UnifySyncResult {
-        // HarmonyOS分布式同步到远程
-        return try {
-            syncToDistributedDevices(key)
-            UnifySyncResult(
-                key = key,
-                success = true,
-                timestamp = System.currentTimeMillis()
-            )
-        } catch (e: Exception) {
-            UnifySyncResult(
-                key = key,
-                success = false,
-                timestamp = System.currentTimeMillis(),
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun syncFromRemote(key: String): UnifySyncResult {
-        return try {
-            syncFromDistributedDevices(key)
-            UnifySyncResult(
-                key = key,
-                success = true,
-                timestamp = System.currentTimeMillis()
-            )
-        } catch (e: Exception) {
-            UnifySyncResult(
-                key = key,
-                success = false,
-                timestamp = System.currentTimeMillis(),
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun bidirectionalSync(key: String): UnifySyncResult {
-        return try {
-            bidirectionalSyncWithDistributedDevices(key)
-            UnifySyncResult(
-                key = key,
-                success = true,
-                timestamp = System.currentTimeMillis()
-            )
-        } catch (e: Exception) {
-            UnifySyncResult(
-                key = key,
-                success = false,
-                timestamp = System.currentTimeMillis(),
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun batchSync(keys: List<String>): List<UnifySyncResult> {
-        return keys.map { bidirectionalSync(it) }
-    }
-    
-    override fun setSyncPolicy(policy: UnifySyncPolicy) {
-        this.policy = policy
-    }
-    
-    override fun observeSyncStatus(): Flow<UnifySyncStatus> {
-        return syncStatus
-    }
-    
-    private fun initializeDistributedSync() {
-        // 初始化HarmonyOS分布式同步服务
-        // 占位符实现
-    }
-    
-    private fun checkDistributedNetworkStatus(): Boolean {
-        // 检查HarmonyOS分布式网络状态
-        // 占位符实现
-        return true
-    }
-    
-    private suspend fun syncToDistributedDevices(key: String) {
-        // 同步数据到HarmonyOS分布式设备
-        // 占位符实现
-    }
-    
-    private suspend fun syncFromDistributedDevices(key: String) {
-        // 从HarmonyOS分布式设备同步数据
-        // 占位符实现
-    }
-    
-    private suspend fun bidirectionalSyncWithDistributedDevices(key: String) {
-        // 与HarmonyOS分布式设备双向同步
-        // 占位符实现
-    }
-}
-
-/**
- * HarmonyOS存储元数据
- */
-@kotlinx.serialization.Serializable
-private data class HarmonyStorageMetadata(
-    val timestamp: Long,
-    val size: Long,
-    val encrypted: Boolean,
-    val deviceId: String,
-    val distributed: Boolean
+data class HarmonyDevice(
+    val id: String,
+    val name: String,
+    val isConnected: Boolean
 )
 
 /**
- * HarmonyOS缓存条目
+ * HarmonyOS平台数据管理器工厂
  */
-private data class HarmonyCacheEntry(
-    val value: Any?,
-    var expireTime: Long,
-    var accessTime: Long,
-    var accessCount: Long,
-    val deviceId: String
-)
-
-/**
- * HarmonyOS缓存统计
- */
-private class HarmonyCacheStats {
-    var hitCount: Long = 0
-    var missCount: Long = 0
-    var evictionCount: Long = 0
-    
-    fun reset() {
-        hitCount = 0
-        missCount = 0
-        evictionCount = 0
-    }
-}
-
-/**
- * HarmonyOS数据管理器工厂实现
- */
-actual object UnifyDataManagerFactory {
-    actual fun create(config: UnifyDataManagerConfig): UnifyDataManager {
-        return HarmonyUnifyDataManager(config)
-    }
+actual fun createUnifyDataManager(): UnifyDataManager {
+    return HarmonyUnifyDataManager()
 }

@@ -1,300 +1,243 @@
 package com.unify.core.data
 
+import com.unify.core.data.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import java.util.concurrent.ConcurrentHashMap
-import java.util.UUID
 
 /**
- * 小程序平台的数据管理器实现
+ * 小程序平台UnifyDataManager实现
+ * 基于小程序Storage API和云开发数据库
  */
-actual class UnifyDataManagerImpl : UnifyDataManager {
+class UnifyDataManagerImpl : UnifyDataManager {
     
-    override val storage: UnifyStorage = MiniAppStorage()
-    override val secureStorage: UnifySecureStorage = MiniAppSecureStorage()
-    override val cache: UnifyCacheManager = MiniAppCacheManager()
-    override val state: UnifyStateManager = MiniAppStateManager()
-    override val database: UnifyDatabaseManager = MiniAppDatabaseManager()
+    // 数据变化监听
+    private val dataChangeFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    private var initialized = false
+    // 缓存管理
+    private val cache = mutableMapOf<String, CacheEntry>()
     
-    override suspend fun initialize() {
-        if (initialized) return
-        
-        cache.setMaxSize(20 * 1024 * 1024) // 20MB缓存限制（小程序包大小限制）
-        database.initialize("unify_miniapp_database", 1)
-        
-        initialized = true
-    }
-    
-    override suspend fun clearAllData() {
-        storage.clear()
-        cache.clear()
-        state.clearAllStates()
-    }
-    
-    override suspend fun backupData(): BackupResult {
-        return try {
-            val backupData = Json.encodeToString(mapOf(
-                "storage" to storage.getAllKeys(),
-                "timestamp" to System.currentTimeMillis(),
-                "platform" to "MiniApp"
-            )).toByteArray()
-            
-            BackupResult(
-                success = true,
-                data = backupData,
-                size = backupData.size.toLong()
-            )
-        } catch (e: Exception) {
-            BackupResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun restoreData(backupData: ByteArray): RestoreResult {
-        return try {
-            // 实现小程序数据恢复逻辑
-            RestoreResult(
-                success = true,
-                restoredItems = 0
-            )
-        } catch (e: Exception) {
-            RestoreResult(
-                success = false,
-                error = e.message
-            )
-        }
-    }
-    
-    override suspend fun getDataUsageStats(): DataUsageStats {
-        return DataUsageStats(
-            totalStorageUsed = 0L,
-            cacheSize = cache.getSize(),
-            databaseSize = 0L,
-            secureStorageSize = 0L
-        )
-    }
-}
-
-/**
- * 小程序存储实现
- */
-class MiniAppStorage : UnifyStorage {
-    private val storage = ConcurrentHashMap<String, String>()
+    // 小程序存储管理器
+    private val miniAppStorage = MiniAppStorageManager()
     
     override suspend fun putString(key: String, value: String) {
-        // 使用小程序存储API (wx.setStorageSync)
-        storage[key] = value
+        miniAppStorage.setStorageSync(key, value)
+        notifyDataChange(key, value)
     }
     
-    override suspend fun getString(key: String): String? {
-        // 使用小程序存储API (wx.getStorageSync)
-        return storage[key]
+    override suspend fun getString(key: String, defaultValue: String): String {
+        return miniAppStorage.getStorageSync(key) as? String ?: defaultValue
     }
     
-    override suspend fun putInt(key: String, value: Int) = putString(key, value.toString())
-    override suspend fun getInt(key: String): Int? = getString(key)?.toIntOrNull()
+    override suspend fun putInt(key: String, value: Int) {
+        miniAppStorage.setStorageSync(key, value)
+        notifyDataChange(key, value)
+    }
     
-    override suspend fun putLong(key: String, value: Long) = putString(key, value.toString())
-    override suspend fun getLong(key: String): Long? = getString(key)?.toLongOrNull()
+    override suspend fun getInt(key: String, defaultValue: Int): Int {
+        return miniAppStorage.getStorageSync(key) as? Int ?: defaultValue
+    }
     
-    override suspend fun putFloat(key: String, value: Float) = putString(key, value.toString())
-    override suspend fun getFloat(key: String): Float? = getString(key)?.toFloatOrNull()
+    override suspend fun putLong(key: String, value: Long) {
+        miniAppStorage.setStorageSync(key, value)
+        notifyDataChange(key, value)
+    }
     
-    override suspend fun putBoolean(key: String, value: Boolean) = putString(key, value.toString())
-    override suspend fun getBoolean(key: String): Boolean? = getString(key)?.toBooleanStrictOrNull()
+    override suspend fun getLong(key: String, defaultValue: Long): Long {
+        return miniAppStorage.getStorageSync(key) as? Long ?: defaultValue
+    }
     
-    override suspend fun putByteArray(key: String, value: ByteArray) = putString(key, value.toString())
-    override suspend fun getByteArray(key: String): ByteArray? = getString(key)?.toByteArray()
+    override suspend fun putFloat(key: String, value: Float) {
+        miniAppStorage.setStorageSync(key, value)
+        notifyDataChange(key, value)
+    }
+    
+    override suspend fun getFloat(key: String, defaultValue: Float): Float {
+        return miniAppStorage.getStorageSync(key) as? Float ?: defaultValue
+    }
+    
+    override suspend fun putBoolean(key: String, value: Boolean) {
+        miniAppStorage.setStorageSync(key, value)
+        notifyDataChange(key, value)
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return miniAppStorage.getStorageSync(key) as? Boolean ?: defaultValue
+    }
+    
+    override suspend fun <T> putObject(key: String, value: T) {
+        try {
+            val jsonString = Json.encodeToString(value)
+            miniAppStorage.setStorageSync(key, jsonString)
+            notifyDataChange(key, value)
+        } catch (e: Exception) {
+            throw DataException("Failed to serialize object: ${e.message}")
+        }
+    }
+    
+    override suspend fun <T> getObject(key: String, defaultValue: T): T {
+        return try {
+            val jsonString = miniAppStorage.getStorageSync(key) as? String
+            if (jsonString != null) {
+                Json.decodeFromString<T>(jsonString)
+            } else {
+                defaultValue
+            }
+        } catch (e: Exception) {
+            defaultValue
+        }
+    }
     
     override suspend fun remove(key: String) {
-        // 使用小程序API (wx.removeStorageSync)
-        storage.remove(key)
+        miniAppStorage.removeStorageSync(key)
+        notifyDataChange(key, null)
     }
     
     override suspend fun clear() {
-        // 使用小程序API (wx.clearStorageSync)
-        storage.clear()
-    }
-    
-    override suspend fun contains(key: String): Boolean = storage.containsKey(key)
-    
-    override suspend fun getAllKeys(): Set<String> = storage.keys.toSet()
-}
-
-/**
- * 小程序安全存储实现
- */
-class MiniAppSecureStorage : MiniAppStorage(), UnifySecureStorage {
-    
-    override suspend fun putSecureString(key: String, value: String) {
-        // 小程序安全存储
-        putString("secure_$key", value)
-    }
-    
-    override suspend fun getSecureString(key: String): String? {
-        return getString("secure_$key")
-    }
-    
-    override suspend fun putEncrypted(key: String, value: ByteArray) {
-        putByteArray("encrypted_$key", value)
-    }
-    
-    override suspend fun getDecrypted(key: String): ByteArray? {
-        return getByteArray("encrypted_$key")
-    }
-    
-    override suspend fun setEncryptionKey(key: String) {
-        // 设置小程序加密密钥
-    }
-    
-    override suspend fun authenticateWithBiometric(): Boolean {
-        // 小程序生物识别认证 (wx.startSoterAuthentication)
-        return true
-    }
-}
-
-/**
- * 小程序缓存管理器实现
- */
-class MiniAppCacheManager : UnifyCacheManager {
-    private val cache = ConcurrentHashMap<String, CacheItem>()
-    private var maxSize = 20 * 1024 * 1024L // 20MB限制
-    
-    data class CacheItem(
-        val value: Any,
-        val timestamp: Long,
-        val ttl: Long?
-    )
-    
-    override suspend fun <T> put(key: String, value: T, ttl: Long?) {
-        cache[key] = CacheItem(value as Any, System.currentTimeMillis(), ttl)
-    }
-    
-    override suspend fun <T> get(key: String, type: Class<T>): T? {
-        val item = cache[key] ?: return null
-        
-        if (item.ttl != null && System.currentTimeMillis() - item.timestamp > item.ttl) {
-            cache.remove(key)
-            return null
+        miniAppStorage.clearStorageSync()
+        dataChangeFlows.values.forEach { flow ->
+            flow.value = null
         }
-        
-        return item.value as? T
     }
     
-    override suspend fun remove(key: String) {
+    override suspend fun contains(key: String): Boolean {
+        return miniAppStorage.getStorageInfoSync().keys.contains(key)
+    }
+    
+    override suspend fun getAllKeys(): Set<String> {
+        return miniAppStorage.getStorageInfoSync().keys.toSet()
+    }
+    
+    override fun <T> observeData(key: String): Flow<T?> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(miniAppStorage.getStorageSync(key))
+        }
+        return flow.asStateFlow() as Flow<T?>
+    }
+    
+    override suspend fun putCache(key: String, value: Any, ttlMillis: Long) {
+        val expiryTime = System.currentTimeMillis() + ttlMillis
+        cache[key] = CacheEntry(value, expiryTime)
+    }
+    
+    override suspend fun <T> getCache(key: String): T? {
+        val entry = cache[key]
+        return if (entry != null && !entry.isExpired()) {
+            entry.value as? T
+        } else {
+            cache.remove(key)
+            null
+        }
+    }
+    
+    override suspend fun removeCache(key: String) {
         cache.remove(key)
     }
     
-    override suspend fun clear() {
+    override suspend fun clearCache() {
         cache.clear()
     }
     
-    override suspend fun isValid(key: String): Boolean {
-        val item = cache[key] ?: return false
-        return item.ttl == null || System.currentTimeMillis() - item.timestamp <= item.ttl
+    override suspend fun clearExpiredCache() {
+        val expiredKeys = cache.filter { it.value.isExpired() }.keys
+        expiredKeys.forEach { cache.remove(it) }
     }
     
-    override suspend fun getSize(): Long {
-        return cache.size.toLong() * 512 // 小程序内存限制考虑
-    }
-    
-    override suspend fun setMaxSize(maxSize: Long) {
-        this.maxSize = maxSize
-    }
-    
-    override suspend fun cleanupExpired() {
-        val now = System.currentTimeMillis()
-        cache.entries.removeIf { (_, item) ->
-            item.ttl != null && now - item.timestamp > item.ttl
+    override suspend fun syncToCloud() {
+        try {
+            // 使用小程序云开发数据库同步
+            val syncData = miniAppStorage.getStorageInfoSync()
+            miniAppStorage.syncToCloudDatabase(syncData)
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
         }
     }
-}
-
-/**
- * 小程序状态管理器实现
- */
-class MiniAppStateManager : UnifyStateManager {
-    private val states = ConcurrentHashMap<String, Any>()
-    private val stateFlows = ConcurrentHashMap<String, MutableStateFlow<Any?>>()
     
-    override fun <T> setState(key: String, value: T) {
-        states[key] = value as Any
-        getOrCreateStateFlow(key).value = value
+    override suspend fun syncFromCloud() {
+        try {
+            // 从小程序云开发数据库同步
+            val cloudData = miniAppStorage.syncFromCloudDatabase()
+            cloudData.forEach { (key, value) ->
+                miniAppStorage.setStorageSync(key, value)
+                notifyDataChange(key, value)
+            }
+        } catch (e: Exception) {
+            throw DataException("Cloud sync failed: ${e.message}")
+        }
     }
     
-    override fun <T> getState(key: String, type: Class<T>): T? {
-        return states[key] as? T
+    private fun notifyDataChange(key: String, value: Any?) {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(value)
+        }
+        flow.value = value
     }
     
-    override fun <T> observeState(key: String, type: Class<T>): Flow<T?> {
-        return getOrCreateStateFlow(key).asStateFlow() as Flow<T?>
-    }
-    
-    override fun removeState(key: String) {
-        states.remove(key)
-        stateFlows.remove(key)
-    }
-    
-    override fun clearAllStates() {
-        states.clear()
-        stateFlows.clear()
-    }
-    
-    override suspend fun persistState() {
-        // 持久化到小程序存储
-    }
-    
-    override suspend fun restoreState() {
-        // 从小程序存储恢复
-    }
-    
-    private fun getOrCreateStateFlow(key: String): MutableStateFlow<Any?> {
-        return stateFlows.getOrPut(key) { MutableStateFlow(states[key]) }
+    private data class CacheEntry(
+        val value: Any,
+        val expiryTime: Long
+    ) {
+        fun isExpired(): Boolean = System.currentTimeMillis() > expiryTime
     }
 }
 
-/**
- * 小程序数据库管理器实现
- */
-class MiniAppDatabaseManager : UnifyDatabaseManager {
+// 小程序存储管理器模拟实现
+private class MiniAppStorageManager {
+    private val storage = mutableMapOf<String, Any>()
     
-    override suspend fun initialize(databaseName: String, version: Int) {
-        // 小程序通常使用云数据库或本地存储
+    fun setStorageSync(key: String, value: Any) {
+        storage[key] = value
+        // 实际实现中会调用小程序API: wx.setStorageSync(key, value)
     }
     
-    override suspend fun query(sql: String, args: Array<Any>?): List<Map<String, Any?>> {
-        // 执行查询（可能通过云函数）
-        return emptyList()
+    fun getStorageSync(key: String): Any? {
+        // 实际实现中会调用小程序API: wx.getStorageSync(key)
+        return storage[key]
     }
     
-    override suspend fun execute(sql: String, args: Array<Any>?): Int {
-        // 执行更新（可能通过云函数）
-        return 0
+    fun removeStorageSync(key: String) {
+        storage.remove(key)
+        // 实际实现中会调用小程序API: wx.removeStorageSync(key)
     }
     
-    override suspend fun beginTransaction(): TransactionHandle {
-        return TransactionHandle(
-            id = UUID.randomUUID().toString(),
-            timestamp = System.currentTimeMillis()
+    fun clearStorageSync() {
+        storage.clear()
+        // 实际实现中会调用小程序API: wx.clearStorageSync()
+    }
+    
+    fun getStorageInfoSync(): StorageInfo {
+        // 实际实现中会调用小程序API: wx.getStorageInfoSync()
+        return StorageInfo(
+            keys = storage.keys.toList(),
+            currentSize = storage.size * 100, // 模拟大小
+            limitSize = 10240 // 10MB限制
         )
     }
     
-    override suspend fun commitTransaction(handle: TransactionHandle) {
-        // 提交事务
+    suspend fun syncToCloudDatabase(data: StorageInfo) {
+        // 实际实现中会调用小程序云开发API
+        // 如: wx.cloud.database().collection('user_data').add({data: data})
+        println("Syncing ${data.keys.size} items to cloud database")
     }
     
-    override suspend fun rollbackTransaction(handle: TransactionHandle) {
-        // 回滚事务
+    suspend fun syncFromCloudDatabase(): Map<String, Any> {
+        // 实际实现中会调用小程序云开发API
+        // 如: wx.cloud.database().collection('user_data').get()
+        return emptyMap()
     }
     
-    override suspend fun close() {
-        // 关闭数据库连接
+    data class StorageInfo(
+        val keys: List<String>,
+        val currentSize: Int,
+        val limitSize: Int
+    )
+}
+
+actual object UnifyDataManagerFactory {
+    actual fun create(): UnifyDataManager {
+        return UnifyDataManagerImpl()
     }
 }

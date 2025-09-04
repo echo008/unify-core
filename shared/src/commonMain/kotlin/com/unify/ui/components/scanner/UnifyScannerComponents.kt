@@ -1,417 +1,212 @@
 package com.unify.ui.components.scanner
 
-import androidx.compose.animation.core.*
-import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.unify.ui.LocalUnifyTheme
-import com.unify.ui.components.foundation.*
-import kotlinx.coroutines.delay
-import kotlin.math.*
 
 /**
- * 扫码类型
+ * 跨平台统一扫描器组件系统
+ * 支持二维码、条形码、文档、图像等多种扫描功能
  */
-enum class UnifyScanType {
-    QRCODE,         // 二维码
-    BARCODE,        // 条形码
-    DATAMATRIX,     // Data Matrix码
-    PDF417,         // PDF417码
-    AZTEC,          // Aztec码
-    ALL             // 所有类型
-}
 
 /**
- * 扫码结果
- */
-data class UnifyScanResult(
-    val type: UnifyScanType,
-    val result: String,
-    val rawData: ByteArray? = null,
-    val timestamp: Long = System.currentTimeMillis()
-) {
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is UnifyScanResult) return false
-        
-        if (type != other.type) return false
-        if (result != other.result) return false
-        if (rawData != null) {
-            if (other.rawData == null) return false
-            if (!rawData.contentEquals(other.rawData)) return false
-        } else if (other.rawData != null) return false
-        if (timestamp != other.timestamp) return false
-        
-        return true
-    }
-    
-    override fun hashCode(): Int {
-        var result1 = type.hashCode()
-        result1 = 31 * result1 + result.hashCode()
-        result1 = 31 * result1 + (rawData?.contentHashCode() ?: 0)
-        result1 = 31 * result1 + timestamp.hashCode()
-        return result1
-    }
-}
-
-/**
- * 扫码配置
- */
-data class UnifyScanConfig(
-    val scanType: Set<UnifyScanType> = setOf(UnifyScanType.ALL),
-    val enableFlash: Boolean = true,
-    val enableZoom: Boolean = true,
-    val enableAlbum: Boolean = true,
-    val enableSound: Boolean = true,
-    val enableVibrate: Boolean = true,
-    val autoFocus: Boolean = true,
-    val scanArea: Float = 0.7f,              // 扫描区域占屏幕比例
-    val maskColor: Color = Color.Black.copy(alpha = 0.5f),
-    val borderColor: Color = Color.White,
-    val borderWidth: Dp = 2.dp,
-    val cornerLength: Dp = 20.dp,
-    val cornerWidth: Dp = 4.dp,
-    val scanLineColor: Color = Color.Green,
-    val scanLineHeight: Dp = 2.dp,
-    val animationDuration: Int = 2000,       // 扫描线动画时长(ms)
-    val tipText: String = "将二维码/条码放入框内，即可自动扫描",
-    val tipTextColor: Color = Color.White,
-    val resultDelay: Long = 1000L            // 扫描成功后延迟时间(ms)
-)
-
-/**
- * 扫码器状态
- */
-enum class UnifyScannerState {
-    IDLE,           // 空闲
-    SCANNING,       // 扫描中
-    SUCCESS,        // 扫描成功
-    ERROR,          // 扫描失败
-    PERMISSION_DENIED // 权限被拒绝
-}
-
-/**
- * 二维码/条码扫描器组件
+ * 统一扫描器组件
  */
 @Composable
-fun UnifyScanner(
-    modifier: Modifier = Modifier,
-    config: UnifyScanConfig = UnifyScanConfig(),
-    onScanResult: ((UnifyScanResult) -> Unit)? = null,
-    onError: ((error: String) -> Unit)? = null,
-    onPermissionDenied: (() -> Unit)? = null,
-    contentDescription: String? = null
+fun UnifyScannerView(
+    scannerType: ScannerType = ScannerType.QR_CODE,
+    onScanResult: (ScanResult) -> Unit = {},
+    onScanError: (String) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
-    val theme = LocalUnifyTheme.current
-    var scannerState by remember { mutableStateOf(UnifyScannerState.IDLE) }
-    var isFlashOn by remember { mutableStateOf(false) }
-    var zoomLevel by remember { mutableStateOf(1f) }
-    var scanResult by remember { mutableStateOf<UnifyScanResult?>(null) }
+    var isScanning by remember { mutableStateOf(false) }
+    var scanHistory by remember { mutableStateOf<List<ScanResult>>(emptyList()) }
+    var currentResult by remember { mutableStateOf<ScanResult?>(null) }
     
-    // 扫描线动画
-    val infiniteTransition = rememberInfiniteTransition(label = "scanLine")
-    val scanLineOffset by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(config.animationDuration, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "scanLineOffset"
-    )
-    
-    LaunchedEffect(Unit) {
-        // 模拟权限检查和相机初始化
-        delay(500)
-        scannerState = UnifyScannerState.SCANNING
-        
-        // 模拟扫描过程
-        delay(3000)
-        val mockResult = UnifyScanResult(
-            type = UnifyScanType.QRCODE,
-            result = "https://example.com/qrcode-content"
-        )
-        scanResult = mockResult
-        scannerState = UnifyScannerState.SUCCESS
-        onScanResult?.invoke(mockResult)
-        
-        delay(config.resultDelay)
-        scannerState = UnifyScannerState.SCANNING
+    LaunchedEffect(isScanning) {
+        if (isScanning) {
+            try {
+                val result = performScan(scannerType)
+                currentResult = result
+                scanHistory = scanHistory + result
+                onScanResult(result)
+                isScanning = false
+            } catch (e: Exception) {
+                onScanError(e.message ?: "扫描失败")
+                isScanning = false
+            }
+        }
     }
     
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                role = Role.Button
-            }
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 相机预览区域（模拟）
+        // 扫描器标题和控制
+        ScannerHeader(
+            scannerType = scannerType,
+            isScanning = isScanning,
+            onStartScan = { isScanning = true },
+            onStopScan = { isScanning = false }
+        )
+        
+        // 扫描预览区域
+        ScannerPreview(
+            scannerType = scannerType,
+            isScanning = isScanning,
+            currentResult = currentResult,
+            modifier = Modifier.weight(1f)
+        )
+        
+        // 扫描结果显示
+        currentResult?.let { result ->
+            ScanResultCard(
+                result = result,
+                onAction = { action ->
+                    handleScanResultAction(result, action)
+                }
+            )
+        }
+        
+        // 扫描历史
+        if (scanHistory.isNotEmpty()) {
+            ScanHistorySection(
+                history = scanHistory,
+                onClearHistory = { scanHistory = emptyList() }
+            )
+        }
+    }
+}
+
+/**
+ * 扫描器头部组件
+ */
+@Composable
+private fun ScannerHeader(
+    scannerType: ScannerType,
+    isScanning: Boolean,
+    onStartScan: () -> Unit,
+    onStopScan: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = getScannerTypeDisplayName(scannerType),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = getScannerTypeDescription(scannerType),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        
+        if (isScanning) {
+            Button(
+                onClick = onStopScan,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                Text("停止扫描")
+            }
+        } else {
+            Button(
+                onClick = onStartScan
+            ) {
+                Text("开始扫描")
+            }
+        }
+    }
+}
+
+/**
+ * 扫描预览组件
+ */
+@Composable
+private fun ScannerPreview(
+    scannerType: ScannerType,
+    isScanning: Boolean,
+    currentResult: ScanResult?,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(
-                    brush = androidx.compose.ui.graphics.Brush.radialGradient(
-                        colors = listOf(
-                            Color(0xFF424242),
-                            Color(0xFF212121)
-                        )
-                    )
-                )
-        ) {
-            UnifyText(
-                text = "相机预览",
-                color = Color.Gray,
-                variant = UnifyTextVariant.H6,
-                modifier = Modifier.align(Alignment.Center)
-            )
-        }
-        
-        // 扫描遮罩和框架
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            val scanAreaSize = minOf(canvasWidth, canvasHeight) * config.scanArea
-            val left = (canvasWidth - scanAreaSize) / 2
-            val top = (canvasHeight - scanAreaSize) / 2
-            val right = left + scanAreaSize
-            val bottom = top + scanAreaSize
-            
-            // 绘制遮罩
-            drawRect(
-                color = config.maskColor,
-                topLeft = androidx.compose.ui.geometry.Offset(0f, 0f),
-                size = androidx.compose.ui.geometry.Size(canvasWidth, top)
-            )
-            drawRect(
-                color = config.maskColor,
-                topLeft = androidx.compose.ui.geometry.Offset(0f, top),
-                size = androidx.compose.ui.geometry.Size(left, scanAreaSize)
-            )
-            drawRect(
-                color = config.maskColor,
-                topLeft = androidx.compose.ui.geometry.Offset(right, top),
-                size = androidx.compose.ui.geometry.Size(canvasWidth - right, scanAreaSize)
-            )
-            drawRect(
-                color = config.maskColor,
-                topLeft = androidx.compose.ui.geometry.Offset(0f, bottom),
-                size = androidx.compose.ui.geometry.Size(canvasWidth, canvasHeight - bottom)
-            )
-            
-            // 绘制扫描框边框
-            val borderWidthPx = config.borderWidth.toPx()
-            val cornerLengthPx = config.cornerLength.toPx()
-            val cornerWidthPx = config.cornerWidth.toPx()
-            
-            // 四个角的线条
-            // 左上角
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(cornerLengthPx, cornerWidthPx)
-            )
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(left, top),
-                size = androidx.compose.ui.geometry.Size(cornerWidthPx, cornerLengthPx)
-            )
-            
-            // 右上角
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(right - cornerLengthPx, top),
-                size = androidx.compose.ui.geometry.Size(cornerLengthPx, cornerWidthPx)
-            )
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(right - cornerWidthPx, top),
-                size = androidx.compose.ui.geometry.Size(cornerWidthPx, cornerLengthPx)
-            )
-            
-            // 左下角
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(left, bottom - cornerWidthPx),
-                size = androidx.compose.ui.geometry.Size(cornerLengthPx, cornerWidthPx)
-            )
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(left, bottom - cornerLengthPx),
-                size = androidx.compose.ui.geometry.Size(cornerWidthPx, cornerLengthPx)
-            )
-            
-            // 右下角
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(right - cornerLengthPx, bottom - cornerWidthPx),
-                size = androidx.compose.ui.geometry.Size(cornerLengthPx, cornerWidthPx)
-            )
-            drawRect(
-                color = config.borderColor,
-                topLeft = androidx.compose.ui.geometry.Offset(right - cornerWidthPx, bottom - cornerLengthPx),
-                size = androidx.compose.ui.geometry.Size(cornerWidthPx, cornerLengthPx)
-            )
-            
-            // 绘制扫描线
-            if (scannerState == UnifyScannerState.SCANNING) {
-                val scanLineY = top + (bottom - top) * scanLineOffset
-                val scanLineHeightPx = config.scanLineHeight.toPx()
-                
-                drawRect(
-                    color = config.scanLineColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(left + cornerWidthPx, scanLineY),
-                    size = androidx.compose.ui.geometry.Size(scanAreaSize - 2 * cornerWidthPx, scanLineHeightPx)
-                )
-            }
-        }
-        
-        // 提示文本
-        UnifyText(
-            text = config.tipText,
-            color = config.tipTextColor,
-            variant = UnifyTextVariant.BODY_MEDIUM,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(32.dp)
-                .fillMaxWidth()
-        )
-        
-        // 顶部控制栏
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            contentAlignment = Alignment.Center
         ) {
-            // 返回按钮
-            IconButton(
-                onClick = { /* 返回 */ }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "返回",
-                    tint = Color.White
-                )
-            }
-            
-            Row {
-                // 闪光灯控制
-                if (config.enableFlash) {
-                    IconButton(
-                        onClick = { isFlashOn = !isFlashOn }
+            when {
+                isScanning -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(
-                            imageVector = if (isFlashOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                            contentDescription = if (isFlashOn) "关闭闪光灯" else "开启闪光灯",
-                            tint = if (isFlashOn) Color.Yellow else Color.White
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(64.dp),
+                            strokeWidth = 6.dp
+                        )
+                        Text(
+                            text = "正在扫描${getScannerTypeDisplayName(scannerType)}...",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = getScannerInstructions(scannerType),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
                 
-                // 相册选择
-                if (config.enableAlbum) {
-                    IconButton(
-                        onClick = { /* 从相册选择 */ }
+                currentResult != null -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PhotoLibrary,
-                            contentDescription = "从相册选择",
-                            tint = Color.White
+                        Text(
+                            text = "✅",
+                            fontSize = 48.sp
+                        )
+                        Text(
+                            text = "扫描成功",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.Green
                         )
                     }
                 }
-            }
-        }
-        
-        // 扫描成功提示
-        if (scannerState == UnifyScannerState.SUCCESS && scanResult != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .background(
-                        Color.Green.copy(alpha = 0.9f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "扫描成功",
-                        tint = Color.White,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    UnifyText(
-                        text = "扫描成功",
-                        color = Color.White,
-                        variant = UnifyTextVariant.H6,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    UnifyText(
-                        text = scanResult!!.result,
-                        color = Color.White,
-                        variant = UnifyTextVariant.BODY_SMALL,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2
-                    )
-                }
-            }
-        }
-        
-        // 扫描失败提示
-        if (scannerState == UnifyScannerState.ERROR) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .background(
-                        Color.Red.copy(alpha = 0.9f),
-                        RoundedCornerShape(8.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Error,
-                        contentDescription = "扫描失败",
-                        tint = Color.White,
-                        modifier = Modifier.size(48.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    UnifyText(
-                        text = "扫描失败",
-                        color = Color.White,
-                        variant = UnifyTextVariant.H6,
-                        fontWeight = FontWeight.Bold
-                    )
+                
+                else -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = getScannerTypeIcon(scannerType),
+                            fontSize = 64.sp
+                        )
+                        Text(
+                            text = "点击开始扫描",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
         }
@@ -419,147 +214,514 @@ fun UnifyScanner(
 }
 
 /**
- * 二维码生成器组件
+ * 扫描结果卡片组件
  */
 @Composable
-fun UnifyQRCodeGenerator(
-    content: String,
-    modifier: Modifier = Modifier,
-    size: Dp = 200.dp,
-    backgroundColor: Color = Color.White,
-    foregroundColor: Color = Color.Black,
-    errorCorrectionLevel: String = "M", // L, M, Q, H
-    margin: Int = 1,
-    contentDescription: String? = null
+private fun ScanResultCard(
+    result: ScanResult,
+    onAction: (ScanResultAction) -> Unit
 ) {
-    val theme = LocalUnifyTheme.current
-    
-    Box(
-        modifier = modifier
-            .size(size)
-            .background(backgroundColor, RoundedCornerShape(8.dp))
-            .padding(16.dp)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            },
-        contentAlignment = Alignment.Center
+    Card(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        // 模拟二维码图案
-        Canvas(
-            modifier = Modifier.fillMaxSize()
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            val canvasSize = size.toPx() - 32.dp.toPx() // 减去padding
-            val blockSize = canvasSize / 25 // 25x25的网格
-            
-            // 绘制模拟的二维码图案
-            for (i in 0 until 25) {
-                for (j in 0 until 25) {
-                    // 使用内容的哈希值来决定是否绘制方块
-                    val shouldDraw = (content.hashCode() + i * 25 + j) % 3 == 0
-                    if (shouldDraw) {
-                        drawRect(
-                            color = foregroundColor,
-                            topLeft = androidx.compose.ui.geometry.Offset(
-                                i * blockSize,
-                                j * blockSize
-                            ),
-                            size = androidx.compose.ui.geometry.Size(blockSize * 0.8f, blockSize * 0.8f)
-                        )
-                    }
-                }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "扫描结果",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = result.type.name,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
             }
             
-            // 绘制三个定位角
-            val cornerSize = blockSize * 7
-            val positions = listOf(
-                androidx.compose.ui.geometry.Offset(0f, 0f),
-                androidx.compose.ui.geometry.Offset(canvasSize - cornerSize, 0f),
-                androidx.compose.ui.geometry.Offset(0f, canvasSize - cornerSize)
+            Text(
+                text = result.content,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.fillMaxWidth()
             )
             
-            positions.forEach { pos ->
-                // 外框
-                drawRect(
-                    color = foregroundColor,
-                    topLeft = pos,
-                    size = androidx.compose.ui.geometry.Size(cornerSize, cornerSize)
+            if (result.metadata.isNotEmpty()) {
+                Text(
+                    text = "附加信息: ${result.metadata}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                // 内框（白色）
-                drawRect(
-                    color = backgroundColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(pos.x + blockSize, pos.y + blockSize),
-                    size = androidx.compose.ui.geometry.Size(cornerSize - 2 * blockSize, cornerSize - 2 * blockSize)
-                )
-                // 中心点
-                drawRect(
-                    color = foregroundColor,
-                    topLeft = androidx.compose.ui.geometry.Offset(pos.x + 2 * blockSize, pos.y + 2 * blockSize),
-                    size = androidx.compose.ui.geometry.Size(3 * blockSize, 3 * blockSize)
-                )
+            }
+            
+            // 操作按钮
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { onAction(ScanResultAction.Copy) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("复制")
+                }
+                
+                OutlinedButton(
+                    onClick = { onAction(ScanResultAction.Share) },
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("分享")
+                }
+                
+                if (result.type == ScanResultType.URL) {
+                    OutlinedButton(
+                        onClick = { onAction(ScanResultAction.Open) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("打开")
+                    }
+                }
             }
         }
     }
 }
 
 /**
- * 条形码生成器组件
+ * 扫描历史区域组件
  */
 @Composable
-fun UnifyBarcodeGenerator(
-    content: String,
-    modifier: Modifier = Modifier,
-    width: Dp = 300.dp,
-    height: Dp = 100.dp,
-    backgroundColor: Color = Color.White,
-    foregroundColor: Color = Color.Black,
-    showText: Boolean = true,
-    contentDescription: String? = null
+private fun ScanHistorySection(
+    history: List<ScanResult>,
+    onClearHistory: () -> Unit
 ) {
     Column(
-        modifier = modifier
-            .width(width)
-            .background(backgroundColor, RoundedCornerShape(8.dp))
-            .padding(16.dp)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-            },
-        horizontalAlignment = Alignment.CenterHorizontally
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        // 条形码图案
-        Canvas(
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "扫描历史 (${history.size})",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            TextButton(
+                onClick = onClearHistory
+            ) {
+                Text("清空")
+            }
+        }
+        
+        LazyColumn(
+            modifier = Modifier.heightIn(max = 200.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            items(history.takeLast(5).reversed()) { result ->
+                ScanHistoryItem(result = result)
+            }
+        }
+    }
+}
+
+/**
+ * 扫描历史项组件
+ */
+@Composable
+private fun ScanHistoryItem(
+    result: ScanResult
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(height)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            val barCount = 50 // 条形码条数
-            val barWidth = canvasWidth / barCount
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = result.content.take(30) + if (result.content.length > 30) "..." else "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = result.type.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
             
-            // 绘制条形码条纹
-            for (i in 0 until barCount) {
-                // 使用内容的哈希值来决定条纹宽度和间隔
-                val shouldDraw = (content.hashCode() + i) % 3 != 0
-                if (shouldDraw) {
-                    val barThickness = if ((content.hashCode() + i) % 2 == 0) barWidth * 0.5f else barWidth * 0.8f
-                    drawRect(
-                        color = foregroundColor,
-                        topLeft = androidx.compose.ui.geometry.Offset(i * barWidth, 0f),
-                        size = androidx.compose.ui.geometry.Size(barThickness, canvasHeight)
-                    )
+            Text(
+                text = formatTimestamp(result.timestamp),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+/**
+ * 多功能扫描器组件
+ */
+@Composable
+fun UnifyMultiScanner(
+    availableTypes: List<ScannerType> = ScannerType.values().toList(),
+    onScanResult: (ScanResult) -> Unit = {},
+    onScanError: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var selectedType by remember { mutableStateOf(availableTypes.firstOrNull() ?: ScannerType.QR_CODE) }
+    var showTypeSelector by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // 扫描类型选择器
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "扫描类型",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            OutlinedButton(
+                onClick = { showTypeSelector = true }
+            ) {
+                Text("${getScannerTypeIcon(selectedType)} ${getScannerTypeDisplayName(selectedType)}")
+            }
+        }
+        
+        // 扫描器视图
+        UnifyScannerView(
+            scannerType = selectedType,
+            onScanResult = onScanResult,
+            onScanError = onScanError,
+            modifier = Modifier.weight(1f)
+        )
+    }
+    
+    // 类型选择对话框
+    if (showTypeSelector) {
+        AlertDialog(
+            onDismissRequest = { showTypeSelector = false },
+            title = { Text("选择扫描类型") },
+            text = {
+                LazyColumn {
+                    items(availableTypes) { type ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            RadioButton(
+                                selected = selectedType == type,
+                                onClick = {
+                                    selectedType = type
+                                    showTypeSelector = false
+                                }
+                            )
+                            Text(getScannerTypeIcon(type))
+                            Column {
+                                Text(
+                                    text = getScannerTypeDisplayName(type),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Text(
+                                    text = getScannerTypeDescription(type),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showTypeSelector = false }
+                ) {
+                    Text("取消")
+                }
+            }
+        )
+    }
+}
+
+/**
+ * 批量扫描组件
+ */
+@Composable
+fun UnifyBatchScanner(
+    scannerType: ScannerType = ScannerType.QR_CODE,
+    maxItems: Int = 10,
+    onBatchComplete: (List<ScanResult>) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+    var batchResults by remember { mutableStateOf<List<ScanResult>>(emptyList()) }
+    var isScanning by remember { mutableStateOf(false) }
+    
+    Column(
+        modifier = modifier.fillMaxSize().padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // 批量扫描头部
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "批量扫描",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "已扫描 ${batchResults.size}/$maxItems",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (batchResults.isNotEmpty()) {
+                    OutlinedButton(
+                        onClick = {
+                            onBatchComplete(batchResults)
+                            batchResults = emptyList()
+                        }
+                    ) {
+                        Text("完成")
+                    }
+                }
+                
+                Button(
+                    onClick = { isScanning = !isScanning },
+                    enabled = batchResults.size < maxItems
+                ) {
+                    Text(if (isScanning) "停止" else "继续扫描")
                 }
             }
         }
         
-        // 显示文本
-        if (showText) {
-            Spacer(modifier = Modifier.height(8.dp))
-            UnifyText(
-                text = content,
-                color = foregroundColor,
-                variant = UnifyTextVariant.BODY_SMALL,
-                textAlign = TextAlign.Center
-            )
+        // 进度指示器
+        LinearProgressIndicator(
+            progress = batchResults.size.toFloat() / maxItems.toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        // 扫描器
+        UnifyScannerView(
+            scannerType = scannerType,
+            onScanResult = { result ->
+                if (batchResults.size < maxItems && !batchResults.any { it.content == result.content }) {
+                    batchResults = batchResults + result
+                    if (batchResults.size >= maxItems) {
+                        isScanning = false
+                        onBatchComplete(batchResults)
+                    }
+                }
+            },
+            modifier = Modifier.weight(1f)
+        )
+        
+        // 批量结果列表
+        if (batchResults.isNotEmpty()) {
+            LazyColumn(
+                modifier = Modifier.heightIn(max = 200.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                items(batchResults) { result ->
+                    BatchResultItem(
+                        result = result,
+                        onRemove = { 
+                            batchResults = batchResults.filter { it != result }
+                        }
+                    )
+                }
+            }
         }
+    }
+}
+
+/**
+ * 批量结果项组件
+ */
+@Composable
+private fun BatchResultItem(
+    result: ScanResult,
+    onRemove: () -> Unit
+) {
+    OutlinedCard(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = result.content.take(40) + if (result.content.length > 40) "..." else "",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = result.type.name,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            
+            IconButton(
+                onClick = onRemove
+            ) {
+                Text("✕")
+            }
+        }
+    }
+}
+
+/**
+ * 执行扫描操作（平台特定实现）
+ */
+expect suspend fun performScan(scannerType: ScannerType): ScanResult
+
+/**
+ * 处理扫描结果操作（平台特定实现）
+ */
+expect fun handleScanResultAction(result: ScanResult, action: ScanResultAction)
+
+/**
+ * 扫描器类型
+ */
+enum class ScannerType {
+    QR_CODE, BARCODE, DOCUMENT, IMAGE, NFC, BUSINESS_CARD, ID_CARD, RECEIPT
+}
+
+/**
+ * 扫描结果类型
+ */
+enum class ScanResultType {
+    TEXT, URL, EMAIL, PHONE, SMS, WIFI, CONTACT, LOCATION, PRODUCT, DOCUMENT, IMAGE
+}
+
+/**
+ * 扫描结果
+ */
+data class ScanResult(
+    val type: ScanResultType,
+    val content: String,
+    val metadata: Map<String, String> = emptyMap(),
+    val timestamp: Long = System.currentTimeMillis(),
+    val confidence: Float = 1.0f
+)
+
+/**
+ * 扫描结果操作
+ */
+enum class ScanResultAction {
+    Copy, Share, Open, Save, Edit, Delete
+}
+
+/**
+ * 获取扫描器类型显示名称
+ */
+private fun getScannerTypeDisplayName(type: ScannerType): String {
+    return when (type) {
+        ScannerType.QR_CODE -> "二维码"
+        ScannerType.BARCODE -> "条形码"
+        ScannerType.DOCUMENT -> "文档"
+        ScannerType.IMAGE -> "图像"
+        ScannerType.NFC -> "NFC"
+        ScannerType.BUSINESS_CARD -> "名片"
+        ScannerType.ID_CARD -> "身份证"
+        ScannerType.RECEIPT -> "收据"
+    }
+}
+
+/**
+ * 获取扫描器类型描述
+ */
+private fun getScannerTypeDescription(type: ScannerType): String {
+    return when (type) {
+        ScannerType.QR_CODE -> "扫描二维码获取信息"
+        ScannerType.BARCODE -> "扫描商品条形码"
+        ScannerType.DOCUMENT -> "扫描文档并识别文字"
+        ScannerType.IMAGE -> "扫描图像并分析内容"
+        ScannerType.NFC -> "读取NFC标签信息"
+        ScannerType.BUSINESS_CARD -> "扫描名片提取联系信息"
+        ScannerType.ID_CARD -> "扫描身份证件"
+        ScannerType.RECEIPT -> "扫描收据提取信息"
+    }
+}
+
+/**
+ * 获取扫描器类型图标
+ */
+private fun getScannerTypeIcon(type: ScannerType): String {
+    return when (type) {
+        ScannerType.QR_CODE -> "📱"
+        ScannerType.BARCODE -> "📊"
+        ScannerType.DOCUMENT -> "📄"
+        ScannerType.IMAGE -> "🖼️"
+        ScannerType.NFC -> "📡"
+        ScannerType.BUSINESS_CARD -> "💼"
+        ScannerType.ID_CARD -> "🆔"
+        ScannerType.RECEIPT -> "🧾"
+    }
+}
+
+/**
+ * 获取扫描器使用说明
+ */
+private fun getScannerInstructions(type: ScannerType): String {
+    return when (type) {
+        ScannerType.QR_CODE -> "将二维码对准扫描框"
+        ScannerType.BARCODE -> "将条形码对准扫描框"
+        ScannerType.DOCUMENT -> "将文档平放在扫描区域"
+        ScannerType.IMAGE -> "将图像对准扫描框"
+        ScannerType.NFC -> "将设备靠近NFC标签"
+        ScannerType.BUSINESS_CARD -> "将名片平放在扫描区域"
+        ScannerType.ID_CARD -> "将身份证件平放在扫描区域"
+        ScannerType.RECEIPT -> "将收据平放在扫描区域"
+    }
+}
+
+/**
+ * 格式化时间戳
+ */
+private fun formatTimestamp(timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    
+    return when {
+        diff < 60000 -> "刚刚"
+        diff < 3600000 -> "${diff / 60000}分钟前"
+        diff < 86400000 -> "${diff / 3600000}小时前"
+        else -> "${diff / 86400000}天前"
     }
 }
