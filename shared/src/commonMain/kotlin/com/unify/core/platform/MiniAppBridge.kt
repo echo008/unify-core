@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
  * 小程序桥接器 - 统一小程序平台API访问
  * 支持微信、支付宝、字节跳动、百度等主流小程序平台
  */
-expect class MiniAppBridge {
+expect class MiniAppBridge() {
     /**
      * 获取小程序平台类型
      */
@@ -108,7 +108,7 @@ data class MiniAppUserInfo(
 @Serializable
 data class MiniAppAPIResult(
     val success: Boolean,
-    val data: Map<String, Any>? = null,
+    val data: Map<String, String>? = null,
     val errorMsg: String? = null,
     val errorCode: Int? = null
 )

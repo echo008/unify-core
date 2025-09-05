@@ -7,8 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
 
 /**
  * 动态组件演示应用
@@ -361,18 +363,58 @@ private fun getSampleComponents(): List<ComponentInfo> {
                 id = "button_1",
                 name = "动态按钮",
                 version = "1.0.0",
-                type = DynamicComponentType.COMPOSE_UI
+                type = DynamicComponentType.COMPOSE_UI,
+                metadata = mapOf("description" to "可交互的动态按钮组件"),
+                dependencies = emptyList(),
+                config = mapOf("theme" to "material3"),
+                content = "ButtonComponent",
+                checksum = "abc123",
+                signature = "sig123"
             ),
-            state = ComponentState.LOADED
+            state = ComponentState.LOADED,
+            loadTime = getCurrentTimeMillis(),
+            lastUpdate = getCurrentTimeMillis(),
+            errorMessage = null,
+            loaded = null,
+            metrics = ComponentMetrics(
+                componentId = "button_1",
+                loadCount = 1,
+                errorCount = 0,
+                lastAccess = getCurrentTimeMillis(),
+                totalExecutionTime = 150L,
+                averageResponseTime = 16L
+            ),
+            dependencies = emptyList(),
+            dependents = emptyList()
         ),
         ComponentInfo(
             component = DynamicComponent(
                 id = "chart_1",
                 name = "图表组件",
                 version = "2.1.0",
-                type = DynamicComponentType.COMPOSE_UI
+                type = DynamicComponentType.COMPOSE_UI,
+                metadata = mapOf("description" to "数据可视化图表组件"),
+                dependencies = listOf("data_processor"),
+                config = mapOf("chartType" to "line"),
+                content = "ChartComponent",
+                checksum = "def456",
+                signature = "sig456"
             ),
-            state = ComponentState.ACTIVE
+            state = ComponentState.ACTIVE,
+            loadTime = getCurrentTimeMillis(),
+            lastUpdate = getCurrentTimeMillis(),
+            errorMessage = null,
+            loaded = null,
+            metrics = ComponentMetrics(
+                componentId = "chart_1",
+                loadCount = 2,
+                errorCount = 0,
+                lastAccess = getCurrentTimeMillis(),
+                totalExecutionTime = 200L,
+                averageResponseTime = 24L
+            ),
+            dependencies = listOf("data_processor"),
+            dependents = emptyList()
         )
     )
 }

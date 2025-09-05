@@ -1,10 +1,20 @@
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableMapOf
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 动态配置数据结构
@@ -21,7 +31,7 @@ data class DynamicConfiguration(
     val metadata: Map<String, String> = emptyMap(),
     val dependencies: List<String> = emptyList(),
     val validationRules: List<ValidationRule> = emptyList(),
-    val lastModified: Long = System.currentTimeMillis(),
+    val lastModified: Long = getCurrentTimeMillis(),
     val checksum: String = ""
 )
 
@@ -111,7 +121,7 @@ data class ConfigChangeEvent(
     val changeType: ConfigChangeType,
     val oldValue: Map<String, ConfigValue>? = null,
     val newValue: Map<String, ConfigValue>? = null,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val source: String = ""
 )
 
@@ -359,7 +369,7 @@ class DynamicConfigurationManagerImpl(
         
         val updatedConfig = config.copy(
             values = updatedValues,
-            lastModified = System.currentTimeMillis()
+            lastModified = getCurrentTimeMillis()
         )
         
         return saveConfiguration(updatedConfig)
@@ -373,7 +383,7 @@ class DynamicConfigurationManagerImpl(
         
         val updatedConfig = config.copy(
             values = updatedValues,
-            lastModified = System.currentTimeMillis()
+            lastModified = getCurrentTimeMillis()
         )
         
         return saveConfiguration(updatedConfig)
@@ -391,7 +401,7 @@ class DynamicConfigurationManagerImpl(
                     
                     val updatedConfig = config.copy(
                         values = updatedValues,
-                        lastModified = System.currentTimeMillis()
+                        lastModified = getCurrentTimeMillis()
                     )
                     
                     if (!saveConfiguration(updatedConfig)) {
@@ -419,7 +429,7 @@ class DynamicConfigurationManagerImpl(
             id = "${baseConfigId}_merged_${overrideConfigId}",
             name = "${baseConfig.name} (合并 ${overrideConfig.name})",
             values = mergedValues,
-            lastModified = System.currentTimeMillis()
+            lastModified = getCurrentTimeMillis()
         )
     }
     
@@ -492,7 +502,7 @@ class DynamicConfigurationManagerImpl(
         
         return try {
             val backupData = Json.encodeToString(config)
-            val backupKey = "${BACKUP_STORAGE_PREFIX}${configId}_${System.currentTimeMillis()}"
+            val backupKey = "${BACKUP_STORAGE_PREFIX}${configId}_${getCurrentTimeMillis()}"
             
             if (storageManager.saveConfig(backupKey, backupData)) {
                 backupKey
@@ -517,7 +527,7 @@ class DynamicConfigurationManagerImpl(
         val allConfigs = getAllConfigurations()
         val exportData = mapOf(
             "version" to EXPORT_VERSION,
-            "timestamp" to System.currentTimeMillis(),
+            "timestamp" to getCurrentTimeMillis(),
             "configurations" to allConfigs
         )
         

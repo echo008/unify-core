@@ -1,10 +1,20 @@
 package com.unify.core.testing
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.time.Duration
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.time.measureTime
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 测试结果
@@ -17,7 +27,7 @@ data class TestResult(
     val duration: Long,
     val message: String = "",
     val error: String? = null,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val metadata: Map<String, String> = emptyMap()
 )
 
@@ -287,7 +297,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
     }
     
     override suspend fun runAllTests(): TestReport {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         val allResults = mutableListOf<TestResult>()
         
         for (suite in testSuites.values) {
@@ -295,7 +305,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
             allResults.addAll(suiteResults)
         }
         
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         val duration = endTime - startTime
         
         val totalTests = allResults.size
@@ -305,7 +315,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
         val successRate = if (totalTests > 0) passedTests.toDouble() / totalTests else 0.0
         
         return TestReport(
-            id = "report_${System.currentTimeMillis()}",
+            id = "report_${getCurrentTimeMillis()}",
             name = "完整测试报告",
             startTime = startTime,
             endTime = endTime,
@@ -406,7 +416,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
         return mapOf(
             "kotlin.version" to "2.0.21",
             "compose.version" to "1.7.0",
-            "timestamp" to System.currentTimeMillis().toString()
+            "timestamp" to getCurrentTimeMillis().toString()
         )
     }
     

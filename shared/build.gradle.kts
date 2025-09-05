@@ -108,6 +108,12 @@ kotlin {
                 
                 // Android协程
                 implementation(libs.kotlinx.coroutines.core)
+                
+                // JSON序列化
+                implementation("com.google.code.gson:gson:2.10.1")
+                
+                // OkHttp for network operations
+                implementation("com.squareup.okhttp3:okhttp:4.12.0")
             }
         }
         

@@ -1,7 +1,11 @@
 package com.unify.core.platform
 
 import com.unify.core.types.PlatformType
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import com.unify.core.types.DeviceInfo
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * HarmonyOS平台管理器实现
@@ -360,7 +364,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
     }
     
     private fun generateFallbackDeviceId(): String {
-        return "harmony-${System.currentTimeMillis()}"
+        return "harmony-${getCurrentTimeMillis()}"
     }
     
     // 硬件能力检测方法

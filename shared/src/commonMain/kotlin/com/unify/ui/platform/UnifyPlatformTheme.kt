@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.serialization.Serializable
 
@@ -123,12 +124,11 @@ data class UnifySpacing(
 /**
  * 平台主题适配器
  */
-expect class UnifyPlatformThemeAdapter {
+expect class UnifyPlatformThemeAdapter() {
     fun getSystemColorScheme(isDark: Boolean): UnifyColorScheme
     fun getSystemTypography(): UnifyTypography
     fun getSystemShapes(): UnifyShapes
-    fun getSystemSpacing(): UnifySpacing
-    fun applyPlatformSpecificTheme(config: UnifyThemeConfig): UnifyThemeConfig
+    fun applyPlatformSpecificTheme(theme: UnifyThemeConfig): UnifyThemeConfig
 }
 
 /**

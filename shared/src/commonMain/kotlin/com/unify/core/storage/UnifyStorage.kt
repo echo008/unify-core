@@ -1,7 +1,11 @@
 package com.unify.core.storage
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.KSerializer
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 统一存储接口
@@ -90,16 +94,8 @@ sealed class StorageEvent {
 }
 
 /**
- * 存储配置
+ * 存储配置 - 使用StorageFactory中的统一定义
  */
-data class StorageConfig(
-    val name: String,
-    val encrypted: Boolean = false,
-    val maxSize: Long = Long.MAX_VALUE,
-    val compressionEnabled: Boolean = false,
-    val backupEnabled: Boolean = true,
-    val syncEnabled: Boolean = false
-)
 
 /**
  * 存储统计信息
@@ -192,7 +188,7 @@ class StorageManager {
             StorageStats(
                 totalKeys = storage.getAllKeys().size,
                 totalSize = storage.getSize(),
-                lastModified = System.currentTimeMillis()
+                lastModified = getCurrentTimeMillis()
             )
         }
     }

@@ -136,14 +136,14 @@ object UnifyResponsiveShapes {
     /**
      * 根据屏幕尺寸调整圆角大小
      */
-    fun getScaledShape(baseRadius: androidx.compose.ui.unit.Dp, scaleFactor: Float): Shape {
+    fun getScaledShape(baseRadius: androidx.compose.ui.unit.Dp, scaleFactor: Float): RoundedCornerShape {
         return RoundedCornerShape(baseRadius * scaleFactor)
     }
     
     /**
      * 获取平台特定的形状缩放因子
      */
-    expect fun getPlatformShapeScale(): Float
+    fun getPlatformShapeScale(): Float = 1.0f
     
     /**
      * 获取响应式形状

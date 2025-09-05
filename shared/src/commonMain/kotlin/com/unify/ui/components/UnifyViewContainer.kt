@@ -3,6 +3,11 @@ package com.unify.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -10,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -21,10 +27,10 @@ fun UnifyViewContainer(
     modifier: Modifier = Modifier,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     borderColor: Color = MaterialTheme.colorScheme.outline,
-    borderWidth: dp = 1.dp,
-    cornerRadius: dp = 8.dp,
+    borderWidth: Dp = 1.dp,
+    cornerRadius: Dp = 8.dp,
     padding: PaddingValues = PaddingValues(16.dp),
-    elevation: dp = 2.dp,
+    elevation: Dp = 2.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Card(
@@ -49,7 +55,7 @@ fun UnifyViewContainer(
 @Composable
 fun UnifyVerticalContainer(
     modifier: Modifier = Modifier,
-    spacing: dp = 8.dp,
+    spacing: Dp = 8.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -67,7 +73,7 @@ fun UnifyVerticalContainer(
 @Composable
 fun UnifyHorizontalContainer(
     modifier: Modifier = Modifier,
-    spacing: dp = 8.dp,
+    spacing: Dp = 8.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
     content: @Composable RowScope.() -> Unit
 ) {
@@ -86,8 +92,8 @@ fun UnifyHorizontalContainer(
 fun UnifyGridContainer(
     modifier: Modifier = Modifier,
     columns: Int = 2,
-    spacing: dp = 8.dp,
-    content: @Composable LazyGridScope.() -> Unit
+    spacing: Dp = 8.dp,
+    content: LazyGridScope.() -> Unit
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
@@ -106,7 +112,7 @@ fun UnifyGridContainer(
 fun UnifyDividerContainer(
     modifier: Modifier = Modifier,
     dividerColor: Color = MaterialTheme.colorScheme.outline,
-    dividerThickness: dp = 1.dp,
+    dividerThickness: Dp = 1.dp,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(modifier = modifier) {
@@ -223,7 +229,7 @@ fun UnifyCollapsibleContainer(
 @Composable
 fun UnifyShadowContainer(
     modifier: Modifier = Modifier,
-    shadowElevation: dp = 4.dp,
+    shadowElevation: Dp = 4.dp,
     content: @Composable BoxScope.() -> Unit
 ) {
     Card(

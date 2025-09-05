@@ -72,27 +72,7 @@ fun UnifyClickableSurface(
     )
 }
 
-/**
- * Unify卡片表面组件
- */
-@Composable
-fun UnifyCard(
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(12.dp),
-    colors: CardColors = CardDefaults.cardColors(),
-    elevation: CardElevation = CardDefaults.cardElevation(),
-    border: BorderStroke? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Card(
-        modifier = modifier,
-        shape = shape,
-        colors = colors,
-        elevation = elevation,
-        border = border,
-        content = content
-    )
-}
+// UnifyCard moved to UnifyCard.kt to avoid duplicate declarations
 
 /**
  * Unify可点击卡片组件

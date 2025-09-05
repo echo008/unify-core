@@ -10,7 +10,7 @@ import kotlinx.serialization.json.Json
  * Unify安全管理器
  * 提供跨平台的安全功能，包括加密、认证、权限管理等
  */
-expect class UnifySecurityManager {
+expect class UnifySecurityManager() {
     /**
      * 初始化安全管理器
      */

@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.sin
@@ -31,7 +32,7 @@ import kotlin.math.sin
 fun UnifyLoadingIndicator(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    size: dp = 40.dp
+    size: Dp = 40.dp
 ) {
     CircularProgressIndicator(
         modifier = modifier.size(size),
@@ -70,7 +71,7 @@ fun UnifyLoadingWithText(
 fun UnifyPulseLoading(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    size: dp = 40.dp
+    size: Dp = 40.dp
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val scale by infiniteTransition.animateFloat(
@@ -91,7 +92,7 @@ fun UnifyPulseLoading(
     ) {
         Box(
             modifier = Modifier
-                .size(size * scale)
+                .size(size.times(scale))
                 .background(color, CircleShape)
         )
     }
@@ -179,7 +180,7 @@ fun UnifyWaveLoading(
 fun UnifySpinnerLoading(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    size: dp = 40.dp
+    size: Dp = 40.dp
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "spinner")
     val rotation by infiniteTransition.animateFloat(
@@ -311,8 +312,8 @@ fun UnifyProgressLoading(
 fun UnifyCircularProgressLoading(
     progress: Float,
     modifier: Modifier = Modifier,
-    size: dp = 80.dp,
-    strokeWidth: dp = 8.dp,
+    size: Dp = 80.dp,
+    strokeWidth: Dp = 8.dp,
     color: Color = MaterialTheme.colorScheme.primary,
     showPercentage: Boolean = true
 ) {
@@ -375,7 +376,7 @@ fun UnifyFullScreenLoading(
 fun UnifyCustomShapeLoading(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    size: dp = 40.dp
+    size: Dp = 40.dp
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "custom")
     val rotation by infiniteTransition.animateFloat(
@@ -392,15 +393,15 @@ fun UnifyCustomShapeLoading(
             .size(size)
             .rotate(rotation)
     ) {
-        val radius = size.toPx() / 2
-        val centerX = size.toPx() / 2
-        val centerY = size.toPx() / 2
+        val radius = size.toPx().div(2f)
+        val centerX = size.toPx().div(2f)
+        val centerY = size.toPx().div(2f)
         
         // 绘制自定义形状（三角形旋转）
         repeat(3) { i ->
-            val angle = (i * 120f + rotation) * (kotlin.math.PI / 180f)
-            val x = centerX + cos(angle).toFloat() * radius * 0.6f
-            val y = centerY + sin(angle).toFloat() * radius * 0.6f
+            val angle = i.times(120f).plus(rotation).times(kotlin.math.PI.div(180f))
+            val x = centerX.plus(cos(angle).toFloat().times(radius).times(0.6f))
+            val y = centerY.plus(sin(angle).toFloat().times(radius).times(0.6f))
             
             drawCircle(
                 color = color,

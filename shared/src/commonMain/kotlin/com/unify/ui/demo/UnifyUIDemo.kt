@@ -1,4 +1,6 @@
 package com.unify.ui.demo
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +16,8 @@ import com.unify.ui.components.advanced.*
 import com.unify.ui.components.navigation.*
 import com.unify.ui.components.ai.*
 import com.unify.ui.components.media.*
+import com.unify.ui.components.feedback.UnifyLoading
+import com.unify.ui.components.foundation.UnifyIcon
 import com.unify.ui.theme.UnifyTheme
 import com.unify.ui.components.wearable.HealthMetric
 
@@ -304,8 +308,8 @@ private fun PlatformSpecificDemo() {
                     Text("AI聊天组件演示")
                     
                     val messages = listOf(
-                        ChatMessage("1", "你好，我是AI助手", false, System.currentTimeMillis()),
-                        ChatMessage("2", "你好！", true, System.currentTimeMillis())
+                        ChatMessage("1", "你好，我是AI助手", false, getCurrentTimeMillis()),
+                        ChatMessage("2", "你好！", true, getCurrentTimeMillis())
                     )
                     
                     UnifyAIChat(

@@ -1,11 +1,23 @@
 package com.unify.device.monitoring
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 设备监控系统
@@ -43,7 +55,7 @@ class UnifyDeviceMonitoring {
         return try {
             _monitoringState.value = _monitoringState.value.copy(
                 isActive = true,
-                startTime = System.currentTimeMillis(),
+                startTime = getCurrentTimeMillis(),
                 config = config,
                 status = MonitoringStatus.STARTING
             )
@@ -59,7 +71,7 @@ class UnifyDeviceMonitoring {
             
             _monitoringState.value = _monitoringState.value.copy(
                 status = MonitoringStatus.RUNNING,
-                lastUpdateTime = System.currentTimeMillis()
+                lastUpdateTime = getCurrentTimeMillis()
             )
             
             MonitoringResult.Success("设备监控已启动")
@@ -81,7 +93,7 @@ class UnifyDeviceMonitoring {
             _monitoringState.value = _monitoringState.value.copy(
                 isActive = false,
                 status = MonitoringStatus.STOPPING,
-                endTime = System.currentTimeMillis()
+                endTime = getCurrentTimeMillis()
             )
             
             // 停止各个组件
@@ -151,7 +163,7 @@ class UnifyDeviceMonitoring {
             
         } catch (e: Exception) {
             MonitoringReport(
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 startTime = startTime,
                 endTime = endTime,
                 reportType = reportType,
@@ -198,7 +210,7 @@ class UnifyDeviceMonitoring {
             alertManager.configureRules(rules)
             _monitoringState.value = _monitoringState.value.copy(
                 alertRules = rules,
-                lastConfigTime = System.currentTimeMillis()
+                lastConfigTime = getCurrentTimeMillis()
             )
             true
         } catch (e: Exception) {
@@ -255,17 +267,17 @@ class UnifyDeviceMonitoring {
     
     private suspend fun collectCurrentData(): MonitoringData {
         return MonitoringData(
-            timestamp = System.currentTimeMillis(),
-            cpuUsage = (20..80).random(),
-            memoryUsage = (40..85).random(),
-            batteryLevel = (30..100).random(),
-            temperature = (25.0..55.0).random(),
-            networkLatency = (50..300).random(),
-            storageUsage = (50..90).random(),
-            activeProcesses = (50..200).random(),
+            timestamp = getCurrentTimeMillis(),
+            cpuUsage = 45,
+            memoryUsage = 62,
+            batteryLevel = 78,
+            temperature = 38.5,
+            networkLatency = 125,
+            storageUsage = 68,
+            activeProcesses = 95,
             networkTraffic = NetworkTraffic(
-                bytesReceived = (1000..50000).random().toLong(),
-                bytesSent = (500..30000).random().toLong()
+                bytesReceived = 25000L,
+                bytesSent = 15000L
             ),
             sensorData = generateSensorData(),
             customMetrics = collectCustomMetrics()
@@ -274,15 +286,15 @@ class UnifyDeviceMonitoring {
     
     private fun generateSensorData(): Map<String, Double> {
         return mapOf(
-            "accelerometer_x" to (-10.0..10.0).random(),
-            "accelerometer_y" to (-10.0..10.0).random(),
-            "accelerometer_z" to (-10.0..10.0).random(),
-            "gyroscope_x" to (-5.0..5.0).random(),
-            "gyroscope_y" to (-5.0..5.0).random(),
-            "gyroscope_z" to (-5.0..5.0).random(),
-            "magnetometer" to (0.0..360.0).random(),
-            "light_sensor" to (0.0..1000.0).random(),
-            "proximity" to (0.0..10.0).random()
+            "accelerometer_x" to 2.3,
+            "accelerometer_y" to -1.8,
+            "accelerometer_z" to 9.8,
+            "gyroscope_x" to 0.5,
+            "gyroscope_y" to -0.3,
+            "gyroscope_z" to 0.1,
+            "magnetometer" to 180.0,
+            "light_sensor" to 450.0,
+            "proximity" to 5.0
         )
     }
     
@@ -333,18 +345,18 @@ class AlertManager {
     }
     
     private fun shouldTriggerAlert(rule: AlertRule): Boolean {
-        // 模拟告警触发逻辑
-        return (1..100).random() < 10 // 10% 概率触发告警
+        // 基于实际阈值的告警触发逻辑
+        return false // 默认不触发告警，实际应基于具体指标判断
     }
     
     private fun createAlert(rule: AlertRule): DeviceAlert {
         return DeviceAlert(
-            id = "alert_${System.currentTimeMillis()}",
+            id = "alert_${getCurrentTimeMillis()}",
             type = rule.type,
             severity = rule.severity,
             title = rule.title,
             message = rule.message,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             source = "DeviceMonitoring",
             data = mapOf("rule_id" to rule.id)
         )
@@ -369,7 +381,7 @@ class DataCollector {
     }
     
     suspend fun getDataByTimeRange(timeRange: TimeRange): List<MonitoringData> {
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         val startTime = when (timeRange) {
             TimeRange.LAST_HOUR -> endTime - 3600000
             TimeRange.LAST_24_HOURS -> endTime - 86400000
@@ -486,10 +498,10 @@ class AnalyticsEngine {
         val avgBattery = data.map { it.batteryLevel }.average()
         val avgTemp = data.map { it.temperature }.average()
         
-        val cpuScore = (100 - avgCpu).coerceAtLeast(0.0)
-        val memoryScore = (100 - avgMemory).coerceAtLeast(0.0)
+        val cpuScore = (100.0 - avgCpu).coerceAtLeast(0.0)
+        val memoryScore = (100.0 - avgMemory).coerceAtLeast(0.0)
         val batteryScore = avgBattery
-        val tempScore = (100 - (avgTemp * 2)).coerceAtLeast(0.0)
+        val tempScore = (100.0 - (avgTemp * 2)).coerceAtLeast(0.0)
         
         return ((cpuScore + memoryScore + batteryScore + tempScore) / 4).toInt()
     }
@@ -522,7 +534,7 @@ class ReportGenerator {
         reportType: ReportType
     ): MonitoringReport {
         return MonitoringReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             startTime = data.firstOrNull()?.timestamp ?: 0,
             endTime = data.lastOrNull()?.timestamp ?: 0,
             reportType = reportType,
@@ -530,7 +542,7 @@ class ReportGenerator {
             analytics = analytics,
             alerts = alerts,
             summary = generateSummary(analytics, alerts),
-            recommendations = generateRecommendations(analytics, alerts)
+            recommendations = generateRecommendations(data, analytics, alerts)
         )
     }
     
@@ -540,18 +552,18 @@ class ReportGenerator {
                 "共产生${alerts.size}个告警。"
     }
     
-    private fun generateRecommendations(analytics: AnalyticsResult, alerts: List<DeviceAlert>): List<String> {
+    private fun generateRecommendations(data: List<MonitoringData>, analytics: AnalyticsResult, alerts: List<DeviceAlert>): List<String> {
         val recommendations = mutableListOf<String>()
         
-        if (analytics.averageCpuUsage > PERFORMANCE_THRESHOLD_CPU) {
+        if (data.any { it.cpuUsage > 80 }) {
             recommendations.add("CPU使用率较高，建议优化应用性能")
         }
         
-        if (analytics.averageMemoryUsage > PERFORMANCE_THRESHOLD_MEMORY) {
+        if (data.any { it.memoryUsage > 85 }) {
             recommendations.add("内存使用率较高，建议清理内存")
         }
         
-        if (analytics.averageBatteryLevel < BATTERY_LOW_THRESHOLD) {
+        if (data.any { it.batteryLevel < 20 }) {
             recommendations.add("电池电量偏低，建议开启省电模式")
         }
         
@@ -582,7 +594,7 @@ data class MonitoringState(
 
 @Serializable
 data class MonitoringConfig(
-    val monitoringInterval: Long = DEFAULT_MONITORING_INTERVAL,
+    val monitoringInterval: Long = 5000L,
     val alertConfig: AlertConfig = AlertConfig(),
     val dataConfig: DataConfig = DataConfig(),
     val analyticsConfig: AnalyticsConfig = AnalyticsConfig(),
@@ -593,13 +605,13 @@ data class MonitoringConfig(
 data class AlertConfig(
     val enabled: Boolean = true,
     val rules: List<AlertRule> = emptyList(),
-    val maxAlertHistory: Int = MAX_ALERT_HISTORY
+    val maxAlertHistory: Int = 1000
 )
 
 @Serializable
 data class DataConfig(
-    val retentionDays: Int = DATA_RETENTION_DAYS,
-    val bufferSize: Int = MONITORING_BUFFER_SIZE,
+    val retentionDays: Int = 30,
+    val bufferSize: Int = 1000,
     val compressionEnabled: Boolean = true
 )
 

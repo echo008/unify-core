@@ -1,6 +1,8 @@
 package com.unify.quality.data
 
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify质量管理数据类型定义
@@ -13,7 +15,7 @@ data class UnifyQualityMetrics(
     val performanceQuality: PerformanceQualityMetrics,
     val testQuality: TestQualityMetrics,
     val securityQuality: SecurityQualityMetrics,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 @Serializable
@@ -78,7 +80,7 @@ data class QualityReport(
     val violations: List<QualityViolation>,
     val recommendations: List<QualityRecommendation>,
     val overallScore: Double,
-    val generatedAt: Long = System.currentTimeMillis()
+    val generatedAt: Long = getCurrentTimeMillis()
 )
 
 @Serializable

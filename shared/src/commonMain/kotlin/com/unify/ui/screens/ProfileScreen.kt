@@ -1,22 +1,56 @@
 package com.unify.ui.screens
 
 import androidx.compose.foundation.Image
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.shape.CircleShape
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.Icons
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.filled.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.draw.clip
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.layout.ContentScale
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 用户档案界面
@@ -370,26 +404,26 @@ private fun generateUserProfile(): UserProfile {
                 icon = Icons.Default.CheckCircle,
                 title = "完成任务",
                 description = "完成了数据同步任务",
-                timestamp = System.currentTimeMillis() - 3600000
+                timestamp = getCurrentTimeMillis() - 3600000
             ),
             UserActivity(
                 icon = Icons.Default.Star,
                 title = "获得成就",
                 description = "解锁了连续使用7天成就",
-                timestamp = System.currentTimeMillis() - 7200000
+                timestamp = getCurrentTimeMillis() - 7200000
             ),
             UserActivity(
                 icon = Icons.Default.Person,
                 title = "更新资料",
                 description = "更新了个人头像",
-                timestamp = System.currentTimeMillis() - 86400000
+                timestamp = getCurrentTimeMillis() - 86400000
             )
         )
     )
 }
 
 private fun formatActivityTime(timestamp: Long): String {
-    val now = System.currentTimeMillis()
+    val now = getCurrentTimeMillis()
     val diff = now - timestamp
     return when {
         diff < 3600000 -> "${diff / 60000}分钟前"

@@ -1,10 +1,20 @@
 package com.unify.data.enhanced
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify增强数据管理器
@@ -41,7 +51,7 @@ class UnifyDataEnhanced {
             val entry = UserDataEntry(
                 userId = userId,
                 data = userData,
-                processedAt = System.currentTimeMillis(),
+                processedAt = getCurrentTimeMillis(),
                 dataSize = userData.length,
                 checksum = calculateChecksum(userData)
             )
@@ -84,7 +94,7 @@ class UnifyDataEnhanced {
                 keywords = keywords,
                 sentiment = sentiment,
                 categories = categories,
-                indexedAt = System.currentTimeMillis(),
+                indexedAt = getCurrentTimeMillis(),
                 searchScore = calculateSearchScore(title, content, tags, keywords)
             )
             
@@ -167,7 +177,7 @@ class UnifyDataEnhanced {
      */
     suspend fun analyzeDataTrends(timeRange: TimeRange): DataTrendAnalysis {
         return try {
-            val startTime = System.currentTimeMillis() - timeRange.milliseconds
+            val startTime = getCurrentTimeMillis() - timeRange.milliseconds
             val relevantEntries = searchIndex.values.filter { it.indexedAt >= startTime }
             
             val categoryDistribution = relevantEntries
@@ -196,7 +206,7 @@ class UnifyDataEnhanced {
                 sentimentDistribution = sentimentDistribution,
                 topKeywords = keywordFrequency,
                 contentLengthStats = contentLengthStats,
-                analysisTime = System.currentTimeMillis()
+                analysisTime = getCurrentTimeMillis()
             )
             
         } catch (e: Exception) {
@@ -207,7 +217,7 @@ class UnifyDataEnhanced {
                 sentimentDistribution = emptyMap(),
                 topKeywords = emptyList(),
                 contentLengthStats = ContentLengthStats(),
-                analysisTime = System.currentTimeMillis()
+                analysisTime = getCurrentTimeMillis()
             )
         }
     }
@@ -240,7 +250,7 @@ class UnifyDataEnhanced {
      * 获取数据统计信息
      */
     fun getDataStatistics(): DataStatistics {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val indexSize = searchIndex.size
         val cacheSize = userDataCache.size
         val totalIndexedContent = searchIndex.values.sumOf { it.content.length }
@@ -298,7 +308,7 @@ class UnifyDataEnhanced {
                 userDataSummary = userDataCache.values.map { 
                     UserDataSummary(it.userId, it.dataSize, it.processedAt, it.checksum)
                 },
-                exportTime = System.currentTimeMillis(),
+                exportTime = getCurrentTimeMillis(),
                 version = "1.0"
             )
             
@@ -379,7 +389,7 @@ class UnifyDataEnhanced {
         
         // 时间范围过滤
         if (params.timeRange != null) {
-            val startTime = System.currentTimeMillis() - params.timeRange.milliseconds
+            val startTime = getCurrentTimeMillis() - params.timeRange.milliseconds
             if (entry.indexedAt < startTime) return false
         }
         
@@ -402,7 +412,7 @@ class UnifyDataEnhanced {
         }
         
         // 时间新鲜度加分
-        val timeDiff = System.currentTimeMillis() - entry.indexedAt
+        val timeDiff = getCurrentTimeMillis() - entry.indexedAt
         val freshnessScore = maxOf(0.0, 1.0 - (timeDiff / (7 * 24 * 3600000.0))) // 7天内的内容有新鲜度加分
         score += freshnessScore * 0.3
         
@@ -453,7 +463,7 @@ class UnifyDataEnhanced {
     }
     
     private fun cleanupExpiredCache() {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val expiredKeys = userDataCache.filter { (_, entry) ->
             currentTime - entry.processedAt > CACHE_EXPIRY_TIME
         }.keys
@@ -488,7 +498,7 @@ class UnifyDataEnhanced {
         _dataMetrics.value = _dataMetrics.value.copy(
             totalOperations = _dataMetrics.value.totalOperations + 1,
             totalDataProcessed = _dataMetrics.value.totalDataProcessed + dataSize,
-            lastOperationTime = System.currentTimeMillis(),
+            lastOperationTime = getCurrentTimeMillis(),
             lastOperation = operation
         )
     }
@@ -724,7 +734,7 @@ class DataOptimizer {
         searchIndex: MutableMap<String, SearchIndexEntry>,
         userDataCache: MutableMap<String, UserDataEntry>
     ): OptimizationStats {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         var itemsRemoved = 0
         var spaceSaved = 0L
         
@@ -747,7 +757,7 @@ class DataOptimizer {
             itemsRemoved++
         }
         
-        val optimizationTime = System.currentTimeMillis() - startTime
+        val optimizationTime = getCurrentTimeMillis() - startTime
         val compressionRatio = if (spaceSaved > 0) spaceSaved.toDouble() / (spaceSaved + searchIndex.values.sumOf { it.content.length }) else 0.0
         
         return OptimizationStats(

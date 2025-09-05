@@ -106,4 +106,3 @@ fun HelloWorldContent() {
     }
 }
 
-expect fun getPlatformName(): String

@@ -38,7 +38,7 @@ fun UnifyAdvancedDemo() {
         UnifyChartData("销售", 120f, Color.Blue),
         UnifyChartData("营销", 80f, Color.Green),
         UnifyChartData("开发", 150f, Color.Red),
-        UnifyChartData("支持", 60f, Color.Orange)
+        UnifyChartData("支持", 60f, Color(0xFFFFA500))
     )
     
     val dropdownItems = listOf(

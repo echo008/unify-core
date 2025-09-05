@@ -26,18 +26,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.StrokeCap
+import com.unify.core.components.UnifyFeedbackType
 
 /**
  * Unify统一反馈组件
  * 100% Kotlin Compose语法实现
  */
-enum class UnifyFeedbackType {
-    SUCCESS,
-    ERROR,
-    WARNING,
-    INFO,
-    LOADING
-}
+// UnifyFeedbackType is defined in UnifyComponents.kt
 
 @Composable
 fun UnifyProgressIndicator(
@@ -55,14 +51,14 @@ fun UnifyProgressIndicator(
                 modifier = modifier,
                 color = color,
                 trackColor = trackColor,
-                strokeCap = androidx.compose.foundation.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
         } else {
             LinearProgressIndicator(
                 modifier = modifier,
                 color = color,
                 trackColor = trackColor,
-                strokeCap = androidx.compose.foundation.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
         }
     } else {
@@ -73,14 +69,14 @@ fun UnifyProgressIndicator(
                 color = color,
                 trackColor = trackColor,
                 strokeWidth = strokeWidth,
-                strokeCap = androidx.compose.foundation.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
         } else {
             CircularProgressIndicator(
                 modifier = modifier,
                 color = color,
                 strokeWidth = strokeWidth,
-                strokeCap = androidx.compose.foundation.StrokeCap.Round
+                strokeCap = StrokeCap.Round
             )
         }
     }

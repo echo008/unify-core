@@ -1,4 +1,6 @@
 package com.unify.core.dynamic
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import kotlinx.coroutines.*
 import kotlinx.serialization.*
@@ -384,7 +386,7 @@ class DynamicStorageManagerImpl(
     
     override suspend fun createBackup(): String? {
         return try {
-            val backupId = "backup_${System.currentTimeMillis()}"
+            val backupId = "backup_${getCurrentTimeMillis()}"
             val backupData = mutableMapOf<String, String>()
             
             // 备份所有组件
@@ -487,7 +489,7 @@ class DynamicStorageManagerImpl(
         try {
             // 清理过期的备份
             val backupKeys = adapter.listKeys(BACKUP_PREFIX)
-            val cutoffTime = System.currentTimeMillis() - (7 * 24 * 60 * 60 * 1000L) // 7天前
+            val cutoffTime = getCurrentTimeMillis() - (7 * 24 * 60 * 60 * 1000L) // 7天前
             
             backupKeys.forEach { key ->
                 try {

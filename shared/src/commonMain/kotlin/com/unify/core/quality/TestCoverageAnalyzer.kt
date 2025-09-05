@@ -1,10 +1,20 @@
 package com.unify.core.quality
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 测试覆盖率分析器
@@ -55,7 +65,7 @@ class TestCoverageAnalyzer {
             modulesCoverage = modulesCoverage,
             platformsCoverage = platformsCoverage,
             recommendations = generateRecommendations(modulesCoverage, platformsCoverage),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
         
         _coverageData.value = _coverageData.value.copy(

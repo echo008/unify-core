@@ -31,37 +31,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.unify.core.components.UnifySpacing
 
 /**
  * Unify统一布局组件
  * 100% Kotlin Compose语法实现
  */
 
-// 间距枚举
-enum class UnifySpacing(val value: Dp) {
-    NONE(0.dp),
-    EXTRA_SMALL(4.dp),
-    SMALL(8.dp),
-    MEDIUM(16.dp),
-    LARGE(24.dp),
-    EXTRA_LARGE(32.dp)
-}
-
 @Composable
 fun UnifyColumn(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    spacing: UnifySpacing = UnifySpacing.NONE,
+    spacing: UnifySpacing = UnifySpacing.SMALL,
     content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = if (spacing != UnifySpacing.NONE) {
-            Arrangement.spacedBy(spacing.value)
-        } else {
-            verticalArrangement
-        },
+        verticalArrangement = Arrangement.spacedBy(spacing.value),
         horizontalAlignment = horizontalAlignment,
         content = content
     )
@@ -72,16 +59,12 @@ fun UnifyRow(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    spacing: UnifySpacing = UnifySpacing.NONE,
+    spacing: UnifySpacing = UnifySpacing.SMALL,
     content: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = if (spacing != UnifySpacing.NONE) {
-            Arrangement.spacedBy(spacing.value)
-        } else {
-            horizontalArrangement
-        },
+        horizontalArrangement = Arrangement.spacedBy(spacing.value),
         verticalAlignment = verticalAlignment,
         content = content
     )
@@ -172,9 +155,9 @@ fun UnifySection(
     spacing: UnifySpacing = UnifySpacing.MEDIUM,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    UnifyColumn(
+    Column(
         modifier = modifier,
-        spacing = spacing
+        verticalArrangement = Arrangement.spacedBy(spacing.value)
     ) {
         if (title != null || titleContent != null) {
             if (titleContent != null) {

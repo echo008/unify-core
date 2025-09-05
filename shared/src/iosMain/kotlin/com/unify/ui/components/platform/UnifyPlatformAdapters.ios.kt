@@ -6,8 +6,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import platform.UIKit.*
-import platform.Foundation.*
+import platform.UIKit.UIButton
+import platform.UIKit.UITextField
+import platform.UIKit.UIView
+import platform.UIKit.UIColor
+import platform.UIKit.UIFont
+import platform.UIKit.UIScreen
+import platform.UIKit.UIDevice
+import platform.Foundation.NSString
+import platform.Foundation.NSDate
+import platform.Foundation.NSBundle
 
 /**
  * iOS平台特定组件适配器

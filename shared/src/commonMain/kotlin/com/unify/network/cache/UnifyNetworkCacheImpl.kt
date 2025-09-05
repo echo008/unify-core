@@ -1,10 +1,20 @@
 package com.unify.network.cache
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 网络缓存实现
@@ -57,7 +67,7 @@ class UnifyNetworkCacheImpl {
             _cacheState.value = _cacheState.value.copy(
                 isInitializing = false,
                 isInitialized = true,
-                initTime = System.currentTimeMillis()
+                initTime = getCurrentTimeMillis()
             )
             
             CacheInitResult.Success("网络缓存初始化成功")
@@ -93,7 +103,7 @@ class UnifyNetworkCacheImpl {
             
             // 更新访问时间
             val updatedEntry = entry.copy(
-                lastAccessTime = System.currentTimeMillis(),
+                lastAccessTime = getCurrentTimeMillis(),
                 accessCount = entry.accessCount + 1
             )
             cacheStorage[key] = updatedEntry
@@ -112,7 +122,7 @@ class UnifyNetworkCacheImpl {
     suspend fun put(
         key: String, 
         data: String, 
-        ttl: Long = DEFAULT_TTL_SECONDS * 1000,
+        ttl: Long = DEFAULT_TTL_SECONDS * 1000L,
         priority: CachePriority = CachePriority.NORMAL
     ): CacheResult<Unit> {
         return try {
@@ -121,7 +131,7 @@ class UnifyNetworkCacheImpl {
                 evictLeastRecentlyUsed()
             }
             
-            val now = System.currentTimeMillis()
+            val now = getCurrentTimeMillis()
             val entry = CacheEntry(
                 key = key,
                 data = data,
@@ -188,7 +198,7 @@ class UnifyNetworkCacheImpl {
             _cacheState.value = _cacheState.value.copy(
                 totalSize = 0,
                 entryCount = 0,
-                lastClearTime = System.currentTimeMillis()
+                lastClearTime = getCurrentTimeMillis().toLong()
             )
             
             CacheResult.Success(Unit)
@@ -212,7 +222,7 @@ class UnifyNetworkCacheImpl {
      */
     suspend fun putBatch(
         entries: Map<String, String>,
-        ttl: Long = DEFAULT_TTL_SECONDS * 1000,
+        ttl: Long = DEFAULT_TTL_SECONDS * 1000L,
         priority: CachePriority = CachePriority.NORMAL
     ): Map<String, CacheResult<Unit>> {
         return entries.mapValues { (key, data) ->
@@ -257,7 +267,7 @@ class UnifyNetworkCacheImpl {
             val queuedRequest = QueuedRequest(
                 id = generateRequestId(),
                 request = request,
-                queueTime = System.currentTimeMillis(),
+                queueTime = getCurrentTimeMillis(),
                 retryCount = 0
             )
             
@@ -404,7 +414,7 @@ class UnifyNetworkCacheImpl {
         return try {
             val exportData = CacheExportData(
                 version = CACHE_VERSION,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 entries = cacheStorage.values.toList(),
                 metadata = cacheMetadata.values.toList(),
                 statistics = getCacheStatistics()
@@ -463,7 +473,7 @@ class UnifyNetworkCacheImpl {
     }
     
     private fun isCacheExpired(entry: CacheEntry): Boolean {
-        return System.currentTimeMillis() > entry.expiryTime
+        return getCurrentTimeMillis() > entry.expiryTime
     }
     
     private fun shouldEvictCache(): Boolean {
@@ -512,7 +522,7 @@ class UnifyNetworkCacheImpl {
             hitCount = if (hit) _cacheState.value.hitCount + 1 else _cacheState.value.hitCount,
             missCount = if (miss) _cacheState.value.missCount + 1 else _cacheState.value.missCount,
             expiredCount = if (expired) _cacheState.value.expiredCount + 1 else _cacheState.value.expiredCount,
-            lastAccessTime = System.currentTimeMillis()
+            lastAccessTime = getCurrentTimeMillis()
         )
     }
     
@@ -542,14 +552,14 @@ class UnifyNetworkCacheImpl {
     }
     
     private fun generateRequestId(): String {
-        return "req_${System.currentTimeMillis()}_${(1000..9999).random()}"
+        return "req_${getCurrentTimeMillis()}_${(1000..9999).random()}"
     }
     
     private suspend fun executeRequest(request: NetworkRequest): RequestResult {
         // 模拟网络请求执行
         return RequestResult(
             isSuccess = (1..10).random() > 3, // 70% 成功率
-            data = if ((1..10).random() > 3) "response_data_${System.currentTimeMillis()}" else null,
+            data = if ((1..10).random() > 3) "response_data_${getCurrentTimeMillis()}" else null,
             error = if ((1..10).random() <= 3) "网络请求失败" else null
         )
     }
@@ -610,9 +620,9 @@ data class CacheState(
 
 @Serializable
 data class CacheConfig(
-    val maxSizeMB: Int = DEFAULT_CACHE_SIZE_MB,
-    val defaultTTL: Long = DEFAULT_TTL_SECONDS * 1000,
-    val maxEntries: Int = MAX_CACHE_ENTRIES,
+    val maxSizeMB: Int = 100,
+    val defaultTTL: Long = 3600L * 1000, // 1小时默认TTL
+    val maxEntries: Int = 10000,
     val enableCompression: Boolean = true,
     val enablePersistence: Boolean = true,
     val maxOfflineRequests: Int = 1000,
@@ -624,7 +634,7 @@ data class PolicyConfig(
     val cachePostRequests: Boolean = false,
     val staticResourceTTL: Long = 86400000L, // 24小时
     val apiResponseTTL: Long = 3600000L, // 1小时
-    val defaultTTL: Long = DEFAULT_TTL_SECONDS * 1000
+    val defaultTTL: Long = 3600L * 1000 // 1小时默认TTL
 )
 
 @Serializable

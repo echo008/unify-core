@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.unify.demo
 
 import androidx.compose.foundation.layout.*
@@ -10,7 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.container.UnifySection
+import com.unify.core.components.UnifySection
 import com.unify.ui.components.input.UnifySwitchWithLabel
 import com.unify.ui.components.input.UnifySliderWithLabel
 import com.unify.ui.components.feedback.UnifyDialog

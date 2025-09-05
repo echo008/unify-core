@@ -1,4 +1,6 @@
 package com.unify.ui.feedback
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -270,7 +272,7 @@ class UnifyToastState {
             icon = icon,
             actionText = actionText,
             onAction = onAction,
-            id = System.currentTimeMillis()
+            id = getCurrentTimeMillis()
         )
     }
     

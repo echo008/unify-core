@@ -1,9 +1,17 @@
 package com.unify.quality
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 代码质量增强器
@@ -39,7 +47,7 @@ class UnifyCodeQualityEnhancer {
             _qualityState.value = _qualityState.value.copy(
                 isInitializing = false,
                 isInitialized = true,
-                initTime = System.currentTimeMillis()
+                initTime = getCurrentTimeMillis()
             )
             
             QualityResult.Success("代码质量增强器初始化成功")
@@ -134,7 +142,7 @@ class UnifyCodeQualityEnhancer {
     fun getQualityReport(): QualityReport {
         val state = _qualityState.value
         return QualityReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             isInitialized = state.isInitialized,
             config = state.config,
             systemStatus = if (state.isInitialized) "运行正常" else "未初始化",

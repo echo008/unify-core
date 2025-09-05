@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 enum class UnifyCardType {
     FILLED,
     ELEVATED,
-    OUTLINED
+    OUTLINED,
+    TONAL
 }
 
 @Composable
@@ -74,7 +75,6 @@ fun UnifyCard(
                     shape = shape,
                     colors = colors ?: CardDefaults.elevatedCardColors(),
                     elevation = elevation ?: CardDefaults.elevatedCardElevation(),
-                    border = border,
                     content = content
                 )
             } else {
@@ -83,7 +83,6 @@ fun UnifyCard(
                     shape = shape,
                     colors = colors ?: CardDefaults.elevatedCardColors(),
                     elevation = elevation ?: CardDefaults.elevatedCardElevation(),
-                    border = border,
                     content = content
                 )
             }
@@ -107,6 +106,33 @@ fun UnifyCard(
                     colors = colors ?: CardDefaults.outlinedCardColors(),
                     elevation = elevation ?: CardDefaults.outlinedCardElevation(),
                     border = border ?: CardDefaults.outlinedCardBorder(),
+                    content = content
+                )
+            }
+        }
+        UnifyCardType.TONAL -> {
+            if (onClick != null) {
+                Card(
+                    onClick = onClick,
+                    modifier = modifier,
+                    enabled = enabled,
+                    shape = shape,
+                    colors = colors ?: CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    elevation = elevation ?: CardDefaults.cardElevation(),
+                    border = border,
+                    content = content
+                )
+            } else {
+                Card(
+                    modifier = modifier,
+                    shape = shape,
+                    colors = colors ?: CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    ),
+                    elevation = elevation ?: CardDefaults.cardElevation(),
+                    border = border,
                     content = content
                 )
             }

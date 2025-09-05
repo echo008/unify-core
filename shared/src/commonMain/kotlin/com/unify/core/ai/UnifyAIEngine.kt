@@ -1,10 +1,28 @@
 package com.unify.core.ai
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
+
+/**
+ * AI能力类型枚举
+ */
+enum class AICapabilityType {
+    TEXT_GENERATION,
+    IMAGE_GENERATION,
+    SPEECH_TO_TEXT,
+    TEXT_TO_SPEECH,
+    EMBEDDING,
+    MODERATION,
+    CODE_GENERATION,
+    TRANSLATION,
+    SUMMARIZATION,
+    QUESTION_ANSWERING
+}
 
 /**
  * Unify AI引擎 - 核心AI功能实现
@@ -80,16 +98,16 @@ class UnifyAIEngine {
             
             // 处理请求
             val result = when (request.type) {
-                AIModelType.TEXT_GENERATION -> processTextGeneration(request)
-                AIModelType.IMAGE_GENERATION -> processImageGeneration(request)
-                AIModelType.SPEECH_TO_TEXT -> processSpeechToText(request)
-                AIModelType.TEXT_TO_SPEECH -> processTextToSpeech(request)
-                AIModelType.EMBEDDING -> processEmbedding(request)
-                AIModelType.MODERATION -> processModeration(request)
-                AIModelType.CODE_GENERATION -> processCodeGeneration(request)
-                AIModelType.TRANSLATION -> processTranslation(request)
-                AIModelType.SUMMARIZATION -> processSummarization(request)
-                AIModelType.QUESTION_ANSWERING -> processQuestionAnswering(request)
+                AICapabilityType.TEXT_GENERATION -> processTextGeneration(request)
+                AICapabilityType.IMAGE_GENERATION -> processImageGeneration(request)
+                AICapabilityType.SPEECH_TO_TEXT -> processSpeechToText(request)
+                AICapabilityType.TEXT_TO_SPEECH -> processTextToSpeech(request)
+                AICapabilityType.EMBEDDING -> processEmbedding(request)
+                AICapabilityType.MODERATION -> processModeration(request)
+                AICapabilityType.CODE_GENERATION -> processCodeGeneration(request)
+                AICapabilityType.TRANSLATION -> processTranslation(request)
+                AICapabilityType.SUMMARIZATION -> processSummarization(request)
+                AICapabilityType.QUESTION_ANSWERING -> processQuestionAnswering(request)
             }
             
             // 缓存结果
@@ -130,7 +148,7 @@ class UnifyAIEngine {
      * 文本生成处理
      */
     private suspend fun processTextGeneration(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.TEXT_GENERATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.TEXT_GENERATION)
             ?: return AIResult.Error("文本生成模型配置未找到")
         
         // 模拟AI处理
@@ -152,7 +170,7 @@ class UnifyAIEngine {
      * 图像生成处理
      */
     private suspend fun processImageGeneration(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.IMAGE_GENERATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.IMAGE_GENERATION)
             ?: return AIResult.Error("图像生成模型配置未找到")
         
         delay(3000)
@@ -173,7 +191,7 @@ class UnifyAIEngine {
      * 语音转文本处理
      */
     private suspend fun processSpeechToText(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.SPEECH_TO_TEXT)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.SPEECH_TO_TEXT)
             ?: return AIResult.Error("语音转文本模型配置未找到")
         
         delay(2000)
@@ -194,7 +212,7 @@ class UnifyAIEngine {
      * 文本转语音处理
      */
     private suspend fun processTextToSpeech(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.TEXT_TO_SPEECH)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.TEXT_TO_SPEECH)
             ?: return AIResult.Error("文本转语音模型配置未找到")
         
         delay(1500)
@@ -215,7 +233,7 @@ class UnifyAIEngine {
      * 嵌入向量处理
      */
     private suspend fun processEmbedding(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.EMBEDDING)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.EMBEDDING)
             ?: return AIResult.Error("嵌入模型配置未找到")
         
         delay(500)
@@ -239,7 +257,7 @@ class UnifyAIEngine {
      * 内容审核处理
      */
     private suspend fun processModeration(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.MODERATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.MODERATION)
             ?: return AIResult.Error("内容审核模型配置未找到")
         
         delay(300)
@@ -260,7 +278,7 @@ class UnifyAIEngine {
      * 代码生成处理
      */
     private suspend fun processCodeGeneration(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.CODE_GENERATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.CODE_GENERATION)
             ?: return AIResult.Error("代码生成模型配置未找到")
         
         delay(2000)
@@ -281,7 +299,7 @@ class UnifyAIEngine {
      * 翻译处理
      */
     private suspend fun processTranslation(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.TRANSLATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.TRANSLATION)
             ?: return AIResult.Error("翻译模型配置未找到")
         
         delay(800)
@@ -302,7 +320,7 @@ class UnifyAIEngine {
      * 摘要处理
      */
     private suspend fun processSummarization(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.SUMMARIZATION)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.SUMMARIZATION)
             ?: return AIResult.Error("摘要模型配置未找到")
         
         delay(1200)
@@ -323,7 +341,7 @@ class UnifyAIEngine {
      * 问答处理
      */
     private suspend fun processQuestionAnswering(request: AIRequest): AIResult {
-        val config = configurationManager.getModelConfiguration(AIModelType.QUESTION_ANSWERING)
+        val config = configurationManager.getModelConfiguration(AICapabilityType.QUESTION_ANSWERING)
             ?: return AIResult.Error("问答模型配置未找到")
         
         delay(1000)
@@ -367,7 +385,7 @@ class UnifyAIEngine {
      * 检查缓存是否过期
      */
     private fun isCacheExpired(result: AIResult): Boolean {
-        return System.currentTimeMillis() - result.timestamp > configurationManager.configuration.value.cacheExpiryMs
+        return getCurrentTimeMillis() - result.timestamp > configurationManager.configuration.value.cacheExpiryMs
     }
     
     /**
@@ -376,6 +394,34 @@ class UnifyAIEngine {
     fun clearCache() {
         _resultCache.clear()
         _modelCache.clear()
+    }
+    
+    /**
+     * 生成文本
+     */
+    suspend fun generateText(prompt: String, config: com.unify.ai.components.AIConfig = com.unify.ai.components.AIConfig()): AIResult {
+        val request = AIRequest(
+            type = AICapabilityType.TEXT_GENERATION,
+            input = prompt,
+            parameters = mapOf(
+                "temperature" to config.temperature.toString(),
+                "maxTokens" to config.maxTokens.toString(),
+                "model" to config.model
+            )
+        )
+        return processRequest(request)
+    }
+    
+    /**
+     * 语音转文本
+     */
+    suspend fun speechToText(audioData: ByteArray, language: String = "zh-CN"): AIResult {
+        val request = AIRequest(
+            type = AICapabilityType.SPEECH_TO_TEXT,
+            input = "audio_data_${audioData.size}_bytes",
+            parameters = mapOf("language" to language)
+        )
+        return processRequest(request)
     }
     
     /**
@@ -408,10 +454,10 @@ enum class AIEngineState {
 @Serializable
 data class AIRequest(
     val id: String = kotlin.random.Random.nextInt().toString(),
-    val type: AIModelType,
+    val type: AICapabilityType,
     val input: String,
     val parameters: Map<String, String> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -426,13 +472,13 @@ sealed class AIResult {
         val processingTimeMs: Long,
         val modelUsed: String,
         val metadata: Map<String, String> = emptyMap(),
-        override val timestamp: Long = System.currentTimeMillis()
+        override val timestamp: Long = getCurrentTimeMillis()
     ) : AIResult()
     
     data class Error(
         val message: String,
         val errorCode: String? = null,
-        override val timestamp: Long = System.currentTimeMillis()
+        override val timestamp: Long = getCurrentTimeMillis()
     ) : AIResult()
 }
 
@@ -443,7 +489,7 @@ sealed class AIResult {
 data class AIModel(
     val id: String,
     val name: String,
-    val type: AIModelType,
+    val type: AICapabilityType,
     val version: String,
     val isLoaded: Boolean = false,
     val memoryUsageMB: Int = 0

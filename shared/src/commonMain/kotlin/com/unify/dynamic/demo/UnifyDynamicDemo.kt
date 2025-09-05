@@ -1,19 +1,47 @@
 package com.unify.dynamic.demo
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.Icons
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.filled.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 动态系统演示应用
@@ -32,7 +60,7 @@ fun UnifyDynamicDemo() {
             dynamicState = dynamicState.copy(
                 isLoading = false,
                 loadedComponents = generateDynamicComponents(),
-                lastUpdateTime = System.currentTimeMillis()
+                lastUpdateTime = getCurrentTimeMillis()
             )
         }
     }
@@ -59,7 +87,7 @@ fun UnifyDynamicDemo() {
                     dynamicState = dynamicState.copy(
                         isLoading = false,
                         loadedComponents = generateDynamicComponents(),
-                        lastUpdateTime = System.currentTimeMillis()
+                        lastUpdateTime = getCurrentTimeMillis()
                     )
                 }
             },
@@ -70,7 +98,7 @@ fun UnifyDynamicDemo() {
                     dynamicState = dynamicState.copy(
                         isUpdating = false,
                         hotUpdateCount = dynamicState.hotUpdateCount + 1,
-                        lastUpdateTime = System.currentTimeMillis()
+                        lastUpdateTime = getCurrentTimeMillis()
                     )
                 }
             }
@@ -174,7 +202,7 @@ private fun DynamicSystemStatusCard(
                 StatusItem(
                     label = "热更新次数",
                     value = "${state.hotUpdateCount}",
-                    color = Color.Orange
+                    color = Color(0xFFFFA500)
                 )
             }
             
@@ -285,7 +313,7 @@ private fun DynamicComponentCard(
                         ComponentStatus.ACTIVE -> Color.Green
                         ComponentStatus.INACTIVE -> Color.Gray
                         ComponentStatus.ERROR -> Color.Red
-                        ComponentStatus.UPDATING -> Color.Orange
+                        ComponentStatus.UPDATING -> Color(0xFFFFA500)
                     },
                     shape = MaterialTheme.shapes.small
                 ) {
@@ -408,7 +436,7 @@ private fun generateDynamicComponents(): List<DynamicComponent> {
 }
 
 private fun formatUpdateTime(timestamp: Long): String {
-    val now = System.currentTimeMillis()
+    val now = getCurrentTimeMillis()
     val diff = now - timestamp
     return when {
         diff < 60000 -> "刚刚"

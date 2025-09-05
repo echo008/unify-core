@@ -1,4 +1,6 @@
 package com.unify.core.dynamic
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -104,7 +106,7 @@ class DynamicTestRunner(
             id = testId,
             request = testRequest,
             priority = testRequest.priority,
-            submittedAt = System.currentTimeMillis(),
+            submittedAt = getCurrentTimeMillis(),
             retryCount = 0
         )
         
@@ -164,7 +166,7 @@ class DynamicTestRunner(
             val runningTest = RunningTest(
                 id = queuedTest.id,
                 request = queuedTest.request,
-                startTime = System.currentTimeMillis(),
+                startTime = getCurrentTimeMillis(),
                 status = TestExecutionStatus.RUNNING,
                 progress = 0.0
             )
@@ -191,7 +193,7 @@ class DynamicTestRunner(
                 val errorResult = TestExecutionResult(
                     success = false,
                     message = "测试执行异常: ${e.message}",
-                    executionTime = System.currentTimeMillis() - runningTest.startTime,
+                    executionTime = getCurrentTimeMillis() - runningTest.startTime,
                     details = mapOf("error" to e.toString())
                 )
                 
@@ -204,7 +206,7 @@ class DynamicTestRunner(
      * 执行组件加载测试
      */
     private suspend fun executeComponentLoadTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.1)
         
@@ -222,10 +224,10 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = loadSuccess,
             message = if (loadSuccess) "组件加载成功" else "组件加载失败",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "componentId" to componentId,
-                "loadTime" to (System.currentTimeMillis() - startTime).toString()
+                "loadTime" to (getCurrentTimeMillis() - startTime).toString()
             )
         )
     }
@@ -234,7 +236,7 @@ class DynamicTestRunner(
      * 执行性能测试
      */
     private suspend fun executePerformanceTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.1)
         
@@ -255,7 +257,7 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = performanceGood,
             message = if (performanceGood) "性能测试通过" else "性能测试未达标",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "cpuUsage" to String.format("%.2f", cpuUsage),
                 "memoryUsage" to memoryUsage.toString(),
@@ -268,7 +270,7 @@ class DynamicTestRunner(
      * 执行安全测试
      */
     private suspend fun executeSecurityTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.2)
         
@@ -289,7 +291,7 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = securityPassed,
             message = if (securityPassed) "安全测试通过" else "发现安全问题",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "vulnerabilities" to vulnerabilities.toString(),
                 "signatureValid" to signatureValid.toString(),
@@ -302,7 +304,7 @@ class DynamicTestRunner(
      * 执行集成测试
      */
     private suspend fun executeIntegrationTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.1)
         
@@ -323,7 +325,7 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = integrationSuccess,
             message = if (integrationSuccess) "集成测试通过" else "集成测试失败",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "componentsIntegrated" to componentsIntegrated.toString(),
                 "dataFlowCorrect" to dataFlowCorrect.toString(),
@@ -336,7 +338,7 @@ class DynamicTestRunner(
      * 执行压力测试
      */
     private suspend fun executeStressTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.1)
         
@@ -359,7 +361,7 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = stressPassed,
             message = if (stressPassed) "压力测试通过" else "压力测试未通过",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "maxConcurrentUsers" to maxConcurrentUsers.toString(),
                 "errorRate" to String.format("%.2f", errorRate),
@@ -372,7 +374,7 @@ class DynamicTestRunner(
      * 执行兼容性测试
      */
     private suspend fun executeCompatibilityTest(request: TestRequest): TestExecutionResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         updateTestProgress(request.id, 0.1)
         
@@ -392,7 +394,7 @@ class DynamicTestRunner(
         return TestExecutionResult(
             success = compatibilityGood,
             message = if (compatibilityGood) "兼容性测试通过" else "兼容性问题",
-            executionTime = System.currentTimeMillis() - startTime,
+            executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "totalPlatforms" to platforms.size.toString(),
                 "compatiblePlatforms" to compatiblePlatforms.size.toString(),
@@ -425,7 +427,7 @@ class DynamicTestRunner(
             request = runningTest.request,
             result = result,
             startTime = runningTest.startTime,
-            endTime = System.currentTimeMillis()
+            endTime = getCurrentTimeMillis()
         )
         
         // 移除运行中的测试
@@ -505,7 +507,7 @@ class DynamicTestRunner(
             val cancelledResult = TestExecutionResult(
                 success = false,
                 message = "测试已取消",
-                executionTime = System.currentTimeMillis() - runningTest.startTime,
+                executionTime = getCurrentTimeMillis() - runningTest.startTime,
                 details = mapOf("cancelled" to "true")
             )
             
@@ -522,7 +524,7 @@ class DynamicTestRunner(
     fun getTestStatus(testId: String): TestStatus? {
         // 检查队列
         _testQueue.value.find { it.id == testId }?.let {
-            return TestStatus.QUEUED
+            return TestStatus.PENDING
         }
         
         // 检查运行中
@@ -532,7 +534,7 @@ class DynamicTestRunner(
         
         // 检查完成
         _completedTests.value.find { it.id == testId }?.let {
-            return if (it.result.success) TestStatus.COMPLETED else TestStatus.FAILED
+            return if (it.result.success) TestStatus.PASSED else TestStatus.FAILED
         }
         
         return null
@@ -542,7 +544,7 @@ class DynamicTestRunner(
      * 执行清理任务
      */
     private fun performCleanup() {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         
         // 清理超时的运行测试
         val currentRunning = _runningTests.value.toMutableMap()
@@ -572,7 +574,7 @@ class DynamicTestRunner(
      * 更新心跳
      */
     private fun updateHeartbeat() {
-        updateMetrics { it.copy(lastHeartbeat = System.currentTimeMillis()) }
+        updateMetrics { it.copy(lastHeartbeat = getCurrentTimeMillis()) }
     }
     
     /**
@@ -620,10 +622,10 @@ class DynamicTestRunner(
         
         // 等待运行中的测试完成或超时
         val maxWaitTime = 30000L // 30秒
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         while (_runningTests.value.isNotEmpty() && 
-               System.currentTimeMillis() - startTime < maxWaitTime) {
+               getCurrentTimeMillis() - startTime < maxWaitTime) {
             delay(1000)
         }
         
@@ -680,16 +682,7 @@ enum class TestExecutionStatus {
     CANCELLED
 }
 
-/**
- * 测试状态枚举
- */
-enum class TestStatus {
-    QUEUED,
-    RUNNING,
-    COMPLETED,
-    FAILED,
-    CANCELLED
-}
+// TestStatus已在UnifyTypes.kt中定义，此处移除重复声明
 
 /**
  * 测试请求数据类
@@ -761,7 +754,7 @@ data class TestRunnerMetrics(
     val totalStarted: Int = 0,
     val totalCompleted: Int = 0,
     val totalFailed: Int = 0,
-    val lastHeartbeat: Long = System.currentTimeMillis()
+    val lastHeartbeat: Long = getCurrentTimeMillis()
 )
 
 /**

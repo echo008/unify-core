@@ -61,7 +61,7 @@ fun UnifyDialog(
     when (type) {
         UnifyDialogType.ALERT, UnifyDialogType.CONFIRMATION -> {
             AlertDialog(
-                onDismissRequest = if (dismissible) onDismissRequest else { },
+                onDismissRequest = if (dismissible) onDismissRequest else { {} },
                 title = title?.let {
                     {
                         Row(
@@ -111,7 +111,7 @@ fun UnifyDialog(
         }
         UnifyDialogType.CUSTOM -> {
             CustomDialog(
-                onDismissRequest = if (dismissible) onDismissRequest else { },
+                onDismissRequest = if (dismissible) onDismissRequest else { {} },
                 title = title,
                 message = message,
                 icon = icon,

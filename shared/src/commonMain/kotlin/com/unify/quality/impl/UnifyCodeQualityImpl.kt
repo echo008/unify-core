@@ -1,9 +1,17 @@
 package com.unify.quality.impl
 
 import com.unify.quality.data.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify代码质量管理实现
@@ -291,7 +299,7 @@ class UnifyCodeQualityImpl {
         // 模拟趋势数据
         val dataPoints = (1..days).map { day ->
             QualityDataPoint(
-                timestamp = System.currentTimeMillis() - (days - day) * 24 * 60 * 60 * 1000L,
+                timestamp = getCurrentTimeMillis() - (days - day) * 24 * 60 * 60 * 1000L,
                 value = when (metricName) {
                     "codeReusabilityRate" -> 0.85 + (day * 0.001)
                     "testCoverage" -> 0.90 + (day * 0.002)

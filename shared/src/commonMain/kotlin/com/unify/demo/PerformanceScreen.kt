@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.unify.ui.components.feedback.UnifyProgress
-import com.unify.ui.components.container.UnifySection
+import com.unify.core.components.UnifySection
 import kotlinx.coroutines.delay
 
 /**
@@ -51,8 +51,7 @@ fun PerformanceScreen(
     ) {
         item {
             UnifySection(
-                title = "性能监控",
-                subtitle = "实时系统性能指标"
+                title = "性能监控"
             ) {
                 if (isLoading) {
                     Box(

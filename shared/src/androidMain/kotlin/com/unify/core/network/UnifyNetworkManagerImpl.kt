@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializers.PolymorphicSerializer
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -70,7 +71,7 @@ class AndroidUnifyNetworkManager(private val context: Context) : UnifyNetworkMan
         val requestBody = body?.let { bodyData ->
             val jsonString = when (bodyData) {
                 is String -> bodyData
-                else -> json.encodeToString(kotlinx.serialization.serializers.serializer(), bodyData)
+                else -> json.encodeToString(kotlinx.serialization.serializers.PolymorphicSerializer(Any::class), bodyData)
             }
             jsonString.toRequestBody("application/json".toMediaType())
         } ?: "".toRequestBody()
@@ -94,7 +95,7 @@ class AndroidUnifyNetworkManager(private val context: Context) : UnifyNetworkMan
         val requestBody = body?.let { bodyData ->
             val jsonString = when (bodyData) {
                 is String -> bodyData
-                else -> json.encodeToString(kotlinx.serialization.serializers.serializer(), bodyData)
+                else -> json.encodeToString(kotlinx.serialization.serializers.PolymorphicSerializer(Any::class), bodyData)
             }
             jsonString.toRequestBody("application/json".toMediaType())
         } ?: "".toRequestBody()

@@ -48,47 +48,7 @@ fun UnifyScrollableContainer(
     )
 }
 
-@Composable
-fun UnifySection(
-    title: String,
-    modifier: Modifier = Modifier,
-    subtitle: String? = null,
-    actions: (@Composable RowScope.() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            
-            if (actions != null) {
-                Row(content = actions)
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Column(content = content)
-    }
-}
+// UnifySection moved to core/components/UnifyLayout.kt to avoid duplicate declarations
 
 @Composable
 fun UnifyGrid(

@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material3.contentColorFor
 import androidx.compose.ui.unit.dp
 
 /**
@@ -101,13 +102,13 @@ fun UnifyNavigationRail(
     modifier: Modifier = Modifier,
     containerColor: Color = NavigationRailDefaults.ContainerColor,
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
-    header: @Composable (() -> Unit)? = null
+    header: (@Composable () -> Unit)? = null
 ) {
     NavigationRail(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        header = header
+        header = header?.let { { it() } }
     ) {
         items.forEach { item ->
             NavigationRailItem(

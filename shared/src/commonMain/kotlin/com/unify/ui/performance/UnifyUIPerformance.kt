@@ -1,11 +1,23 @@
 package com.unify.ui.performance
 
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify UI性能监控和优化系统
@@ -65,7 +77,7 @@ class UnifyUIPerformanceMonitor {
      * 获取当前性能指标
      */
     fun getCurrentMetrics(): UIPerformanceMetrics {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val averageFrameTime = if (frameTimeHistory.isNotEmpty()) {
             frameTimeHistory.average()
         } else {
@@ -239,7 +251,7 @@ class UnifyUIPerformanceMonitor {
             bottlenecks = bottlenecks,
             suggestions = suggestions,
             overallScore = calculateOverallScore(metrics),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
     }
     
@@ -248,8 +260,8 @@ class UnifyUIPerformanceMonitor {
         if (frameTimeHistory.isNotEmpty()) {
             val stats = RenderingStats(
                 averageFrameTime = frameTimeHistory.average(),
-                minFrameTime = frameTimeHistory.minOrNull() ?: 0.0,
-                maxFrameTime = frameTimeHistory.maxOrNull() ?: 0.0,
+                minFrameTime = frameTimeHistory.minOrNull()?.toDouble() ?: 0.0,
+                maxFrameTime = frameTimeHistory.maxOrNull()?.toDouble() ?: 0.0,
                 frameCount = frameTimeHistory.size,
                 droppedFrameCount = calculateDroppedFrames()
             )
@@ -351,9 +363,9 @@ object UnifyUIPerformanceOptimizer {
         name: String,
         content: @Composable () -> T
     ): T {
-        val startTime = remember { System.currentTimeMillis() }
+        val startTime = remember { getCurrentTimeMillis() }
         val result = content()
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         
         LaunchedEffect(endTime) {
             println("组件 $name 渲染时间: ${endTime - startTime}ms")

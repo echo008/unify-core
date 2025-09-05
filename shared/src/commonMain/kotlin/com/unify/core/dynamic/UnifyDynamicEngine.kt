@@ -1,12 +1,29 @@
 package com.unify.core.dynamic
 
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableMapOf
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableListOf
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+import com.unify.core.architecture.ComponentType
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 统一动态化引擎 - 核心组件
@@ -70,7 +87,7 @@ enum class ComponentState {
 }
 
 /**
- * 动态组件信息
+ * 动态组件信息 - 统一版本
  */
 @Serializable
 data class ComponentInfo(
@@ -78,7 +95,24 @@ data class ComponentInfo(
     val state: ComponentState,
     val loadTime: Long = 0L,
     val lastUpdate: Long = 0L,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val registration: ComponentRegistration = ComponentRegistration(
+        id = component.id,
+        name = component.name,
+        version = component.version,
+        type = com.unify.core.architecture.ComponentType.UI, // 转换DynamicComponentType到ComponentType
+        description = component.metadata["description"] ?: "动态组件",
+        author = component.metadata["author"] ?: "Unknown",
+        size = component.content.length.toLong(),
+        checksum = component.checksum,
+        dependencies = component.dependencies,
+        permissions = component.metadata["permissions"]?.split(",") ?: emptyList(),
+        metadata = component.metadata
+    ),
+    val loaded: LoadedComponent? = null,
+    val metrics: ComponentMetrics? = null,
+    val dependencies: List<String> = component.dependencies,
+    val dependents: List<String> = emptyList()
 )
 
 /**
@@ -175,7 +209,7 @@ class UnifyDynamicEngineImpl(
     override fun isRunning(): Boolean = isEngineRunning
     
     override suspend fun loadComponent(component: DynamicComponent): DynamicLoadResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         try {
             // 更新状态
@@ -218,8 +252,8 @@ class UnifyDynamicEngineImpl(
                 val componentInfo = ComponentInfo(
                     component = component,
                     state = ComponentState.LOADED,
-                    loadTime = System.currentTimeMillis() - startTime,
-                    lastUpdate = System.currentTimeMillis()
+                    loadTime = getCurrentTimeMillis() - startTime,
+                    lastUpdate = getCurrentTimeMillis()
                 )
                 loadedComponents[component.id] = componentInfo
                 updateComponentState(component.id, ComponentState.LOADED)
@@ -233,7 +267,7 @@ class UnifyDynamicEngineImpl(
                     success = true,
                     componentId = component.id,
                     message = "组件加载成功",
-                    loadTime = System.currentTimeMillis() - startTime
+                    loadTime = getCurrentTimeMillis() - startTime
                 )
             } else {
                 updateComponentState(component.id, ComponentState.ERROR)

@@ -1,7 +1,11 @@
 package com.unify.ui.components.platform
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -10,8 +14,156 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * 小程序平台UI适配器
- * 提供小程序特有的UI组件和交互方式
+ * 小程序平台UI适配器实现
+ */
+@Composable
+actual fun UnifyPlatformButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    text: String
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF07C160)
+        )
+    ) {
+        Text(text = text, color = Color.White)
+    }
+}
+
+@Composable
+actual fun UnifyPlatformTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier,
+    placeholder: String,
+    enabled: Boolean
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        placeholder = { Text(placeholder) },
+        enabled = enabled,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = Color(0xFF07C160)
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier,
+    enabled: Boolean
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        enabled = enabled,
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = Color(0xFF07C160),
+            checkedTrackColor = Color(0xFF07C160).copy(alpha = 0.5f)
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier,
+    valueRange: ClosedFloatingPointRange<Float>,
+    enabled: Boolean
+) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        valueRange = valueRange,
+        enabled = enabled,
+        colors = SliderDefaults.colors(
+            thumbColor = Color(0xFF07C160),
+            activeTrackColor = Color(0xFF07C160)
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformProgressBar(
+    progress: Float,
+    modifier: Modifier,
+    color: Color
+) {
+    LinearProgressIndicator(
+        progress = progress,
+        modifier = modifier,
+        color = color.takeIf { it != Color.Unspecified } ?: Color(0xFF07C160)
+    )
+}
+
+@Composable
+actual fun UnifyPlatformDialog(
+    onDismissRequest: () -> Unit,
+    title: String,
+    content: @Composable () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    dismissButton: @Composable (() -> Unit)?
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(title) },
+        text = content,
+        confirmButton = confirmButton,
+        dismissButton = dismissButton
+    )
+}
+
+@Composable
+actual fun UnifyPlatformCard(
+    modifier: Modifier,
+    onClick: (() -> Unit)?,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier,
+        onClick = onClick ?: {},
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+actual fun UnifyPlatformChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    selected: Boolean
+) {
+    FilterChip(
+        onClick = onClick,
+        label = { Text(text) },
+        selected = selected,
+        modifier = modifier,
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = Color(0xFF07C160),
+            selectedLabelColor = Color.White
+        )
+    )
+}
+
+/**
+ * 小程序平台特有的UI组件和交互方式
  */
 object MiniAppUnifyPlatformAdapters {
     

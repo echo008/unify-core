@@ -1,8 +1,14 @@
 package com.unify.ui.components.wearable
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.Composable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 可穿戴设备组件接口定义
@@ -14,14 +20,14 @@ data class HealthMetric(
     val type: String,
     val value: String,
     val unit: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 data class WatchNotification(
     val id: String,
     val title: String,
     val content: String,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 enum class NotificationAction {

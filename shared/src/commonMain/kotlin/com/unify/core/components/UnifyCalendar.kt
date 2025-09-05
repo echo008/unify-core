@@ -265,9 +265,8 @@ private fun CalendarDay(
             .clickable(enabled = isEnabled) { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        UnifyColumn(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            spacing = UnifySpacing.NONE
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 text = day.toString(),

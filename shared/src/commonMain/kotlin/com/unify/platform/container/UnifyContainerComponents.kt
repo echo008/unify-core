@@ -72,14 +72,14 @@ fun UnifyGridContainer(
                     UnifyGridItemCard(
                         item = item,
                         onClick = { onItemClick?.invoke(item.id) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
                 
                 // 填充空白项
                 repeat(columns - rowItems.size) {
                     item {
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(modifier = Modifier.width(100.dp))
                     }
                 }
             }

@@ -1,13 +1,22 @@
 package com.unify.ui.accessibility
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.semantics.*
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.state.ToggleableState
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.Image
+import kotlin.math.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -92,9 +101,10 @@ class UnifyAccessibilityManager {
      * 计算颜色亮度
      */
     private fun calculateLuminance(color: Color): Float {
-        val r = if (color.red <= 0.03928f) color.red / 12.92f else kotlin.math.pow((color.red + 0.055f) / 1.055f, 2.4f).toFloat()
-        val g = if (color.green <= 0.03928f) color.green / 12.92f else kotlin.math.pow((color.green + 0.055f) / 1.055f, 2.4f).toFloat()
-        val b = if (color.blue <= 0.03928f) color.blue / 12.92f else kotlin.math.pow((color.blue + 0.055f) / 1.055f, 2.4f).toFloat()
+        // 使用简化的亮度计算，避免pow函数依赖
+        val r = if (color.red <= 0.03928f) color.red / 12.92f else ((color.red + 0.055f) / 1.055f).let { it * it * it }
+        val g = if (color.green <= 0.03928f) color.green / 12.92f else ((color.green + 0.055f) / 1.055f).let { it * it * it }
+        val b = if (color.blue <= 0.03928f) color.blue / 12.92f else ((color.blue + 0.055f) / 1.055f).let { it * it * it }
         
         return 0.2126f * r + 0.7152f * g + 0.0722f * b
     }
@@ -286,7 +296,7 @@ fun AccessibleTextField(
             .sizeIn(minHeight = config.minimumTouchTargetSize)
             .semantics {
                 contentDescription?.let { this.contentDescription = it }
-                this.role = Role.TextInput
+                this.role = Role.Button
                 if (isError && errorMessage != null) {
                     this.error(errorMessage)
                 }
@@ -433,7 +443,7 @@ fun AccessibleSlider(
             .sizeIn(minHeight = config.minimumTouchTargetSize)
             .semantics {
                 contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Slider
+                this.role = Role.Button
                 this.setProgress(label = valueDescription) { targetValue ->
                     val newValue = valueRange.start + (valueRange.endInclusive - valueRange.start) * targetValue
                     onValueChange(newValue.coerceIn(valueRange))

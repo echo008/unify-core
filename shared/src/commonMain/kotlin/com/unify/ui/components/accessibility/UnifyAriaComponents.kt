@@ -1,11 +1,20 @@
 package com.unify.ui.components.accessibility
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.semantics.*
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
 
 /**
@@ -45,7 +54,7 @@ fun UnifyAccessibleText(
     isHeading: Boolean = false,
     headingLevel: Int = 1,
     isLiveRegion: Boolean = false,
-    liveRegionMode: LiveRegionMode = LiveRegionMode.Polite
+    liveRegionMode: androidx.compose.ui.semantics.LiveRegionMode = androidx.compose.ui.semantics.LiveRegionMode.Polite
 ) {
     Text(
         text = text,
@@ -62,12 +71,13 @@ fun UnifyAccessibleText(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun UnifyAccessibleImage(
+    painter: androidx.compose.ui.graphics.painter.Painter,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    isDecorative: Boolean = false,
-    content: @Composable () -> Unit
+    isDecorative: Boolean = false
 ) {
     Box(
         modifier = modifier.semantics {
@@ -80,7 +90,11 @@ fun UnifyAccessibleImage(
             }
         }
     ) {
-        content()
+        androidx.compose.foundation.Image(
+            painter = painter,
+            contentDescription = if (isDecorative) null else contentDescription,
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
@@ -134,7 +148,7 @@ fun UnifyAccessibleTextField(
                 modifier = Modifier
                     .padding(start = 16.dp, top = 4.dp)
                     .semantics {
-                        liveRegion = LiveRegionMode.Assertive
+                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
                     }
             )
         }
@@ -277,7 +291,7 @@ fun UnifyAccessibleNavigationItem(
     enabled: Boolean = true,
     badge: String? = null
 ) {
-    NavigationBarItem(
+    NavigationRailItem(
         selected = selected,
         onClick = onClick,
         icon = icon,
@@ -326,7 +340,7 @@ fun UnifyAccessibleProgress(
                     text = "$progressPercentage%",
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.semantics {
-                        liveRegion = LiveRegionMode.Polite
+                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
                     }
                 )
             }
@@ -357,7 +371,7 @@ fun UnifyAccessibleAlert(
                 text = title,
                 modifier = Modifier.semantics {
                     heading()
-                    liveRegion = LiveRegionMode.Assertive
+                    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
                 }
             )
         },
@@ -365,18 +379,15 @@ fun UnifyAccessibleAlert(
             Text(
                 text = message,
                 modifier = Modifier.semantics {
-                    liveRegion = LiveRegionMode.Polite
+                    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
                 }
             )
         },
         confirmButton = confirmButton,
         dismissButton = dismissButton,
         modifier = modifier.semantics {
-            role = Role.Dialog
+            role = Role.Button
         }
     )
 }
 
-enum class LiveRegionMode {
-    Polite, Assertive
-}

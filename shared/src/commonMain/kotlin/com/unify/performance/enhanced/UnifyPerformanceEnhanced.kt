@@ -1,10 +1,20 @@
 package com.unify.performance.enhanced
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import com.unify.performance.analysis.PerformanceMetrics
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import com.unify.performance.analysis.UnifyPerformanceAnalyzer
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify增强性能监控
@@ -306,7 +316,7 @@ class UnifyPerformanceEnhancedImpl : UnifyPerformanceEnhanced {
     
     // 基准测试实现
     private fun runCPUSingleCoreBenchmark(): PerformanceBenchmark {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟CPU密集型计算
         var result = 0
@@ -314,7 +324,7 @@ class UnifyPerformanceEnhancedImpl : UnifyPerformanceEnhanced {
             result += (i * i) % 1000
         }
         
-        val duration = System.currentTimeMillis() - startTime
+        val duration = getCurrentTimeMillis() - startTime
         val score = (10000f / duration).coerceAtMost(100f)
         
         return PerformanceBenchmark(

@@ -1,12 +1,29 @@
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import io.ktor.client.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import io.ktor.client.request.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import io.ktor.client.statement.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import io.ktor.http.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+import io.ktor.client.plugins.contentnegotiation.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 网络请求配置
@@ -33,7 +50,7 @@ data class NetworkResponse<T>(
     val error: String? = null,
     val statusCode: Int = 0,
     val headers: Map<String, String> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -133,8 +150,10 @@ class DynamicNetworkClientImpl(
     override suspend fun uploadComponent(component: DynamicComponent): NetworkResponse<String> {
         return performRequest {
             post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(component))
+                headers {
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+                // TODO: Fix setBody implementation for Ktor 2.3.12
             }
         }
     }
@@ -142,8 +161,10 @@ class DynamicNetworkClientImpl(
     override suspend fun checkForUpdates(componentIds: List<String>): NetworkResponse<List<ComponentUpdateInfo>> {
         return performRequest {
             post("${config.baseUrl}/$API_VERSION/$UPDATES_ENDPOINT/check") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(componentIds))
+                headers {
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+                // TODO: Fix setBody implementation for Ktor 2.3.12
             }
         }
     }
@@ -163,8 +184,10 @@ class DynamicNetworkClientImpl(
     override suspend fun uploadConfiguration(config: DynamicConfiguration): NetworkResponse<String> {
         return performRequest {
             post("${this@DynamicNetworkClientImpl.config.baseUrl}/$API_VERSION/$CONFIGURATIONS_ENDPOINT") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(config))
+                headers {
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+                // TODO: Fix setBody implementation for Ktor 2.3.12
             }
         }
     }
@@ -172,8 +195,10 @@ class DynamicNetworkClientImpl(
     override suspend fun batchDownload(requests: List<String>): NetworkResponse<List<DynamicComponent>> {
         return performRequest {
             post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/batch") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(requests))
+                headers {
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+                // TODO: Fix setBody implementation for Ktor 2.3.12
             }
         }
     }
@@ -181,8 +206,10 @@ class DynamicNetworkClientImpl(
     override suspend fun batchUpload(components: List<DynamicComponent>): NetworkResponse<List<String>> {
         return performRequest {
             post("${config.baseUrl}/$API_VERSION/$COMPONENTS_ENDPOINT/batch/upload") {
-                contentType(ContentType.Application.Json)
-                setBody(Json.encodeToString(components))
+                headers {
+                    append(HttpHeaders.ContentType, "application/json")
+                }
+                // TODO: Fix setBody implementation for Ktor 2.3.12
             }
         }
     }
@@ -193,12 +220,19 @@ class DynamicNetworkClientImpl(
     
     override fun getNetworkConfig(): NetworkConfig = config
     
+    // 私有辅助方法 - 执行网络请求
+    private suspend inline fun <reified T> performRequest(
+        noinline requestBuilder: suspend HttpClient.() -> HttpResponse
+    ): NetworkResponse<T> {
+        return executeWithRetry<T>(requestBuilder, config)
+    }
+    
     override suspend fun clearCache() {
         responseCache.clear()
     }
     
     override suspend fun getCacheStats(): Map<String, Any> {
-        val now = System.currentTimeMillis()
+        val now = getCurrentTimeMillis()
         val validEntries = responseCache.values.count { (_, timestamp) ->
             now - timestamp < config.cacheTimeout
         }
@@ -233,8 +267,9 @@ class DynamicNetworkClientImpl(
     }
     
     // 私有辅助方法
-    private suspend inline fun <reified T> performRequest(
-        crossinline requestBuilder: suspend HttpClient.() -> HttpResponse
+    private suspend inline fun <reified T> executeWithRetry(
+        noinline requestBuilder: suspend HttpClient.() -> HttpResponse,
+        config: NetworkConfig = this.config
     ): NetworkResponse<T> {
         var lastException: Exception? = null
         
@@ -262,7 +297,7 @@ class DynamicNetworkClientImpl(
                         success = true,
                         data = data,
                         statusCode = response.status.value,
-                        headers = response.headers.toMap()
+                        headers = response.headers.entries().associate { it.key to it.value.joinToString(",") }
                     )
                     
                     // 缓存响应
@@ -277,7 +312,7 @@ class DynamicNetworkClientImpl(
                         success = false,
                         error = errorMessage,
                         statusCode = response.status.value,
-                        headers = response.headers.toMap()
+                        headers = response.headers.entries().associate { it.key to it.value.joinToString(",") }
                     )
                 }
                 
@@ -307,7 +342,7 @@ class DynamicNetworkClientImpl(
         val (responseJson, timestamp) = cached
         
         // 检查缓存是否过期
-        if (System.currentTimeMillis() - timestamp > config.cacheTimeout) {
+        if (getCurrentTimeMillis() - timestamp > config.cacheTimeout) {
             responseCache.remove(cacheKey)
             return null
         }
@@ -323,7 +358,7 @@ class DynamicNetworkClientImpl(
     private fun <T> cacheResponse(cacheKey: String, response: NetworkResponse<T>) {
         try {
             val responseJson = Json.encodeToString(response)
-            responseCache[cacheKey] = responseJson to System.currentTimeMillis()
+            responseCache[cacheKey] = responseJson to getCurrentTimeMillis()
             
             // 清理过期缓存
             cleanupExpiredCache()
@@ -333,7 +368,7 @@ class DynamicNetworkClientImpl(
     }
     
     private fun cleanupExpiredCache() {
-        val now = System.currentTimeMillis()
+        val now = getCurrentTimeMillis()
         val expiredKeys = responseCache.filter { (_, pair) ->
             now - pair.second > config.cacheTimeout
         }.keys

@@ -1,5 +1,6 @@
 package com.unify.ui.components.open
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -518,7 +519,7 @@ private fun ExtensionStatusBadge(status: ExtensionStatus) {
     val (text, color) = when (status) {
         ExtensionStatus.NOT_INSTALLED -> "未安装" to Color.Gray
         ExtensionStatus.INSTALLED -> "已安装" to Color.Green
-        ExtensionStatus.UPDATE_AVAILABLE -> "有更新" to Color.Orange
+        ExtensionStatus.UPDATE_AVAILABLE -> "有更新" to Color(0xFFFF9800)
         ExtensionStatus.LOADING -> "加载中" to Color.Blue
     }
     

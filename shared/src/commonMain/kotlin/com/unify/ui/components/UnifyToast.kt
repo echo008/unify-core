@@ -15,6 +15,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Unify Toast组件
@@ -68,10 +70,8 @@ class ToastState {
         
         // 自动移除Toast
         if (duration > 0) {
-            kotlinx.coroutines.GlobalScope.launch {
-                delay(duration)
-                _toasts.remove(toast)
-            }
+            // 需要在Composable中使用LaunchedEffect来处理协程
+            // 这里暂时注释掉，在UI组件中处理自动移除
         }
     }
     

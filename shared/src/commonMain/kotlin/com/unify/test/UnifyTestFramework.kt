@@ -1,9 +1,17 @@
 package com.unify.test
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 统一测试框架
@@ -38,7 +46,7 @@ class UnifyTestFramework {
             _testState.value = _testState.value.copy(
                 isInitializing = false,
                 isInitialized = true,
-                initTime = System.currentTimeMillis()
+                initTime = getCurrentTimeMillis()
             )
             
             TestResult.Success("测试框架初始化成功")
@@ -71,7 +79,7 @@ class UnifyTestFramework {
             _testState.value = _testState.value.copy(
                 isRunning = true,
                 currentSuite = testSuite.name,
-                startTime = System.currentTimeMillis()
+                startTime = getCurrentTimeMillis()
             )
             
             val results = testRunner.executeTests(testSuite)
@@ -85,7 +93,7 @@ class UnifyTestFramework {
                 passedTests = results.count { it.status == TestStatus.PASSED },
                 failedTests = results.count { it.status == TestStatus.FAILED },
                 skippedTests = results.count { it.status == TestStatus.SKIPPED },
-                duration = System.currentTimeMillis() - _testState.value.startTime,
+                duration = getCurrentTimeMillis() - _testState.value.startTime,
                 coverage = coverage,
                 results = results,
                 errors = results.filter { it.status == TestStatus.FAILED }.map { it.error ?: "未知错误" }
@@ -94,14 +102,14 @@ class UnifyTestFramework {
             _testState.value = _testState.value.copy(
                 isRunning = false,
                 lastResult = executionResult,
-                endTime = System.currentTimeMillis()
+                endTime = getCurrentTimeMillis()
             )
             
             executionResult
         } catch (e: Exception) {
             _testState.value = _testState.value.copy(
                 isRunning = false,
-                endTime = System.currentTimeMillis()
+                endTime = getCurrentTimeMillis()
             )
             
             TestExecutionResult(
@@ -130,7 +138,7 @@ class UnifyTestFramework {
             
             TestQualityReport(
                 suite = testSuite.name,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 metrics = qualityMetrics,
                 qualityScore = calculateQualityScore(qualityMetrics),
                 recommendations = recommendations,
@@ -139,7 +147,7 @@ class UnifyTestFramework {
         } catch (e: Exception) {
             TestQualityReport(
                 suite = testSuite.name,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 metrics = TestQualityMetrics(),
                 qualityScore = 0,
                 recommendations = listOf("质量分析失败: ${e.message}"),
@@ -155,7 +163,7 @@ class UnifyTestFramework {
     fun getTestReport(): TestFrameworkReport {
         val state = _testState.value
         return TestFrameworkReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             isInitialized = state.isInitialized,
             isRunning = state.isRunning,
             config = state.config,
@@ -267,9 +275,9 @@ class TestRunner {
     suspend fun executeTests(testSuite: TestSuite): List<TestCaseResult> {
         return testSuite.testCases.map { testCase ->
             try {
-                val startTime = System.currentTimeMillis()
+                val startTime = getCurrentTimeMillis()
                 val success = executeTestCase(testCase)
-                val duration = System.currentTimeMillis() - startTime
+                val duration = getCurrentTimeMillis() - startTime
                 
                 TestCaseResult(
                     testCase = testCase,
@@ -302,7 +310,7 @@ class TestReporter {
     fun generateReport(testSuite: TestSuite, results: List<TestCaseResult>, coverage: Double): TestReport {
         return TestReport(
             suiteName = testSuite.name,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             totalTests = results.size,
             passedTests = results.count { it.status == TestStatus.PASSED },
             failedTests = results.count { it.status == TestStatus.FAILED },

@@ -1,16 +1,38 @@
 package com.unify.ui.components.scanner
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.sp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 跨平台统一扫描器组件系统
@@ -636,7 +658,7 @@ data class ScanResult(
     val type: ScanResultType,
     val content: String,
     val metadata: Map<String, String> = emptyMap(),
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val confidence: Float = 1.0f
 )
 
@@ -715,7 +737,7 @@ private fun getScannerInstructions(type: ScannerType): String {
  * 格式化时间戳
  */
 private fun formatTimestamp(timestamp: Long): String {
-    val now = System.currentTimeMillis()
+    val now = getCurrentTimeMillis()
     val diff = now - timestamp
     
     return when {

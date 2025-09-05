@@ -53,7 +53,7 @@ actual fun UnifySurface(
                 border?.let { borderStroke ->
                     mod.border(
                         width = borderStroke.width,
-                        color = borderStroke.brush,
+                        color = borderStroke.color,
                         shape = surfaceShape
                     )
                 } ?: mod

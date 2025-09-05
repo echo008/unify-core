@@ -1,10 +1,20 @@
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableMapOf
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableListOf
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 回滚点数据结构
@@ -140,7 +150,7 @@ class RollbackManagerImpl(
                 id = rollbackPointId,
                 componentId = componentId,
                 version = component.version,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 description = description.ifEmpty { "自动备份 - ${component.version}" },
                 componentData = Json.encodeToString(component),
                 configData = component.config,
@@ -226,7 +236,7 @@ class RollbackManagerImpl(
                 fromVersion = currentComponent?.component?.version ?: "unknown",
                 toVersion = targetRollbackPoint.version,
                 rollbackPointId = targetRollbackPoint.id,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 status = RollbackStatus.PENDING,
                 reason = "手动回滚操作"
             )
@@ -316,7 +326,7 @@ class RollbackManagerImpl(
     override fun getRollbackPolicy(): RollbackPolicy = rollbackPolicy
     
     override suspend fun cleanupExpiredBackups(): Int {
-        val cutoffTime = System.currentTimeMillis() - (rollbackPolicy.retentionDays * 24 * 60 * 60 * 1000L)
+        val cutoffTime = getCurrentTimeMillis() - (rollbackPolicy.retentionDays * 24 * 60 * 60 * 1000L)
         var cleanedCount = 0
         
         rollbackPoints.values.forEach { backupList ->
@@ -358,7 +368,7 @@ class RollbackManagerImpl(
     override suspend fun exportBackups(): String {
         val exportData = mapOf(
             "version" to "1.0",
-            "timestamp" to System.currentTimeMillis(),
+            "timestamp" to getCurrentTimeMillis(),
             "rollbackPoints" to getAllBackupPoints(),
             "rollbackOperations" to rollbackOperations,
             "policy" to rollbackPolicy
@@ -408,11 +418,11 @@ class RollbackManagerImpl(
     
     // 私有辅助方法
     private fun generateRollbackPointId(componentId: String): String {
-        return "rollback_${componentId}_${System.currentTimeMillis()}"
+        return "rollback_${componentId}_${getCurrentTimeMillis()}"
     }
     
     private fun generateOperationId(): String {
-        return "operation_${System.currentTimeMillis()}_${(0..999).random()}"
+        return "operation_${getCurrentTimeMillis()}_${(0..999).random()}"
     }
     
     private fun calculateChecksum(component: DynamicComponent): String {

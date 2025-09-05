@@ -1,4 +1,6 @@
 package com.unify.core.data
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +70,7 @@ interface UnifyRepository<T : Any> {
 /**
  * 通用数据仓库实现
  */
-class UnifyRepositoryImpl<T : RepositoryEntity>(
+open class UnifyRepositoryImpl<T : RepositoryEntity>(
     private val dataSource: DataSource<T>
 ) : UnifyRepository<T> {
     
@@ -99,11 +101,11 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
             // 从数据源获取
             val data = dataSource.getAll()
             _allDataCache.value = data
-            _lastCacheUpdate.value = System.currentTimeMillis()
+            _lastCacheUpdate.value = getCurrentTimeMillis()
             
             // 更新单项缓存
             data.forEach { item ->
-                _cache[item.id] = CachedItem(item, System.currentTimeMillis())
+                _cache[item.id] = CachedItem(item, getCurrentTimeMillis())
             }
             
             emit(data)
@@ -124,7 +126,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
             // 从数据源获取
             val item = dataSource.getById(id)
             if (item != null) {
-                _cache[id] = CachedItem(item, System.currentTimeMillis())
+                _cache[id] = CachedItem(item, getCurrentTimeMillis())
             }
             
             emit(item)
@@ -138,7 +140,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
             val result = dataSource.insert(item)
             
             // 更新缓存
-            _cache[item.id] = CachedItem(result, System.currentTimeMillis())
+            _cache[item.id] = CachedItem(result, getCurrentTimeMillis())
             invalidateAllDataCache()
             
             Result.success(result)
@@ -152,7 +154,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
             val result = dataSource.update(item)
             
             // 更新缓存
-            _cache[item.id] = CachedItem(result, System.currentTimeMillis())
+            _cache[item.id] = CachedItem(result, getCurrentTimeMillis())
             invalidateAllDataCache()
             
             Result.success(result)
@@ -183,7 +185,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
             
             // 更新缓存
             results.forEach { item ->
-                _cache[item.id] = CachedItem(item, System.currentTimeMillis())
+                _cache[item.id] = CachedItem(item, getCurrentTimeMillis())
             }
             invalidateAllDataCache()
             
@@ -253,7 +255,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
      * 检查缓存是否过期
      */
     private fun isCacheExpired(timestamp: Long): Boolean {
-        return System.currentTimeMillis() - timestamp > CACHE_EXPIRY_MS
+        return getCurrentTimeMillis() - timestamp > CACHE_EXPIRY_MS
     }
     
     /**
@@ -268,7 +270,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
      * 清理过期缓存
      */
     fun cleanExpiredCache() {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val expiredKeys = _cache.entries
             .filter { currentTime - it.value.timestamp > CACHE_EXPIRY_MS }
             .map { it.key }
@@ -282,7 +284,7 @@ class UnifyRepositoryImpl<T : RepositoryEntity>(
      * 获取缓存统计信息
      */
     fun getCacheStats(): CacheStats {
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val expiredCount = _cache.values.count { 
             currentTime - it.timestamp > CACHE_EXPIRY_MS 
         }
@@ -468,8 +470,8 @@ data class UserEntity(
     override val id: String,
     val name: String,
     val email: String,
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    val createdAt: Long = getCurrentTimeMillis(),
+    val updatedAt: Long = getCurrentTimeMillis()
 ) : RepositoryEntity
 
 /**
@@ -484,9 +486,10 @@ class UserRepository : UnifyRepositoryImpl<UserEntity>(
      */
     suspend fun findByEmail(email: String): Flow<UserEntity?> = flow {
         try {
-            val users = dataSource.search(email)
-            val user = users.find { it.email.equals(email, ignoreCase = true) }
-            emit(user)
+            getAll().collect { users ->
+                val user = users.find { it.email.equals(email, ignoreCase = true) }
+                emit(user)
+            }
         } catch (e: Exception) {
             throw RepositoryException("根据邮箱查找用户失败: $email", e)
         }
@@ -497,11 +500,12 @@ class UserRepository : UnifyRepositoryImpl<UserEntity>(
      */
     suspend fun getActiveUsers(): Flow<List<UserEntity>> = flow {
         try {
-            val allUsers = dataSource.getAll()
-            val activeUsers = allUsers.filter { user ->
-                System.currentTimeMillis() - user.updatedAt < 86400000L // 24小时内活跃
+            getAll().collect { users ->
+                val activeUsers = users.filter { user ->
+                    getCurrentTimeMillis() - user.updatedAt < 86400000L // 24小时内活跃
+                }
+                emit(activeUsers)
             }
-            emit(activeUsers)
         } catch (e: Exception) {
             throw RepositoryException("获取活跃用户失败", e)
         }

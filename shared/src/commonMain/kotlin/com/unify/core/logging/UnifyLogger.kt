@@ -1,6 +1,8 @@
 package com.unify.core.logging
 
 import com.unify.core.types.UnifyLogLevel
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import com.unify.core.types.UnifyResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,7 +17,7 @@ data class UnifyLogEntry(
     val tag: String,
     val message: String,
     val throwable: Throwable? = null,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val threadName: String = "main",
     val metadata: Map<String, Any> = emptyMap()
 ) {
@@ -44,7 +46,7 @@ class UnifyConsoleAppender : UnifyLogAppender {
             println(entry.toFormattedString())
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("控制台输出失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("控制台输出失败", e))
         }
     }
     
@@ -71,7 +73,7 @@ class UnifyMemoryAppender(
             _entries.value = currentEntries
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("内存日志添加失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("内存日志添加失败", e))
         }
     }
     
@@ -82,7 +84,7 @@ class UnifyMemoryAppender(
             _entries.value = emptyList()
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("内存日志清理失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("内存日志清理失败", e))
         }
     }
     
@@ -110,7 +112,7 @@ class UnifyMemoryAppender(
             
             UnifyResult.Success(filteredEntries)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("获取日志条目失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("获取日志条目失败", e))
         }
     }
 }
@@ -192,7 +194,7 @@ class UnifyLoggerImpl(
             }
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("添加日志输出器失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("添加日志输出器失败", e))
         }
     }
     
@@ -201,7 +203,7 @@ class UnifyLoggerImpl(
             _appenders.remove(appender)
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("移除日志输出器失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("移除日志输出器失败", e))
         }
     }
     
@@ -210,7 +212,7 @@ class UnifyLoggerImpl(
             _appenders.forEach { it.flush() }
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("刷新日志失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("刷新日志失败", e))
         }
     }
     
@@ -220,7 +222,7 @@ class UnifyLoggerImpl(
             _appenders.clear()
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.failure(com.unify.core.exceptions.UnifyUnknownException("关闭日志系统失败", e.message))
+            UnifyResult.failure(com.unify.core.error.UnifyUnknownException("关闭日志系统失败", e))
         }
     }
 }

@@ -1,4 +1,6 @@
 package com.unify.demo
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -149,7 +151,7 @@ private fun PlatformInfoDemo(platformInfo: PlatformInfo) {
                 title = "运行时信息",
                 icon = Icons.Default.Memory
             ) {
-                InfoRow("当前时间", System.currentTimeMillis().toString())
+                InfoRow("当前时间", getCurrentTimeMillis().toString())
                 InfoRow("可用处理器", Runtime.getRuntime().availableProcessors().toString())
                 InfoRow("最大内存", "${Runtime.getRuntime().maxMemory() / 1024 / 1024} MB")
                 InfoRow("已用内存", "${(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024} MB")
@@ -254,8 +256,8 @@ private fun UIComponentsDemo() {
                 ) {
                     Icon(Icons.Default.Home, "首页", tint = Color.Blue)
                     Icon(Icons.Default.Search, "搜索", tint = Color.Green)
-                    Icon(Icons.Default.Settings, "设置", tint = Color.Orange)
-                    Icon(Icons.Default.Person, "用户", tint = Color.Purple)
+                    Icon(Icons.Default.Settings, "设置", tint = Color(0xFFFFA500))
+                    Icon(Icons.Default.Person, "用户", tint = Color(0xFF800080))
                     Icon(Icons.Default.Favorite, "收藏", tint = Color.Red)
                 }
             }
@@ -451,7 +453,7 @@ private fun StorageDemo() {
                     
                     Button(
                         onClick = {
-                            storageInfo = "数据备份: 备份文件已创建 (backup_${System.currentTimeMillis()}.zip)"
+                            storageInfo = "数据备份: 备份文件已创建 (backup_${getCurrentTimeMillis()}.zip)"
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -500,13 +502,13 @@ private fun PerformanceDemo() {
                 ) {
                     Button(
                         onClick = {
-                            val startTime = System.currentTimeMillis()
+                            val startTime = getCurrentTimeMillis()
                             // 模拟计算密集型任务
                             var sum = 0L
                             for (i in 1..1000000) {
                                 sum += i
                             }
-                            val endTime = System.currentTimeMillis()
+                            val endTime = getCurrentTimeMillis()
                             performanceResult = "CPU测试完成: 耗时 ${endTime - startTime}ms, 结果: $sum"
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -531,9 +533,9 @@ private fun PerformanceDemo() {
                     
                     Button(
                         onClick = {
-                            val startTime = System.nanoTime()
+                            val startTime = getNanoTime()
                             Thread.sleep(100) // 模拟IO操作
-                            val endTime = System.nanoTime()
+                            val endTime = getNanoTime()
                             val latency = (endTime - startTime) / 1_000_000.0
                             performanceResult = "IO延迟测试: ${String.format("%.2f", latency)} ms"
                         },

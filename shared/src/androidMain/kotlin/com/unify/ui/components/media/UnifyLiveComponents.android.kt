@@ -3,26 +3,23 @@ package com.unify.ui.components.media
 import android.content.Context
 import android.media.MediaPlayer
 import android.net.Uri
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.launch
 import java.io.File
-import java.text.SimpleDateFormat
-import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 /**
  * Android平台实时媒体组件
@@ -30,7 +27,7 @@ import java.util.concurrent.Executors
 object AndroidLiveComponents {
     
     /**
-     * 相机预览组件
+     * 相机预览组件 (简化实现)
      */
     @Composable
     fun CameraPreview(
@@ -38,78 +35,47 @@ object AndroidLiveComponents {
         onImageCaptured: (String) -> Unit = {},
         onError: (String) -> Unit = {}
     ) {
-        val context = LocalContext.current
-        val lifecycleOwner = LocalLifecycleOwner.current
-        val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-        
-        var imageCapture by remember { mutableStateOf<ImageCapture?>(null) }
-        var preview by remember { mutableStateOf<Preview?>(null) }
-        var camera by remember { mutableStateOf<Camera?>(null) }
-        
-        val previewView = remember { PreviewView(context) }
-        
-        LaunchedEffect(Unit) {
-            val cameraProvider = ProcessCameraProvider.getInstance(context).get()
-            
-            preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-            
-            imageCapture = ImageCapture.Builder().build()
-            
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            
-            try {
-                cameraProvider.unbindAll()
-                camera = cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview,
-                    imageCapture
-                )
-            } catch (exc: Exception) {
-                onError("相机初始化失败: ${exc.message}")
-            }
-        }
-        
-        DisposableEffect(Unit) {
-            onDispose {
-                cameraExecutor.shutdown()
-            }
-        }
-        
         Column(modifier = modifier) {
-            AndroidView(
-                factory = { previewView },
+            // 简化的相机预览占位符
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
-            )
+                    .height(300.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Black)
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "相机预览\n(需要CameraX依赖)",
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
             
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 Button(
                     onClick = {
-                        captureImage(context, imageCapture, onImageCaptured, onError)
+                        onImageCaptured("mock_image_${System.currentTimeMillis()}")
                     }
                 ) {
                     Text("拍照")
                 }
                 
+                var flashEnabled by remember { mutableStateOf(false) }
                 Button(
                     onClick = {
-                        camera?.let { cam ->
-                            val currentTorchState = cam.cameraInfo.torchState.value
-                            cam.cameraControl.enableTorch(currentTorchState != TorchState.ON)
-                        }
+                        flashEnabled = !flashEnabled
                     }
                 ) {
-                    Text("闪光灯")
+                    Text(if (flashEnabled) "关闭闪光灯" else "打开闪光灯")
                 }
             }
         }
@@ -344,42 +310,6 @@ object AndroidLiveComponents {
                 )
             }
         }
-    }
-    
-    private fun captureImage(
-        context: Context,
-        imageCapture: ImageCapture?,
-        onImageCaptured: (String) -> Unit,
-        onError: (String) -> Unit
-    ) {
-        val imageCapture = imageCapture ?: return
-        
-        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
-            .format(System.currentTimeMillis())
-        val contentValues = android.content.ContentValues().apply {
-            put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, name)
-            put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-        }
-        
-        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
-            context.contentResolver,
-            android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-            contentValues
-        ).build()
-        
-        imageCapture.takePicture(
-            outputFileOptions,
-            ContextCompat.getMainExecutor(context),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onError(exception: ImageCaptureException) {
-                    onError("拍照失败: ${exception.message}")
-                }
-                
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    onImageCaptured(output.savedUri?.toString() ?: "")
-                }
-            }
-        )
     }
     
     private fun startRecording(

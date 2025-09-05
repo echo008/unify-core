@@ -1,10 +1,20 @@
 package com.unify.testing.enhanced
 
 import com.unify.testing.impl.UnifyTestFrameworkImpl
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify增强测试框架
@@ -22,7 +32,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
      * 执行性能基准测试
      */
     suspend fun runPerformanceBenchmark(testSuite: String): PerformanceTestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟性能测试
         val metrics = when (testSuite) {
@@ -33,13 +43,13 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
             else -> PerformanceMetrics()
         }
         
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         
         val result = PerformanceTestResult(
             testSuite = testSuite,
             metrics = metrics,
             executionTime = endTime - startTime,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             passed = metrics.isWithinThreshold()
         )
         
@@ -55,7 +65,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
         duration: Long = 60000L, // 60秒
         concurrency: Int = 10
     ): StressTestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟压力测试
         val results = when (testType) {
@@ -65,7 +75,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
             StressTestType.NETWORK_LOAD -> simulateNetworkLoad(concurrency, duration)
         }
         
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         
         val stressResult = StressTestResult(
             testType = testType,
@@ -77,7 +87,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
             maxResponseTime = results.maxResponseTime,
             throughput = results.throughput,
             errorRate = results.errorRate,
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
         
         _stressTestResults.value = _stressTestResults.value + stressResult
@@ -114,7 +124,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
         return CrossPlatformTestResult(
             platformResults = results,
             overallCompatibility = calculateOverallCompatibility(results),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
     }
     
@@ -137,7 +147,7 @@ class UnifyTestFrameworkEnhanced : UnifyTestFrameworkImpl() {
             categoryResults = results,
             performanceChanges = performanceComparison,
             overallRegression = results.values.all { it },
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
     }
     

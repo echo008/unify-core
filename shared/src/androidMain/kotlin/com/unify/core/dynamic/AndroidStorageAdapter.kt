@@ -231,12 +231,12 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
         }
     }
     
-    override suspend fun hotReload(moduleId: String): Boolean {
+    override suspend fun reloadModule(moduleId: String): Boolean {
         return try {
             val module = moduleStorage[moduleId]
             if (module != null) {
                 // 重新加载模块
-                reloadModule(module)
+                reloadModuleInternal(module)
                 updateModuleState(moduleId, ModuleState.RELOADED)
                 true
             } else {
@@ -255,22 +255,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
         return _pluginState.asStateFlow()
     }
     
-    override suspend fun getStorageInfo(): DynamicStorageInfo {
-        val moduleCount = moduleStorage.size
-        val pluginCount = pluginStorage.size
-        val totalSize = calculateTotalSize()
-        val availableSpace = getAvailableSpace()
-        
-        return DynamicStorageInfo(
-            moduleCount = moduleCount,
-            pluginCount = pluginCount,
-            totalSize = totalSize,
-            availableSpace = availableSpace,
-            lastUpdate = System.currentTimeMillis()
-        )
-    }
-    
-    override suspend fun cleanup(): Boolean {
+    private suspend fun cleanup(): Boolean {
         return try {
             // 清理过期模块
             cleanupExpiredModules()
@@ -314,8 +299,9 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
                 id = "temp_module",
                 name = "Dynamic Module",
                 version = "1.0.0",
-                minSdkVersion = Build.VERSION_CODES.LOLLIPOP,
-                targetSdkVersion = Build.VERSION.SDK_INT,
+                description = "Android dynamic module",
+                author = "Unify System",
+                minPlatformVersion = Build.VERSION_CODES.LOLLIPOP.toString(),
                 permissions = emptyList(),
                 dependencies = emptyList()
             )
@@ -331,7 +317,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
             
             // 检查ZIP/APK签名
             val zipSignature = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
-            val headerSignature = moduleData.copyOfRange(0, 4)
+            val headerSignature = pluginData.copyOfRange(0, 4)
             if (!zipSignature.contentEquals(headerSignature)) return null
             
             // 提取插件信息
@@ -339,10 +325,11 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
                 id = "temp_plugin",
                 name = "Dynamic Plugin",
                 version = "1.0.0",
-                minSdkVersion = Build.VERSION_CODES.LOLLIPOP,
-                targetSdkVersion = Build.VERSION.SDK_INT,
+                description = "Android dynamic plugin",
+                author = "Unify System",
+                minPlatformVersion = Build.VERSION_CODES.LOLLIPOP.toString(),
                 permissions = emptyList(),
-                features = emptyList()
+                dependencies = emptyList()
             )
         } catch (e: Exception) {
             null
@@ -350,7 +337,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
     }
     
     private fun isModuleCompatible(moduleInfo: ModuleInfo): Boolean {
-        return Build.VERSION.SDK_INT >= moduleInfo.minSdkVersion
+        return Build.VERSION.SDK_INT >= moduleInfo.minPlatformVersion.toIntOrNull() ?: 0
     }
     
     private fun hasRequiredPermissions(permissions: List<String>): Boolean {
@@ -457,7 +444,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
         }
     }
     
-    private fun reloadModule(module: DynamicModule) {
+    private fun reloadModuleInternal(module: DynamicModule) {
         try {
             module.reload()
         } catch (e: Exception) {
@@ -467,7 +454,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
     
     private fun backupModule(module: DynamicModule): ByteArray? {
         return try {
-            module.file.readBytes()
+            (module.file as File).readBytes()
         } catch (e: Exception) {
             null
         }
@@ -475,7 +462,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
     
     private fun restoreModule(module: DynamicModule, backupData: ByteArray) {
         try {
-            module.file.writeBytes(backupData)
+            (module.file as File).writeBytes(backupData)
         } catch (e: Exception) {
             // 忽略恢复错误
         }
@@ -618,7 +605,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
 class AndroidDynamicModule(
     override val id: String,
     override val info: ModuleInfo,
-    val file: File,
+    override val file: File,
     val classLoader: ClassLoader
 ) : DynamicModule {
     
@@ -635,7 +622,7 @@ class AndroidDynamicModule(
         }
     }
     
-    override fun start(): Boolean {
+    private fun start(): Boolean {
         return try {
             if (isInitialized) {
                 // 模块启动逻辑
@@ -679,11 +666,11 @@ class AndroidDynamicModule(
         }
     }
     
-    override fun getState(): ModuleState {
+    private fun getState(): ModuleState {
         return when {
             !isInitialized -> ModuleState.UNLOADED
             !isRunning -> ModuleState.LOADED
-            else -> ModuleState.RUNNING
+            else -> ModuleState.LOADED
         }
     }
 }
@@ -694,7 +681,7 @@ class AndroidDynamicModule(
 class AndroidDynamicPlugin(
     override val id: String,
     override val info: PluginInfo,
-    val file: File,
+    override val file: File,
     val packageInfo: android.content.pm.PackageInfo?
 ) : DynamicPlugin {
     
@@ -721,7 +708,7 @@ class AndroidDynamicPlugin(
         }
     }
     
-    override fun start(): Boolean {
+    private fun start(): Boolean {
         return try {
             if (isInstalled) {
                 // 插件启动逻辑
@@ -753,11 +740,11 @@ class AndroidDynamicPlugin(
         }
     }
     
-    override fun getState(): PluginState {
+    private fun getState(): PluginState {
         return when {
             !isInstalled -> PluginState.UNINSTALLED
             !isRunning -> PluginState.INSTALLED
-            else -> PluginState.RUNNING
+            else -> PluginState.INSTALLED
         }
     }
 }

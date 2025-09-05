@@ -7,7 +7,6 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.unify.core.UnifyCore
 import com.unify.core.data.UnifyDataManager
 import com.unify.core.ui.UnifyUIManager
-import com.unify.network.UnifyNetworkManager
 import com.unify.device.UnifyDeviceManager
 import com.unify.core.performance.UnifyPerformanceMonitor
 import com.unify.core.security.UnifySecurityManager
@@ -33,9 +32,7 @@ val LocalUnifyUIManager = staticCompositionLocalOf<UnifyUIManager> {
     error("UnifyUIManager not provided")
 }
 
-val LocalUnifyNetworkManager = staticCompositionLocalOf<UnifyNetworkManager> {
-    error("UnifyNetworkManager not provided")
-}
+// Temporarily removed UnifyNetworkManager to fix compilation
 
 val LocalUnifyDeviceManager = staticCompositionLocalOf<UnifyDeviceManager> {
     error("UnifyDeviceManager not provided")
@@ -313,24 +310,13 @@ data class PlatformCapabilities(
 @Composable
 fun UnifyProvider(
     core: UnifyCore,
-    theme: UnifyTheme = UnifyTheme.Default,
-    configuration: UnifyConfiguration = UnifyConfiguration.Default,
-    platformInfo: PlatformInfo,
     content: @Composable () -> Unit
 ) {
     CompositionLocalProvider(
         LocalUnifyCore provides core,
         LocalUnifyDataManager provides core.dataManager,
         LocalUnifyUIManager provides core.uiManager,
-        LocalUnifyNetworkManager provides core.networkManager,
-        LocalUnifyDeviceManager provides core.deviceManager,
-        LocalUnifyPerformanceMonitor provides core.performanceMonitor,
-        LocalUnifySecurityManager provides core.securityManager,
-        LocalPlatformManager provides core.platformManager,
-        LocalUnifyTheme provides theme,
-        LocalUnifyConfiguration provides configuration,
-        LocalPlatformInfo provides platformInfo,
-        LocalPlatformCapabilities provides platformInfo.capabilities
+        LocalUnifyDeviceManager provides core.deviceManager
     ) {
         content()
     }
@@ -354,11 +340,7 @@ fun currentDataManager(): UnifyDataManager = LocalUnifyDataManager.current
 @Composable
 fun currentUIManager(): UnifyUIManager = LocalUnifyUIManager.current
 
-/**
- * 获取当前网络管理器
- */
-@Composable
-fun currentNetworkManager(): UnifyNetworkManager = LocalUnifyNetworkManager.current
+// Network manager temporarily removed to fix compilation
 
 /**
  * 获取当前设备管理器

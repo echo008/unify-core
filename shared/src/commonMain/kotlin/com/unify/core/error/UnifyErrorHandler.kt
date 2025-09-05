@@ -1,6 +1,12 @@
 package com.unify.core.error
 
-import com.unify.core.exceptions.UnifyException
+import com.unify.core.error.UnifyException
+import com.unify.core.error.UnifyOutOfMemoryException
+import com.unify.core.error.UnifyStackOverflowException
+import com.unify.core.error.UnifyUnknownException
+import com.unify.core.error.PlatformError
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import com.unify.core.logging.UnifyLog
 import com.unify.core.types.UnifyResult
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +21,7 @@ data class UnifyErrorReport(
     val id: String = generateErrorId(),
     val exception: Throwable,
     val context: String,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val stackTrace: String = exception.stackTraceToString(),
     val metadata: Map<String, Any> = emptyMap(),
     val severity: UnifyErrorSeverity = UnifyErrorSeverity.MEDIUM,
@@ -23,7 +29,7 @@ data class UnifyErrorReport(
 ) {
     companion object {
         private var errorCounter = 0
-        private fun generateErrorId(): String = "ERR_${System.currentTimeMillis()}_${++errorCounter}"
+        private fun generateErrorId(): String = "ERR_${getCurrentTimeMillis()}_${++errorCounter}"
     }
 }
 
@@ -70,7 +76,10 @@ class UnifyLocalErrorReporter : UnifyErrorReporter {
             
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.Error("错误报告失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "错误报告失败: ${e.message}",
+                cause = e
+            ))
         }
     }
     
@@ -91,7 +100,10 @@ class UnifyLocalErrorReporter : UnifyErrorReporter {
             reportError(report)
             UnifyResult.Success(report.id)
         } catch (e: Exception) {
-            UnifyResult.Error("异常报告失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "异常报告失败: ${e.message}",
+                cause = e
+            ))
         }
     }
     
@@ -112,7 +124,10 @@ class UnifyLocalErrorReporter : UnifyErrorReporter {
             
             UnifyResult.Success(reports)
         } catch (e: Exception) {
-            UnifyResult.Error("获取错误报告失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "获取错误报告失败: ${e.message}",
+                cause = e
+            ))
         }
     }
     
@@ -121,7 +136,10 @@ class UnifyLocalErrorReporter : UnifyErrorReporter {
             _errorReports.value = emptyList()
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.Error("清除错误报告失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "清除错误报告失败: ${e.message}",
+                cause = e
+            ))
         }
     }
 }
@@ -191,7 +209,10 @@ class UnifyErrorHandlerImpl(
             
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.Error("错误处理失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "错误恢复失败: ${e.message}",
+                cause = e
+            ))
         }
     }
     
@@ -203,8 +224,8 @@ class UnifyErrorHandlerImpl(
             exception = exception,
             context = context,
             metadata = mapOf(
-                "error_code" to exception.code,
-                "error_type" to exception.type.name
+                "error_message" to exception.message.orEmpty(),
+                "error_class" to exception::class.simpleName.orEmpty()
             )
         )
     }
@@ -218,7 +239,10 @@ class UnifyErrorHandlerImpl(
             UnifyResult.Success(result)
         } catch (e: Exception) {
             handleError(e, context)
-            UnifyResult.Error("执行失败: ${e.message}")
+            UnifyResult.Failure(UnifyUnknownException(
+                message = "执行失败: ${e.message}",
+                cause = e
+            ))
         }
     }
     
@@ -241,20 +265,13 @@ class UnifyErrorHandlerImpl(
     
     private fun determineSeverity(exception: Throwable): UnifyErrorSeverity {
         return when (exception) {
-            is OutOfMemoryError -> UnifyErrorSeverity.CRITICAL
-            is StackOverflowError -> UnifyErrorSeverity.CRITICAL
-            is UnifyException -> when (exception.errorType) {
-                UnifyExceptionType.PLATFORM -> UnifyErrorSeverity.CRITICAL
-                UnifyExceptionType.NETWORK -> UnifyErrorSeverity.HIGH
-                UnifyExceptionType.STORAGE -> UnifyErrorSeverity.MEDIUM
-                UnifyExceptionType.PERMISSION -> UnifyErrorSeverity.HIGH
-                UnifyExceptionType.DATA -> UnifyErrorSeverity.MEDIUM
-                UnifyExceptionType.CONFIGURATION -> UnifyErrorSeverity.MEDIUM
-                UnifyExceptionType.SECURITY -> UnifyErrorSeverity.CRITICAL
-                UnifyExceptionType.PERFORMANCE -> UnifyErrorSeverity.HIGH
-                UnifyExceptionType.UNKNOWN -> UnifyErrorSeverity.MEDIUM
-                else -> UnifyErrorSeverity.MEDIUM
-            }
+            is UnifyOutOfMemoryException -> UnifyErrorSeverity.CRITICAL
+            is UnifyStackOverflowException -> UnifyErrorSeverity.CRITICAL
+            is UnifyNetworkException -> UnifyErrorSeverity.HIGH
+            is UnifyStorageException -> UnifyErrorSeverity.MEDIUM
+            is UnifyPermissionException -> UnifyErrorSeverity.HIGH
+            is UnifyPlatformException -> UnifyErrorSeverity.CRITICAL
+            is UnifyException -> UnifyErrorSeverity.MEDIUM
             is IllegalArgumentException -> UnifyErrorSeverity.LOW
             is IllegalStateException -> UnifyErrorSeverity.MEDIUM
             is RuntimeException -> UnifyErrorSeverity.MEDIUM
@@ -296,10 +313,10 @@ suspend fun <T> UnifyResult<T>.onError(
     context: String = "ResultError",
     action: suspend (String) -> Unit = {}
 ): UnifyResult<T> {
-    if (this is UnifyResult.Error) {
-        action(this.message)
+    if (this is UnifyResult.Failure) {
+        action(this.exception.message ?: "Unknown error")
         UnifyErrorHandling.handleError(
-            RuntimeException(this.message),
+            RuntimeException(this.exception.message),
             context
         )
     }

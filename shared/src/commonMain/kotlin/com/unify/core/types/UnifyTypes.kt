@@ -1,7 +1,11 @@
 package com.unify.core.types
 
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 企业级结果封装类
@@ -16,7 +20,7 @@ sealed class UnifyResult<out T> {
     /**
      * 失败结果
      */
-    data class Failure(val exception: com.unify.core.exceptions.UnifyException) : UnifyResult<Nothing>()
+    data class Failure(val exception: com.unify.core.error.UnifyException) : UnifyResult<Nothing>()
     
     /**
      * 是否成功
@@ -39,7 +43,7 @@ sealed class UnifyResult<out T> {
     /**
      * 获取异常（失败时）
      */
-    fun exceptionOrNull(): com.unify.core.exceptions.UnifyException? = when (this) {
+    fun exceptionOrNull(): com.unify.core.error.UnifyException? = when (this) {
         is Success -> null
         is Failure -> exception
     }
@@ -59,7 +63,7 @@ sealed class UnifyResult<out T> {
         is Success -> try {
             Success(transform(data))
         } catch (e: Exception) {
-            Failure(com.unify.core.exceptions.UnifyTransformException("数据转换失败", e.message))
+            Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
         }
         is Failure -> this
     }
@@ -71,7 +75,7 @@ sealed class UnifyResult<out T> {
         is Success -> try {
             transform(data)
         } catch (e: Exception) {
-            Failure(com.unify.core.exceptions.UnifyTransformException("数据转换失败", e.message))
+            Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
         }
         is Failure -> this
     }
@@ -85,7 +89,7 @@ sealed class UnifyResult<out T> {
         /**
          * 创建失败结果
          */
-        fun <T> failure(exception: com.unify.core.exceptions.UnifyException): UnifyResult<T> = Failure(exception)
+        fun <T> failure(exception: com.unify.core.error.UnifyException): UnifyResult<T> = Failure(exception)
         
         /**
          * 从可能抛出异常的代码块创建结果
@@ -94,8 +98,8 @@ sealed class UnifyResult<out T> {
             Success(block())
         } catch (e: Exception) {
             Failure(when (e) {
-                is com.unify.core.exceptions.UnifyException -> e
-                else -> com.unify.core.exceptions.UnifyUnknownException("未知错误", e.message)
+                is com.unify.core.error.UnifyException -> e
+                else -> com.unify.core.error.UnifyUnknownException("未知错误", e)
             })
         }
     }
@@ -267,7 +271,7 @@ data class UnifyPerformanceMetrics(
     val renderTime: Long,
     val networkLatency: Long,
     val frameRate: Double = 60.0,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -277,7 +281,7 @@ data class UnifyPerformanceMetrics(
 data class UnifyHealthCheckResult(
     val overallState: UnifyHealthState,
     val checks: Map<String, UnifyHealthCheck>,
-    val timestamp: Long = System.currentTimeMillis(),
+    val timestamp: Long = getCurrentTimeMillis(),
     val duration: Long
 )
 

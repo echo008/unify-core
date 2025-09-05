@@ -150,7 +150,7 @@ object DesktopUnifyPlatformAdapters {
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Minimize,
+                    imageVector = androidx.compose.material.icons.Icons.Default.Remove,
                     contentDescription = "Minimize",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -162,7 +162,7 @@ object DesktopUnifyPlatformAdapters {
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.CropFree,
+                    imageVector = androidx.compose.material.icons.Icons.Default.Fullscreen,
                     contentDescription = "Maximize",
                     tint = MaterialTheme.colorScheme.onSurface
                 )
@@ -174,7 +174,7 @@ object DesktopUnifyPlatformAdapters {
                 modifier = Modifier.size(32.dp)
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Close,
+                    imageVector = androidx.compose.material.icons.Icons.Default.Clear,
                     contentDescription = "Close",
                     tint = MaterialTheme.colorScheme.error
                 )

@@ -12,7 +12,6 @@ actual fun getPlatformMemoryInfo(): PlatformMemoryInfo {
         val physicalMemory = processInfo.physicalMemory.toLong()
         
         // 获取当前进程内存使用情况
-        val taskInfo = mach_task_basic_info_t()
         val usedMemory = getTaskMemoryUsage()
         
         PlatformMemoryInfo(
@@ -40,9 +39,9 @@ actual fun requestGarbageCollection() {
         // iOS使用ARC，手动触发内存清理
         NSURLCache.sharedURLCache.removeAllCachedResponses()
         
-        // 清理自动释放池
+        // 清理自动释放池 - 使用autoreleasepool函数
         autoreleasepool {
-            // 执行内存清理操作
+            // 自动释放池清理
         }
     } catch (e: Exception) {
         // 忽略异常
@@ -57,7 +56,7 @@ private fun getTaskMemoryUsage(): Long {
         // 在实际实现中会使用mach API获取内存信息
         // 这里返回模拟值
         val processInfo = NSProcessInfo.processInfo
-        (processInfo.physicalMemory * 0.3).toLong() // 假设使用30%内存
+        (processInfo.physicalMemory.toDouble() * 0.3).toLong() // 假设使用30%内存
     } catch (e: Exception) {
         256 * 1024 * 1024L // 256MB默认值
     }
@@ -69,7 +68,7 @@ private fun getTaskMemoryUsage(): Long {
 private fun getGCCount(): Int {
     return try {
         // iOS使用ARC，没有传统的GC，返回内存警告次数的模拟值
-        (System.currentTimeMillis() / 15000).toInt() % 50
+        (kotlin.system.getTimeMillis() / 15000).toInt() % 50
     } catch (e: Exception) {
         0
     }
@@ -111,7 +110,7 @@ object IOSMemoryUtils {
         return try {
             // 在实际实现中会使用vm_statistics64获取详细内存信息
             val processInfo = NSProcessInfo.processInfo
-            (processInfo.physicalMemory * 0.6).toLong() // 假设60%可用
+            (processInfo.physicalMemory.toDouble() * 0.6).toLong() // 假设60%可用
         } catch (e: Exception) {
             2L * 1024 * 1024 * 1024 // 2GB默认值
         }

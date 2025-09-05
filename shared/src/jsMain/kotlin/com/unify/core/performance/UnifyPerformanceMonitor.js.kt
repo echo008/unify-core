@@ -47,8 +47,8 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
             _isMonitoring.value = true
             startMetricsCollection()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("启动Web性能监控失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("启动Web性能监控失败: ${e.message}", e))
         }
     }
     
@@ -59,8 +59,8 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
             monitoringJob = null
             frameHistory.clear()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("停止Web性能监控失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("停止Web性能监控失败: ${e.message}", e))
         }
     }
     
@@ -71,7 +71,7 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
             checkThresholds(currentMetrics)
             UnifyResult.Success(currentMetrics)
         } catch (e: Exception) {
-            UnifyResult.Error("获取Web性能指标失败: ${e.message}")
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("获取Web性能指标失败: ${e.message}", e))
         }
     }
     
@@ -81,7 +81,7 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
             val level = calculatePerformanceLevel(currentMetrics)
             UnifyResult.Success(level)
         } catch (e: Exception) {
-            UnifyResult.Error("计算Web性能等级失败: ${e.message}")
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("计算Web性能等级失败: ${e.message}", e))
         }
     }
     
@@ -89,8 +89,8 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
         return try {
             this.thresholds = thresholds
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("设置Web性能阈值失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("设置Web性能阈值失败: ${e.message}", e))
         }
     }
     
@@ -98,8 +98,8 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
         return try {
             _alerts.value = emptyList()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("清除Web性能警告失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("清除Web性能警报失败: ${e.message}", e))
         }
     }
     
@@ -131,7 +131,7 @@ class WebPerformanceMonitor : UnifyPerformanceMonitor {
             
             UnifyResult.Success(report)
         } catch (e: Exception) {
-            UnifyResult.Error("导出Web性能报告失败: ${e.message}")
+            UnifyResult.Failure(com.unify.core.error.UnifyPerformanceException("导出Web性能报告失败: ${e.message}", e))
         }
     }
     

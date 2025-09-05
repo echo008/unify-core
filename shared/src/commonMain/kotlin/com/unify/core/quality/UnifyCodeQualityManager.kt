@@ -1,10 +1,20 @@
 package com.unify.core.quality
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify代码质量管理器
@@ -79,14 +89,14 @@ class UnifyCodeQualityManager {
                 securityAnalysis,
                 performanceAnalysis
             ),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
         
         _qualityMetrics.value = _qualityMetrics.value.copy(
             latestReport = report,
             totalFiles = codebase.files.size,
             totalLines = codebase.files.sumOf { it.lineCount },
-            lastAnalysisTime = System.currentTimeMillis()
+            lastAnalysisTime = getCurrentTimeMillis()
         )
         
         return report
@@ -364,15 +374,17 @@ class UnifyCodeQualityManager {
     }
     
     private fun calculatePerformanceScore(issues: List<PerformanceIssue>, memoryLeaks: List<MemoryLeak>): Double {
-        val penalty = issues.sumOf { 
-            when (it.severity) {
+        val issuesPenalty = issues.sumOf { issue ->
+            when (issue.severity) {
                 IssueSeverity.CRITICAL -> 25
                 IssueSeverity.HIGH -> 15
                 IssueSeverity.MEDIUM -> 10
                 IssueSeverity.LOW -> 5
-            }
-        } + memoryLeaks.size * 20
-        return maxOf(0.0, 100.0 - penalty)
+            }.toLong()
+        }.toInt()
+        val memoryPenalty = memoryLeaks.size * 20
+        val totalPenalty = issuesPenalty.plus(memoryPenalty)
+        return maxOf(0.0, 100.0 - totalPenalty.toDouble())
     }
     
     // 占位符实现 - 实际项目中需要具体实现

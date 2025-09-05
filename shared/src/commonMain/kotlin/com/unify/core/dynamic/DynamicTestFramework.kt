@@ -1,4 +1,6 @@
 package com.unify.core.dynamic
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -182,7 +184,7 @@ class DynamicTestFramework {
             val execution = TestExecution(
                 id = kotlin.random.Random.nextInt().toString(),
                 suiteId = suiteId,
-                startTime = System.currentTimeMillis(),
+                startTime = getCurrentTimeMillis(),
                 status = ExecutionStatus.RUNNING
             )
             
@@ -209,7 +211,7 @@ class DynamicTestFramework {
             // 更新执行状态
             val completedExecution = execution.copy(
                 status = ExecutionStatus.COMPLETED,
-                endTime = System.currentTimeMillis()
+                endTime = getCurrentTimeMillis()
             )
             currentRunning[execution.id] = completedExecution
             _runningTests.value = currentRunning
@@ -243,7 +245,7 @@ class DynamicTestFramework {
      * 运行单个测试用例
      */
     private suspend fun runTestCase(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         return try {
             when (testCase.type) {
@@ -259,8 +261,8 @@ class DynamicTestFramework {
                 testName = testCase.name,
                 status = TestStatus.FAILED,
                 message = "测试执行异常: ${e.message}",
-                executionTime = System.currentTimeMillis() - startTime,
-                timestamp = System.currentTimeMillis()
+                executionTime = getCurrentTimeMillis() - startTime,
+                timestamp = getCurrentTimeMillis()
             )
         }
     }
@@ -269,7 +271,7 @@ class DynamicTestFramework {
      * 运行功能测试
      */
     private suspend fun runFunctionalTest(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟功能测试
         delay(kotlin.random.Random.nextLong(500, 2000))
@@ -281,8 +283,8 @@ class DynamicTestFramework {
             testName = testCase.name,
             status = if (success) TestStatus.PASSED else TestStatus.FAILED,
             message = if (success) "功能测试通过" else "功能测试失败",
-            executionTime = System.currentTimeMillis() - startTime,
-            timestamp = System.currentTimeMillis(),
+            executionTime = getCurrentTimeMillis() - startTime,
+            timestamp = getCurrentTimeMillis(),
             details = mapOf(
                 "test_type" to "functional",
                 "component_loaded" to success.toString()
@@ -294,7 +296,7 @@ class DynamicTestFramework {
      * 运行性能测试
      */
     private suspend fun runPerformanceTest(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟性能测试
         delay(kotlin.random.Random.nextLong(1000, 3000))
@@ -312,8 +314,8 @@ class DynamicTestFramework {
             testName = testCase.name,
             status = if (success) TestStatus.PASSED else TestStatus.FAILED,
             message = if (success) "性能测试通过" else "性能测试未达标",
-            executionTime = System.currentTimeMillis() - startTime,
-            timestamp = System.currentTimeMillis(),
+            executionTime = getCurrentTimeMillis() - startTime,
+            timestamp = getCurrentTimeMillis(),
             details = mapOf(
                 "test_type" to "performance",
                 "load_time_ms" to loadTime.toString(),
@@ -327,7 +329,7 @@ class DynamicTestFramework {
      * 运行安全测试
      */
     private suspend fun runSecurityTest(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟安全测试
         delay(kotlin.random.Random.nextLong(300, 1500))
@@ -339,8 +341,8 @@ class DynamicTestFramework {
             testName = testCase.name,
             status = if (success) TestStatus.PASSED else TestStatus.FAILED,
             message = if (success) "安全测试通过" else "发现安全漏洞",
-            executionTime = System.currentTimeMillis() - startTime,
-            timestamp = System.currentTimeMillis(),
+            executionTime = getCurrentTimeMillis() - startTime,
+            timestamp = getCurrentTimeMillis(),
             details = mapOf(
                 "test_type" to "security",
                 "signature_valid" to success.toString(),
@@ -353,7 +355,7 @@ class DynamicTestFramework {
      * 运行集成测试
      */
     private suspend fun runIntegrationTest(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟集成测试
         delay(kotlin.random.Random.nextLong(800, 2500))
@@ -365,8 +367,8 @@ class DynamicTestFramework {
             testName = testCase.name,
             status = if (success) TestStatus.PASSED else TestStatus.FAILED,
             message = if (success) "集成测试通过" else "集成测试失败",
-            executionTime = System.currentTimeMillis() - startTime,
-            timestamp = System.currentTimeMillis(),
+            executionTime = getCurrentTimeMillis() - startTime,
+            timestamp = getCurrentTimeMillis(),
             details = mapOf(
                 "test_type" to "integration",
                 "components_integrated" to "3",
@@ -379,7 +381,7 @@ class DynamicTestFramework {
      * 运行单元测试
      */
     private suspend fun runUnitTest(testCase: TestCase): TestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         // 模拟单元测试
         delay(kotlin.random.Random.nextLong(200, 800))
@@ -391,8 +393,8 @@ class DynamicTestFramework {
             testName = testCase.name,
             status = if (success) TestStatus.PASSED else TestStatus.FAILED,
             message = if (success) "单元测试通过" else "单元测试失败",
-            executionTime = System.currentTimeMillis() - startTime,
-            timestamp = System.currentTimeMillis(),
+            executionTime = getCurrentTimeMillis() - startTime,
+            timestamp = getCurrentTimeMillis(),
             details = mapOf(
                 "test_type" to "unit",
                 "assertions_passed" to if (success) "all" else "partial"
@@ -416,7 +418,7 @@ class DynamicTestFramework {
             failedTests = failedTests,
             successRate = if (totalTests > 0) (passedTests.toDouble() / totalTests) * 100 else 0.0,
             averageExecutionTime = avgExecutionTime.toLong(),
-            lastRunTime = System.currentTimeMillis()
+            lastRunTime = getCurrentTimeMillis()
         )
         
         _testMetrics.value = newMetrics
@@ -454,7 +456,7 @@ class DynamicTestFramework {
             recentFailures = recentResults.filter { it.status == TestStatus.FAILED }
                 .takeLast(10),
             performanceMetrics = calculatePerformanceMetrics(recentResults),
-            generatedAt = System.currentTimeMillis()
+            generatedAt = getCurrentTimeMillis()
         )
     }
     
@@ -577,7 +579,7 @@ data class TestCase(
     val id: String,
     val name: String,
     val type: TestType,
-    val timeout: Long = DEFAULT_TIMEOUT_MS,
+    val timeout: Long = DynamicTestFramework.DEFAULT_TIMEOUT_MS,
     val description: String = "",
     val parameters: Map<String, String> = emptyMap()
 )

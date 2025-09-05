@@ -1,5 +1,8 @@
 package com.unify.helloworld
 
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+
 /**
  * 跨平台信息接口
  * 定义获取平台名称和设备信息的统一接口

@@ -1,9 +1,17 @@
 package com.unify.device.enhanced
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 增强设备管理器
@@ -67,7 +75,7 @@ class UnifyDeviceManagerEnhanced {
                 isInitializing = false,
                 isInitialized = true,
                 capabilities = capabilities,
-                initializationTime = System.currentTimeMillis()
+                initializationTime = getCurrentTimeMillis()
             )
             
             DeviceInitResult.Success("设备管理器初始化成功")
@@ -92,7 +100,7 @@ class UnifyDeviceManagerEnhanced {
             
             _deviceState.value = _deviceState.value.copy(
                 isMonitoring = true,
-                monitoringStartTime = System.currentTimeMillis()
+                monitoringStartTime = getCurrentTimeMillis()
             )
             
             // 启动各种监控服务
@@ -121,7 +129,7 @@ class UnifyDeviceManagerEnhanced {
         return try {
             _deviceState.value = _deviceState.value.copy(
                 isMonitoring = false,
-                monitoringEndTime = System.currentTimeMillis()
+                monitoringEndTime = getCurrentTimeMillis()
             )
             
             // 停止所有监控服务
@@ -144,7 +152,7 @@ class UnifyDeviceManagerEnhanced {
         val currentState = _deviceState.value
         
         return PerformanceReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             cpuUsage = performanceAnalyzer.getCurrentCpuUsage(),
             memoryUsage = memoryManager.getCurrentMemoryUsage(),
             batteryLevel = batteryOptimizer.getCurrentBatteryLevel(),
@@ -208,7 +216,7 @@ class UnifyDeviceManagerEnhanced {
             
             _deviceState.value = _deviceState.value.copy(
                 isOptimizing = false,
-                lastOptimizationTime = System.currentTimeMillis(),
+                lastOptimizationTime = getCurrentTimeMillis(),
                 optimizationCount = _deviceState.value.optimizationCount + 1
             )
             
@@ -231,7 +239,7 @@ class UnifyDeviceManagerEnhanced {
         val performanceReport = getPerformanceReport()
         
         return DeviceHealthReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             overallScore = calculateHealthScore(performanceReport),
             batteryHealth = batteryOptimizer.getBatteryHealth(),
             thermalHealth = thermalManager.getThermalHealth(),
@@ -251,7 +259,7 @@ class UnifyDeviceManagerEnhanced {
         return try {
             _deviceState.value = _deviceState.value.copy(
                 configuration = config,
-                lastConfigTime = System.currentTimeMillis()
+                lastConfigTime = getCurrentTimeMillis()
             )
             
             // 应用配置到各个组件
@@ -323,7 +331,7 @@ class UnifyDeviceManagerEnhanced {
     }
     
     private fun getCurrentNetworkLatency(): Int {
-        return (50..200).random()
+        return 85
     }
     
     private fun getCurrentStorageUsage(): StorageUsage {
@@ -473,7 +481,7 @@ class DevicePerformanceAnalyzer {
     }
     
     fun getCurrentCpuUsage(): Int {
-        return if (isMonitoring) (20..80).random() else 0
+        return if (isMonitoring) 45 else 0
     }
     
     suspend fun optimize(): OptimizationActionResult {
@@ -493,7 +501,7 @@ class BatteryOptimizer {
     private var currentBatteryLevel = 100
     
     suspend fun initialize() {
-        currentBatteryLevel = (60..100).random()
+        currentBatteryLevel = 85
     }
     
     suspend fun startMonitoring() {
@@ -533,7 +541,7 @@ class ThermalManager {
     private var currentTemperature = 35.0
     
     suspend fun initialize() {
-        currentTemperature = (30.0..45.0).random()
+        currentTemperature = 38.5
     }
     
     suspend fun startMonitoring() {
@@ -550,8 +558,8 @@ class ThermalManager {
     
     fun getThermalHealth(): HealthMetric {
         return HealthMetric(
-            score = if (currentTemperature < THERMAL_WARNING_THRESHOLD) 90 else 60,
-            status = if (currentTemperature < THERMAL_WARNING_THRESHOLD) 
+            score = if (currentTemperature < 45.0) 90 else 60,
+            status = if (currentTemperature < 45.0) 
                 HealthStatus.GOOD else HealthStatus.FAIR,
             details = "当前温度: ${currentTemperature}°C"
         )
@@ -567,7 +575,7 @@ class MemoryManager {
     private var currentMemoryUsage = 0
     
     suspend fun initialize() {
-        currentMemoryUsage = (40..80).random()
+        currentMemoryUsage = 60
     }
     
     suspend fun startMonitoring() {
@@ -585,7 +593,7 @@ class MemoryManager {
     fun getMemoryHealth(): HealthMetric {
         return HealthMetric(
             score = (100 - currentMemoryUsage).coerceAtLeast(0),
-            status = if (currentMemoryUsage < MEMORY_WARNING_THRESHOLD) 
+            status = if (currentMemoryUsage < 80) 
                 HealthStatus.GOOD else HealthStatus.FAIR,
             details = "内存使用率: ${currentMemoryUsage}%"
         )

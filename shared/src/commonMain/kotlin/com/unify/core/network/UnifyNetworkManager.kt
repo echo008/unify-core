@@ -74,33 +74,7 @@ interface WebSocketConnection {
     fun isConnected(): Boolean
 }
 
-/**
- * 网络状态枚举
- */
-enum class NetworkStatus {
-    CONNECTED,
-    DISCONNECTED,
-    CONNECTING
-}
-
-/**
- * 网络类型枚举
- */
-enum class NetworkType {
-    WIFI,
-    CELLULAR,
-    ETHERNET,
-    UNKNOWN
-}
-
-/**
- * 重试策略数据类
- */
-data class RetryPolicy(
-    val maxRetries: Int = 3,
-    val retryDelayMillis: Long = 1000,
-    val backoffMultiplier: Float = 2.0f
-)
+// 网络状态、类型和重试策略已在UnifyNetworkService.kt中定义，此处移除重复声明
 
 /**
  * 网络管理器工厂

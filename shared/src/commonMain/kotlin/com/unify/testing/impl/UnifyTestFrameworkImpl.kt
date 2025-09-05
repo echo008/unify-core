@@ -1,9 +1,17 @@
 package com.unify.testing.impl
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify测试框架核心实现
@@ -24,7 +32,7 @@ open class UnifyTestFrameworkImpl {
      * 执行单个测试用例
      */
     suspend fun runTest(testCase: UnifyTestCase): UnifyTestResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         
         return try {
             _isRunning.value = true
@@ -38,7 +46,7 @@ open class UnifyTestFrameworkImpl {
             // 执行测试清理
             executeTeardown(testCase.teardown)
             
-            val endTime = System.currentTimeMillis()
+            val endTime = getCurrentTimeMillis()
             
             UnifyTestResult(
                 testName = testCase.name,
@@ -46,12 +54,12 @@ open class UnifyTestFrameworkImpl {
                 status = if (result) TestExecutionStatus.PASSED else TestExecutionStatus.FAILED,
                 executionTime = endTime - startTime,
                 errorMessage = null,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 platform = getCurrentPlatform(),
                 category = testCase.category
             )
         } catch (e: Exception) {
-            val endTime = System.currentTimeMillis()
+            val endTime = getCurrentTimeMillis()
             
             UnifyTestResult(
                 testName = testCase.name,
@@ -59,7 +67,7 @@ open class UnifyTestFrameworkImpl {
                 status = TestExecutionStatus.FAILED,
                 executionTime = endTime - startTime,
                 errorMessage = e.message,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 platform = getCurrentPlatform(),
                 category = testCase.category
             )
@@ -72,7 +80,7 @@ open class UnifyTestFrameworkImpl {
      * 执行测试套件
      */
     suspend fun runTestSuite(testSuite: UnifyTestSuite): UnifyTestSuiteResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         val results = mutableListOf<UnifyTestResult>()
         
         _isRunning.value = true
@@ -97,7 +105,7 @@ open class UnifyTestFrameworkImpl {
             _isRunning.value = false
         }
         
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         
         return UnifyTestSuiteResult(
             suiteName = testSuite.name,
@@ -108,7 +116,7 @@ open class UnifyTestFrameworkImpl {
             failedTests = results.count { it.status == TestExecutionStatus.FAILED },
             skippedTests = results.count { it.status == TestExecutionStatus.SKIPPED },
             executionTime = endTime - startTime,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             platform = getCurrentPlatform()
         )
     }
@@ -117,7 +125,7 @@ open class UnifyTestFrameworkImpl {
      * 批量执行多个测试套件
      */
     suspend fun runAllTestSuites(testSuites: List<UnifyTestSuite>): UnifyTestBatchResult {
-        val startTime = System.currentTimeMillis()
+        val startTime = getCurrentTimeMillis()
         val suiteResults = mutableListOf<UnifyTestSuiteResult>()
         
         testSuites.forEach { suite ->
@@ -125,7 +133,7 @@ open class UnifyTestFrameworkImpl {
             suiteResults.add(result)
         }
         
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         
         return UnifyTestBatchResult(
             suiteResults = suiteResults,
@@ -135,7 +143,7 @@ open class UnifyTestFrameworkImpl {
             totalFailed = suiteResults.sumOf { it.failedTests },
             totalSkipped = suiteResults.sumOf { it.skippedTests },
             executionTime = endTime - startTime,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             platform = getCurrentPlatform()
         )
     }

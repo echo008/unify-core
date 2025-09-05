@@ -62,7 +62,7 @@ actual fun requestGarbageCollection() {
 private fun getGCCount(): Int {
     return try {
         // Web环境中GC次数难以准确获取，返回估算值
-        (System.currentTimeMillis() / 20000).toInt() % 100
+        (Date.now() / 20000).toInt() % 100
     } catch (e: Exception) {
         0
     }

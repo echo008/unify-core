@@ -1,6 +1,9 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.unify.ui.demo
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -430,7 +433,7 @@ private fun ComprehensiveOverview() {
 // 辅助函数和数据
 private fun generateWaveData(): List<Float> {
     return (0..50).map { i ->
-        kotlin.math.sin(i * 0.2) * 0.8f
+        (kotlin.math.sin(i * 0.2) * 0.8).toFloat()
     }
 }
 

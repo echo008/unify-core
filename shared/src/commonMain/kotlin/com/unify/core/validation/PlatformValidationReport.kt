@@ -1,6 +1,8 @@
 package com.unify.core.validation
 
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 平台验证报告
@@ -159,8 +161,8 @@ class PlatformValidator {
         val recommendations = generateRecommendations(validationResults)
         
         return PlatformValidationReport(
-            reportId = "platform_validation_${System.currentTimeMillis()}",
-            timestamp = System.currentTimeMillis(),
+            reportId = "platform_validation_${getCurrentTimeMillis()}",
+            timestamp = getCurrentTimeMillis(),
             projectName = "Unify-Core",
             totalPlatforms = SUPPORTED_PLATFORMS.size,
             validatedPlatforms = validationResults,

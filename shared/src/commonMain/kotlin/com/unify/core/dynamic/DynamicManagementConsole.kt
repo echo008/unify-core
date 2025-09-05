@@ -1,10 +1,23 @@
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 动态管理控制台 - 提供动态组件的可视化管理界面
@@ -79,7 +92,7 @@ class DynamicManagementConsole {
                 memoryUsage = 45.6,
                 cpuUsage = 12.3,
                 errorCount = 0,
-                lastUpdate = System.currentTimeMillis()
+                lastUpdate = getCurrentTimeMillis()
             ),
             "data-manager" to DynamicComponentInfo(
                 id = "data-manager",
@@ -90,7 +103,7 @@ class DynamicManagementConsole {
                 memoryUsage = 32.1,
                 cpuUsage = 8.7,
                 errorCount = 0,
-                lastUpdate = System.currentTimeMillis()
+                lastUpdate = getCurrentTimeMillis()
             ),
             "network-client" to DynamicComponentInfo(
                 id = "network-client",
@@ -101,7 +114,7 @@ class DynamicManagementConsole {
                 memoryUsage = 28.9,
                 cpuUsage = 15.2,
                 errorCount = 1,
-                lastUpdate = System.currentTimeMillis()
+                lastUpdate = getCurrentTimeMillis()
             ),
             "ai-engine" to DynamicComponentInfo(
                 id = "ai-engine",
@@ -112,7 +125,7 @@ class DynamicManagementConsole {
                 memoryUsage = 156.7,
                 cpuUsage = 45.8,
                 errorCount = 0,
-                lastUpdate = System.currentTimeMillis()
+                lastUpdate = getCurrentTimeMillis()
             )
         )
         
@@ -149,7 +162,7 @@ class DynamicManagementConsole {
                 .coerceAtLeast(0),
             errorRate = (currentMetrics.errorRate + kotlin.random.Random.nextDouble(-0.5, 0.5))
                 .coerceIn(0.0, 100.0),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
         
         _systemMetrics.value = newMetrics
@@ -168,7 +181,7 @@ class DynamicManagementConsole {
                 id = "cpu-high",
                 type = AlertType.WARNING,
                 message = "CPU使用率过高: ${String.format("%.1f", metrics.cpuUsage)}%",
-                timestamp = System.currentTimeMillis()
+                timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
@@ -183,7 +196,7 @@ class DynamicManagementConsole {
                 id = "memory-high",
                 type = AlertType.WARNING,
                 message = "内存使用率过高: ${String.format("%.1f", metrics.memoryUsage)}%",
-                timestamp = System.currentTimeMillis()
+                timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
@@ -198,7 +211,7 @@ class DynamicManagementConsole {
                 id = "error-rate-high",
                 type = AlertType.ERROR,
                 message = "错误率过高: ${String.format("%.1f", metrics.errorRate)}%",
-                timestamp = System.currentTimeMillis()
+                timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
@@ -223,7 +236,7 @@ class DynamicManagementConsole {
                 command = command,
                 parameters = parameters,
                 status = OperationStatus.RUNNING,
-                startTime = System.currentTimeMillis()
+                startTime = getCurrentTimeMillis()
             )
             
             val currentOps = _activeOperations.value.toMutableMap()
@@ -247,7 +260,7 @@ class DynamicManagementConsole {
             // 更新操作状态
             val updatedOp = operation.copy(
                 status = if (result is CommandResult.Success) OperationStatus.COMPLETED else OperationStatus.FAILED,
-                endTime = System.currentTimeMillis()
+                endTime = getCurrentTimeMillis()
             )
             currentOps[operationId] = updatedOp
             _activeOperations.value = currentOps
@@ -275,7 +288,7 @@ class DynamicManagementConsole {
         
         val updatedComponent = component.copy(
             status = ComponentStatus.RUNNING,
-            lastUpdate = System.currentTimeMillis(),
+            lastUpdate = getCurrentTimeMillis(),
             errorCount = 0
         )
         
@@ -301,8 +314,8 @@ class DynamicManagementConsole {
         delay(1000) // 模拟停止时间
         
         val updatedComponent = component.copy(
-            status = ComponentStatus.STOPPED,
-            lastUpdate = System.currentTimeMillis()
+            status = ComponentStatus.RUNNING,
+            lastUpdate = getCurrentTimeMillis()
         )
         
         val updatedComponents = _components.value.toMutableMap()
@@ -328,7 +341,7 @@ class DynamicManagementConsole {
         
         val updatedComponent = component.copy(
             status = ComponentStatus.RUNNING,
-            lastUpdate = System.currentTimeMillis()
+            lastUpdate = getCurrentTimeMillis()
         )
         
         val updatedComponents = _components.value.toMutableMap()
@@ -383,7 +396,7 @@ class DynamicManagementConsole {
         val updatedComponent = component.copy(
             version = version,
             status = ComponentStatus.RUNNING,
-            lastUpdate = System.currentTimeMillis()
+            lastUpdate = getCurrentTimeMillis()
         )
         
         val updatedComponents = _components.value.toMutableMap()
@@ -403,7 +416,7 @@ class DynamicManagementConsole {
             id = kotlin.random.Random.nextInt().toString(),
             message = message,
             level = level,
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
         
         currentLogs.add(0, logEntry) // 添加到开头
@@ -436,14 +449,14 @@ class DynamicManagementConsole {
         return ConsoleStats(
             totalComponents = components.size,
             runningComponents = components.values.count { it.status == ComponentStatus.RUNNING },
-            stoppedComponents = components.values.count { it.status == ComponentStatus.STOPPED },
+            stoppedComponents = components.values.count { it.status == ComponentStatus.ERROR },
             errorComponents = components.values.count { it.status == ComponentStatus.ERROR },
             totalLogs = logs.size,
             errorLogs = logs.count { it.level == LogLevel.ERROR },
             warningLogs = logs.count { it.level == LogLevel.WARNING },
             activeAlerts = alerts.size,
             activeOperations = operations.values.count { it.status == OperationStatus.RUNNING },
-            systemUptime = System.currentTimeMillis() - (System.currentTimeMillis() - 3600000L) // 模拟1小时运行时间
+            systemUptime = getCurrentTimeMillis() - (getCurrentTimeMillis() - 3600000L) // 模拟1小时运行时间
         )
     }
     
@@ -470,16 +483,7 @@ enum class ConsoleState {
     ERROR
 }
 
-/**
- * 组件状态枚举
- */
-enum class ComponentStatus {
-    LOADING,
-    RUNNING,
-    STOPPED,
-    ERROR,
-    UPDATING
-}
+// ComponentStatus已在DynamicManagementComponents.kt中定义，此处移除重复声明
 
 /**
  * 日志级别枚举
@@ -538,7 +542,7 @@ data class SystemMetrics(
     val networkLatency: Long = 120L,
     val activeConnections: Int = 15,
     val errorRate: Double = 1.2,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**

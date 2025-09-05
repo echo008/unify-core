@@ -40,8 +40,7 @@ fun UnifyImage(
         alignment = alignment,
         contentScale = contentScale,
         alpha = alpha,
-        colorFilter = colorFilter,
-        filterQuality = filterQuality
+        colorFilter = colorFilter
     )
 }
 

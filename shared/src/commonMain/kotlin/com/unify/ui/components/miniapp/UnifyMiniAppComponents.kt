@@ -1,16 +1,38 @@
 package com.unify.ui.components.miniapp
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.sp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 跨平台统一小程序组件系统
@@ -404,7 +426,7 @@ fun UnifyMiniAppBridge(
             Button(
                 onClick = {
                     val testCall = MiniAppApiCall(
-                        callId = "test_${System.currentTimeMillis()}",
+                        callId = "test_${getCurrentTimeMillis()}",
                         appId = appId,
                         method = "getUserInfo",
                         params = mapOf("scope" to "userInfo")
@@ -653,7 +675,7 @@ private fun LifecycleEventItem(
             }
             
             Text(
-                text = System.currentTimeMillis().toString().takeLast(6),
+                text = getCurrentTimeMillis().toString().takeLast(6),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

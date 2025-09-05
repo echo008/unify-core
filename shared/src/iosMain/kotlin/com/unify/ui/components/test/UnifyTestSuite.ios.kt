@@ -534,7 +534,7 @@ private fun measureMemoryUsage(): Long {
     // 模拟内存使用测量 - iOS特定实现
     val processInfo = NSProcessInfo.processInfo
     val physicalMemory = processInfo.physicalMemory
-    return (physicalMemory / (1024 * 1024 * 10)).toLong() // 模拟当前使用量
+    return (physicalMemory / (1024u * 1024u * 10u)).toLong() // 模拟当前使用量
 }
 
 private fun measureRenderPerformance(): Long {
@@ -615,7 +615,7 @@ object IOSTestUtils {
         val processInfo = NSProcessInfo.processInfo
         
         return mapOf(
-            "physicalMemory" to processInfo.physicalMemory / (1024 * 1024),
+            "physicalMemory" to processInfo.physicalMemory / (1024u * 1024u),
             "processorCount" to processInfo.processorCount,
             "systemVersion" to device.systemVersion,
             "deviceModel" to device.model,
@@ -630,7 +630,7 @@ object IOSTestUtils {
      * 触发触觉反馈
      */
     fun triggerHapticFeedback() {
-        val impactFeedback = UIImpactFeedbackGenerator(UIImpactFeedbackStyleMedium)
+        val impactFeedback = UIImpactFeedbackGenerator(UIImpactFeedbackStyle.UIImpactFeedbackStyleMedium)
         impactFeedback.impactOccurred()
     }
     
@@ -644,7 +644,7 @@ object IOSTestUtils {
             "reduceMotionEnabled" to UIAccessibilityIsReduceMotionEnabled(),
             "reduceTransparencyEnabled" to UIAccessibilityIsReduceTransparencyEnabled(),
             "boldTextEnabled" to UIAccessibilityIsBoldTextEnabled(),
-            "darkerSystemColorsEnabled" to UIAccessibilityIsDarkerSystemColorsEnabled()
+            "darkerSystemColorsEnabled" to (UIAccessibilityDarkerSystemColorsEnabled() ?: false)
         )
     }
 }

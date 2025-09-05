@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.container.UnifySection
+import com.unify.core.components.UnifySection
 import com.unify.ui.components.feedback.UnifyProgress
 import kotlinx.coroutines.delay
 

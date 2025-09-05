@@ -56,43 +56,43 @@ private suspend fun scanQRCode(): ScanResult {
             type = ScanResultType.URL,
             content = "https://www.example.com",
             metadata = mapOf(
-                "format" -> "QR_CODE",
-                "size" -> "256x256",
-                "errorCorrection" -> "M"
+                "format" to "QR_CODE",
+                "size" to "256x256",
+                "errorCorrection" to "M"
             )
         ),
         ScanResult(
             type = ScanResultType.TEXT,
             content = "Hello, World! 这是一个测试二维码",
             metadata = mapOf(
-                "format" -> "QR_CODE",
-                "encoding" -> "UTF-8"
+                "format" to "QR_CODE",
+                "encoding" to "UTF-8"
             )
         ),
         ScanResult(
             type = ScanResultType.WIFI,
             content = "WIFI:T:WPA;S:MyNetwork;P:password123;H:false;;",
             metadata = mapOf(
-                "format" -> "QR_CODE",
-                "network" -> "MyNetwork",
-                "security" -> "WPA"
+                "format" to "QR_CODE",
+                "network" to "MyNetwork",
+                "security" to "WPA"
             )
         ),
         ScanResult(
             type = ScanResultType.CONTACT,
             content = "BEGIN:VCARD\nVERSION:3.0\nFN:张三\nTEL:13800138000\nEMAIL:zhangsan@example.com\nEND:VCARD",
             metadata = mapOf(
-                "format" -> "QR_CODE",
-                "name" -> "张三",
-                "phone" -> "13800138000"
+                "format" to "QR_CODE",
+                "name" to "张三",
+                "phone" to "13800138000"
             )
         ),
         ScanResult(
             type = ScanResultType.EMAIL,
             content = "mailto:contact@example.com?subject=Hello&body=Hi there!",
             metadata = mapOf(
-                "format" -> "QR_CODE",
-                "recipient" -> "contact@example.com"
+                "format" to "QR_CODE",
+                "recipient" to "contact@example.com"
             )
         )
     )
@@ -109,30 +109,30 @@ private suspend fun scanBarcode(): ScanResult {
             type = ScanResultType.PRODUCT,
             content = "6901028089296",
             metadata = mapOf(
-                "format" -> "EAN_13",
-                "product" -> "可口可乐 330ml",
-                "brand" -> "Coca-Cola",
-                "price" -> "3.50"
+                "format" to "EAN_13",
+                "product" to "可口可乐 330ml",
+                "brand" to "Coca-Cola",
+                "price" to "3.50"
             )
         ),
         ScanResult(
             type = ScanResultType.PRODUCT,
             content = "4901777289314",
             metadata = mapOf(
-                "format" -> "EAN_13",
-                "product" -> "统一方便面",
-                "brand" -> "统一",
-                "price" -> "4.20"
+                "format" to "EAN_13",
+                "product" to "统一方便面",
+                "brand" to "统一",
+                "price" to "4.20"
             )
         ),
         ScanResult(
             type = ScanResultType.PRODUCT,
             content = "123456789012",
             metadata = mapOf(
-                "format" -> "UPC_A",
-                "product" -> "Apple iPhone 15",
-                "brand" -> "Apple",
-                "price" -> "5999.00"
+                "format" to "UPC_A",
+                "product" to "Apple iPhone 15",
+                "brand" to "Apple",
+                "price" to "5999.00"
             )
         )
     )
@@ -149,21 +149,21 @@ private suspend fun scanDocument(): ScanResult {
             type = ScanResultType.DOCUMENT,
             content = "这是一份重要的商业合同文档。\n\n合同编号：CT-2024-001\n签署日期：2024年1月15日\n\n甲方：ABC科技有限公司\n乙方：XYZ贸易有限公司\n\n合同内容：\n1. 产品供应协议\n2. 价格条款\n3. 交付时间\n4. 质量保证\n\n特此签署。",
             metadata = mapOf(
-                "type" -> "CONTRACT",
-                "pages" -> "1",
-                "language" -> "zh-CN",
-                "confidence" -> "0.95",
-                "words" -> "156"
+                "type" to "CONTRACT",
+                "pages" to "1",
+                "language" to "zh-CN",
+                "confidence" to "0.95",
+                "words" to "156"
             )
         ),
         ScanResult(
             type = ScanResultType.DOCUMENT,
             content = "发票\n\n发票号码：INV-2024-0001\n开票日期：2024年1月20日\n\n购买方：个人消费者\n销售方：某某商店\n\n商品明细：\n- 苹果 2kg × 8.00 = 16.00元\n- 香蕉 1kg × 6.00 = 6.00元\n- 橙子 1.5kg × 10.00 = 15.00元\n\n合计：37.00元\n税额：3.70元\n总计：40.70元",
             metadata = mapOf(
-                "type" -> "INVOICE",
-                "number" -> "INV-2024-0001",
-                "amount" -> "40.70",
-                "currency" -> "CNY"
+                "type" to "INVOICE",
+                "number" to "INV-2024-0001",
+                "amount" to "40.70",
+                "currency" to "CNY"
             )
         )
     )
@@ -180,30 +180,30 @@ private suspend fun scanImage(): ScanResult {
             type = ScanResultType.IMAGE,
             content = "检测到图像内容：一只可爱的橘猫正在阳光下睡觉",
             metadata = mapOf(
-                "objects" -> "cat, sunlight, sleeping",
-                "colors" -> "orange, white, yellow",
-                "scene" -> "indoor",
-                "confidence" -> "0.92"
+                "objects" to "cat, sunlight, sleeping",
+                "colors" to "orange, white, yellow",
+                "scene" to "indoor",
+                "confidence" to "0.92"
             )
         ),
         ScanResult(
             type = ScanResultType.IMAGE,
             content = "检测到图像内容：城市夜景，高楼大厦灯火通明",
             metadata = mapOf(
-                "objects" -> "buildings, lights, city",
-                "colors" -> "blue, yellow, black",
-                "scene" -> "urban_night",
-                "confidence" -> "0.88"
+                "objects" to "buildings, lights, city",
+                "colors" to "blue, yellow, black",
+                "scene" to "urban_night",
+                "confidence" to "0.88"
             )
         ),
         ScanResult(
             type = ScanResultType.IMAGE,
             content = "检测到图像内容：美味的意大利披萨，配有番茄、奶酪和罗勒叶",
             metadata = mapOf(
-                "objects" -> "pizza, tomato, cheese, basil",
-                "colors" -> "red, white, green",
-                "scene" -> "food",
-                "confidence" -> "0.96"
+                "objects" to "pizza, tomato, cheese, basil",
+                "colors" to "red, white, green",
+                "scene" to "food",
+                "confidence" to "0.96"
             )
         )
     )
@@ -220,28 +220,28 @@ private suspend fun scanNFC(): ScanResult {
             type = ScanResultType.TEXT,
             content = "NFC标签内容：欢迎来到我们的咖啡店！",
             metadata = mapOf(
-                "type" -> "NDEF_TEXT",
-                "language" -> "zh",
-                "tagId" -> "04:A1:B2:C3:D4:E5:F6",
-                "technology" -> "NfcA"
+                "type" to "NDEF_TEXT",
+                "language" to "zh",
+                "tagId" to "04:A1:B2:C3:D4:E5:F6",
+                "technology" to "NfcA"
             )
         ),
         ScanResult(
             type = ScanResultType.URL,
             content = "https://wifi.example.com/connect",
             metadata = mapOf(
-                "type" -> "NDEF_URI",
-                "tagId" -> "04:B2:C3:D4:E5:F6:A1",
-                "technology" -> "NfcB"
+                "type" to "NDEF_URI",
+                "tagId" to "04:B2:C3:D4:E5:F6:A1",
+                "technology" to "NfcB"
             )
         ),
         ScanResult(
             type = ScanResultType.CONTACT,
             content = "BEGIN:VCARD\nVERSION:2.1\nFN:李四\nTEL:13900139000\nEMAIL:lisi@example.com\nURL:https://lisi.example.com\nEND:VCARD",
             metadata = mapOf(
-                "type" -> "NDEF_VCARD",
-                "name" -> "李四",
-                "tagId" -> "04:C3:D4:E5:F6:A1:B2"
+                "type" to "NDEF_VCARD",
+                "name" to "李四",
+                "tagId" to "04:C3:D4:E5:F6:A1:B2"
             )
         )
     )
@@ -258,26 +258,26 @@ private suspend fun scanBusinessCard(): ScanResult {
             type = ScanResultType.CONTACT,
             content = "王经理\n销售总监\nABC科技有限公司\n电话：010-12345678\n手机：13800138000\n邮箱：wang@abc-tech.com\n地址：北京市朝阳区科技园区1号楼",
             metadata = mapOf(
-                "name" -> "王经理",
-                "title" -> "销售总监",
-                "company" -> "ABC科技有限公司",
-                "phone" -> "010-12345678",
-                "mobile" -> "13800138000",
-                "email" -> "wang@abc-tech.com",
-                "address" -> "北京市朝阳区科技园区1号楼"
+                "name" to "王经理",
+                "title" to "销售总监",
+                "company" to "ABC科技有限公司",
+                "phone" to "010-12345678",
+                "mobile" to "13800138000",
+                "email" to "wang@abc-tech.com",
+                "address" to "北京市朝阳区科技园区1号楼"
             )
         ),
         ScanResult(
             type = ScanResultType.CONTACT,
             content = "张设计师\n创意总监\nXYZ设计工作室\n电话：021-87654321\n手机：13900139000\n邮箱：zhang@xyz-design.com\n网站：www.xyz-design.com",
             metadata = mapOf(
-                "name" -> "张设计师",
-                "title" -> "创意总监",
-                "company" -> "XYZ设计工作室",
-                "phone" -> "021-87654321",
-                "mobile" -> "13900139000",
-                "email" -> "zhang@xyz-design.com",
-                "website" -> "www.xyz-design.com"
+                "name" to "张设计师",
+                "title" to "创意总监",
+                "company" to "XYZ设计工作室",
+                "phone" to "021-87654321",
+                "mobile" to "13900139000",
+                "email" to "zhang@xyz-design.com",
+                "website" to "www.xyz-design.com"
             )
         )
     )
@@ -294,14 +294,14 @@ private suspend fun scanIDCard(): ScanResult {
             type = ScanResultType.DOCUMENT,
             content = "身份证信息：\n姓名：张三\n性别：男\n民族：汉\n出生：1990年5月15日\n住址：北京市海淀区中关村大街1号\n公民身份号码：110108199005151234\n签发机关：北京市公安局海淀分局\n有效期限：2020.05.15-2030.05.15",
             metadata = mapOf(
-                "type" -> "ID_CARD",
-                "name" -> "张三",
-                "gender" -> "男",
-                "birth" -> "1990-05-15",
-                "idNumber" -> "110108199005151234",
-                "authority" -> "北京市公安局海淀分局",
-                "validFrom" -> "2020-05-15",
-                "validTo" -> "2030-05-15"
+                "type" to "ID_CARD",
+                "name" to "张三",
+                "gender" to "男",
+                "birth" to "1990-05-15",
+                "idNumber" to "110108199005151234",
+                "authority" to "北京市公安局海淀分局",
+                "validFrom" to "2020-05-15",
+                "validTo" to "2030-05-15"
             )
         )
     )
@@ -318,29 +318,29 @@ private suspend fun scanReceipt(): ScanResult {
             type = ScanResultType.DOCUMENT,
             content = "购物小票\n\n某某超市\n地址：北京市朝阳区购物街123号\n电话：010-12345678\n\n交易时间：2024-01-20 14:30:25\n收银员：001号\n\n商品明细：\n牛奶 250ml×4    ¥12.00\n面包 500g×1     ¥8.50\n苹果 2kg        ¥16.00\n香蕉 1kg        ¥6.00\n\n小计：¥42.50\n优惠：¥2.50\n实付：¥40.00\n\n支付方式：微信支付\n找零：¥0.00\n\n谢谢惠顾！",
             metadata = mapOf(
-                "type" -> "RECEIPT",
-                "store" -> "某某超市",
-                "date" -> "2024-01-20",
-                "time" -> "14:30:25",
-                "total" -> "40.00",
-                "currency" -> "CNY",
-                "payment" -> "微信支付",
-                "items" -> "4"
+                "type" to "RECEIPT",
+                "store" to "某某超市",
+                "date" to "2024-01-20",
+                "time" to "14:30:25",
+                "total" to "40.00",
+                "currency" to "CNY",
+                "payment" to "微信支付",
+                "items" to "4"
             )
         ),
         ScanResult(
             type = ScanResultType.DOCUMENT,
             content = "餐厅账单\n\n美味餐厅\n地址：上海市黄浦区南京路456号\n\n桌号：8号桌\n服务员：小王\n时间：2024-01-20 19:45:00\n\n菜品：\n宫保鸡丁        ¥28.00\n麻婆豆腐        ¥18.00\n白米饭×2       ¥6.00\n可乐×2         ¥12.00\n\n小计：¥64.00\n服务费(10%)：¥6.40\n合计：¥70.40\n\n支付宝支付\n\n欢迎再次光临！",
             metadata = mapOf(
-                "type" -> "RESTAURANT_BILL",
-                "restaurant" -> "美味餐厅",
-                "table" -> "8号桌",
-                "date" -> "2024-01-20",
-                "time" -> "19:45:00",
-                "subtotal" -> "64.00",
-                "service" -> "6.40",
-                "total" -> "70.40",
-                "payment" -> "支付宝"
+                "type" to "RESTAURANT_BILL",
+                "restaurant" to "美味餐厅",
+                "table" to "8号桌",
+                "date" to "2024-01-20",
+                "time" to "19:45:00",
+                "subtotal" to "64.00",
+                "service" to "6.40",
+                "total" to "70.40",
+                "payment" to "支付宝"
             )
         )
     )

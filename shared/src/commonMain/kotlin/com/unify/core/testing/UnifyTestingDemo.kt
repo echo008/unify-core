@@ -1,14 +1,32 @@
 package com.unify.core.testing
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 测试框架演示应用
@@ -574,7 +592,7 @@ private suspend fun generateSampleCoverageReport(): CoverageReport {
     return CoverageReport(
         id = "coverage_demo",
         projectName = "Unify-Core",
-        timestamp = System.currentTimeMillis(),
+        timestamp = getCurrentTimeMillis(),
         overallCoverage = 88.5,
         modulesCoverage = modulesCoverage,
         summary = CoverageSummary(
@@ -615,7 +633,7 @@ private suspend fun generateSampleQualityReport(): QualityReport {
     return QualityReport(
         id = "quality_demo",
         projectName = "Unify-Core",
-        timestamp = System.currentTimeMillis(),
+        timestamp = getCurrentTimeMillis(),
         metrics = metrics,
         checkResults = checkResults,
         summary = QualitySummary(

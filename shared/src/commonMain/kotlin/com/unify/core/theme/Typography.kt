@@ -3,6 +3,7 @@ package com.unify.core.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
@@ -239,7 +240,7 @@ object UnifyResponsiveTypography {
     /**
      * 获取平台特定的字体缩放因子
      */
-    expect fun getPlatformFontScale(): Float
+    fun getPlatformFontScale(): Float = 1.0f
     
     /**
      * 获取响应式字体排版

@@ -1,12 +1,16 @@
 package com.unify.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unify.core.providers.*
@@ -240,7 +244,7 @@ fun UnifyTabRow(
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = { tabPositions ->
         if (selectedTabIndex < tabPositions.size) {
             TabRowDefaults.SecondaryIndicator(
-                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                Modifier,
                 color = contentColor
             )
         }
@@ -300,7 +304,7 @@ fun UnifyScrollableTabRow(
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = { tabPositions ->
         if (selectedTabIndex < tabPositions.size) {
             TabRowDefaults.SecondaryIndicator(
-                Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                Modifier,
                 color = contentColor
             )
         }
@@ -323,98 +327,55 @@ fun UnifyScrollableTabRow(
 }
 
 /**
- * Unify分页器
+ * Unify分页器 - 简化版本
  */
 @Composable
 fun UnifyPager(
     pageCount: Int,
     modifier: Modifier = Modifier,
-    state: PagerState = rememberPagerState { pageCount },
-    contentPadding: PaddingValues = PaddingValues(0.dp),
-    pageSize: PageSize = PageSize.Fill,
-    beyondBoundsPageCount: Int = 0,
-    pageSpacing: androidx.compose.ui.unit.Dp = 0.dp,
-    verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
-    userScrollEnabled: Boolean = true,
-    reverseLayout: Boolean = false,
-    key: ((index: Int) -> Any)? = null,
-    pageNestedScrollConnection: NestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
-        Orientation.Horizontal
-    ),
-    pageContent: @Composable PagerScope.(page: Int) -> Unit
+    currentPage: Int = 0,
+    onPageChanged: (Int) -> Unit = {},
+    pageContent: @Composable (page: Int) -> Unit
 ) {
-    HorizontalPager(
-        pageCount = pageCount,
-        modifier = modifier,
-        state = state,
-        contentPadding = contentPadding,
-        pageSize = pageSize,
-        beyondBoundsPageCount = beyondBoundsPageCount,
-        pageSpacing = pageSpacing,
-        verticalAlignment = verticalAlignment,
-        flingBehavior = flingBehavior,
-        userScrollEnabled = userScrollEnabled,
-        reverseLayout = reverseLayout,
-        key = key,
-        pageNestedScrollConnection = pageNestedScrollConnection,
-        pageContent = pageContent
-    )
+    // 使用简单的Box来显示当前页面
+    Box(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        pageContent(currentPage.coerceIn(0, pageCount - 1))
+    }
 }
 
 /**
- * Unify垂直分页器
+ * Unify垂直分页器 - 简化版本
  */
 @Composable
 fun UnifyVerticalPager(
     pageCount: Int,
     modifier: Modifier = Modifier,
-    state: PagerState = rememberPagerState { pageCount },
-    contentPadding: PaddingValues = PaddingValues(0.dp),
-    pageSize: PageSize = PageSize.Fill,
-    beyondBoundsPageCount: Int = 0,
-    pageSpacing: androidx.compose.ui.unit.Dp = 0.dp,
-    horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    flingBehavior: TargetedFlingBehavior = PagerDefaults.flingBehavior(state = state),
-    userScrollEnabled: Boolean = true,
-    reverseLayout: Boolean = false,
-    key: ((index: Int) -> Any)? = null,
-    pageNestedScrollConnection: NestedScrollConnection = PagerDefaults.pageNestedScrollConnection(
-        Orientation.Vertical
-    ),
-    pageContent: @Composable PagerScope.(page: Int) -> Unit
+    currentPage: Int = 0,
+    onPageChanged: (Int) -> Unit = {},
+    pageContent: @Composable (page: Int) -> Unit
 ) {
-    VerticalPager(
-        pageCount = pageCount,
-        modifier = modifier,
-        state = state,
-        contentPadding = contentPadding,
-        pageSize = pageSize,
-        beyondBoundsPageCount = beyondBoundsPageCount,
-        pageSpacing = pageSpacing,
-        horizontalAlignment = horizontalAlignment,
-        flingBehavior = flingBehavior,
-        userScrollEnabled = userScrollEnabled,
-        reverseLayout = reverseLayout,
-        key = key,
-        pageNestedScrollConnection = pageNestedScrollConnection,
-        pageContent = pageContent
-    )
+    // 使用简单的Column来显示当前页面
+    Column(
+        modifier = modifier.fillMaxSize()
+    ) {
+        pageContent(currentPage.coerceIn(0, pageCount - 1))
+    }
 }
 
 /**
- * Unify分页指示器
+ * Unify分页指示器 - 简化版本
  */
 @Composable
 fun UnifyPagerIndicator(
-    pagerState: PagerState,
+    pageCount: Int,
+    currentPage: Int,
     modifier: Modifier = Modifier,
-    pageCount: Int = pagerState.pageCount,
-    activeColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
-    inactiveColor: Color = activeColor.copy(alpha = 0.3f),
-    indicatorWidth: androidx.compose.ui.unit.Dp = 8.dp,
-    indicatorHeight: androidx.compose.ui.unit.Dp = 8.dp,
-    spacing: androidx.compose.ui.unit.Dp = 8.dp
+    activeColor: Color = MaterialTheme.colorScheme.primary,
+    inactiveColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+    indicatorSize: Dp = 8.dp,
+    spacing: Dp = 8.dp
 ) {
     Row(
         modifier = modifier,
@@ -422,15 +383,21 @@ fun UnifyPagerIndicator(
         verticalAlignment = Alignment.CenterVertically
     ) {
         repeat(pageCount) { index ->
-            val color = if (pagerState.currentPage == index) activeColor else inactiveColor
+            val isSelected = index == currentPage
             Box(
                 modifier = Modifier
-                    .size(width = indicatorWidth, height = indicatorHeight)
-                    .background(color, CircleShape)
+                    .size(indicatorSize)
+                    .background(
+                        color = if (isSelected) activeColor else inactiveColor,
+                        shape = CircleShape
+                    )
             )
         }
     }
 }
+
+
+
 
 // 扩展函数：将Unify颜色转换为Material颜色
 private fun Long.toColor(): Color = Color(this)

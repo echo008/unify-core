@@ -6,6 +6,57 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
 
 /**
+ * AI模型类型枚举
+ */
+enum class AIModelType {
+    GPT_3_5_TURBO,
+    GPT_4,
+    CLAUDE_3_HAIKU,
+    CLAUDE_3_SONNET,
+    GEMINI_PRO,
+    LLAMA_2,
+    MISTRAL_7B,
+    QWEN_PLUS,
+    BAICHUAN_2,
+    CHATGLM_3
+}
+
+/**
+ * AI配置数据类
+ */
+@Serializable
+data class AIConfiguration(
+    val modelType: AIModelType = AIModelType.GPT_3_5_TURBO,
+    val accuracy: Float = 0.7f,
+    val maxTokens: Int = 2048,
+    val temperature: Float = 0.7f,
+    val topP: Float = 0.9f,
+    val frequencyPenalty: Float = 0.0f,
+    val presencePenalty: Float = 0.0f,
+    val contextLength: Int = 8192,
+    val timeoutMs: Long = 30000L,
+    val maxRetryAttempts: Int = 3,
+    val enableCaching: Boolean = true,
+    val cacheExpiryMs: Long = 3600000L,
+    val enableLogging: Boolean = true,
+    val enableMetrics: Boolean = true
+)
+
+/**
+ * 模型配置数据类
+ */
+@Serializable
+data class ModelConfiguration(
+    val modelId: String,
+    val maxTokens: Int = 2048,
+    val temperature: Float = 0.7f,
+    val topP: Float = 0.9f,
+    val frequencyPenalty: Float = 0.0f,
+    val presencePenalty: Float = 0.0f,
+    val customParameters: Map<String, String> = emptyMap()
+)
+
+/**
  * AI配置管理器 - 管理AI模型配置和参数
  */
 class AIConfigurationManager {
@@ -18,6 +69,7 @@ class AIConfigurationManager {
         const val DEFAULT_MAX_TOKENS = 2048
         const val DEFAULT_TEMPERATURE = 0.7f
         const val DEFAULT_TOP_P = 0.9f
+        const val DEFAULT_STREAM = false
         const val DEFAULT_FREQUENCY_PENALTY = 0.0f
         const val DEFAULT_PRESENCE_PENALTY = 0.0f
         const val MAX_CONTEXT_LENGTH = 8192
@@ -30,9 +82,9 @@ class AIConfigurationManager {
     private val _configuration = MutableStateFlow(AIConfiguration())
     val configuration: StateFlow<AIConfiguration> = _configuration.asStateFlow()
     
-    private val _modelConfigurations = MutableStateFlow<Map<AIModelType, ModelConfiguration>>(
+    private val _modelConfigurations = MutableStateFlow<Map<AICapabilityType, ModelConfiguration>>(
         mapOf(
-            AIModelType.TEXT_GENERATION to ModelConfiguration(
+            AICapabilityType.TEXT_GENERATION to ModelConfiguration(
                 modelId = "gpt-3.5-turbo",
                 maxTokens = DEFAULT_MAX_TOKENS,
                 temperature = DEFAULT_TEMPERATURE,
@@ -40,53 +92,53 @@ class AIConfigurationManager {
                 frequencyPenalty = DEFAULT_FREQUENCY_PENALTY,
                 presencePenalty = DEFAULT_PRESENCE_PENALTY
             ),
-            AIModelType.IMAGE_GENERATION to ModelConfiguration(
+            AICapabilityType.IMAGE_GENERATION to ModelConfiguration(
                 modelId = "dall-e-3",
                 maxTokens = 1024,
                 temperature = 0.8f,
                 topP = 0.95f
             ),
-            AIModelType.SPEECH_TO_TEXT to ModelConfiguration(
+            AICapabilityType.SPEECH_TO_TEXT to ModelConfiguration(
                 modelId = "whisper-1",
                 maxTokens = 512,
                 temperature = 0.0f
             ),
-            AIModelType.TEXT_TO_SPEECH to ModelConfiguration(
+            AICapabilityType.TEXT_TO_SPEECH to ModelConfiguration(
                 modelId = "tts-1",
                 maxTokens = 256,
                 temperature = 0.0f
             ),
-            AIModelType.EMBEDDING to ModelConfiguration(
+            AICapabilityType.EMBEDDING to ModelConfiguration(
                 modelId = "text-embedding-ada-002",
                 maxTokens = 8191
             ),
-            AIModelType.MODERATION to ModelConfiguration(
+            AICapabilityType.MODERATION to ModelConfiguration(
                 modelId = "text-moderation-latest",
                 maxTokens = 32768
             ),
-            AIModelType.CODE_GENERATION to ModelConfiguration(
+            AICapabilityType.CODE_GENERATION to ModelConfiguration(
                 modelId = "code-davinci-002",
                 maxTokens = 4096,
                 temperature = 0.2f
             ),
-            AIModelType.TRANSLATION to ModelConfiguration(
+            AICapabilityType.TRANSLATION to ModelConfiguration(
                 modelId = "gpt-3.5-turbo",
                 maxTokens = 2048,
                 temperature = 0.3f
             ),
-            AIModelType.SUMMARIZATION to ModelConfiguration(
+            AICapabilityType.SUMMARIZATION to ModelConfiguration(
                 modelId = "gpt-3.5-turbo",
                 maxTokens = 1024,
                 temperature = 0.5f
             ),
-            AIModelType.QUESTION_ANSWERING to ModelConfiguration(
+            AICapabilityType.QUESTION_ANSWERING to ModelConfiguration(
                 modelId = "gpt-3.5-turbo",
                 maxTokens = 1024,
                 temperature = 0.1f
             )
         )
     )
-    val modelConfigurations: StateFlow<Map<AIModelType, ModelConfiguration>> = _modelConfigurations.asStateFlow()
+    val modelConfigurations: StateFlow<Map<AICapabilityType, ModelConfiguration>> = _modelConfigurations.asStateFlow()
     
     /**
      * 更新AI配置
@@ -106,7 +158,7 @@ class AIConfigurationManager {
     /**
      * 更新特定模型配置
      */
-    fun updateModelConfiguration(modelType: AIModelType, config: ModelConfiguration) {
+    fun updateModelConfiguration(modelType: AICapabilityType, config: ModelConfiguration) {
         val currentConfigs = _modelConfigurations.value.toMutableMap()
         currentConfigs[modelType] = config
         _modelConfigurations.value = currentConfigs
@@ -115,7 +167,7 @@ class AIConfigurationManager {
     /**
      * 获取特定模型配置
      */
-    fun getModelConfiguration(modelType: AIModelType): ModelConfiguration? {
+    fun getModelConfiguration(modelType: AICapabilityType): ModelConfiguration? {
         return _modelConfigurations.value[modelType]
     }
     
@@ -158,56 +210,6 @@ class AIConfigurationManager {
             ValidationResult.Error(errors)
         }
     }
-}
-
-/**
- * AI配置数据类
- */
-@Serializable
-data class AIConfiguration(
-    val accuracy: Float = BASE_ACCURACY,
-    val maxTokens: Int = DEFAULT_MAX_TOKENS,
-    val temperature: Float = DEFAULT_TEMPERATURE,
-    val topP: Float = DEFAULT_TOP_P,
-    val frequencyPenalty: Float = DEFAULT_FREQUENCY_PENALTY,
-    val presencePenalty: Float = DEFAULT_PRESENCE_PENALTY,
-    val contextLength: Int = MAX_CONTEXT_LENGTH,
-    val timeoutMs: Long = DEFAULT_TIMEOUT_MS,
-    val maxRetryAttempts: Int = MAX_RETRY_ATTEMPTS,
-    val enableCaching: Boolean = true,
-    val cacheExpiryMs: Long = CACHE_EXPIRY_MS,
-    val enableLogging: Boolean = true,
-    val enableMetrics: Boolean = true
-)
-
-/**
- * 模型配置数据类
- */
-@Serializable
-data class ModelConfiguration(
-    val modelId: String,
-    val maxTokens: Int = DEFAULT_MAX_TOKENS,
-    val temperature: Float = DEFAULT_TEMPERATURE,
-    val topP: Float = DEFAULT_TOP_P,
-    val frequencyPenalty: Float = DEFAULT_FREQUENCY_PENALTY,
-    val presencePenalty: Float = DEFAULT_PRESENCE_PENALTY,
-    val customParameters: Map<String, String> = emptyMap()
-)
-
-/**
- * AI模型类型枚举
- */
-enum class AIModelType {
-    TEXT_GENERATION,
-    IMAGE_GENERATION,
-    SPEECH_TO_TEXT,
-    TEXT_TO_SPEECH,
-    EMBEDDING,
-    MODERATION,
-    CODE_GENERATION,
-    TRANSLATION,
-    SUMMARIZATION,
-    QUESTION_ANSWERING
 }
 
 /**

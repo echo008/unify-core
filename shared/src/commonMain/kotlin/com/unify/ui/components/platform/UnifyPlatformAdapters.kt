@@ -294,6 +294,109 @@ expect fun UnifyBiometricAuth(
 )
 
 /**
+ * 平台特定按钮组件
+ */
+@Composable
+expect fun UnifyPlatformButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    text: String,
+    enabled: Boolean = true
+)
+
+/**
+ * 平台特定文本输入框
+ */
+@Composable
+expect fun UnifyPlatformTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String = "",
+    enabled: Boolean = true
+)
+
+/**
+ * 平台特定开关组件
+ */
+@Composable
+expect fun UnifyPlatformSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+)
+
+/**
+ * 平台特定滑块组件
+ */
+@Composable
+expect fun UnifyPlatformSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
+    enabled: Boolean = true
+)
+
+/**
+ * 平台特定进度条组件
+ */
+@Composable
+expect fun UnifyPlatformProgressBar(
+    progress: Float,
+    modifier: Modifier = Modifier,
+    showPercentage: Boolean = false
+)
+
+/**
+ * 平台特定警告对话框
+ */
+@Composable
+expect fun UnifyPlatformAlert(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit = {},
+    modifier: Modifier = Modifier
+)
+
+/**
+ * 平台特定操作表
+ */
+@Composable
+expect fun UnifyPlatformActionSheet(
+    title: String,
+    actions: List<String>,
+    onActionSelected: (Int) -> Unit,
+    onCancel: () -> Unit = {},
+    modifier: Modifier = Modifier
+)
+
+/**
+ * 平台特定分段控制器
+ */
+@Composable
+expect fun UnifyPlatformSegmentedControl(
+    items: List<String>,
+    selectedIndex: Int,
+    onSelectionChanged: (Int) -> Unit,
+    modifier: Modifier = Modifier
+)
+
+/**
+ * 平台特定日期选择器
+ */
+@Composable
+expect fun UnifyPlatformDatePicker(
+    selectedDate: Long,
+    onDateSelected: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    minDate: Long? = null,
+    maxDate: Long? = null
+)
+
+/**
  * 平台特定的分享组件
  */
 expect fun shareContent(

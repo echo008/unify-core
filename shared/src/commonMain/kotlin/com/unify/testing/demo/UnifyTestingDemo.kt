@@ -141,7 +141,7 @@ private fun TestResultsSummary(results: List<TestResult>) {
                 TestStatItem("总计", total, Color.Gray)
                 TestStatItem("通过", passed, Color.Green)
                 TestStatItem("失败", failed, Color.Red)
-                TestStatItem("跳过", skipped, Color.Orange)
+                TestStatItem("跳过", skipped, Color(0xFFFFA500))
             }
             
             val passRate = if (total > 0) (passed.toFloat() / total * 100).toInt() else 0
@@ -180,7 +180,7 @@ private fun TestResultCard(result: TestResult) {
             containerColor = when (result.status) {
                 TestStatus.PASSED -> Color.Green.copy(alpha = 0.1f)
                 TestStatus.FAILED -> Color.Red.copy(alpha = 0.1f)
-                TestStatus.SKIPPED -> Color.Orange.copy(alpha = 0.1f)
+                TestStatus.SKIPPED -> Color(0xFFFFA500).copy(alpha = 0.1f)
             }
         )
     ) {
@@ -205,7 +205,7 @@ private fun TestResultCard(result: TestResult) {
                     color = when (result.status) {
                         TestStatus.PASSED -> Color.Green
                         TestStatus.FAILED -> Color.Red
-                        TestStatus.SKIPPED -> Color.Orange
+                        TestStatus.SKIPPED -> Color(0xFFFFA500)
                     }
                 )
             }

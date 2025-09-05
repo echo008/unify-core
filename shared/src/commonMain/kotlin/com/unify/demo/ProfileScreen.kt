@@ -12,8 +12,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.container.UnifySection
 import com.unify.ui.components.input.UnifySwitchWithLabel
+import com.unify.ui.components.feedback.UnifyProgress
+import com.unify.core.components.UnifySection
 
 /**
  * Unify用户配置文件演示界面
@@ -70,8 +71,7 @@ fun ProfileScreen(
         
         item {
             UnifySection(
-                title = "个人设置",
-                subtitle = "自定义您的应用体验"
+                title = "用户信息"
             ) {
                 preferences.forEach { preference ->
                     UnifySwitchWithLabel(

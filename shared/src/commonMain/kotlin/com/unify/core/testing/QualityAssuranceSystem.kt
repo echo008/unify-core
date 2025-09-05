@@ -1,8 +1,14 @@
 package com.unify.core.testing
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 质量指标
@@ -16,7 +22,7 @@ data class QualityMetrics(
     val maintainability: Double,
     val reliability: Double,
     val overallScore: Double,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -231,7 +237,7 @@ class QualityAssuranceSystemImpl(
                     status = QualityStatus.FAILED,
                     score = 0.0,
                     issues = listOf(QualityIssue(
-                        id = "error_${System.currentTimeMillis()}",
+                        id = "error_${getCurrentTimeMillis()}",
                         severity = IssueSeverity.CRITICAL,
                         category = category,
                         description = "质量检查执行失败: ${e.message}"
@@ -250,9 +256,9 @@ class QualityAssuranceSystemImpl(
         val trends = if (config.generateTrends) getQualityTrends() else null
         
         val report = QualityReport(
-            id = "quality_report_${System.currentTimeMillis()}",
+            id = "quality_report_${getCurrentTimeMillis()}",
             projectName = "Unify-Core",
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             metrics = metrics,
             checkResults = checkResults,
             summary = summary,

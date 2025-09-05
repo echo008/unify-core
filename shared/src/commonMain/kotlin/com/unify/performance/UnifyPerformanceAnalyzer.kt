@@ -1,9 +1,17 @@
 package com.unify.performance
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 性能分析器
@@ -39,7 +47,7 @@ class UnifyPerformanceAnalyzer {
             _performanceState.value = _performanceState.value.copy(
                 isInitializing = false,
                 isInitialized = true,
-                initTime = System.currentTimeMillis()
+                initTime = getCurrentTimeMillis()
             )
             
             PerformanceResult.Success("性能分析器初始化成功")
@@ -64,7 +72,7 @@ class UnifyPerformanceAnalyzer {
             
             _performanceState.value = _performanceState.value.copy(
                 isMonitoring = true,
-                monitoringStartTime = System.currentTimeMillis()
+                monitoringStartTime = getCurrentTimeMillis()
             )
             
             PerformanceResult.Success("性能监控已启动")
@@ -81,7 +89,7 @@ class UnifyPerformanceAnalyzer {
             
             _performanceState.value = _performanceState.value.copy(
                 isMonitoring = false,
-                monitoringEndTime = System.currentTimeMillis()
+                monitoringEndTime = getCurrentTimeMillis()
             )
             
             PerformanceResult.Success("性能监控已停止")
@@ -92,7 +100,7 @@ class UnifyPerformanceAnalyzer {
     
     fun getCurrentMetrics(): PerformanceMetrics {
         return PerformanceMetrics(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             cpuUsage = metricsCollector.getCpuUsage(),
             memoryUsage = memoryAnalyzer.getMemoryUsage(),
             fps = performanceProfiler.getCurrentFPS(),
@@ -107,7 +115,7 @@ class UnifyPerformanceAnalyzer {
         val history = metricsCollector.getMetricsHistory()
         
         return PerformanceReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             currentMetrics = metrics,
             averageMetrics = calculateAverageMetrics(history),
             performanceScore = calculatePerformanceScore(metrics),
@@ -182,7 +190,7 @@ class UnifyPerformanceAnalyzer {
         val avgFps = history.map { it.fps }.average()
         
         return PerformanceMetrics(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             cpuUsage = avgCpu,
             memoryUsage = MemoryUsage(
                 used = history.map { it.memoryUsage.used }.average().toLong(),
@@ -234,7 +242,7 @@ class MemoryAnalyzer {
     
     fun getMemoryUsage(): MemoryUsage {
         val total = 1024 * 1024 * 1024L // 1GB
-        val used = (total * (0.3..0.8).random()).toLong()
+        val used = (total * 0.5).toLong() // 固定50%使用率，避免random依赖
         return MemoryUsage(
             used = used,
             total = total,

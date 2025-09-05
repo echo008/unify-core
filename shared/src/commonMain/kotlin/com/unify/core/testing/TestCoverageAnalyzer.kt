@@ -1,8 +1,14 @@
 package com.unify.core.testing
 
 import kotlinx.coroutines.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 代码覆盖率数据
@@ -17,7 +23,7 @@ data class CoverageData(
     val uncoveredLines: List<Int> = emptyList(),
     val branchCoverage: Double = 0.0,
     val functionCoverage: Double = 0.0,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -152,9 +158,9 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
         val recommendations = generateRecommendations(allCoverage)
         
         return CoverageReport(
-            id = "coverage_${System.currentTimeMillis()}",
+            id = "coverage_${getCurrentTimeMillis()}",
             projectName = "Unify-Core",
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             overallCoverage = overallCoverage,
             modulesCoverage = allCoverage,
             summary = summary,

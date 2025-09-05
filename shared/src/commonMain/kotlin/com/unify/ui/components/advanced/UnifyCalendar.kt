@@ -1,9 +1,17 @@
 package com.unify.ui.components.advanced
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.Composable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 // 使用简化的日期类型，避免外部依赖
 data class SimpleDate(val year: Int, val month: Int, val day: Int)
 data class SimpleTime(val hour: Int, val minute: Int)
@@ -71,7 +79,7 @@ expect fun UnifyCalendarView(
 
 // 工具函数
 fun getCurrentDate(): SimpleDate {
-    val currentTimeMillis = System.currentTimeMillis()
+    val currentTimeMillis = getCurrentTimeMillis()
     // 简化实现，返回当前日期
     return SimpleDate(2024, 1, 1)
 }

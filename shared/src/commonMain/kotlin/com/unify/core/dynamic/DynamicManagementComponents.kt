@@ -1,10 +1,26 @@
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
+import com.unify.core.architecture.ComponentType
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 动态管理组件 - 提供动态组件的管理功能
@@ -186,7 +202,7 @@ class DynamicManagementComponents {
     /**
      * 注销组件
      */
-    fun unregisterComponent(componentId: String): ComponentRegistrationResult {
+    suspend fun unregisterComponent(componentId: String): ComponentRegistrationResult {
         val component = _registeredComponents.value[componentId]
             ?: return ComponentRegistrationResult.Error("组件不存在: $componentId")
         
@@ -245,7 +261,7 @@ class DynamicManagementComponents {
             val loadedComponent = LoadedComponent(
                 id = componentId,
                 registration = registration,
-                loadTime = System.currentTimeMillis(),
+                loadTime = getCurrentTimeMillis(),
                 status = ComponentStatus.RUNNING,
                 instanceId = kotlin.random.Random.nextInt().toString(),
                 memoryUsage = kotlin.random.Random.nextLong(10, 100) * 1024 * 1024, // MB转换为bytes
@@ -261,7 +277,7 @@ class DynamicManagementComponents {
                 componentId = componentId,
                 loadCount = 1,
                 errorCount = 0,
-                lastAccess = System.currentTimeMillis(),
+                lastAccess = getCurrentTimeMillis(),
                 totalExecutionTime = 0L,
                 averageResponseTime = 0L
             )
@@ -457,7 +473,7 @@ class DynamicManagementComponents {
                 val metrics = currentMetrics[componentId]
                 if (metrics != null) {
                     currentMetrics[componentId] = metrics.copy(
-                        lastAccess = System.currentTimeMillis(),
+                        lastAccess = getCurrentTimeMillis(),
                         errorCount = if (isHealthy) metrics.errorCount else metrics.errorCount + 1
                     )
                 }
@@ -476,7 +492,7 @@ class DynamicManagementComponents {
      */
     private fun performCleanup() {
         // 清理长时间未使用的组件指标
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         val currentMetrics = _componentMetrics.value.toMutableMap()
         
         val expiredMetrics = currentMetrics.entries.filter { (_, metrics) ->
@@ -503,6 +519,30 @@ class DynamicManagementComponents {
         val metrics = _componentMetrics.value[componentId]
         
         return ComponentInfo(
+            component = DynamicComponent(
+                id = componentId,
+                name = registration.name,
+                version = registration.version,
+                type = when (registration.type) {
+                    ComponentType.CORE -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.UI -> DynamicComponentType.COMPOSE_UI
+                    ComponentType.DATA -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.NETWORK -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.DEVICE -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.AI -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.SECURITY -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.PERFORMANCE -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.PLATFORM -> DynamicComponentType.BUSINESS_LOGIC
+                    ComponentType.CUSTOM -> DynamicComponentType.BUSINESS_LOGIC
+                },
+                metadata = registration.metadata,
+                dependencies = registration.dependencies,
+                config = emptyMap(),
+                content = "",
+                checksum = registration.checksum,
+                signature = ""
+            ),
+            state = ComponentState.LOADED,
             registration = registration,
             loaded = loaded,
             metrics = metrics,
@@ -583,19 +623,7 @@ enum class ManagementState {
     ERROR
 }
 
-/**
- * 组件类型枚举
- */
-enum class ComponentType {
-    UI,
-    DATA,
-    NETWORK,
-    AI,
-    SECURITY,
-    PERFORMANCE,
-    PLATFORM,
-    CUSTOM
-}
+// ComponentType已在UnifyArchitecture.kt中定义，此处移除重复声明
 
 /**
  * 组件状态枚举
@@ -653,17 +681,7 @@ data class ComponentMetrics(
     val averageResponseTime: Long
 )
 
-/**
- * 组件信息
- */
-@Serializable
-data class ComponentInfo(
-    val registration: ComponentRegistration,
-    val loaded: LoadedComponent?,
-    val metrics: ComponentMetrics?,
-    val dependencies: List<String>,
-    val dependents: List<String>
-)
+// ComponentInfo已移至UnifyDynamicEngine.kt中统一定义
 
 /**
  * 组件状态信息

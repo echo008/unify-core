@@ -1,6 +1,9 @@
 package com.unify.core.network
 
 import android.content.Context
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * Android平台网络服务工厂
@@ -8,7 +11,7 @@ import android.content.Context
  */
 actual class NetworkServiceFactory {
     
-    companion object {
+    actual companion object {
         private var context: Context? = null
         
         /**
@@ -18,27 +21,27 @@ actual class NetworkServiceFactory {
         fun initialize(applicationContext: Context) {
             context = applicationContext.applicationContext
         }
-    }
-    
-    actual fun createNetworkManager(): UnifyNetworkManager {
-        val appContext = context ?: throw IllegalStateException(
-            "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
-        )
-        return AndroidUnifyNetworkManager(appContext)
-    }
-    
-    actual fun createNetworkCache(): UnifyNetworkCache {
-        val appContext = context ?: throw IllegalStateException(
-            "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
-        )
-        return AndroidUnifyNetworkCache(appContext)
-    }
-    
-    actual fun createNetworkMonitor(): UnifyNetworkMonitor {
-        val appContext = context ?: throw IllegalStateException(
-            "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
-        )
-        return AndroidUnifyNetworkMonitor(appContext)
+        
+        actual fun createNetworkManager(): UnifyNetworkManager {
+            val appContext = context ?: throw IllegalStateException(
+                "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
+            )
+            return AndroidUnifyNetworkManager(appContext)
+        }
+        
+        actual fun createNetworkCache(): UnifyNetworkCache {
+            val appContext = context ?: throw IllegalStateException(
+                "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
+            )
+            return AndroidUnifyNetworkCache(appContext)
+        }
+        
+        actual fun createNetworkMonitor(): UnifyNetworkMonitor {
+            val appContext = context ?: throw IllegalStateException(
+                "NetworkServiceFactory not initialized. Call NetworkServiceFactory.initialize(context) first."
+            )
+            return AndroidUnifyNetworkMonitor(appContext)
+        }
     }
 }
 
@@ -150,13 +153,25 @@ class AndroidUnifyNetworkCache(private val context: Context) : UnifyNetworkCache
 class AndroidUnifyNetworkMonitor(private val context: Context) : UnifyNetworkMonitor {
     
     private val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
-    private val _networkEvents = kotlinx.coroutines.flow.MutableSharedFlow<NetworkEvent>()
+    private val _networkEvents = MutableSharedFlow<NetworkEvent>()
     
-    override fun observeNetworkEvents(): kotlinx.coroutines.flow.Flow<NetworkEvent> {
+    override fun observeNetworkEvents(): Flow<NetworkEvent> {
         return _networkEvents.asSharedFlow()
     }
     
-    override suspend fun startMonitoring() {
+    override fun onRequestStart(url: String, method: String) {
+        _networkEvents.tryEmit(NetworkEvent.RequestStart(url, method))
+    }
+    
+    override fun onRequestComplete(url: String, statusCode: Int, duration: Long) {
+        _networkEvents.tryEmit(NetworkEvent.RequestComplete(url, statusCode, duration))
+    }
+    
+    override fun onRequestError(url: String, error: Throwable) {
+        _networkEvents.tryEmit(NetworkEvent.RequestError(url, error))
+    }
+    
+    private suspend fun startMonitoring() {
         val networkRequest = android.net.NetworkRequest.Builder()
             .addCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
             .build()
@@ -182,11 +197,11 @@ class AndroidUnifyNetworkMonitor(private val context: Context) : UnifyNetworkMon
         })
     }
     
-    override suspend fun stopMonitoring() {
+    override fun stopMonitoring() {
         // Android会在应用销毁时自动取消注册
     }
     
-    override suspend fun getCurrentNetworkInfo(): NetworkConnectionInfo {
+    override fun getCurrentNetworkInfo(): NetworkConnectionInfo {
         return try {
             val activeNetwork = connectivityManager.activeNetwork
             val networkCapabilities = connectivityManager.getNetworkCapabilities(activeNetwork)
@@ -199,21 +214,20 @@ class AndroidUnifyNetworkMonitor(private val context: Context) : UnifyNetworkMon
             }
             
             val isConnected = networkCapabilities?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-            val isMetered = connectivityManager.isActiveNetworkMetered
             
             NetworkConnectionInfo(
                 isConnected = isConnected,
                 networkType = type,
-                isMetered = isMetered,
                 signalStrength = 75, // 简化实现
+                bandwidth = 0L,
                 ipAddress = getIpAddress()
             )
         } catch (e: Exception) {
             NetworkConnectionInfo(
                 isConnected = false,
                 networkType = NetworkType.UNKNOWN,
-                isMetered = false,
                 signalStrength = 0,
+                bandwidth = 0L,
                 ipAddress = ""
             )
         }
@@ -227,6 +241,18 @@ class AndroidUnifyNetworkMonitor(private val context: Context) : UnifyNetworkMon
         } catch (e: Exception) {
             ""
         }
+    }
+}
+
+/**
+ * Android平台网络状态获取实现
+ */
+actual fun getCurrentNetworkStatus(): NetworkStatus {
+    return try {
+        // 简化实现，实际项目中应该获取真实网络状态
+        NetworkStatus.CONNECTED
+    } catch (e: Exception) {
+        NetworkStatus.UNKNOWN
     }
 }
 

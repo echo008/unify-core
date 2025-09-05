@@ -246,9 +246,9 @@ fun UnifyMarkdownRenderer(
                         )
                     }
                 }
-                is MarkdownElement.List -> {
+                is MarkdownElement.ListElement -> {
                     Column {
-                        element.items.forEach { item ->
+                        element.items.forEach { item: String ->
                             Row {
                                 Text("• ")
                                 Text(item)
@@ -377,7 +377,7 @@ sealed class MarkdownElement {
     data class H3(val text: String) : MarkdownElement()
     data class Paragraph(val text: String) : MarkdownElement()
     data class Code(val code: String) : MarkdownElement()
-    data class List(val items: List<String>) : MarkdownElement()
+    data class ListElement(val items: List<String>) : MarkdownElement()
 }
 
 // 辅助函数
@@ -449,7 +449,7 @@ private fun parseMarkdown(markdown: String): List<MarkdownElement> {
             line.startsWith("```") -> elements.add(MarkdownElement.Code(line.substring(3)))
             line.startsWith("- ") || line.startsWith("* ") -> {
                 // 简化的列表处理
-                elements.add(MarkdownElement.List(listOf(line.substring(2))))
+                elements.add(MarkdownElement.ListElement(listOf(line.substring(2))))
             }
             line.isNotBlank() -> elements.add(MarkdownElement.Paragraph(line))
         }

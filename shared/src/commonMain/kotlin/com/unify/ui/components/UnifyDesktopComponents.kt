@@ -3,17 +3,18 @@ package com.unify.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.window.WindowDraggableArea
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.WindowScope
 
 /**
  * Unify桌面端组件
@@ -24,48 +25,46 @@ import androidx.compose.ui.window.WindowScope
  * 桌面窗口标题栏
  */
 @Composable
-fun WindowScope.UnifyDesktopTitleBar(
+fun UnifyDesktopTitleBar(
     title: String,
     modifier: Modifier = Modifier,
     onMinimize: () -> Unit = {},
     onMaximize: () -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    WindowDraggableArea {
-        Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(40.dp)
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 标题
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.weight(1f)
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp)
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 标题
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f)
+        )
+        
+        // 窗口控制按钮
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            UnifyWindowButton(
+                text = "−",
+                color = Color(0xFFFFBD2E),
+                onClick = onMinimize
             )
-            
-            // 窗口控制按钮
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                UnifyWindowButton(
-                    text = "−",
-                    color = Color(0xFFFFBD2E),
-                    onClick = onMinimize
-                )
-                UnifyWindowButton(
-                    text = "□",
-                    color = Color(0xFF28CA42),
-                    onClick = onMaximize
-                )
-                UnifyWindowButton(
-                    text = "×",
-                    color = Color(0xFFFF5F57),
-                    onClick = onClose
-                )
-            }
+            UnifyWindowButton(
+                text = "□",
+                color = Color(0xFF28CA42),
+                onClick = onMaximize
+            )
+            UnifyWindowButton(
+                text = "×",
+                color = Color(0xFFFF5F57),
+                onClick = onClose
+            )
         }
     }
 }
@@ -204,7 +203,7 @@ fun UnifyDesktopSidebar(
     selectedItem: String?,
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    width: dp = 200.dp
+    width: Dp = 200.dp
 ) {
     Column(
         modifier = modifier

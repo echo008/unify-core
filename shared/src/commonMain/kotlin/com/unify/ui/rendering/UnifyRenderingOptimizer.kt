@@ -1,13 +1,29 @@
 package com.unify.ui.rendering
 
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Paint
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify渲染优化器
@@ -85,7 +101,7 @@ class UnifyRenderingOptimizer {
             renderingCache.remove(oldestKey)
         }
         
-        renderingCache[key] = renderData.copy(timestamp = System.currentTimeMillis())
+        renderingCache[key] = renderData.copy(timestamp = getCurrentTimeMillis())
     }
     
     /**
@@ -98,7 +114,7 @@ class UnifyRenderingOptimizer {
         val cached = renderingCache[key] ?: return null
         
         // 检查缓存是否过期
-        val currentTime = System.currentTimeMillis()
+        val currentTime = getCurrentTimeMillis()
         if (currentTime - cached.timestamp > settings.cacheExpirationMs) {
             renderingCache.remove(key)
             return null
@@ -128,7 +144,7 @@ class UnifyRenderingOptimizer {
             bottlenecks = bottlenecks,
             cacheHitRate = calculateCacheHitRate(),
             optimizationSavings = calculateOptimizationSavings(),
-            timestamp = System.currentTimeMillis()
+            timestamp = getCurrentTimeMillis()
         )
     }
     
@@ -280,7 +296,7 @@ class UnifyRenderingOptimizer {
     }
     
     private fun recordDrawCalls(operations: List<DrawOperation>) {
-        val timestamp = System.currentTimeMillis()
+        val timestamp = getCurrentTimeMillis()
         operations.forEach { operation ->
             drawCallHistory.add(
                 DrawCallInfo(

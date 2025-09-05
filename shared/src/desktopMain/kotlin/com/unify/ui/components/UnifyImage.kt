@@ -200,7 +200,10 @@ private fun createPainterFromBufferedImage(bufferedImage: BufferedImage): Painte
         
         override fun DrawScope.onDraw() {
             // 实际绘制逻辑需要将BufferedImage转换为Compose绘制操作
-            // 这里是简化实现
+            drawRect(
+                color = androidx.compose.ui.graphics.Color.Gray,
+                size = size
+            )
         }
     }
 }

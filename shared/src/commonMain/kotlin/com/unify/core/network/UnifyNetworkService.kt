@@ -45,8 +45,8 @@ sealed class NetworkResult<out T> {
 @Serializable
 data class NetworkException(
     val code: Int,
-    val message: String,
-    val cause: String? = null
+    override val message: String,
+    val causeMessage: String? = null
 ) : Exception(message)
 
 /**
@@ -198,8 +198,10 @@ class UnifyNetworkServiceImpl(
         }
     }
     
-    private expect fun getCurrentNetworkStatus(): NetworkStatus
 }
+
+// 平台特定的网络状态获取函数
+internal expect fun getCurrentNetworkStatus(): NetworkStatus
 
 /**
  * 网络工具类
@@ -238,16 +240,7 @@ object UnifyNetworkUtils {
     }
 }
 
-/**
- * 网络缓存接口
- */
-interface UnifyNetworkCache {
-    suspend fun get(key: String): String?
-    suspend fun put(key: String, value: String, ttl: Long = 0L)
-    suspend fun remove(key: String)
-    suspend fun clear()
-    suspend fun size(): Long
-}
+// UnifyNetworkCache 接口已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
 
 /**
  * 网络拦截器接口
@@ -257,22 +250,27 @@ interface UnifyNetworkInterceptor {
     suspend fun interceptResponse(response: HttpResponse): HttpResponse
 }
 
-/**
- * 网络重试策略
- */
-data class RetryPolicy(
-    val maxRetries: Int = 3,
-    val baseDelay: Long = 1000L,
-    val maxDelay: Long = 10000L,
-    val backoffMultiplier: Double = 2.0,
-    val retryableStatusCodes: Set<Int> = setOf(408, 429, 500, 502, 503, 504)
+// NetworkEvent 密封类已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
+
+// NetworkConnectionInfo 数据类已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
+// 扩展版本保留额外字段
+@Serializable
+data class ExtendedNetworkConnectionInfo(
+    val isConnected: Boolean,
+    val networkType: NetworkType,
+    val signalStrength: Int = 0,
+    val bandwidth: Long = 0L,
+    val ipAddress: String? = null
 )
 
 /**
  * 网络监控接口
  */
 interface UnifyNetworkMonitor {
+    fun observeNetworkEvents(): Flow<NetworkEvent>
     fun onRequestStart(url: String, method: String)
-    fun onRequestComplete(url: String, method: String, duration: Long, success: Boolean)
-    fun onNetworkError(url: String, method: String, error: Throwable)
+    fun onRequestComplete(url: String, statusCode: Int, duration: Long)
+    fun onRequestError(url: String, error: String?)
+    fun stopMonitoring()
+    fun getCurrentNetworkInfo(): NetworkConnectionInfo
 }

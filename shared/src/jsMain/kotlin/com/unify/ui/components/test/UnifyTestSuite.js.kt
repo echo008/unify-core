@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.browser.document
 import kotlinx.browser.window
 import org.w3c.dom.Navigator
-import org.w3c.dom.Performance
+import org.w3c.performance.*
 import kotlin.js.Date
 import kotlin.random.Random
 
@@ -536,7 +536,7 @@ private fun measurePageLoadTime(): Long {
     // 测量页面加载时间
     return try {
         val performance = window.performance
-        val loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart
+        val loadTime = performance.timing.loadEventEnd.toLong() - performance.timing.navigationStart.toLong()
         if (loadTime > 0) loadTime.toLong() else Random.nextLong(1000, 4000)
     } catch (e: Exception) {
         Random.nextLong(1500, 3500)
@@ -707,8 +707,8 @@ object WebTestUtils {
                 "navigationStart" to timing.navigationStart,
                 "loadEventEnd" to timing.loadEventEnd,
                 "domContentLoadedEventEnd" to timing.domContentLoadedEventEnd,
-                "loadTime" to (timing.loadEventEnd - timing.navigationStart),
-                "domReadyTime" to (timing.domContentLoadedEventEnd - timing.navigationStart)
+                "loadTime" to (timing.loadEventEnd.toLong() - timing.navigationStart.toLong()),
+                "domReadyTime" to (timing.domContentLoadedEventEnd.toLong() - timing.navigationStart.toLong())
             )
         } catch (e: Exception) {
             mapOf("error" to e.message.toString())

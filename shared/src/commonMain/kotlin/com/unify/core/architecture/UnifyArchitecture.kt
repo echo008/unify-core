@@ -10,14 +10,12 @@ import kotlinx.serialization.Serializable
  */
 object UnifyArchitecture {
     
-    companion object {
-        const val ARCHITECTURE_VERSION = "1.0.0"
-        const val MIN_COMPONENT_VERSION = "1.0.0"
-        const val MAX_DEPENDENCY_DEPTH = 10
-        const val DEFAULT_TIMEOUT_MS = 5000L
-        const val MAX_RETRY_COUNT = 3
-        const val COMPONENT_REGISTRY_SIZE = 1000
-    }
+    const val ARCHITECTURE_VERSION = "1.0.0"
+    const val MIN_COMPONENT_VERSION = "1.0.0"
+    const val MAX_DEPENDENCY_DEPTH = 10
+    const val DEFAULT_TIMEOUT_MS = 5000L
+    const val MAX_RETRY_COUNT = 3
+    const val COMPONENT_REGISTRY_SIZE = 1000
     
     private val _components = MutableStateFlow<Map<String, ArchitectureComponent>>(emptyMap())
     val components: StateFlow<Map<String, ArchitectureComponent>> = _components.asStateFlow()

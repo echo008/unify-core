@@ -1,11 +1,23 @@
 package com.unify.core.memory
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify跨平台内存管理器
@@ -36,7 +48,7 @@ data class MemoryInfo(
     val largeMemoryClass: Int,
     val isLowMemory: Boolean,
     val threshold: Long,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -54,7 +66,7 @@ data class MemoryUsage(
     val gcCount: Long,
     val gcTime: Long,
     val usagePercentage: Float,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 /**
@@ -103,6 +115,15 @@ data class MemoryConfig(
 /**
  * Unify内存管理器实现
  */
+// 平台特定的内存管理器函数声明
+internal expect suspend fun getPlatformMemoryInfo(): MemoryInfo
+internal expect suspend fun getPlatformMemoryUsage(): MemoryUsage
+internal expect suspend fun getPlatformGCInfo(): GCInfo
+internal expect suspend fun performCacheClear()
+internal expect suspend fun performMemoryOptimization()
+internal expect suspend fun startMemoryMonitoring()
+internal expect suspend fun stopMemoryMonitoring()
+
 class UnifyMemoryManagerImpl(
     private val config: MemoryConfig = MemoryConfig()
 ) : UnifyMemoryManager {
@@ -170,14 +191,6 @@ class UnifyMemoryManagerImpl(
             optimizeMemory()
         }
     }
-    
-    private expect suspend fun getPlatformMemoryInfo(): MemoryInfo
-    private expect suspend fun getPlatformMemoryUsage(): MemoryUsage
-    private expect suspend fun getPlatformGCInfo(): GCInfo
-    private expect suspend fun performCacheClear()
-    private expect suspend fun performMemoryOptimization()
-    private expect suspend fun startMemoryMonitoring()
-    private expect suspend fun stopMemoryMonitoring()
 }
 
 /**
@@ -215,8 +228,8 @@ class UnifyLRUMemoryCache(
     )
     
     override suspend fun put(key: String, value: Any, size: Long) {
-        val serializedValue = Json.encodeToString(kotlinx.serialization.serializer(), value)
-        val entry = CacheEntry(serializedValue, size, System.currentTimeMillis())
+        val serializedValue = value.toString() // 简化序列化处理
+        val entry = CacheEntry(serializedValue, size, getCurrentTimeMillis())
         
         // 如果key已存在，先移除旧值
         remove(key)
@@ -240,7 +253,7 @@ class UnifyLRUMemoryCache(
             // 更新访问顺序
             accessOrder.remove(key)
             accessOrder.add(key)
-            Json.decodeFromString(kotlinx.serialization.serializer<Any>(), entry.value)
+            entry.value // 返回字符串值
         } else {
             misses++
             null

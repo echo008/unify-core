@@ -42,7 +42,7 @@ actual fun UnifySurface(
 }
 
 @Composable
-actual fun UnifyCard(
+actual fun UnifyPlatformCard(
     modifier: Modifier,
     elevation: Dp,
     backgroundColor: Color,
@@ -61,9 +61,10 @@ actual fun UnifyCard(
             containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
             contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface
         ),
-        border = borderStroke,
-        content = content
-    )
+        border = borderStroke
+    ) {
+        content()
+    }
 }
 
 @Composable

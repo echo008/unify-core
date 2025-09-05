@@ -133,7 +133,7 @@ fun <T> UnifyRadioGroup(
     title: String? = null,
     arrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp)
 ) {
-    UnifyColumn(
+    Column(
         modifier = modifier,
         verticalArrangement = arrangement
     ) {
@@ -191,7 +191,7 @@ fun <T> UnifyCheckboxGroup(
     title: String? = null,
     arrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp)
 ) {
-    UnifyColumn(
+    Column(
         modifier = modifier,
         verticalArrangement = arrangement
     ) {
@@ -264,9 +264,9 @@ fun UnifySlider(
     valueFormatter: (Float) -> String = { "%.1f".format(it) },
     label: String? = null
 ) {
-    UnifyColumn(
-        modifier = modifier,
-        spacing = UnifySpacing.SMALL
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         if (label != null || showValue) {
             Row(
@@ -324,9 +324,9 @@ fun UnifySwitch(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         if (label != null || description != null) {
-            UnifyColumn(
+            Column(
                 modifier = Modifier.weight(1f),
-                spacing = UnifySpacing.EXTRA_SMALL
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 if (label != null) {
                     Text(

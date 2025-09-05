@@ -155,7 +155,7 @@ object DesktopLiveComponents {
                     val clip = AudioSystem.getClip()
                     clip.open(audioInputStream)
                     
-                    totalFrames = clip.frameLength
+                    totalFrames = clip.frameLength.toLong()
                     duration = clip.frameLength.toDouble() / clip.format.frameRate
                     
                     clip.addLineListener { event ->
@@ -181,7 +181,7 @@ object DesktopLiveComponents {
         LaunchedEffect(isPlaying) {
             if (isPlaying) {
                 while (isPlaying && audioClip?.isRunning == true) {
-                    currentFrame = audioClip?.framePosition ?: 0L
+                    currentFrame = audioClip?.framePosition?.toLong() ?: 0L
                     currentTime = if (totalFrames > 0) {
                         (currentFrame.toDouble() / totalFrames) * duration
                     } else 0.0

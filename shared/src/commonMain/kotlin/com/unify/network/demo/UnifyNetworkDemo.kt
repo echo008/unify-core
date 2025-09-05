@@ -1,19 +1,49 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package com.unify.network.demo
 
 import androidx.compose.foundation.layout.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.Icons
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.filled.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.launch
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 网络管理演示应用
@@ -166,14 +196,14 @@ private fun NetworkStatusCard(
                     color = when (status) {
                         ConnectionStatus.CONNECTED -> Color.Green
                         ConnectionStatus.DISCONNECTED -> Color.Red
-                        ConnectionStatus.LIMITED -> Color.Orange
+                        ConnectionStatus.LIMITED -> Color(0xFFFFA500)
                     }
                 )
                 
                 NetworkStatusItem(
                     label = "网络速度",
                     value = "${speed.downloadMbps}/${speed.uploadMbps} Mbps",
-                    color = if (speed.downloadMbps > 10) Color.Green else Color.Orange
+                    color = if (speed.downloadMbps > 10) Color.Green else Color(0xFFFFA500)
                 )
             }
             
@@ -186,7 +216,7 @@ private fun NetworkStatusCard(
                 NetworkStatusItem(
                     label = "延迟",
                     value = "${latency}ms",
-                    color = if (latency < 100) Color.Green else if (latency < 200) Color.Orange else Color.Red
+                    color = if (latency < 100) Color.Green else if (latency < 200) Color(0xFFFFA500) else Color.Red
                 )
                 
                 NetworkStatusItem(
@@ -522,7 +552,7 @@ private fun RequestHistoryItem(request: NetworkRequestResult) {
                 color = when (request.status) {
                     RequestStatus.SUCCESS -> Color.Green
                     RequestStatus.ERROR -> Color.Red
-                    RequestStatus.TIMEOUT -> Color.Orange
+                    RequestStatus.TIMEOUT -> Color(0xFFFFA500)
                     RequestStatus.CACHED -> Color.Blue
                 }
             ) {
@@ -599,13 +629,13 @@ private fun simulateNetworkRequest(url: String, method: String): NetworkRequestR
             if (duration > 1500) RequestStatus.TIMEOUT else RequestStatus.ERROR
         },
         duration = duration,
-        timestamp = System.currentTimeMillis(),
+        timestamp = getCurrentTimeMillis(),
         responseSize = if (isSuccess) (1000..50000).random() else 0
     )
 }
 
 private fun formatTime(timestamp: Long): String {
-    val now = System.currentTimeMillis()
+    val now = getCurrentTimeMillis()
     val diff = now - timestamp
     return when {
         diff < 60000 -> "刚刚"
@@ -675,12 +705,12 @@ private fun generateOfflineRequests(): List<OfflineRequest> {
             OfflineRequest(
                 url = "https://api.example.com/sync",
                 method = "POST",
-                timestamp = System.currentTimeMillis() - 300000
+                timestamp = getCurrentTimeMillis() - 300000
             ),
             OfflineRequest(
                 url = "https://api.example.com/upload",
                 method = "PUT",
-                timestamp = System.currentTimeMillis() - 180000
+                timestamp = getCurrentTimeMillis() - 180000
             )
         )
     } else emptyList()

@@ -1,7 +1,10 @@
 package com.unify.ui.components.platform
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -10,8 +13,161 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 /**
- * TV平台UI适配器
- * 提供智能电视特有的UI组件和交互方式
+ * TV平台UI适配器实现
+ */
+@Composable
+actual fun UnifyPlatformButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    text: String
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier.size(width = 200.dp, height = 56.dp),
+        enabled = enabled,
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary
+        )
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.titleMedium
+        )
+    }
+}
+
+@Composable
+actual fun UnifyPlatformTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier,
+    placeholder: String,
+    enabled: Boolean
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.height(64.dp),
+        placeholder = { Text(placeholder, style = MaterialTheme.typography.bodyLarge) },
+        enabled = enabled,
+        textStyle = MaterialTheme.typography.bodyLarge,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier,
+    enabled: Boolean
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier.size(48.dp),
+        enabled = enabled,
+        colors = SwitchDefaults.colors(
+            checkedThumbColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier,
+    valueRange: ClosedFloatingPointRange<Float>,
+    enabled: Boolean
+) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier.height(48.dp),
+        valueRange = valueRange,
+        enabled = enabled,
+        colors = SliderDefaults.colors(
+            thumbColor = MaterialTheme.colorScheme.primary,
+            activeTrackColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+@Composable
+actual fun UnifyPlatformProgressBar(
+    progress: Float,
+    modifier: Modifier,
+    color: Color
+) {
+    LinearProgressIndicator(
+        progress = progress,
+        modifier = modifier.height(8.dp),
+        color = color
+    )
+}
+
+@Composable
+actual fun UnifyPlatformDialog(
+    onDismissRequest: () -> Unit,
+    title: String,
+    content: @Composable () -> Unit,
+    confirmButton: @Composable () -> Unit,
+    dismissButton: @Composable (() -> Unit)?
+) {
+    AlertDialog(
+        onDismissRequest = onDismissRequest,
+        title = { Text(title, style = MaterialTheme.typography.titleLarge) },
+        text = content,
+        confirmButton = confirmButton,
+        dismissButton = dismissButton,
+        modifier = Modifier.size(width = 400.dp, height = 300.dp)
+    )
+}
+
+@Composable
+actual fun UnifyPlatformCard(
+    modifier: Modifier,
+    onClick: (() -> Unit)?,
+    content: @Composable () -> Unit
+) {
+    Card(
+        modifier = modifier,
+        onClick = onClick ?: {},
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        content()
+    }
+}
+
+@Composable
+actual fun UnifyPlatformChip(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    selected: Boolean
+) {
+    FilterChip(
+        onClick = onClick,
+        label = { Text(text, style = MaterialTheme.typography.bodyLarge) },
+        selected = selected,
+        modifier = modifier.height(48.dp),
+        colors = FilterChipDefaults.filterChipColors(
+            selectedContainerColor = MaterialTheme.colorScheme.primary
+        )
+    )
+}
+
+/**
+ * TV平台特有的UI组件和交互方式
  */
 object TVUnifyPlatformAdapters {
     

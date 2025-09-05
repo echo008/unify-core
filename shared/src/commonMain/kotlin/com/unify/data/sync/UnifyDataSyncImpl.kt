@@ -1,10 +1,20 @@
 package com.unify.data.sync
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify数据同步实现
@@ -43,7 +53,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = true,
                 status = SyncStatus.SYNCING,
-                startTime = System.currentTimeMillis(),
+                startTime = getCurrentTimeMillis(),
                 error = null
             )
             
@@ -71,8 +81,8 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = if (finalResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
-                lastSyncTime = if (finalResult.isSuccess) System.currentTimeMillis() else _syncState.value.lastSyncTime,
+                endTime = getCurrentTimeMillis(),
+                lastSyncTime = if (finalResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime,
                 error = if (!finalResult.isSuccess) finalResult.error else null
             )
             
@@ -82,7 +92,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
+                endTime = getCurrentTimeMillis(),
                 error = "同步异常: ${e.message}"
             )
             SyncResult.Error("同步失败: ${e.message}")
@@ -97,7 +107,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = true,
                 status = SyncStatus.INCREMENTAL_SYNC,
-                startTime = System.currentTimeMillis()
+                startTime = getCurrentTimeMillis()
             )
             
             // 获取增量变更
@@ -107,12 +117,12 @@ class UnifyDataSyncImpl {
                 _syncState.value = _syncState.value.copy(
                     isActive = false,
                     status = SyncStatus.UP_TO_DATE,
-                    endTime = System.currentTimeMillis()
+                    endTime = getCurrentTimeMillis()
                 )
                 return SyncResult.Success(SyncStats(
                     itemsSynced = 0,
                     conflictsResolved = 0,
-                    syncDuration = System.currentTimeMillis() - _syncState.value.startTime,
+                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
                     dataTransferred = 0
                 ))
             }
@@ -123,8 +133,8 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = if (applyResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
-                lastSyncTime = if (applyResult.isSuccess) System.currentTimeMillis() else _syncState.value.lastSyncTime
+                endTime = getCurrentTimeMillis(),
+                lastSyncTime = if (applyResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime
             )
             
             applyResult
@@ -133,7 +143,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
+                endTime = getCurrentTimeMillis(),
                 error = "增量同步失败: ${e.message}"
             )
             SyncResult.Error("增量同步失败: ${e.message}")
@@ -157,7 +167,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = true,
                 status = SyncStatus.OFFLINE_SYNC,
-                startTime = System.currentTimeMillis()
+                startTime = getCurrentTimeMillis()
             )
             
             // 处理离线变更队列
@@ -174,8 +184,8 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = if (uploadResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
-                lastSyncTime = if (uploadResult.isSuccess) System.currentTimeMillis() else _syncState.value.lastSyncTime
+                endTime = getCurrentTimeMillis(),
+                lastSyncTime = if (uploadResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime
             )
             
             uploadResult
@@ -184,7 +194,7 @@ class UnifyDataSyncImpl {
             _syncState.value = _syncState.value.copy(
                 isActive = false,
                 status = SyncStatus.FAILED,
-                endTime = System.currentTimeMillis(),
+                endTime = getCurrentTimeMillis(),
                 error = "离线同步失败: ${e.message}"
             )
             SyncResult.Error("离线同步失败: ${e.message}")
@@ -199,7 +209,7 @@ class UnifyDataSyncImpl {
             key = key,
             value = value,
             operation = operation,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             priority = SYNC_PRIORITY_NORMAL,
             retryCount = 0
         )
@@ -262,7 +272,7 @@ class UnifyDataSyncImpl {
         _syncState.value = _syncState.value.copy(
             isActive = false,
             status = SyncStatus.CANCELLED,
-            endTime = System.currentTimeMillis(),
+            endTime = getCurrentTimeMillis(),
             error = "同步已取消"
         )
     }
@@ -277,14 +287,14 @@ class UnifyDataSyncImpl {
                 key = key,
                 value = value,
                 operation = ChangeOperation.UPDATE,
-                timestamp = System.currentTimeMillis(),
+                timestamp = getCurrentTimeMillis(),
                 checksum = calculateChecksum(value)
             ))
         }
         
         return SyncPayload(
             changes = changes,
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             deviceId = getDeviceId(),
             version = "1.0"
         )
@@ -390,7 +400,7 @@ class UnifyDataSyncImpl {
             val uploadStats = UploadStats(
                 itemsUploaded = payload.changes.size,
                 dataSize = payload.changes.sumOf { it.value.length },
-                uploadTime = System.currentTimeMillis()
+                uploadTime = getCurrentTimeMillis()
             )
             
             UploadResult.Success(uploadStats)
@@ -409,7 +419,7 @@ class UnifyDataSyncImpl {
                 val stats = SyncStats(
                     itemsSynced = uploadResult.stats.itemsUploaded + applyResult.appliedCount,
                     conflictsResolved = 0, // 从冲突解决结果获取
-                    syncDuration = System.currentTimeMillis() - _syncState.value.startTime,
+                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
                     dataTransferred = uploadResult.stats.dataSize
                 )
                 
@@ -456,7 +466,7 @@ class UnifyDataSyncImpl {
             val stats = SyncStats(
                 itemsSynced = appliedCount,
                 conflictsResolved = 0,
-                syncDuration = System.currentTimeMillis() - _syncState.value.startTime,
+                syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
                 dataTransferred = dataSize
             )
             
@@ -497,7 +507,7 @@ class UnifyDataSyncImpl {
             val stats = SyncStats(
                 itemsSynced = totalUploaded,
                 conflictsResolved = 0,
-                syncDuration = System.currentTimeMillis() - _syncState.value.startTime,
+                syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
                 dataTransferred = totalDataSize
             )
             
@@ -529,13 +539,13 @@ class UnifyDataSyncImpl {
     }
     
     private fun getDeviceId(): String {
-        return "device_${System.currentTimeMillis().hashCode()}"
+        return "device_${getCurrentTimeMillis().hashCode()}"
     }
     
     private fun updateSyncState() {
         _syncState.value = _syncState.value.copy(
             pendingChanges = localChanges.size,
-            lastUpdateTime = System.currentTimeMillis()
+            lastUpdateTime = getCurrentTimeMillis()
         )
     }
     
@@ -774,4 +784,23 @@ class ConflictResolver {
         
         return if (localValue.length > remoteValue.length) localValue else remoteValue
     }
+}
+
+// 数据类定义
+@Serializable
+data class SyncOperation(
+    val id: String,
+    val type: SyncOperationType,
+    val key: String,
+    val value: String?,
+    val timestamp: Long,
+    val priority: SyncPriority = SyncPriority.NORMAL
+)
+
+enum class SyncOperationType {
+    CREATE, UPDATE, DELETE
+}
+
+enum class SyncPriority {
+    LOW, NORMAL, HIGH, CRITICAL
 }

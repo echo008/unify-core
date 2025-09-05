@@ -23,10 +23,10 @@ expect fun UnifySurface(
 )
 
 /**
- * Unify卡片组件
+ * Unify平台特定卡片组件 (重命名避免与UnifyCard.kt冲突)
  */
 @Composable
-expect fun UnifyCard(
+expect fun UnifyPlatformCard(
     modifier: Modifier = Modifier,
     elevation: Dp = 4.dp,
     backgroundColor: Color = Color.Unspecified,

@@ -1,4 +1,6 @@
 package com.unify.ui.screens
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -183,7 +185,7 @@ private fun getColorForBattery(level: Int): Color {
 }
 
 private fun formatTimestamp(timestamp: Long): String {
-    val now = System.currentTimeMillis()
+    val now = getCurrentTimeMillis()
     val diff = now - timestamp
     return when {
         diff < 60000 -> "刚刚"
@@ -206,9 +208,9 @@ private fun generatePerformanceData(): PerformanceData {
 
 private fun generateRecentEvents(): List<PerformanceEvent> {
     val events = listOf(
-        PerformanceEvent("内存使用过高", "应用内存使用超过阈值", EventSeverity.HIGH, System.currentTimeMillis() - 30000),
-        PerformanceEvent("网络请求缓慢", "API响应时间超过预期", EventSeverity.MEDIUM, System.currentTimeMillis() - 120000),
-        PerformanceEvent("帧率下降", "UI渲染性能降低", EventSeverity.LOW, System.currentTimeMillis() - 300000)
+        PerformanceEvent("内存使用过高", "应用内存使用超过阈值", EventSeverity.HIGH, getCurrentTimeMillis() - 30000),
+        PerformanceEvent("网络请求缓慢", "API响应时间超过预期", EventSeverity.MEDIUM, getCurrentTimeMillis() - 120000),
+        PerformanceEvent("帧率下降", "UI渲染性能降低", EventSeverity.LOW, getCurrentTimeMillis() - 300000)
     )
     return events.take((1..3).random())
 }

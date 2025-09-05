@@ -1,8 +1,14 @@
 package com.unify.performance.analysis
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * Unify性能分析实现
@@ -16,7 +22,7 @@ data class PerformanceMetrics(
     val networkLatency: Long,
     val storageIO: Float,
     val batteryLevel: Int,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis()
 )
 
 data class PerformanceReport(
@@ -93,7 +99,7 @@ class UnifyPerformanceAnalysisImpl : UnifyPerformanceAnalyzer {
     }
     
     override fun generateReport(durationMs: Long): PerformanceReport {
-        val endTime = System.currentTimeMillis()
+        val endTime = getCurrentTimeMillis()
         val startTime = endTime - durationMs
         
         val relevantMetrics = metricsHistory.filter { 

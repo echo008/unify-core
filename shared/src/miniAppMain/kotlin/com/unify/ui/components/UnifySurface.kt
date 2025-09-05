@@ -41,7 +41,7 @@ actual fun UnifySurface(
 }
 
 @Composable
-actual fun UnifyCard(
+actual fun UnifyPlatformCard(
     modifier: Modifier,
     elevation: Dp,
     backgroundColor: Color,

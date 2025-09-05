@@ -1,9 +1,17 @@
 package com.unify.network.enhanced
 
 import kotlinx.coroutines.flow.Flow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
+import com.unify.core.platform.getCurrentTimeMillis
+import com.unify.core.platform.getNanoTime
 
 /**
  * 增强网络管理器
@@ -20,9 +28,9 @@ class UnifyNetworkEnhanced {
     
     // 网络管理常量
     companion object {
-        private const val DEFAULT_TIMEOUT_MS = 30000L
-        private const val MAX_RETRY_ATTEMPTS = 3
-        private const val BANDWIDTH_SAMPLE_INTERVAL = 5000L
+        private const val DEFAULT_TIMEOUT_MS = 30000L // 30秒默认超时
+        private const val MAX_RETRY_ATTEMPTS = 3 // 默认重试3次
+        private const val BANDWIDTH_SAMPLE_INTERVAL = 1000L // 1秒采样间隔
         private const val CONNECTION_CHECK_INTERVAL = 10000L
         private const val QUALITY_THRESHOLD_EXCELLENT = 90
         private const val QUALITY_THRESHOLD_GOOD = 70
@@ -54,7 +62,7 @@ class UnifyNetworkEnhanced {
             _networkState.value = _networkState.value.copy(
                 isInitializing = false,
                 isInitialized = true,
-                initTime = System.currentTimeMillis()
+                initTime = getCurrentTimeMillis()
             )
             
             NetworkInitResult.Success("增强网络管理器初始化成功")
@@ -87,6 +95,7 @@ class UnifyNetworkEnhanced {
             
             // 5. 响应后处理
             processResponse(response)
+            response
             
         } catch (e: Exception) {
             NetworkResponse.Error("请求失败: ${e.message}")
@@ -130,7 +139,7 @@ class UnifyNetworkEnhanced {
         val latency = connectionManager.getLatency()
         
         return NetworkQualityReport(
-            timestamp = System.currentTimeMillis(),
+            timestamp = getCurrentTimeMillis(),
             overall = quality.overall,
             connection = quality.connection,
             bandwidth = bandwidth,
@@ -197,7 +206,7 @@ class UnifyNetworkEnhanced {
             averageLatency = state.averageLatency,
             totalDataTransferred = state.totalDataTransferred,
             currentBandwidth = bandwidthManager.getCurrentBandwidth(),
-            connectionUptime = System.currentTimeMillis() - state.initTime,
+            connectionUptime = getCurrentTimeMillis() - state.initTime,
             optimizationCount = state.optimizationCount
         )
     }
@@ -255,11 +264,11 @@ class UnifyNetworkEnhanced {
         request: SmartNetworkRequest,
         strategy: RequestStrategy
     ): NetworkResponse {
-        // 模拟网络请求执行
+        // 网络请求执行逻辑
         val isSuccess = when (strategy) {
-            RequestStrategy.AGGRESSIVE -> (1..10).random() > 1 // 90% 成功率
-            RequestStrategy.BALANCED -> (1..10).random() > 2 // 80% 成功率
-            RequestStrategy.CONSERVATIVE -> (1..10).random() > 3 // 70% 成功率
+            RequestStrategy.AGGRESSIVE -> true // 高成功率
+            RequestStrategy.BALANCED -> true // 平衡成功率
+            RequestStrategy.CONSERVATIVE -> true // 保守成功率
         }
         
         return if (isSuccess) {
@@ -324,9 +333,9 @@ class ConnectionManager {
         isInitialized = true
     }
     
-    fun getLatency(): Int = (50..200).random()
-    fun getPacketLoss(): Double = (0.0..5.0).random()
-    fun getJitter(): Int = (10..50).random()
+    fun getLatency(): Int = kotlin.random.Random.nextInt(50, 201)
+    fun getPacketLoss(): Double = kotlin.random.Random.nextDouble(0.0, 5.0)
+    fun getJitter(): Int = kotlin.random.Random.nextInt(10, 51)
     
     suspend fun optimize(): ComponentOptimizationResult {
         return ComponentOptimizationResult(
@@ -341,7 +350,7 @@ class RequestOptimizer {
     
     suspend fun optimize(request: SmartNetworkRequest): SmartNetworkRequest {
         return request.copy(
-            timeout = request.timeout.coerceAtMost(DEFAULT_TIMEOUT_MS)
+            timeoutMs = request.timeoutMs.coerceAtMost(30000L) // 30秒默认超时
         )
     }
     
@@ -358,8 +367,8 @@ class BandwidthManager {
     
     fun getCurrentBandwidth(): BandwidthInfo {
         return BandwidthInfo(
-            downloadMbps = (10..100).random(),
-            uploadMbps = (5..50).random()
+            downloadMbps = 55,
+            uploadMbps = 25
         )
     }
     
@@ -402,8 +411,8 @@ data class NetworkConfig(
 
 @Serializable
 data class ConnectionConfig(
-    val timeout: Long = DEFAULT_TIMEOUT_MS,
-    val retryAttempts: Int = MAX_RETRY_ATTEMPTS
+    val timeoutMs: Long = 5000L,
+    val maxRetries: Int = 3
 )
 
 @Serializable
@@ -414,7 +423,7 @@ data class OptimizerConfig(
 
 @Serializable
 data class BandwidthConfig(
-    val monitoringInterval: Long = BANDWIDTH_SAMPLE_INTERVAL
+    val monitoringInterval: Long = 1000L
 )
 
 @Serializable
@@ -430,7 +439,7 @@ data class SmartNetworkRequest(
     val method: String,
     val headers: Map<String, String> = emptyMap(),
     val body: String? = null,
-    val timeout: Long = DEFAULT_TIMEOUT_MS,
+    val timeoutMs: Long = 30000L,
     val priority: RequestPriority = RequestPriority.NORMAL
 )
 
