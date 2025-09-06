@@ -14,9 +14,40 @@ enum class BiometricType {
     FINGERPRINT, FACE_ID, VOICE, IRIS, NONE
 }
 
-enum class AuthenticationResult {
-    SUCCESS, FAILED, CANCELLED, ERROR, NOT_AVAILABLE
+data class AuthenticationResult(
+    val isSuccess: Boolean,
+    val errorMessage: String? = null,
+    val biometricType: BiometricType? = null
+)
+
+enum class PasswordStrength {
+    WEAK, MEDIUM, STRONG, VERY_STRONG
 }
+
+data class PasswordRule(
+    val id: String,
+    val description: String,
+    val isRequired: Boolean = true
+)
+
+enum class EncryptionLevel {
+    BASIC, STANDARD, HIGH, MILITARY
+}
+
+data class ConsentItem(
+    val id: String,
+    val title: String,
+    val description: String,
+    val isRequired: Boolean = false,
+    val granted: Boolean = false
+)
+
+data class SecuritySettings(
+    val biometricEnabled: Boolean = true,
+    val pinCodeEnabled: Boolean = true,
+    val autoLockEnabled: Boolean = true,
+    val encryptionEnabled: Boolean = true
+)
 
 data class SecurityConfig(
     val enableBiometric: Boolean = true,

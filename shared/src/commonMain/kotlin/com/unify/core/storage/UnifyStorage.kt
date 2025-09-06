@@ -26,12 +26,12 @@ interface UnifyStorage {
     /**
      * 删除数据
      */
-    suspend fun delete(key: String)
+    suspend fun delete(key: String): Boolean
     
     /**
      * 清空所有数据
      */
-    suspend fun clear()
+    suspend fun clear(): Boolean
     
     /**
      * 检查键是否存在
@@ -41,7 +41,7 @@ interface UnifyStorage {
     /**
      * 获取所有键
      */
-    suspend fun getAllKeys(): Set<String>
+    suspend fun getAllKeys(): List<String>
     
     /**
      * 获取存储大小
@@ -94,6 +94,85 @@ sealed class StorageEvent {
 }
 
 /**
+ * 存储结果
+ */
+sealed class StorageResult<T> {
+    data class Success<T>(val data: T) : StorageResult<T>()
+    data class Error<T>(val message: String, val exception: Throwable? = null) : StorageResult<T>()
+}
+
+/**
+ * 检索结果
+ */
+sealed class RetrievalResult<T> {
+    data class Success<T>(val data: T) : RetrievalResult<T>()
+    data class NotFound<T>(val message: String) : RetrievalResult<T>()
+    data class Error<T>(val message: String, val exception: Throwable? = null) : RetrievalResult<T>()
+}
+
+/**
+ * 云同步结果
+ */
+sealed class CloudSyncResult {
+    data class Success(val message: String) : CloudSyncResult()
+    data class Error(val message: String) : CloudSyncResult()
+}
+
+sealed class DataExportResult {
+    data class Success(val data: String) : DataExportResult()
+    data class Error(val message: String) : DataExportResult()
+}
+
+sealed class DataImportResult {
+    data class Success(val message: String) : DataImportResult()
+    data class Error(val message: String) : DataImportResult()
+}
+
+sealed class SecureStorageResult {
+    data class Success(val message: String) : SecureStorageResult()
+    data class Error(val message: String) : SecureStorageResult()
+}
+
+sealed class SecureRetrievalResult {
+    data class Success(val data: String) : SecureRetrievalResult()
+    data class Error(val message: String) : SecureRetrievalResult()
+}
+
+data class StorageInfo(
+    val type: StorageType,
+    val size: Long,
+    val lastModified: Long
+)
+
+enum class StorageType {
+    LOCAL, CLOUD, SECURE, MEMORY, UNKNOWN
+}
+
+data class StorageState(
+    val isConnected: Boolean,
+    val syncStatus: String,
+    val lastSync: Long
+)
+
+enum class StorageStatus {
+    AVAILABLE, UNAVAILABLE, ERROR
+}
+
+/**
+ * 平台存储接口
+ */
+interface PlatformStorage {
+    suspend fun store(key: String, value: String): StorageResult<Unit>
+    suspend fun retrieve(key: String): RetrievalResult<String>
+    suspend fun delete(key: String): Boolean
+    suspend fun exists(key: String): Boolean
+    suspend fun clear(): Boolean
+    suspend fun getAllKeys(): List<String>
+    suspend fun getStorageInfo(): StorageInfo
+    fun getStorageStateFlow(): kotlinx.coroutines.flow.StateFlow<StorageState>
+}
+
+/**
  * 存储配置 - 使用StorageFactory中的统一定义
  */
 
@@ -126,6 +205,30 @@ interface StorageFactory {
  * 平台特定的存储工厂
  */
 expect class PlatformStorageFactory() : StorageFactory
+
+/**
+ * 存储数据导入导出功能
+ */
+expect suspend fun exportData(keys: List<String>): DataExportResult
+expect suspend fun importData(data: Map<String, String>): DataImportResult
+expect suspend fun syncWithCloud(): CloudSyncResult
+
+/**
+ * 安全存储功能
+ */
+expect suspend fun storeSecurely(key: String, value: String): SecureStorageResult
+expect suspend fun retrieveSecurely(key: String): SecureRetrievalResult
+expect suspend fun clearSecureStorage(): Boolean
+
+/**
+ * 存储状态监控
+ */
+expect fun getStorageStateFlow(): kotlinx.coroutines.flow.StateFlow<StorageState>
+
+/**
+ * 平台存储创建
+ */
+expect fun createPlatformStorage(): PlatformStorage
 
 /**
  * 存储管理器

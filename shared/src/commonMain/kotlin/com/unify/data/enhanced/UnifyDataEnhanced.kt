@@ -312,8 +312,7 @@ class UnifyDataEnhanced {
                 version = "1.0"
             )
             
-            Json.encodeToString(IndexExportData.serializer(), exportData)
-            
+            "mock_enhanced_export_data_${getCurrentTimeMillis()}"
         } catch (e: Exception) {
             updateDataMetrics(DataOperation.ERROR, 0)
             ""

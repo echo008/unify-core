@@ -5,7 +5,7 @@ import android.content.Context
 import android.os.BatteryManager
 import android.os.Debug
 import com.unify.core.types.UnifyResult
-import com.unify.core.exceptions.UnifyException
+import com.unify.core.error.UnifyException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -63,7 +63,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
             startMetricsCollection()
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.Failure(UnifyException("启动Android性能监控失败: ${e.message}"))
+            UnifyResult.Failure(UnifyException("获取Android性能建议失败: ${e.message}", e))
         }
     }
     
@@ -86,7 +86,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
             checkThresholds(currentMetrics)
             UnifyResult.Success(currentMetrics)
         } catch (e: Exception) {
-            UnifyResult.Failure(UnifyException("获取Android性能指标失败: ${e.message}"))
+            UnifyResult.Failure(UnifyException("获取Android性能指标失败: ${e.message}", e))
         }
     }
     
@@ -96,7 +96,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
             val level = calculatePerformanceLevel(currentMetrics)
             UnifyResult.Success(level)
         } catch (e: Exception) {
-            UnifyResult.Failure(UnifyException("计算Android性能等级失败: ${e.message}"))
+            UnifyResult.Failure(UnifyException("计算Android性能等级失败: ${e.message}", e))
         }
     }
     
@@ -105,7 +105,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
             this.thresholds = thresholds
             UnifyResult.Success(Unit)
         } catch (e: Exception) {
-            UnifyResult.Failure(UnifyException("设置Android性能阈值失败: ${e.message}"))
+            UnifyResult.Failure(UnifyException("设置Android性能阈值失败: ${e.message}", e))
         }
     }
     
@@ -148,7 +148,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
             
             UnifyResult.Success(report)
         } catch (e: Exception) {
-            UnifyResult.Error("导出Android性能报告失败: ${e.message}")
+            UnifyResult.Failure(UnifyException("导出Android性能报告失败: ${e.message}", e))
         }
     }
     
@@ -242,7 +242,7 @@ class AndroidPerformanceMonitor : UnifyPerformanceMonitor {
         }
     }
     
-    fun recordFrameTime(frameTime: Long) {
+    override fun recordFrameTime(frameTime: Long) {
         frameHistory.add(frameTime)
         if (frameHistory.size > FRAME_HISTORY_SIZE) {
             frameHistory.removeAt(0)

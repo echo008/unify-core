@@ -19,14 +19,14 @@ import androidx.compose.ui.unit.sp
 @Composable
 actual fun UnifyText(
     text: String,
-    modifier: Modifier = Modifier,
-    color: Color = Color.Unspecified,
-    fontSize: TextUnit = TextUnit.Unspecified,
-    fontWeight: FontWeight? = null,
-    textAlign: TextAlign? = null,
-    overflow: TextOverflow = TextOverflow.Clip,
-    maxLines: Int = Int.MAX_VALUE,
-    style: TextStyle? = null
+    modifier: Modifier,
+    color: Color,
+    fontSize: TextUnit,
+    fontWeight: FontWeight?,
+    textAlign: TextAlign?,
+    overflow: TextOverflow,
+    maxLines: Int,
+    style: TextStyle?
 ) {
     // Desktop平台字体缩放因子
     val desktopFontScaleFactor = 1.0f

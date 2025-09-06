@@ -1,20 +1,10 @@
 package com.unify.core.memory
 
 import kotlinx.coroutines.flow.Flow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.Json
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
@@ -121,7 +111,7 @@ internal expect suspend fun getPlatformMemoryUsage(): MemoryUsage
 internal expect suspend fun getPlatformGCInfo(): GCInfo
 internal expect suspend fun performCacheClear()
 internal expect suspend fun performMemoryOptimization()
-internal expect suspend fun startMemoryMonitoring()
+internal expect fun startMemoryMonitoring(): StateFlow<MemoryUsage?>
 internal expect suspend fun stopMemoryMonitoring()
 
 class UnifyMemoryManagerImpl(

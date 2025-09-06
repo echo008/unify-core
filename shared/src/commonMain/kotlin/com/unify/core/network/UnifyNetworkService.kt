@@ -1,276 +1,189 @@
 package com.unify.core.network
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.request.*
-import io.ktor.client.statement.*
-import io.ktor.http.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
 
 /**
- * Unify跨平台网络服务
- * 支持8大平台的统一网络通信
+ * 统一网络服务接口 - 跨平台网络通信核心服务
+ * 提供RESTful API调用、实时数据流、批量请求等高级功能
  */
 interface UnifyNetworkService {
-    suspend fun get(url: String, headers: Map<String, String> = emptyMap()): NetworkResult<String>
-    suspend fun post(url: String, body: String, headers: Map<String, String> = emptyMap()): NetworkResult<String>
-    suspend fun put(url: String, body: String, headers: Map<String, String> = emptyMap()): NetworkResult<String>
-    suspend fun delete(url: String, headers: Map<String, String> = emptyMap()): NetworkResult<String>
-    suspend fun download(url: String, onProgress: (Float) -> Unit = {}): NetworkResult<ByteArray>
-    suspend fun upload(url: String, data: ByteArray, onProgress: (Float) -> Unit = {}): NetworkResult<String>
-    fun getNetworkStatus(): Flow<NetworkStatus>
-}
-
-/**
- * 网络请求结果封装
- */
-@Serializable
-sealed class NetworkResult<out T> {
-    @Serializable
-    data class Success<T>(val data: T) : NetworkResult<T>()
+    /**
+     * 执行HTTP请求
+     */
+    suspend fun <T> request(request: NetworkRequest<T>): NetworkResponse<T>
     
-    @Serializable
-    data class Error(val exception: NetworkException) : NetworkResult<Nothing>()
+    /**
+     * 批量请求
+     */
+    suspend fun batchRequest(requests: List<NetworkRequest<*>>): List<NetworkResponse<*>>
     
-    @Serializable
-    data class Loading(val progress: Float = 0f) : NetworkResult<Nothing>()
+    /**
+     * 创建实时数据流
+     */
+    fun <T> createDataStream(
+        url: String,
+        interval: Long = 5000L,
+        parser: (String) -> T
+    ): Flow<T>
+    
+    /**
+     * WebSocket连接
+     */
+    suspend fun connectWebSocket(
+        url: String,
+        protocols: List<String> = emptyList()
+    ): WebSocketConnection
+    
+    /**
+     * 服务器推送事件 (SSE)
+     */
+    fun createServerSentEventStream(url: String): Flow<ServerSentEvent>
+    
+    /**
+     * GraphQL查询
+     */
+    suspend fun graphqlQuery(
+        url: String,
+        query: String,
+        variables: Map<String, Any> = emptyMap()
+    ): NetworkResponse<GraphQLResponse>
+    
+    /**
+     * 获取请求统计信息
+     */
+    fun getRequestStats(): RequestStats
+    
+    /**
+     * 设置全局请求拦截器
+     */
+    fun setRequestInterceptor(interceptor: RequestInterceptor)
+    
+    /**
+     * 设置全局响应拦截器
+     */
+    fun setResponseInterceptor(interceptor: ResponseInterceptor)
 }
 
 /**
- * 网络异常定义
+ * 网络请求封装
  */
 @Serializable
-data class NetworkException(
-    val code: Int,
-    override val message: String,
-    val causeMessage: String? = null
-) : Exception(message)
-
-/**
- * 网络状态枚举
- */
-@Serializable
-enum class NetworkStatus {
-    CONNECTED,
-    DISCONNECTED,
-    CONNECTING,
-    WIFI,
-    MOBILE,
-    ETHERNET,
-    UNKNOWN
-}
-
-/**
- * 网络配置
- */
-@Serializable
-data class NetworkConfig(
+data class NetworkRequest<T>(
+    val method: HttpMethod,
+    val url: String,
+    val headers: Map<String, String> = emptyMap(),
+    val body: String? = null,
     val timeout: Long = 30000L,
-    val retryCount: Int = 3,
-    val retryDelay: Long = 1000L,
-    val enableLogging: Boolean = false,
-    val enableCache: Boolean = true,
-    val cacheSize: Long = 10 * 1024 * 1024L, // 10MB
-    val userAgent: String = "UnifyApp/1.0",
-    val baseUrl: String = "",
-    val defaultHeaders: Map<String, String> = emptyMap()
+    val priority: RequestPriority = RequestPriority.NORMAL,
+    val cacheStrategy: CacheStrategy = CacheStrategy.NETWORK_FIRST,
+    val retryPolicy: RetryPolicy = RetryPolicy(),
+    val tag: String? = null
 )
 
 /**
- * Unify网络服务实现
+ * HTTP方法
  */
-class UnifyNetworkServiceImpl(
-    private val client: HttpClient,
-    private val config: NetworkConfig = NetworkConfig()
-) : UnifyNetworkService {
-    
-    private val json = Json {
-        ignoreUnknownKeys = true
-        isLenient = true
-        encodeDefaults = false
-    }
-    
-    override suspend fun get(url: String, headers: Map<String, String>): NetworkResult<String> {
-        return executeRequest {
-            client.get(buildUrl(url)) {
-                applyHeaders(headers)
-            }
-        }
-    }
-    
-    override suspend fun post(url: String, body: String, headers: Map<String, String>): NetworkResult<String> {
-        return executeRequest {
-            client.post(buildUrl(url)) {
-                applyHeaders(headers)
-                contentType(ContentType.Application.Json)
-                setBody(body)
-            }
-        }
-    }
-    
-    override suspend fun put(url: String, body: String, headers: Map<String, String>): NetworkResult<String> {
-        return executeRequest {
-            client.put(buildUrl(url)) {
-                applyHeaders(headers)
-                contentType(ContentType.Application.Json)
-                setBody(body)
-            }
-        }
-    }
-    
-    override suspend fun delete(url: String, headers: Map<String, String>): NetworkResult<String> {
-        return executeRequest {
-            client.delete(buildUrl(url)) {
-                applyHeaders(headers)
-            }
-        }
-    }
-    
-    override suspend fun download(url: String, onProgress: (Float) -> Unit): NetworkResult<ByteArray> {
-        return try {
-            val response = client.get(buildUrl(url))
-            val data = response.body<ByteArray>()
-            onProgress(1.0f)
-            NetworkResult.Success(data)
-        } catch (e: Exception) {
-            NetworkResult.Error(NetworkException(0, e.message ?: "下载失败", e.toString()))
-        }
-    }
-    
-    override suspend fun upload(url: String, data: ByteArray, onProgress: (Float) -> Unit): NetworkResult<String> {
-        return try {
-            val response = client.post(buildUrl(url)) {
-                contentType(ContentType.Application.OctetStream)
-                setBody(data)
-            }
-            onProgress(1.0f)
-            NetworkResult.Success(response.bodyAsText())
-        } catch (e: Exception) {
-            NetworkResult.Error(NetworkException(0, e.message ?: "上传失败", e.toString()))
-        }
-    }
-    
-    override fun getNetworkStatus(): Flow<NetworkStatus> = flow {
-        emit(getCurrentNetworkStatus())
-    }
-    
-    private suspend fun executeRequest(request: suspend () -> HttpResponse): NetworkResult<String> {
-        return try {
-            val response = request()
-            when (response.status.value) {
-                in 200..299 -> NetworkResult.Success(response.bodyAsText())
-                else -> NetworkResult.Error(
-                    NetworkException(
-                        response.status.value,
-                        response.status.description
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            NetworkResult.Error(
-                NetworkException(
-                    0,
-                    e.message ?: "网络请求失败",
-                    e.toString()
-                )
-            )
-        }
-    }
-    
-    private fun HttpRequestBuilder.applyHeaders(headers: Map<String, String>) {
-        config.defaultHeaders.forEach { (key, value) ->
-            header(key, value)
-        }
-        headers.forEach { (key, value) ->
-            header(key, value)
-        }
-        header("User-Agent", config.userAgent)
-    }
-    
-    private fun buildUrl(url: String): String {
-        return if (url.startsWith("http")) {
-            url
-        } else {
-            "${config.baseUrl.trimEnd('/')}/${url.trimStart('/')}"
-        }
-    }
-    
+enum class HttpMethod {
+    GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS
 }
-
-// 平台特定的网络状态获取函数
-internal expect fun getCurrentNetworkStatus(): NetworkStatus
 
 /**
- * 网络工具类
+ * 重试策略
  */
-object UnifyNetworkUtils {
-    /**
-     * 检查URL是否有效
-     */
-    fun isValidUrl(url: String): Boolean {
-        return try {
-            Url(url)
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    /**
-     * 构建查询参数
-     */
-    fun buildQueryParams(params: Map<String, String>): String {
-        return params.entries.joinToString("&") { (key, value) ->
-            "$key=${value.encodeURLParameter()}"
-        }
-    }
-    
-    /**
-     * 解析Content-Type
-     */
-    fun parseContentType(contentType: String): ContentType {
-        return try {
-            ContentType.parse(contentType)
-        } catch (e: Exception) {
-            ContentType.Application.Json
-        }
-    }
-}
-
-// UnifyNetworkCache 接口已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
-
-/**
- * 网络拦截器接口
- */
-interface UnifyNetworkInterceptor {
-    suspend fun intercept(request: HttpRequestBuilder): HttpRequestBuilder
-    suspend fun interceptResponse(response: HttpResponse): HttpResponse
-}
-
-// NetworkEvent 密封类已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
-
-// NetworkConnectionInfo 数据类已在 NetworkServiceFactory.kt 中定义，此处移除重复声明
-// 扩展版本保留额外字段
 @Serializable
-data class ExtendedNetworkConnectionInfo(
-    val isConnected: Boolean,
-    val networkType: NetworkType,
-    val signalStrength: Int = 0,
-    val bandwidth: Long = 0L,
-    val ipAddress: String? = null
+data class RetryPolicy(
+    val maxRetries: Int = 3,
+    val baseDelay: Long = 1000L,
+    val maxDelay: Long = 10000L,
+    val backoffMultiplier: Double = 2.0,
+    val retryOnConnectionFailure: Boolean = true,
+    val retryOnTimeout: Boolean = true
 )
 
 /**
- * 网络监控接口
+ * WebSocket连接接口
  */
-interface UnifyNetworkMonitor {
-    fun observeNetworkEvents(): Flow<NetworkEvent>
-    fun onRequestStart(url: String, method: String)
-    fun onRequestComplete(url: String, statusCode: Int, duration: Long)
-    fun onRequestError(url: String, error: String?)
-    fun stopMonitoring()
-    fun getCurrentNetworkInfo(): NetworkConnectionInfo
+interface WebSocketConnection {
+    val isConnected: Boolean
+    
+    suspend fun send(message: String)
+    suspend fun send(data: ByteArray)
+    suspend fun close(code: Int = 1000, reason: String = "")
+    
+    fun onMessage(callback: (String) -> Unit)
+    fun onBinaryMessage(callback: (ByteArray) -> Unit)
+    fun onError(callback: (Throwable) -> Unit)
+    fun onClose(callback: (Int, String) -> Unit)
+}
+
+/**
+ * 服务器推送事件
+ */
+@Serializable
+data class ServerSentEvent(
+    val id: String? = null,
+    val event: String? = null,
+    val data: String,
+    val retry: Long? = null
+)
+
+/**
+ * GraphQL响应
+ */
+@Serializable
+data class GraphQLResponse(
+    val data: JsonObject? = null,
+    val errors: List<GraphQLError>? = null,
+    val extensions: JsonObject? = null
+)
+
+/**
+ * GraphQL错误
+ */
+@Serializable
+data class GraphQLError(
+    val message: String,
+    val locations: List<GraphQLLocation>? = null,
+    val path: List<String>? = null,
+    val extensions: JsonObject? = null
+)
+
+/**
+ * GraphQL位置
+ */
+@Serializable
+data class GraphQLLocation(
+    val line: Int,
+    val column: Int
+)
+
+/**
+ * 请求统计信息
+ */
+@Serializable
+data class RequestStats(
+    val totalRequests: Long = 0L,
+    val successfulRequests: Long = 0L,
+    val failedRequests: Long = 0L,
+    val averageResponseTime: Double = 0.0,
+    val cacheHitRate: Double = 0.0,
+    val bytesTransferred: Long = 0L,
+    val activeConnections: Int = 0
+)
+
+/**
+ * 请求拦截器
+ */
+interface RequestInterceptor {
+    suspend fun intercept(request: NetworkRequest<*>): NetworkRequest<*>
+}
+
+/**
+ * 响应拦截器
+ */
+interface ResponseInterceptor {
+    suspend fun <T> intercept(response: NetworkResponse<T>): NetworkResponse<T>
 }

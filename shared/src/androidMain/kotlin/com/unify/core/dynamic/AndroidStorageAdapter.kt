@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.decodeFromString
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -487,7 +489,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
     private fun persistModuleInfo(moduleId: String, moduleInfo: ModuleInfo) {
         try {
             val configFile = File(configDir, "$moduleId.json")
-            val jsonString = json.encodeToString(ModuleInfo.serializer(), moduleInfo)
+            val jsonString = json.encodeToString(moduleInfo)
             configFile.writeText(jsonString)
         } catch (e: Exception) {
             // 忽略持久化错误
@@ -497,7 +499,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
     private fun persistPluginInfo(pluginId: String, pluginInfo: PluginInfo) {
         try {
             val configFile = File(configDir, "$pluginId.json")
-            val jsonString = json.encodeToString(PluginInfo.serializer(), pluginInfo)
+            val jsonString = json.encodeToString(pluginInfo)
             configFile.writeText(jsonString)
         } catch (e: Exception) {
             // 忽略持久化错误
@@ -530,7 +532,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
                 
                 if (moduleFile.exists()) {
                     val jsonString = configFile.readText()
-                    val moduleInfo = json.decodeFromString(ModuleInfo.serializer(), jsonString)
+                    val moduleInfo = json.decodeFromString<ModuleInfo>(jsonString)
                     val module = createDynamicModule(moduleId, moduleInfo, moduleFile)
                     
                     if (initializeModule(module)) {
@@ -552,7 +554,7 @@ class AndroidStorageAdapter(private val context: Context) : DynamicStorageAdapte
                 
                 if (pluginFile.exists()) {
                     val jsonString = configFile.readText()
-                    val pluginInfo = json.decodeFromString(PluginInfo.serializer(), jsonString)
+                    val pluginInfo = json.decodeFromString<PluginInfo>(jsonString)
                     val plugin = createDynamicPlugin(pluginId, pluginInfo, pluginFile)
                     
                     if (installPluginInternal(plugin)) {

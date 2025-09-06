@@ -17,7 +17,7 @@ interface UnifyDataManager {
     suspend fun saveLong(key: String, value: Long)
     suspend fun getLong(key: String, defaultValue: Long = 0L): Long
     suspend fun saveObject(key: String, value: Any)
-    suspend fun <T> getObject(key: String, clazz: Class<T>): T?
+    suspend fun <T> getObject(key: String, defaultValue: T, serializer: kotlinx.serialization.KSerializer<T>): T
     suspend fun remove(key: String)
     suspend fun clear()
     suspend fun contains(key: String): Boolean
@@ -26,6 +26,13 @@ interface UnifyDataManager {
     fun observeInt(key: String, defaultValue: Int = 0): Flow<Int>
     fun observeBoolean(key: String, defaultValue: Boolean = false): Flow<Boolean>
     fun observeFloat(key: String, defaultValue: Float = 0f): Flow<Float>
+    fun observeLong(key: String, defaultValue: Long = 0L): Flow<Long>
+    suspend fun saveToSecureStorage(key: String, value: String)
+    suspend fun getFromSecureStorage(key: String, defaultValue: String = ""): String
+    suspend fun saveFile(fileName: String, data: ByteArray)
+    suspend fun getFile(fileName: String): ByteArray?
+    suspend fun deleteFile(fileName: String): Boolean
+    suspend fun fileExists(fileName: String): Boolean
 }
 
 /**

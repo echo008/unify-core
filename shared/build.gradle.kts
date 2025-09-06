@@ -1,12 +1,17 @@
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.android.library)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
+    // alias(libs.plugins.sqldelight)  // 暂时禁用未配置的SQLDelight
+    // alias(libs.plugins.ksp)
+    // alias(libs.plugins.room)  // 暂时禁用未配置的Room
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
+    alias(libs.plugins.binary.compatibility.validator)
     alias(libs.plugins.kover)
+    alias(libs.plugins.dokka)
 }
 
 android {
@@ -25,7 +30,7 @@ android {
         compose = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
 
@@ -114,6 +119,26 @@ kotlin {
                 
                 // OkHttp for network operations
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
+                
+                // Room数据库依赖
+                implementation("androidx.room:room-runtime:2.6.1")
+                implementation("androidx.room:room-ktx:2.6.1")
+                
+                // DataStore依赖
+                implementation("androidx.datastore:datastore-preferences:1.0.0")
+                implementation("androidx.datastore:datastore-core:1.0.0")
+                
+                // Compose基础依赖
+                implementation("androidx.compose.foundation:foundation-layout:1.5.15")
+                implementation("androidx.compose.foundation:foundation:1.5.15")
+                implementation("androidx.compose.ui:ui-unit:1.5.15")
+                
+                // Android测试框架依赖
+                implementation("androidx.test.ext:junit:1.1.5")
+                implementation("androidx.test.espresso:espresso-core:3.5.1")
+                implementation("androidx.test:core:1.5.0")
+                implementation("androidx.test:runner:1.5.2")
+                implementation("junit:junit:4.13.2")
             }
         }
         

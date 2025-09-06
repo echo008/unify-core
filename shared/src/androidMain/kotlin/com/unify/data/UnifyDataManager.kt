@@ -9,6 +9,8 @@ import androidx.room.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import java.io.File
 
 /**
@@ -166,7 +168,7 @@ actual class UnifyDataManagerImpl actual constructor() : UnifyDataManager {
         file.writeBytes(data)
     }
     
-    override suspend fun loadFile(fileName: String): ByteArray? {
+    override suspend fun getFile(fileName: String): ByteArray? {
         val file = File(context.filesDir, fileName)
         return if (file.exists()) {
             file.readBytes()
@@ -184,55 +186,6 @@ actual class UnifyDataManagerImpl actual constructor() : UnifyDataManager {
         val file = File(context.filesDir, fileName)
         return file.exists()
     }
-    
-    override suspend fun getFileSize(fileName: String): Long {
-        val file = File(context.filesDir, fileName)
-        return if (file.exists()) file.length() else 0L
-    }
-    
-    override suspend fun listFiles(): List<String> {
-        return context.filesDir.listFiles()?.map { it.name } ?: emptyList()
-    }
-    
-    override suspend fun getDatabaseSize(): Long {
-        return database.openHelper.readableDatabase.pageSize * 
-               database.openHelper.readableDatabase.pageCount
-    }
-    
-    override suspend fun compactDatabase() {
-        database.openHelper.writableDatabase.execSQL("VACUUM")
-    }
-    
-    override suspend fun exportData(): String {
-        val allData = mutableMapOf<String, Any>()
-        preferences.all.forEach { (key, value) ->
-            allData[key] = value ?: ""
-        }
-        return Json.encodeToString(allData)
-    }
-    
-    override suspend fun importData(data: String): Boolean {
-        return try {
-            val importedData: Map<String, String> = Json.decodeFromString(data)
-            val editor = preferences.edit()
-            importedData.forEach { (key, value) ->
-                editor.putString(key, value)
-            }
-            editor.apply()
-            true
-        } catch (e: Exception) {
-            false
-        }
-    }
-    
-    override suspend fun backup(): String {
-        return exportData()
-    }
-    
-    override suspend fun restore(backupData: String): Boolean {
-        return importData(backupData)
-    }
-    
     private fun encryptValue(value: String): String {
         // 实现Android Keystore加密
         // 这里简化实现，实际应用中应使用Android Keystore
@@ -297,11 +250,11 @@ interface UnifyDao {
 class UnifyTypeConverters {
     @TypeConverter
     fun fromString(value: String): List<String> {
-        return Json.decodeFromString(value)
+        return Json.decodeFromString(ListSerializer(String.serializer()), value)
     }
     
     @TypeConverter
     fun fromList(list: List<String>): String {
-        return Json.encodeToString(list)
+        return Json.encodeToString(ListSerializer(String.serializer()), list)
     }
 }

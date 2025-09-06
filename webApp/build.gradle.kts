@@ -2,8 +2,7 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
-    // 暂时禁用Vite插件，使用标准Webpack配置
-    // alias(libs.plugins.vite.kotlin)
+    alias(libs.plugins.vite.kotlin)
 }
 
 kotlin {

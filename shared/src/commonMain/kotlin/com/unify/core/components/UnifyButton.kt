@@ -146,7 +146,7 @@ fun UnifyButton(
                 shape = shape,
                 colors = colors ?: ButtonDefaults.outlinedButtonColors(),
                 elevation = elevation,
-                border = border ?: ButtonDefaults.outlinedButtonBorder(enabled && !loading),
+                border = border,
                 contentPadding = actualContentPadding,
                 content = buttonContent
             )

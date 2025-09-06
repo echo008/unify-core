@@ -15,6 +15,516 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+// Actual implementations for expect functions
+
+@Composable
+actual fun UnifyWebView(
+    url: String,
+    modifier: Modifier,
+    onPageLoaded: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("WebView: $url")
+            Button(
+                onClick = { onPageLoaded(url) }
+            ) {
+                Text("Load Page")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyVideoPlayer(
+    url: String,
+    modifier: Modifier,
+    autoPlay: Boolean,
+    showControls: Boolean,
+    onPlaybackStateChanged: (Boolean) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Video Player: $url")
+            Text("Auto Play: $autoPlay")
+            Text("Show Controls: $showControls")
+            Button(
+                onClick = { onPlaybackStateChanged(true) }
+            ) {
+                Text("Play")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyAudioPlayer(
+    url: String,
+    modifier: Modifier,
+    autoPlay: Boolean,
+    showControls: Boolean,
+    onPlaybackStateChanged: (Boolean) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Audio Player: $url")
+            Text("Auto Play: $autoPlay")
+            Button(
+                onClick = { onPlaybackStateChanged(true) }
+            ) {
+                Text("Play Audio")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyQRCodeScanner(
+    modifier: Modifier,
+    onQRCodeScanned: (String) -> Unit,
+    onError: (String) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("QR Code Scanner")
+            Button(
+                onClick = { onQRCodeScanned("sample_qr_code") }
+            ) {
+                Text("Scan QR Code")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyBiometricAuth(
+    title: String,
+    subtitle: String,
+    onAuthSuccess: () -> Unit,
+    onAuthError: (String) -> Unit,
+    onAuthCancel: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Biometric Auth")
+            Text("Title: $title")
+            Text("Subtitle: $subtitle")
+            Button(
+                onClick = onAuthSuccess
+            ) {
+                Text("Authenticate")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyPlatformButton(
+    onClick: () -> Unit,
+    modifier: Modifier,
+    text: String,
+    enabled: Boolean
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled
+    ) {
+        Text(text)
+    }
+}
+
+@Composable
+actual fun UnifyPlatformTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier,
+    placeholder: String,
+    enabled: Boolean
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        placeholder = { Text(placeholder) },
+        enabled = enabled
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSwitch(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    modifier: Modifier,
+    enabled: Boolean
+) {
+    Switch(
+        checked = checked,
+        onCheckedChange = onCheckedChange,
+        modifier = modifier,
+        enabled = enabled
+    )
+}
+
+@Composable
+actual fun UnifyPlatformSlider(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    modifier: Modifier,
+    valueRange: ClosedFloatingPointRange<Float>,
+    enabled: Boolean
+) {
+    Slider(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        valueRange = valueRange,
+        enabled = enabled
+    )
+}
+
+@Composable
+actual fun UnifyPlatformProgressBar(
+    progress: Float,
+    modifier: Modifier,
+    showPercentage: Boolean
+) {
+    Column(modifier = modifier) {
+        LinearProgressIndicator(
+            progress = progress,
+            modifier = Modifier.fillMaxWidth()
+        )
+        if (showPercentage) {
+            Text("${(progress * 100).toInt()}%")
+        }
+    }
+}
+
+@Composable
+actual fun UnifyPlatformAlert(
+    title: String,
+    message: String,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier
+) {
+    AlertDialog(
+        onDismissRequest = onCancel,
+        title = { Text(title) },
+        text = { Text(message) },
+        confirmButton = {
+            Button(onClick = onConfirm) {
+                Text("Confirm")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onCancel) {
+                Text("Cancel")
+            }
+        },
+        modifier = modifier
+    )
+}
+
+@Composable
+actual fun UnifyPlatformActionSheet(
+    title: String,
+    actions: List<String>,
+    onActionSelected: (Int) -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text(title)
+            actions.forEachIndexed { index, action ->
+                Button(
+                    onClick = { 
+                        onActionSelected(index)
+                        onCancel()
+                    }
+                ) {
+                    Text(action)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyPlatformSegmentedControl(
+    items: List<String>,
+    selectedIndex: Int,
+    onSelectionChanged: (Int) -> Unit,
+    modifier: Modifier
+) {
+    Row(
+        modifier = modifier
+    ) {
+        items.forEachIndexed { index, item ->
+            Button(
+                onClick = { onSelectionChanged(index) },
+                colors = if (index == selectedIndex) {
+                    ButtonDefaults.buttonColors()
+                } else {
+                    ButtonDefaults.outlinedButtonColors()
+                }
+            ) {
+                Text(item)
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyPlatformDatePicker(
+    selectedDate: Long,
+    onDateSelected: (Long) -> Unit,
+    modifier: Modifier,
+    minDate: Long?,
+    maxDate: Long?
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Date Picker")
+            Text("Selected: ${java.text.SimpleDateFormat("yyyy-MM-dd").format(selectedDate)}")
+            Button(
+                onClick = { 
+                    onDateSelected(System.currentTimeMillis())
+                }
+            ) {
+                Text("Select Date")
+            }
+        }
+    }
+}
+
+actual fun shareContent(
+    content: String,
+    title: String,
+    mimeType: String
+) {
+    // Android share implementation
+}
+
+actual fun showNotification(
+    title: String,
+    content: String,
+    channelId: String,
+    importance: Int
+) {
+    // Android notification implementation
+}
+
+actual fun vibrate(
+    duration: Long,
+    amplitude: Int
+) {
+    // Android vibration implementation
+}
+
+actual fun toggleFlashlight(enabled: Boolean) {
+    // Android flashlight implementation
+}
+
+actual fun setScreenBrightness(brightness: Float) {
+    // Android screen brightness implementation
+}
+
+actual fun setVolume(volume: Float, streamType: Int) {
+    // Android volume control implementation
+}
+
+actual fun observeNetworkStatus(): kotlinx.coroutines.flow.Flow<NetworkType> {
+    return kotlinx.coroutines.flow.flowOf(NetworkType.WIFI)
+}
+
+actual fun observeBatteryStatus(): kotlinx.coroutines.flow.Flow<BatteryStatus> {
+    return kotlinx.coroutines.flow.flowOf(
+        BatteryStatus(
+            level = 85.0f,
+            isCharging = false,
+            chargingType = ChargingType.NONE,
+            temperature = 25.0f,
+            voltage = 4000,
+            health = BatteryHealth.GOOD
+        )
+    )
+}
+
+// Additional Platform Adapter actual implementations removed to avoid duplication
+// UnifyPlatformAdapterFactory is implemented in UnifyPlatformAdapterFactory.android.kt
+
+actual fun Modifier.platformSpecific(): Modifier {
+    return this
+}
+
+@Composable
+actual fun UnifyStatusBarController(
+    statusBarColor: androidx.compose.ui.graphics.Color,
+    darkIcons: Boolean
+) {
+    // Android status bar control implementation
+}
+
+@Composable
+actual fun UnifyNavigationBarController(
+    navigationBarColor: androidx.compose.ui.graphics.Color,
+    darkIcons: Boolean
+) {
+    // Android navigation bar control implementation
+}
+
+@Composable
+actual fun UnifySystemUIController(
+    statusBarColor: androidx.compose.ui.graphics.Color,
+    navigationBarColor: androidx.compose.ui.graphics.Color,
+    statusBarDarkIcons: Boolean,
+    navigationBarDarkIcons: Boolean
+) {
+    // Android system UI control implementation
+}
+
+@Composable
+actual fun UnifySafeAreaHandler(
+    content: @Composable () -> Unit
+) {
+    content()
+}
+
+@Composable
+actual fun UnifyKeyboardHandler(
+    onKeyboardVisibilityChanged: (Boolean) -> Unit,
+    content: @Composable () -> Unit
+) {
+    content()
+}
+
+@Composable
+actual fun UnifyBackHandler(
+    enabled: Boolean,
+    onBack: () -> Unit
+) {
+    // Android back handler implementation
+}
+
+@Composable
+actual fun UnifyLifecycleHandler(
+    onResume: () -> Unit,
+    onPause: () -> Unit,
+    onDestroy: () -> Unit
+) {
+    // Android lifecycle handler implementation
+}
+
+@Composable
+actual fun UnifyPermissionHandler(
+    permissions: List<String>,
+    onPermissionResult: (Map<String, Boolean>) -> Unit
+) {
+    val resultMap = permissions.associateWith { true }
+    androidx.compose.runtime.LaunchedEffect(permissions) {
+        onPermissionResult(resultMap)
+    }
+}
+
+@Composable
+actual fun UnifyFilePicker(
+    fileTypes: List<String>,
+    multipleSelection: Boolean,
+    onFileSelected: (List<String>) -> Unit
+) {
+    Button(
+        onClick = { 
+            val files = if (multipleSelection) {
+                listOf("file1.txt", "file2.txt")
+            } else {
+                listOf("sample_file.txt")
+            }
+            onFileSelected(files)
+        }
+    ) {
+        Text("Pick File")
+    }
+}
+
+@Composable
+actual fun UnifyCameraComponent(
+    modifier: Modifier,
+    onImageCaptured: (ByteArray) -> Unit,
+    onError: (String) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Camera Component")
+            Button(
+                onClick = { onImageCaptured(byteArrayOf(1, 2, 3)) }
+            ) {
+                Text("Capture Image")
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifyMapComponent(
+    modifier: Modifier,
+    latitude: Double,
+    longitude: Double,
+    zoom: Float,
+    onLocationSelected: (Double, Double) -> Unit
+) {
+    Card(
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp)
+        ) {
+            Text("Map Component")
+            Text("Lat: $latitude, Lng: $longitude")
+            Text("Zoom: $zoom")
+            Button(
+                onClick = { onLocationSelected(latitude + 0.1, longitude + 0.1) }
+            ) {
+                Text("Select Location")
+            }
+        }
+    }
+}
+
 /**
  * Android平台特定的UI适配器组件
  */

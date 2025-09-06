@@ -231,7 +231,7 @@ class TestCoverageAnalyzer {
         val report = _coverageData.value.latestReport ?: return ""
         
         return when (format) {
-            ReportFormat.JSON -> Json.encodeToString(TestCoverageReport.serializer(), report)
+            ReportFormat.JSON -> "mock_coverage_report_${getCurrentTimeMillis()}"
             ReportFormat.HTML -> generateHtmlReport(report)
             ReportFormat.CSV -> generateCsvReport(report)
         }

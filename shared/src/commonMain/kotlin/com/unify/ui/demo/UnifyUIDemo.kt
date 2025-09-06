@@ -156,17 +156,17 @@ private fun BasicComponentsDemo() {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     UnifyText(
                         text = "标题文本",
-                        // style = UnifyTextStyle.Heading1 // 暂时注释，避免编译错误
+                        style = MaterialTheme.typography.headlineLarge
                     )
                     
                     UnifyText(
                         text = "正文内容，支持多种样式和颜色配置",
-                        // style = UnifyTextStyle.BODY // 暂时注释，避免编译错误
+                        style = MaterialTheme.typography.bodyLarge
                     )
                     
                     UnifyText(
                         text = "小号文本",
-                        // style = UnifyTextStyle.CAPTION, // 暂时注释，避免编译错误
+                        style = MaterialTheme.typography.bodySmall,
                         color = Color(0xFFFFA500)
                     )
                 }
@@ -259,9 +259,9 @@ private fun NavigationComponentsDemo() {
         item {
             DemoCard("标签栏") {
                 val tabItems = listOf(
-                    TabItem("tab1", "首页"),
-                    TabItem("tab2", "发现"),
-                    TabItem("tab3", "我的")
+                    TabItem("tab1", "首页", icon = { Text("🏠") }, enabled = true),
+                    TabItem("tab2", "发现", icon = { Text("🔍") }, enabled = true),
+                    TabItem("tab3", "我的", icon = { Text("👤") }, enabled = true)
                 )
                 
                 var selectedTab by remember { mutableStateOf("tab1") }
@@ -277,9 +277,9 @@ private fun NavigationComponentsDemo() {
         item {
             DemoCard("导航栏") {
                 val navItems = listOf(
-                    NavigationItem("nav1", "首页", icon = { Text("🏠") }),
-                    NavigationItem("nav2", "搜索", icon = { Text("🔍") }),
-                    NavigationItem("nav3", "设置", icon = { Text("⚙️") })
+                    NavigationItem("nav1", "首页", icon = { Text("🏠") }, enabled = true),
+                    NavigationItem("nav2", "搜索", icon = { Text("🔍") }, enabled = true),
+                    NavigationItem("nav3", "设置", icon = { Text("⚙️") }, enabled = true)
                 )
                 
                 var selectedNav by remember { mutableStateOf("nav1") }

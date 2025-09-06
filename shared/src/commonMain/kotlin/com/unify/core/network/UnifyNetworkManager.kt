@@ -1,84 +1,153 @@
 package com.unify.core.network
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonElement
 
 /**
- * Unify跨平台网络管理器接口
- * 统一管理HTTP请求、WebSocket连接和网络状态
+ * 统一网络管理器 - 跨平台网络通信核心接口
+ * 提供HTTP请求、响应式数据流、错误处理、缓存管理等功能
  */
-interface UnifyNetworkManager {
-    // HTTP请求
-    suspend fun get(url: String, headers: Map<String, String> = emptyMap()): NetworkResponse
-    suspend fun post(url: String, body: String, headers: Map<String, String> = emptyMap()): NetworkResponse
-    suspend fun put(url: String, body: String, headers: Map<String, String> = emptyMap()): NetworkResponse
-    suspend fun delete(url: String, headers: Map<String, String> = emptyMap()): NetworkResponse
-    suspend fun patch(url: String, body: String, headers: Map<String, String> = emptyMap()): NetworkResponse
+expect class UnifyNetworkManager {
+    companion object {
+        fun create(): UnifyNetworkManager
+    }
     
-    // 文件上传下载
-    suspend fun uploadFile(url: String, filePath: String, headers: Map<String, String> = emptyMap()): NetworkResponse
-    suspend fun downloadFile(url: String, savePath: String, headers: Map<String, String> = emptyMap()): NetworkResponse
+    /**
+     * 初始化网络管理器
+     */
+    fun initialize(config: NetworkConfig)
     
-    // WebSocket连接
-    fun connectWebSocket(url: String, listener: WebSocketListener): WebSocketConnection
+    /**
+     * GET请求
+     */
+    suspend fun get(
+        url: String,
+        headers: Map<String, String> = emptyMap(),
+        useCache: Boolean = true
+    ): NetworkResponse<String>
     
-    // 网络状态监控
-    fun observeNetworkStatus(): Flow<NetworkStatus>
-    fun isNetworkAvailable(): Boolean
-    fun getNetworkType(): NetworkType
+    /**
+     * POST请求
+     */
+    suspend fun post(
+        url: String,
+        body: String,
+        headers: Map<String, String> = emptyMap(),
+        contentType: String = "application/json"
+    ): NetworkResponse<String>
     
-    // 请求配置
-    fun setBaseUrl(baseUrl: String)
-    fun getBaseUrl(): String
-    fun setDefaultHeaders(headers: Map<String, String>)
-    fun getDefaultHeaders(): Map<String, String>
-    fun setTimeout(timeoutMillis: Long)
-    fun getTimeout(): Long
+    /**
+     * PUT请求
+     */
+    suspend fun put(
+        url: String,
+        body: String,
+        headers: Map<String, String> = emptyMap(),
+        contentType: String = "application/json"
+    ): NetworkResponse<String>
     
-    // 缓存管理
-    fun setCacheEnabled(enabled: Boolean)
-    fun isCacheEnabled(): Boolean
-    fun clearCache()
+    /**
+     * DELETE请求
+     */
+    suspend fun delete(
+        url: String,
+        headers: Map<String, String> = emptyMap()
+    ): NetworkResponse<String>
     
-    // 重试机制
-    fun setRetryPolicy(policy: RetryPolicy)
-    fun getRetryPolicy(): RetryPolicy
+    /**
+     * 下载文件
+     */
+    suspend fun downloadFile(
+        url: String,
+        destinationPath: String,
+        onProgress: ((Float) -> Unit)? = null
+    ): NetworkResponse<String>
+    
+    /**
+     * 上传文件
+     */
+    suspend fun uploadFile(
+        url: String,
+        filePath: String,
+        fieldName: String = "file",
+        additionalData: Map<String, String> = emptyMap(),
+        onProgress: ((Float) -> Unit)? = null
+    ): NetworkResponse<UploadResult>
+    
+    /**
+     * 获取网络状态流
+     */
+    fun getNetworkStatusFlow(): Flow<NetworkStatus>
+    
+    /**
+     * 清除缓存
+     */
+    suspend fun clearCache()
+    
+    /**
+     * 取消所有请求
+     */
+    fun cancelAllRequests()
 }
 
 /**
- * 网络响应数据类
+ * 网络响应封装
  */
-data class NetworkResponse(
-    val statusCode: Int,
-    val body: String,
-    val headers: Map<String, String>,
-    val isSuccess: Boolean,
-    val error: String? = null
+@Serializable
+data class NetworkResponse<T>(
+    val success: Boolean,
+    val data: T? = null,
+    val error: NetworkError? = null,
+    val statusCode: Int = 0,
+    val headers: Map<String, String> = emptyMap(),
+    val responseTime: Long = 0L,
+    val fromCache: Boolean = false
 )
 
 /**
- * WebSocket监听器接口
+ * 网络错误
  */
-interface WebSocketListener {
-    fun onOpen()
-    fun onMessage(message: String)
-    fun onError(error: String)
-    fun onClose(code: Int, reason: String)
+@Serializable
+data class NetworkError(
+    val code: NetworkErrorCode,
+    val message: String,
+    val details: String? = null,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+/**
+ * 网络错误代码
+ */
+enum class NetworkErrorCode {
+    TIMEOUT,
+    NO_INTERNET,
+    SERVER_ERROR,
+    CLIENT_ERROR,
+    PARSE_ERROR,
+    UNKNOWN_HOST,
+    SSL_ERROR,
+    CANCELLED,
+    UNKNOWN
 }
 
 /**
- * WebSocket连接接口
+ * 请求优先级
  */
-interface WebSocketConnection {
-    fun send(message: String)
-    fun close()
-    fun isConnected(): Boolean
+enum class RequestPriority {
+    LOW,
+    NORMAL,
+    HIGH,
+    CRITICAL
 }
 
-// 网络状态、类型和重试策略已在UnifyNetworkService.kt中定义，此处移除重复声明
-
 /**
- * 网络管理器工厂
+ * 缓存策略
  */
-expect object UnifyNetworkManagerFactory {
-    fun create(): UnifyNetworkManager
+enum class CacheStrategy {
+    NO_CACHE,
+    CACHE_FIRST,
+    NETWORK_FIRST,
+    CACHE_ONLY,
+    NETWORK_ONLY
 }

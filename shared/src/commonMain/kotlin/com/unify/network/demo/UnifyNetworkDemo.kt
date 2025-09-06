@@ -1,717 +1,173 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.unify.network.demo
 
-import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.foundation.lazy.LazyColumn
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.foundation.lazy.items
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.material.icons.Icons
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.material.icons.filled.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.material3.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.runtime.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.Alignment
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.Modifier
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.graphics.Color
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.text.font.FontWeight
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.unit.dp
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.delay
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import com.unify.core.network.*
+import com.unify.network.UnifyNetworkManager
+import com.unify.network.enhanced.UnifyNetworkEnhanced
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
- * 网络管理演示应用
- * 展示网络请求、缓存管理、离线支持和性能监控功能
+ * 网络功能演示应用
+ * 展示Unify网络管理器的各种功能
  */
-@Composable
-fun UnifyNetworkDemo() {
-    var networkState by remember { mutableStateOf(NetworkDemoState()) }
-    val scope = rememberCoroutineScope()
+class UnifyNetworkDemo {
+    private val networkManager = UnifyNetworkManager()
+    private val enhancedNetwork = UnifyNetworkEnhanced()
     
-    LaunchedEffect(Unit) {
-        scope.launch {
-            // 模拟网络状态监控
-            while (true) {
-                networkState = networkState.copy(
-                    connectionStatus = generateConnectionStatus(),
-                    networkSpeed = generateNetworkSpeed(),
-                    latency = (50..200).random(),
-                    dataUsage = networkState.dataUsage + (100..1000).random()
-                )
-                delay(2000)
-            }
-        }
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "网络管理演示",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+    suspend fun runDemo() {
+        println("=== Unify网络管理器演示 ===")
+        
+        // 初始化网络管理器
+        val config = NetworkConfig(
+            baseUrl = "https://api.example.com",
+            timeout = 30000L,
+            retryCount = 3,
+            enableLogging = true,
+            enableCache = true
         )
         
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            item {
-                NetworkStatusCard(
-                    status = networkState.connectionStatus,
-                    speed = networkState.networkSpeed,
-                    latency = networkState.latency,
-                    dataUsage = networkState.dataUsage
-                )
-            }
-            
-            item {
-                NetworkRequestCard(
-                    onSendRequest = { url, method ->
-                        scope.launch {
-                            networkState = networkState.copy(isLoading = true)
-                            delay(1000)
-                            val response = simulateNetworkRequest(url, method)
-                            networkState = networkState.copy(
-                                isLoading = false,
-                                requestHistory = networkState.requestHistory + response
-                            )
-                        }
-                    },
-                    isLoading = networkState.isLoading
-                )
-            }
-            
-            item {
-                CacheManagementCard(
-                    cacheStats = networkState.cacheStats,
-                    onClearCache = {
-                        networkState = networkState.copy(
-                            cacheStats = networkState.cacheStats.copy(
-                                hitCount = 0,
-                                missCount = 0,
-                                totalSize = 0
-                            )
-                        )
-                    },
-                    onOptimizeCache = {
-                        scope.launch {
-                            delay(500)
-                            networkState = networkState.copy(
-                                cacheStats = networkState.cacheStats.copy(
-                                    totalSize = (networkState.cacheStats.totalSize * 0.7).toInt()
-                                )
-                            )
-                        }
-                    }
-                )
-            }
-            
-            item {
-                OfflineManagementCard(
-                    offlineRequests = networkState.offlineRequests,
-                    onProcessOfflineRequests = {
-                        scope.launch {
-                            delay(1000)
-                            networkState = networkState.copy(
-                                offlineRequests = emptyList()
-                            )
-                        }
-                    }
-                )
-            }
-            
-            item {
-                Text(
-                    text = "请求历史",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-            }
-            
-            items(networkState.requestHistory.takeLast(5)) { request ->
-                RequestHistoryItem(request = request)
-            }
-        }
+        networkManager.initialize(config)
+        enhancedNetwork.initialize(config)
+        
+        // 演示基础HTTP请求
+        demoBasicRequests()
+        
+        // 演示缓存功能
+        demoCacheFeatures()
+        
+        // 演示批量请求
+        demoBatchRequests()
+        
+        // 演示网络状态监控
+        demoNetworkStatusMonitoring()
+        
+        // 演示增强功能
+        demoEnhancedFeatures()
+        
+        // 演示性能监控
+        demoPerformanceMonitoring()
     }
-}
-
-@Composable
-private fun NetworkStatusCard(
-    status: ConnectionStatus,
-    speed: NetworkSpeed,
-    latency: Int,
-    dataUsage: Long
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "网络状态",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                NetworkStatusItem(
-                    label = "连接状态",
-                    value = status.displayName,
-                    color = when (status) {
-                        ConnectionStatus.CONNECTED -> Color.Green
-                        ConnectionStatus.DISCONNECTED -> Color.Red
-                        ConnectionStatus.LIMITED -> Color(0xFFFFA500)
-                    }
-                )
-                
-                NetworkStatusItem(
-                    label = "网络速度",
-                    value = "${speed.downloadMbps}/${speed.uploadMbps} Mbps",
-                    color = if (speed.downloadMbps > 10) Color.Green else Color(0xFFFFA500)
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                NetworkStatusItem(
-                    label = "延迟",
-                    value = "${latency}ms",
-                    color = if (latency < 100) Color.Green else if (latency < 200) Color(0xFFFFA500) else Color.Red
-                )
-                
-                NetworkStatusItem(
-                    label = "数据使用",
-                    value = "${dataUsage / 1024}KB",
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun NetworkStatusItem(
-    label: String,
-    value: String,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun NetworkRequestCard(
-    onSendRequest: (String, String) -> Unit,
-    isLoading: Boolean
-) {
-    var url by remember { mutableStateOf("https://api.example.com/data") }
-    var selectedMethod by remember { mutableStateOf("GET") }
-    var expanded by remember { mutableStateOf(false) }
     
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "网络请求测试",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            
-            OutlinedTextField(
-                value = url,
-                onValueChange = { url = it },
-                label = { Text("请求URL") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            ExposedDropdownMenuBox(
-                expanded = expanded,
-                onExpandedChange = { expanded = !expanded }
-            ) {
-                OutlinedTextField(
-                    value = selectedMethod,
-                    onValueChange = { },
-                    readOnly = true,
-                    label = { Text("请求方法") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .menuAnchor()
-                )
-                
-                ExposedDropdownMenu(
-                    expanded = expanded,
-                    onDismissRequest = { expanded = false }
-                ) {
-                    listOf("GET", "POST", "PUT", "DELETE").forEach { method ->
-                        DropdownMenuItem(
-                            text = { Text(method) },
-                            onClick = {
-                                selectedMethod = method
-                                expanded = false
-                            }
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Button(
-                onClick = { onSendRequest(url, selectedMethod) },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(16.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("发送中...")
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "发送",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("发送请求")
-                }
-            }
+    private suspend fun demoBasicRequests() {
+        println("\n--- 基础HTTP请求演示 ---")
+        
+        // GET请求
+        val getResponse = networkManager.getCached("https://httpbin.org/get")
+        println("GET请求结果: ${if (getResponse.success) "成功" else "失败"}")
+        if (getResponse.success) {
+            println("响应时间: ${getResponse.responseTime}ms")
+            println("状态码: ${getResponse.statusCode}")
         }
+        
+        // POST请求
+        // val postResponse = networkManager.post(
+        //     "https://httpbin.org/post",
+        //     """{"message": "Hello from Unify!"}""",
+        //     mapOf("Content-Type" to "application/json")
+        // )
+        // println("POST请求结果: ${if (postResponse.success) "成功" else "失败"}")
     }
-}
-
-@Composable
-private fun CacheManagementCard(
-    cacheStats: CacheStats,
-    onClearCache: () -> Unit,
-    onOptimizeCache: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(
-                text = "缓存管理",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                CacheStatItem(
-                    label = "命中率",
-                    value = "${(cacheStats.hitRate * 100).toInt()}%"
-                )
-                CacheStatItem(
-                    label = "缓存大小",
-                    value = "${cacheStats.totalSize}KB"
-                )
-                CacheStatItem(
-                    label = "条目数",
-                    value = "${cacheStats.entryCount}"
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onClearCache,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "清空",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("清空缓存")
-                }
-                
-                Button(
-                    onClick = onOptimizeCache,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Tune,
-                        contentDescription = "优化",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("优化缓存")
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun CacheStatItem(
-    label: String,
-    value: String
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun OfflineManagementCard(
-    offlineRequests: List<OfflineRequest>,
-    onProcessOfflineRequests: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "离线管理",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                
-                Surface(
-                    color = if (offlineRequests.isNotEmpty()) 
-                        MaterialTheme.colorScheme.errorContainer 
-                    else 
-                        MaterialTheme.colorScheme.primaryContainer,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = "${offlineRequests.size} 待处理",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (offlineRequests.isNotEmpty()) 
-                            MaterialTheme.colorScheme.onErrorContainer 
-                        else 
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
-            }
-            
-            if (offlineRequests.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "离线请求队列:",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                
-                offlineRequests.take(3).forEach { request ->
-                    Text(
-                        text = "• ${request.method} ${request.url}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 8.dp, top = 2.dp)
-                    )
-                }
-                
-                if (offlineRequests.size > 3) {
-                    Text(
-                        text = "... 还有 ${offlineRequests.size - 3} 个请求",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(start = 8.dp, top = 2.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Button(
-                    onClick = onProcessOfflineRequests,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudSync,
-                        contentDescription = "处理",
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("处理离线请求")
-                }
-            } else {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "暂无离线请求",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RequestHistoryItem(request: NetworkRequestResult) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = MaterialTheme.shapes.small,
-                color = when (request.status) {
-                    RequestStatus.SUCCESS -> Color.Green
-                    RequestStatus.ERROR -> Color.Red
-                    RequestStatus.TIMEOUT -> Color(0xFFFFA500)
-                    RequestStatus.CACHED -> Color.Blue
-                }
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = when (request.status) {
-                            RequestStatus.SUCCESS -> Icons.Default.CheckCircle
-                            RequestStatus.ERROR -> Icons.Default.Error
-                            RequestStatus.TIMEOUT -> Icons.Default.Schedule
-                            RequestStatus.CACHED -> Icons.Default.Storage
-                        },
-                        contentDescription = request.status.name,
-                        modifier = Modifier.size(20.dp),
-                        tint = Color.White
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(12.dp))
-            
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "${request.method} ${request.url}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${request.status.displayName} • ${request.duration}ms",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Text(
-                text = formatTime(request.timestamp),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-// 数据生成和辅助函数
-
-private fun generateConnectionStatus(): ConnectionStatus {
-    return when ((1..10).random()) {
-        in 1..7 -> ConnectionStatus.CONNECTED
-        in 8..9 -> ConnectionStatus.LIMITED
-        else -> ConnectionStatus.DISCONNECTED
-    }
-}
-
-private fun generateNetworkSpeed(): NetworkSpeed {
-    return NetworkSpeed(
-        downloadMbps = (5..50).random(),
-        uploadMbps = (1..20).random()
-    )
-}
-
-private fun simulateNetworkRequest(url: String, method: String): NetworkRequestResult {
-    val isSuccess = (1..10).random() > 2 // 80% 成功率
-    val duration = (100..2000).random()
     
-    return NetworkRequestResult(
-        url = url,
-        method = method,
-        status = if (isSuccess) {
-            if ((1..10).random() > 7) RequestStatus.CACHED else RequestStatus.SUCCESS
-        } else {
-            if (duration > 1500) RequestStatus.TIMEOUT else RequestStatus.ERROR
-        },
-        duration = duration,
-        timestamp = getCurrentTimeMillis(),
-        responseSize = if (isSuccess) (1000..50000).random() else 0
-    )
-}
-
-private fun formatTime(timestamp: Long): String {
-    val now = getCurrentTimeMillis()
-    val diff = now - timestamp
-    return when {
-        diff < 60000 -> "刚刚"
-        diff < 3600000 -> "${diff / 60000}分钟前"
-        else -> "${diff / 3600000}小时前"
+    private suspend fun demoCacheFeatures() {
+        println("\n--- 缓存功能演示 ---")
+        
+        val url = "https://httpbin.org/delay/1"
+        
+        // 第一次请求（从网络获取）
+        val firstResponse = networkManager.getCached(url, cacheStrategy = CacheStrategy.NETWORK_FIRST)
+        println("第一次请求: ${if (firstResponse.success) "成功" else "失败"}, 来自缓存: ${firstResponse.fromCache}")
+        
+        // 第二次请求（从缓存获取）
+        val secondResponse = networkManager.getCached(url, cacheStrategy = CacheStrategy.CACHE_FIRST)
+        println("第二次请求: ${if (secondResponse.success) "成功" else "失败"}, 来自缓存: ${secondResponse.fromCache}")
+    }
+    
+    private suspend fun demoBatchRequests() {
+        println("\n--- 批量请求演示 ---")
+        
+        val urls = listOf(
+            "https://httpbin.org/get?param=1",
+            "https://httpbin.org/get?param=2",
+            "https://httpbin.org/get?param=3"
+        )
+        
+        // 串行批量请求
+        val serialResults = networkManager.batchGet(urls)
+        println("串行批量请求完成，成功: ${serialResults.count { it.success }}/${serialResults.size}")
+        
+        // 并行批量请求
+        val parallelResults = networkManager.parallelBatchGet(urls, maxConcurrency = 2)
+        println("并行批量请求完成，成功: ${parallelResults.count { it.success }}/${parallelResults.size}")
+    }
+    
+    private suspend fun demoNetworkStatusMonitoring() {
+        println("\n--- 网络状态监控演示 ---")
+        
+        // 启动网络状态监控
+        kotlinx.coroutines.GlobalScope.launch {
+            networkManager.getNetworkStatusFlow().collect { status ->
+                println("网络状态变化: $status")
+            }
+        }
+        
+        println("网络状态监控已启动...")
+    }
+    
+    private suspend fun demoEnhancedFeatures() {
+        println("\n--- 增强功能演示 ---")
+        
+        // 智能请求
+        val smartResponse = enhancedNetwork.smartRequest(
+            "https://httpbin.org/get",
+            options = com.unify.network.enhanced.SmartRequestOptions(
+                enableDeduplication = true,
+                cacheStrategy = CacheStrategy.CACHE_FIRST
+            )
+        )
+        println("智能请求结果: ${if (smartResponse.success) "成功" else "失败"}")
+        
+        // 实时数据流
+        kotlinx.coroutines.GlobalScope.launch {
+            enhancedNetwork.createRealtimeStream(
+                "https://httpbin.org/get",
+                interval = 10000L
+            ).collect { response ->
+                println("实时数据更新: ${if (response.success) "成功" else "失败"}")
+            }
+        }
+        
+        println("实时数据流已启动...")
+    }
+    
+    private suspend fun demoPerformanceMonitoring() {
+        println("\n--- 性能监控演示 ---")
+        
+        // 执行一些请求以生成性能数据
+        repeat(5) {
+            enhancedNetwork.smartRequest("https://httpbin.org/delay/1")
+        }
+        
+        // 获取性能统计
+        val perfStats = enhancedNetwork.getPerformanceStats()
+        println("性能统计:")
+        println("  总请求数: ${perfStats.totalRequests}")
+        println("  成功请求数: ${perfStats.successfulRequests}")
+        println("  失败请求数: ${perfStats.failedRequests}")
+        println("  平均响应时间: ${perfStats.averageResponseTime}ms")
+        println("  成功率: ${(perfStats.successRate * 100).toInt()}%")
+        
+        // 获取负载均衡统计
+        val lbStats = enhancedNetwork.getLoadBalancerStats()
+        println("负载均衡统计:")
+        println("  总端点数: ${lbStats.totalEndpoints}")
+        println("  活跃端点数: ${lbStats.activeEndpoints}")
     }
 }
 
-// 数据类定义
-
-data class NetworkDemoState(
-    val connectionStatus: ConnectionStatus = ConnectionStatus.CONNECTED,
-    val networkSpeed: NetworkSpeed = NetworkSpeed(25, 10),
-    val latency: Int = 80,
-    val dataUsage: Long = 0,
-    val isLoading: Boolean = false,
-    val requestHistory: List<NetworkRequestResult> = emptyList(),
-    val cacheStats: CacheStats = CacheStats(),
-    val offlineRequests: List<OfflineRequest> = generateOfflineRequests()
-)
-
-data class NetworkSpeed(
-    val downloadMbps: Int,
-    val uploadMbps: Int
-)
-
-data class CacheStats(
-    val hitCount: Int = 45,
-    val missCount: Int = 12,
-    val totalSize: Int = 2048,
-    val entryCount: Int = 156
-) {
-    val hitRate: Double get() = if (hitCount + missCount > 0) hitCount.toDouble() / (hitCount + missCount) else 0.0
-}
-
-data class OfflineRequest(
-    val url: String,
-    val method: String,
-    val timestamp: Long
-)
-
-data class NetworkRequestResult(
-    val url: String,
-    val method: String,
-    val status: RequestStatus,
-    val duration: Int,
-    val timestamp: Long,
-    val responseSize: Int
-)
-
-enum class ConnectionStatus(val displayName: String) {
-    CONNECTED("已连接"),
-    DISCONNECTED("未连接"),
-    LIMITED("受限连接")
-}
-
-enum class RequestStatus(val displayName: String) {
-    SUCCESS("成功"),
-    ERROR("失败"),
-    TIMEOUT("超时"),
-    CACHED("缓存")
-}
-
-private fun generateOfflineRequests(): List<OfflineRequest> {
-    return if ((1..10).random() > 7) {
-        listOf(
-            OfflineRequest(
-                url = "https://api.example.com/sync",
-                method = "POST",
-                timestamp = getCurrentTimeMillis() - 300000
-            ),
-            OfflineRequest(
-                url = "https://api.example.com/upload",
-                method = "PUT",
-                timestamp = getCurrentTimeMillis() - 180000
-            )
-        )
-    } else emptyList()
+/**
+ * 网络演示应用入口
+ */
+suspend fun runNetworkDemo() {
+    val demo = UnifyNetworkDemo()
+    demo.runDemo()
 }

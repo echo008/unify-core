@@ -169,6 +169,18 @@ expect fun UnifyClipboard(
 )
 
 @Composable
+expect fun UnifyBatteryStatus(
+    modifier: Modifier = Modifier,
+    showPercentage: Boolean = true
+)
+
+@Composable
+expect fun UnifyCPUUsage(
+    modifier: Modifier = Modifier,
+    refreshInterval: Long = 1000L
+)
+
+@Composable
 expect fun UnifyNotificationManager(
     notifications: List<NotificationItem>,
     onNotificationAction: (String, NotificationAction) -> Unit,

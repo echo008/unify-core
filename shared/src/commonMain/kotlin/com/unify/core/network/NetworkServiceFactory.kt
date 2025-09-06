@@ -1,69 +1,112 @@
 package com.unify.core.network
 
+import com.unify.core.UnifyCore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.Serializable
 
 /**
- * 网络服务工厂 - 跨平台接口
+ * 网络服务工厂 - 跨平台网络服务创建和管理
+ * 支持HTTP客户端、WebSocket、文件上传下载等功能
  */
-expect class NetworkServiceFactory {
-    companion object {
-        fun createNetworkManager(): UnifyNetworkManager
-        fun createNetworkCache(): UnifyNetworkCache
-        fun createNetworkMonitor(): UnifyNetworkMonitor
-    }
+expect object NetworkServiceFactory {
+    /**
+     * 创建HTTP客户端实例
+     */
+    fun createHttpClient(config: NetworkConfig = NetworkConfig()): UnifyNetworkService
+    
+    /**
+     * 创建WebSocket客户端
+     */
+    fun createWebSocketClient(url: String): WebSocketClient
+    
+    /**
+     * 创建文件上传客户端
+     */
+    fun createFileUploadClient(): FileUploadClient
+    
+    /**
+     * 获取网络状态监听器
+     */
+    fun getNetworkStatusMonitor(): Flow<NetworkStatus>
 }
 
 /**
- * 统一网络缓存接口
+ * 网络配置
  */
-interface UnifyNetworkCache {
-    suspend fun get(key: String): String?
-    suspend fun put(key: String, value: String, ttl: Long = 0L)
-    suspend fun remove(key: String)
-    suspend fun clear()
-    suspend fun size(): Long
-}
-
-/**
- * 网络连接信息
- */
-data class NetworkConnectionInfo(
-    val isConnected: Boolean,
-    val networkType: NetworkType,
-    val signalStrength: Int = 0
+@Serializable
+data class NetworkConfig(
+    val baseUrl: String = "",
+    val timeout: Long = 30000L,
+    val retryCount: Int = 3,
+    val enableLogging: Boolean = true,
+    val enableCache: Boolean = true,
+    val cacheSize: Long = 10 * 1024 * 1024L, // 10MB
+    val headers: Map<String, String> = emptyMap()
 )
 
-
 /**
- * 网络类型枚举
+ * 网络状态
  */
-enum class NetworkType {
+enum class NetworkStatus {
+    CONNECTED,
+    DISCONNECTED,
+    CONNECTING,
     WIFI,
-    CELLULAR,
+    MOBILE,
     ETHERNET,
     UNKNOWN
 }
 
 /**
- * 重试策略
+ * WebSocket客户端接口
  */
-data class RetryPolicy(
-    val maxRetries: Int = 3,
-    val initialDelay: Long = 1000L,
-    val maxDelay: Long = 30000L,
-    val backoffMultiplier: Double = 2.0,
-    val retryOnConnectionFailure: Boolean = true,
-    val retryOnTimeout: Boolean = true
+interface WebSocketClient {
+    suspend fun connect(): Boolean
+    suspend fun disconnect()
+    suspend fun send(message: String)
+    fun onMessage(callback: (String) -> Unit)
+    fun onError(callback: (Throwable) -> Unit)
+    fun onClose(callback: (Int, String) -> Unit)
+}
+
+/**
+ * 文件上传客户端接口
+ */
+interface FileUploadClient {
+    suspend fun uploadFile(
+        url: String,
+        filePath: String,
+        fieldName: String = "file",
+        additionalData: Map<String, String> = emptyMap(),
+        onProgress: ((Float) -> Unit)? = null
+    ): UploadResult
+    
+    suspend fun uploadMultipleFiles(
+        url: String,
+        files: List<FileUploadInfo>,
+        onProgress: ((Float) -> Unit)? = null
+    ): List<UploadResult>
+}
+
+/**
+ * 文件上传信息
+ */
+@Serializable
+data class FileUploadInfo(
+    val filePath: String,
+    val fieldName: String,
+    val fileName: String? = null,
+    val mimeType: String? = null
 )
 
 /**
- * 网络事件
+ * 上传结果
  */
-sealed class NetworkEvent {
-    data class RequestStart(val url: String, val method: String) : NetworkEvent()
-    data class RequestComplete(val url: String, val statusCode: Int, val duration: Long) : NetworkEvent()
-    data class RequestError(val url: String, val error: Throwable) : NetworkEvent()
-    object Connected : NetworkEvent()
-    object Disconnected : NetworkEvent()
-    data class TypeChanged(val networkType: NetworkType) : NetworkEvent()
-}
+@Serializable
+data class UploadResult(
+    val success: Boolean,
+    val url: String? = null,
+    val error: String? = null,
+    val fileSize: Long = 0L,
+    val uploadTime: Long = 0L
+)

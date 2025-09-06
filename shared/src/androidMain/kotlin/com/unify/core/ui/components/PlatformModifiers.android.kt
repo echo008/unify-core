@@ -5,8 +5,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -16,8 +22,15 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 
 /**
  * Android平台特定的Modifier扩展
@@ -36,11 +49,8 @@ actual fun Modifier.platformClickable(
     
     return this.clickable(
         enabled = enabled,
-        indication = rememberRipple(
-            bounded = true,
-            color = MaterialTheme.colorScheme.primary
-        ),
-        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+        indication = null,
+        interactionSource = remember { MutableInteractionSource() },
         onClick = {
             if (enabled) {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -84,15 +94,10 @@ actual fun Modifier.platformShadow(
     return this
         .let { if (clip) it.clip(shape) else it }
         .then(
-            androidx.compose.material3.surfaceColorAtElevation(
+            background(
                 MaterialTheme.colorScheme.surface,
-                elevation
-            ).let { surfaceColor ->
-                androidx.compose.foundation.background(
-                    surfaceColor,
-                    shape
-                )
-            }
+                shape
+            )
         )
 }
 
@@ -116,7 +121,7 @@ actual fun Modifier.platformBorder(
     shape: Shape
 ): Modifier {
     return this.then(
-        androidx.compose.foundation.border(
+        border(
             width = width,
             color = color,
             shape = shape
@@ -175,18 +180,18 @@ actual fun Modifier.platformAccessibility(
     role: String?
 ): Modifier {
     return this.then(
-        androidx.compose.ui.semantics.semantics {
+        semantics {
             contentDescription?.let { desc ->
                 this.contentDescription = desc
             }
             role?.let { r ->
                 when (r) {
-                    "button" -> this.role = androidx.compose.ui.semantics.Role.Button
-                    "checkbox" -> this.role = androidx.compose.ui.semantics.Role.Checkbox
-                    "switch" -> this.role = androidx.compose.ui.semantics.Role.Switch
-                    "radiobutton" -> this.role = androidx.compose.ui.semantics.Role.RadioButton
-                    "tab" -> this.role = androidx.compose.ui.semantics.Role.Tab
-                    "image" -> this.role = androidx.compose.ui.semantics.Role.Image
+                    "button" -> this.role = Role.Button
+                    "checkbox" -> this.role = Role.Checkbox
+                    "switch" -> this.role = Role.Switch
+                    "radiobutton" -> this.role = Role.RadioButton
+                    "tab" -> this.role = Role.Tab
+                    "image" -> this.role = Role.Image
                 }
             }
         }
@@ -202,8 +207,8 @@ actual fun Modifier.platformScrollable(
 ): Modifier {
     return if (enabled) {
         this.then(
-            androidx.compose.foundation.verticalScroll(
-                androidx.compose.foundation.rememberScrollState()
+            verticalScroll(
+                rememberScrollState()
             )
         )
     } else {
@@ -220,10 +225,10 @@ actual fun Modifier.platformAnimated(
 ): Modifier {
     return if (enabled) {
         this.then(
-            androidx.compose.animation.animateContentSize(
-                animationSpec = androidx.compose.animation.core.spring(
-                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
-                    stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+            animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessLow
                 )
             )
         )

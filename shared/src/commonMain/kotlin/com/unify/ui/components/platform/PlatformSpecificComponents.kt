@@ -87,41 +87,41 @@ interface PlatformSpecificUI {
     fun NativeButton(
         text: String,
         onClick: () -> Unit,
-        modifier: Modifier = Modifier,
-        enabled: Boolean = true
+        modifier: Modifier,
+        enabled: Boolean
     )
     
     @Composable
     fun NativeTextField(
         value: String,
         onValueChange: (String) -> Unit,
-        modifier: Modifier = Modifier,
-        placeholder: String = "",
-        enabled: Boolean = true
+        modifier: Modifier,
+        placeholder: String,
+        enabled: Boolean
     )
     
     @Composable
     fun NativeSwitch(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
-        modifier: Modifier = Modifier,
-        enabled: Boolean = true
+        modifier: Modifier,
+        enabled: Boolean
     )
     
     @Composable
     fun NativeSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
-        modifier: Modifier = Modifier,
-        valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-        enabled: Boolean = true
+        modifier: Modifier,
+        valueRange: ClosedFloatingPointRange<Float>,
+        enabled: Boolean
     )
     
     @Composable
     fun NativeProgressBar(
         progress: Float,
-        modifier: Modifier = Modifier,
-        color: Color = MaterialTheme.colorScheme.primary
+        modifier: Modifier,
+        color: Color
     )
     
     @Composable
@@ -130,15 +130,15 @@ interface PlatformSpecificUI {
         message: String,
         onConfirm: () -> Unit,
         onDismiss: () -> Unit,
-        confirmText: String = "确定",
-        dismissText: String = "取消"
+        confirmText: String,
+        dismissText: String
     )
     
     @Composable
     fun NativeToast(
         message: String,
-        duration: Long = 3000L,
-        onDismiss: () -> Unit = {}
+        duration: Long,
+        onDismiss: () -> Unit
     )
     
     @Composable

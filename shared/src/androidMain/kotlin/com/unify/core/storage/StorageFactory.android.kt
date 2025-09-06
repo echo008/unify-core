@@ -21,37 +21,38 @@ import javax.crypto.spec.SecretKeySpec
 /**
  * Android平台存储工厂实现
  */
-actual class PlatformStorageFactory : StorageFactory {
+
+/**
+ * 创建标准存储
+ */
+actual fun createStorage(config: StorageConfig): UnifyStorage {
+    return AndroidSharedPreferencesStorage(getContext(), config)
+}
+
+/**
+ * 创建加密存储
+ */
+actual fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage {
+    return AndroidEncryptedStorage(getContext(), config, encryptionKey)
+}
+
+actual fun createMemoryStorage(): UnifyStorage {
+    return AndroidMemoryStorage()
+}
+
+actual fun createFileStorage(path: String): UnifyStorage {
+    return AndroidFileStorage(getContext(), path)
+}
+
+private fun getContext(): Context {
+    return AndroidStorageFactory.context ?: throw IllegalStateException("StorageFactory not initialized")
+}
+
+object AndroidStorageFactory {
+    internal var context: Context? = null
     
-    companion object {
-        private var context: Context? = null
-        
-        fun initialize(applicationContext: Context) {
-            context = applicationContext.applicationContext
-        }
-    }
-    
-    actual override fun createStorage(config: StorageConfig): UnifyStorage {
-        val appContext = context ?: throw IllegalStateException("StorageFactory not initialized")
-        return if (config.encrypted) {
-            AndroidEncryptedStorage(appContext, config)
-        } else {
-            AndroidSharedPreferencesStorage(appContext, config)
-        }
-    }
-    
-    actual override fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage {
-        val appContext = context ?: throw IllegalStateException("StorageFactory not initialized")
-        return AndroidEncryptedStorage(appContext, config, encryptionKey)
-    }
-    
-    actual override fun createMemoryStorage(): UnifyStorage {
-        return AndroidMemoryStorage()
-    }
-    
-    actual override fun createFileStorage(path: String): UnifyStorage {
-        val appContext = context ?: throw IllegalStateException("StorageFactory not initialized")
-        return AndroidFileStorage(appContext, path)
+    fun initialize(applicationContext: Context) {
+        context = applicationContext.applicationContext
     }
 }
 
@@ -95,25 +96,29 @@ class AndroidSharedPreferencesStorage(
         }
     }
     
-    override suspend fun delete(key: String) {
-        try {
+    override suspend fun delete(key: String): Boolean {
+        return try {
             if (sharedPreferences.contains(key)) {
                 val editor = sharedPreferences.edit()
                 editor.remove(key)
                 editor.apply()
                 _events.tryEmit(StorageEvent.KeyDeleted(key))
+                true
+            } else {
+                false
             }
         } catch (e: Exception) {
             throw StorageException("Failed to delete key: $key", e)
         }
     }
     
-    override suspend fun clear() {
-        try {
+    override suspend fun clear(): Boolean {
+        return try {
             val editor = sharedPreferences.edit()
             editor.clear()
             editor.apply()
             _events.tryEmit(StorageEvent.Cleared)
+            true
         } catch (e: Exception) {
             throw StorageException("Failed to clear storage", e)
         }
@@ -123,8 +128,8 @@ class AndroidSharedPreferencesStorage(
         return sharedPreferences.contains(key)
     }
     
-    override suspend fun getAllKeys(): Set<String> {
-        return sharedPreferences.all.keys
+    override suspend fun getAllKeys(): List<String> {
+        return sharedPreferences.all.keys.toList()
     }
     
     override suspend fun getSize(): Long {
@@ -286,25 +291,29 @@ class AndroidEncryptedStorage(
         }
     }
     
-    override suspend fun delete(key: String) {
-        try {
+    override suspend fun delete(key: String): Boolean {
+        return try {
             if (encryptedSharedPreferences.contains(key)) {
                 val editor = encryptedSharedPreferences.edit()
                 editor.remove(key)
                 editor.apply()
                 _events.tryEmit(StorageEvent.KeyDeleted(key))
+                true
+            } else {
+                false
             }
         } catch (e: Exception) {
             throw StorageException("Failed to delete encrypted key: $key", e)
         }
     }
     
-    override suspend fun clear() {
-        try {
+    override suspend fun clear(): Boolean {
+        return try {
             val editor = encryptedSharedPreferences.edit()
             editor.clear()
             editor.apply()
             _events.tryEmit(StorageEvent.Cleared)
+            true
         } catch (e: Exception) {
             throw StorageException("Failed to clear encrypted storage", e)
         }
@@ -314,8 +323,8 @@ class AndroidEncryptedStorage(
         return encryptedSharedPreferences.contains(key)
     }
     
-    override suspend fun getAllKeys(): Set<String> {
-        return encryptedSharedPreferences.all.keys
+    override suspend fun getAllKeys(): List<String> {
+        return encryptedSharedPreferences.all.keys.toList()
     }
     
     override suspend fun getSize(): Long {
@@ -462,23 +471,27 @@ class AndroidMemoryStorage : UnifyStorage {
         }
     }
     
-    override suspend fun delete(key: String) {
-        if (storage.remove(key) != null) {
+    override suspend fun delete(key: String): Boolean {
+        return if (storage.remove(key) != null) {
             _events.tryEmit(StorageEvent.KeyDeleted(key))
+            true
+        } else {
+            false
         }
     }
     
-    override suspend fun clear() {
+    override suspend fun clear(): Boolean {
         storage.clear()
         _events.tryEmit(StorageEvent.Cleared)
+        return true
     }
     
     override suspend fun exists(key: String): Boolean {
         return storage.containsKey(key)
     }
     
-    override suspend fun getAllKeys(): Set<String> {
-        return storage.keys.toSet()
+    override suspend fun getAllKeys(): List<String> {
+        return storage.keys.toList()
     }
     
     override suspend fun getSize(): Long {
@@ -571,23 +584,27 @@ class AndroidFileStorage(
         }
     }
     
-    override suspend fun delete(key: String) {
-        try {
+    override suspend fun delete(key: String): Boolean {
+        return try {
             val file = File(storageDir, key)
             if (file.exists() && file.delete()) {
                 _events.tryEmit(StorageEvent.KeyDeleted(key))
+                true
+            } else {
+                false
             }
         } catch (e: Exception) {
             throw StorageException("Failed to delete file for key: $key", e)
         }
     }
     
-    override suspend fun clear() {
-        try {
+    override suspend fun clear(): Boolean {
+        return try {
             storageDir.listFiles()?.forEach { file ->
                 file.delete()
             }
             _events.tryEmit(StorageEvent.Cleared)
+            true
         } catch (e: Exception) {
             throw StorageException("Failed to clear file storage", e)
         }
@@ -597,11 +614,11 @@ class AndroidFileStorage(
         return File(storageDir, key).exists()
     }
     
-    override suspend fun getAllKeys(): Set<String> {
+    override suspend fun getAllKeys(): List<String> {
         return try {
-            storageDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
+            storageDir.listFiles()?.map { it.name } ?: emptyList()
         } catch (e: Exception) {
-            emptySet()
+            emptyList()
         }
     }
     
