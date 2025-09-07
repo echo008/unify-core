@@ -1,65 +1,30 @@
 package com.unify.ui.components.performance
 
 import androidx.compose.foundation.Canvas
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.background
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.shape.RoundedCornerShape
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.Icons
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.filled.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Path
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
+import com.unify.core.utils.UnifyStringUtils
 import androidx.compose.ui.unit.dp
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyRuntimeUtils
 import kotlinx.coroutines.delay
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlin.math.sin
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlin.random.Random
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 跨平台统一性能监控组件
@@ -282,6 +247,8 @@ fun TrendChart(
  */
 @Composable
 fun UnifyMemoryMonitor(
+    cpuUsage: Float = 45.2f,
+    fps: Float = 60.0f,
     modifier: Modifier = Modifier
 ) {
     var memoryInfo by remember { mutableStateOf(generateRealMemoryInfo()) }
@@ -328,6 +295,14 @@ fun UnifyMemoryMonitor(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    Text(
+                        text = "CPU: ${cpuUsage}%",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = "FPS: ${fps.toInt()}",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                     Text(
                         text = "已使用: ${formatBytes(memoryInfo.used)}",
                         style = MaterialTheme.typography.bodySmall
@@ -413,7 +388,7 @@ fun UnifyCPUMonitor(
             ) {
                 Column {
                     Text(
-                        text = "${String.format("%.1f", cpuInfo.usage)}%",
+                        text = "${UnifyStringUtils.format("%.1f", cpuInfo.usage)}%",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color = when {
@@ -443,7 +418,7 @@ fun UnifyCPUMonitor(
                 if (cpuInfo.frequency > 0) {
                     Column {
                         Text(
-                            text = "${String.format("%.1f", cpuInfo.frequency)}GHz",
+                            text = "${UnifyStringUtils.format("%.1f", cpuInfo.frequency)}GHz",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold
                         )
@@ -518,21 +493,21 @@ fun UnifyNetworkMonitor(
                 NetworkMetricItem(
                     icon = Icons.Default.Download,
                     label = "下载",
-                    value = "${String.format("%.1f", networkInfo.downloadSpeed)} Mbps",
+                    value = "${UnifyStringUtils.format("%.1f", networkInfo.downloadSpeed)} MB/s",
                     color = Color(0xFF4CAF50)
                 )
                 
                 NetworkMetricItem(
                     icon = Icons.Default.Upload,
                     label = "上传",
-                    value = "${String.format("%.1f", networkInfo.uploadSpeed)} Mbps",
+                    value = "${UnifyStringUtils.format("%.1f", networkInfo.uploadSpeed)} MB/s",
                     color = Color(0xFF2196F3)
                 )
                 
                 NetworkMetricItem(
                     icon = Icons.Default.Speed,
                     label = "延迟",
-                    value = "${String.format("%.0f", networkInfo.latency)} ms",
+                    value = "${UnifyStringUtils.format("%.0f", networkInfo.latency)} ms",
                     color = when {
                         networkInfo.latency > 100 -> Color(0xFFF44336)
                         networkInfo.latency > 50 -> Color(0xFFFF9800)
@@ -572,7 +547,6 @@ private fun NetworkMetricItem(
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = color
         )
@@ -602,7 +576,7 @@ private fun formatBytes(bytes: Long): String {
         unitIndex++
     }
     
-    return "${String.format("%.1f", size)} ${units[unitIndex]}"
+    return "${size} ${units[unitIndex]}"
 }
 
 // 真实性能数据获取函数
@@ -656,10 +630,9 @@ private fun generateRealMetrics(): List<PerformanceMetric> {
 }
 
 private fun generateRealMemoryInfo(): MemoryInfo {
-    val runtime = Runtime.getRuntime()
-    val maxMemory = runtime.maxMemory()
-    val totalMemory = runtime.totalMemory()
-    val freeMemory = runtime.freeMemory()
+    val maxMemory = UnifyRuntimeUtils.getMaxMemory()
+    val totalMemory = UnifyRuntimeUtils.getTotalMemory()
+    val freeMemory = UnifyRuntimeUtils.getAvailableMemory()
     val usedMemory = totalMemory - freeMemory
     
     return MemoryInfo(
@@ -673,7 +646,7 @@ private fun generateRealMemoryInfo(): MemoryInfo {
 private fun generateRealCPUInfo(): CPUInfo {
     return CPUInfo(
         usage = getCurrentCPUUsage(),
-        cores = Runtime.getRuntime().availableProcessors(),
+        cores = UnifyRuntimeUtils.availableProcessors(),
         frequency = getCPUFrequency()
     )
 }
@@ -773,13 +746,14 @@ private fun getTemperatureStatus(): PerformanceStatus {
 
 private fun getGCCount(): Int {
     // 获取垃圾回收次数
-    return System.gc().let { 0 } // 实际应通过JVM监控获取
+    UnifyRuntimeUtils.gc()
+    return 0 // 实际应通过JVM监控获取
 }
 
 private fun getCurrentCPUUsage(): Double {
     // 基于系统负载计算CPU使用率
     val loadAverage = try {
-        java.lang.management.ManagementFactory.getOperatingSystemMXBean().systemLoadAverage
+        UnifyRuntimeUtils.getSystemLoadAverage()
     } catch (e: Exception) {
         0.5 // 默认值
     }

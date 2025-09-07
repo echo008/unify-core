@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyReflectionUtils
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 
@@ -663,7 +664,7 @@ private fun LifecycleEventItem(
         ) {
             Column {
                 Text(
-                    text = event.javaClass.simpleName,
+                    text = UnifyReflectionUtils.getClassName(event),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Medium
                 )

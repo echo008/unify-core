@@ -180,7 +180,7 @@ class DynamicManagementConsole {
             val alert = Alert(
                 id = "cpu-high",
                 type = AlertType.WARNING,
-                message = "CPU使用率过高: ${String.format("%.1f", metrics.cpuUsage)}%",
+                message = "CPU使用率过高: ${metrics.cpuUsage}%",
                 timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {
@@ -195,7 +195,7 @@ class DynamicManagementConsole {
             val alert = Alert(
                 id = "memory-high",
                 type = AlertType.WARNING,
-                message = "内存使用率过高: ${String.format("%.1f", metrics.memoryUsage)}%",
+                message = "内存使用率过高: ${metrics.memoryUsage}%",
                 timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {
@@ -210,7 +210,7 @@ class DynamicManagementConsole {
             val alert = Alert(
                 id = "error-rate-high",
                 type = AlertType.ERROR,
-                message = "错误率过高: ${String.format("%.1f", metrics.errorRate)}%",
+                message = "错误率过高: ${metrics.errorRate}%",
                 timestamp = getCurrentTimeMillis()
             )
             if (!currentAlerts.any { it.id == alert.id }) {

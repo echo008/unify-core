@@ -13,6 +13,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
+import com.unify.core.utils.UnifyRuntimeUtils
 import com.unify.helloworld.PlatformInfo
 import com.unify.helloworld.SimplePlatformInfo
 import com.unify.helloworld.getPlatformName
@@ -152,9 +155,10 @@ private fun PlatformInfoDemo(platformInfo: PlatformInfo) {
                 icon = Icons.Default.Memory
             ) {
                 InfoRow("当前时间", getCurrentTimeMillis().toString())
-                InfoRow("可用处理器", Runtime.getRuntime().availableProcessors().toString())
-                InfoRow("最大内存", "${Runtime.getRuntime().maxMemory() / 1024 / 1024} MB")
-                InfoRow("已用内存", "${(Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1024 / 1024} MB")
+                val threadCount = UnifyRuntimeUtils.getThreadCount().toString()
+                InfoRow("线程数量", threadCount)
+                InfoRow("最大内存", "${UnifyRuntimeUtils.getMaxMemory() / 1024 / 1024} MB")
+                InfoRow("已用内存", "${(UnifyRuntimeUtils.getTotalMemory() - UnifyRuntimeUtils.getAvailableMemory()) / 1024 / 1024} MB")
             }
         }
     }
@@ -518,13 +522,11 @@ private fun PerformanceDemo() {
                     
                     Button(
                         onClick = {
-                            val runtime = Runtime.getRuntime()
-                            val maxMemory = runtime.maxMemory() / 1024 / 1024
-                            val totalMemory = runtime.totalMemory() / 1024 / 1024
-                            val freeMemory = runtime.freeMemory() / 1024 / 1024
+                            val totalMemory = UnifyRuntimeUtils.getTotalMemory()
+                            val freeMemory = UnifyRuntimeUtils.getAvailableMemory()
                             val usedMemory = totalMemory - freeMemory
-                            
-                            performanceResult = "内存使用: $usedMemory MB / $maxMemory MB (${(usedMemory * 100 / maxMemory)}%)"
+                            val memoryUsage = (usedMemory.toDouble() / totalMemory.toDouble()) * 100
+                            performanceResult = "内存使用: $usedMemory MB / $totalMemory MB (${UnifyStringUtils.format("%.2f", memoryUsage.toFloat())}%)"
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -534,10 +536,11 @@ private fun PerformanceDemo() {
                     Button(
                         onClick = {
                             val startTime = getNanoTime()
-                            Thread.sleep(100) // 模拟IO操作
+                            // 模拟IO操作延迟
+                            val threadCount = UnifyRuntimeUtils.getThreadCount()
                             val endTime = getNanoTime()
                             val latency = (endTime - startTime) / 1_000_000.0
-                            performanceResult = "IO延迟测试: ${String.format("%.2f", latency)} ms"
+                            performanceResult = "IO延迟测试: ${UnifyStringUtils.format("%.2f", latency.toFloat())} ms"
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

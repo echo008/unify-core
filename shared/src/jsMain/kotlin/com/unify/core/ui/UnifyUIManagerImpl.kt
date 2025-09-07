@@ -191,18 +191,17 @@ class UnifyUIManagerImpl : UnifyUIManager {
     
     private fun applyThemeToDocument(theme: UnifyTheme) {
         val root = document.documentElement
-        root?.style?.apply {
-            setProperty("--primary-color", colorToHex(theme.primaryColor))
-            setProperty("--secondary-color", colorToHex(theme.secondaryColor))
-            setProperty("--background-color", colorToHex(theme.backgroundColor))
-            setProperty("--surface-color", colorToHex(theme.surfaceColor))
-            setProperty("--error-color", colorToHex(theme.errorColor))
-            setProperty("--on-primary-color", colorToHex(theme.onPrimaryColor))
-            setProperty("--on-secondary-color", colorToHex(theme.onSecondaryColor))
-            setProperty("--on-background-color", colorToHex(theme.onBackgroundColor))
-            setProperty("--on-surface-color", colorToHex(theme.onSurfaceColor))
-            setProperty("--on-error-color", colorToHex(theme.onErrorColor))
-        }
+        val rootStyle = root?.asDynamic()?.style
+        rootStyle?.setProperty("--primary-color", colorToHex(theme.primaryColor))
+        rootStyle?.setProperty("--secondary-color", colorToHex(theme.secondaryColor))
+        rootStyle?.setProperty("--background-color", colorToHex(theme.backgroundColor))
+        rootStyle?.setProperty("--surface-color", colorToHex(theme.surfaceColor))
+        rootStyle?.setProperty("--error-color", colorToHex(theme.errorColor))
+        rootStyle?.setProperty("--on-primary-color", colorToHex(theme.onPrimaryColor))
+        rootStyle?.setProperty("--on-secondary-color", colorToHex(theme.onSecondaryColor))
+        rootStyle?.setProperty("--on-background-color", colorToHex(theme.onBackgroundColor))
+        rootStyle?.setProperty("--on-surface-color", colorToHex(theme.onSurfaceColor))
+        rootStyle?.setProperty("--on-error-color", colorToHex(theme.onErrorColor))
         
         // 设置body背景色
         document.body?.style?.backgroundColor = colorToHex(theme.backgroundColor)
@@ -211,7 +210,7 @@ class UnifyUIManagerImpl : UnifyUIManager {
     
     private fun applyFontScaleToDocument(scale: Float) {
         val root = document.documentElement
-        root?.style?.fontSize = "${scale * 16}px" // 16px是默认字体大小
+        root?.asDynamic()?.style?.fontSize = "${scale * 16}px" // 16px是默认字体大小
     }
     
     private fun colorToHex(color: Color): String {

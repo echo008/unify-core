@@ -3,6 +3,7 @@ package com.unify.ui.components.accessibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import com.unify.core.utils.UnifyStringUtils
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.invisibleToUser
@@ -211,7 +212,7 @@ fun UnifyAccessibleSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     enabled: Boolean = true,
-    valueFormatter: (Float) -> String = { "%.1f".format(it) }
+    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it * 100) }
 ) {
     Column(
         modifier = modifier.semantics {

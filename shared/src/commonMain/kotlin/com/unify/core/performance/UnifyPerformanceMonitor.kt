@@ -1,4 +1,6 @@
 package com.unify.core.performance
+
+import com.unify.core.utils.UnifyPlatformUtils
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 
@@ -160,12 +162,12 @@ class UnifyPerformanceMonitorImpl : UnifyPerformanceMonitor {
                 appendLine("=== Unify 性能监控报告 ===")
                 appendLine("时间: ${currentMetrics.timestamp}")
                 appendLine("性能指标:")
-                appendLine("- CPU使用率: ${String.format("%.1f", currentMetrics.cpuUsage)}%")
+                appendLine("- CPU使用率: ${UnifyPlatformUtils.formatFloat(currentMetrics.cpuUsage, 1)}%")
                 appendLine("- 内存使用: ${currentMetrics.memoryUsage / BYTES_TO_MB_DIVISOR}MB")
-                appendLine("- 帧率: ${String.format("%.1f", currentMetrics.frameRate)} FPS")
+                appendLine("- 帧率: ${UnifyPlatformUtils.formatFloat(currentMetrics.frameRate, 1)} FPS")
                 appendLine("- 渲染时间: ${currentMetrics.renderTime}ms")
                 appendLine("- 网络延迟: ${currentMetrics.networkLatency}ms")
-                appendLine("- 电池电量: ${String.format("%.1f", currentMetrics.batteryLevel)}%")
+                appendLine("- 电池电量: ${UnifyPlatformUtils.formatFloat(currentMetrics.batteryLevel, 1)}%")
             }
             UnifyResult.Success(report)
         } catch (e: Exception) {

@@ -1,18 +1,24 @@
-package com.unify.core.data
+package com.unify.data
 
-import com.unify.core.data.*
-import kotlinx.coroutines.flow.Flow
+import com.unify.data.UnifyDataManager
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import com.unify.core.utils.UnifyStringUtils
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.MapSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.browser.localStorage
+import kotlin.js.Date
+import kotlinx.coroutines.flow.Flow
 
 /**
  * JS平台UnifyDataManager实现
  * 基于浏览器localStorage、IndexedDB和Service Worker缓存
  */
-class UnifyDataManagerImpl : UnifyDataManager {
+actual class UnifyDataManagerImpl actual constructor() : UnifyDataManager {
     
     // 数据变化监听
     private val dataChangeFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
@@ -20,69 +26,69 @@ class UnifyDataManagerImpl : UnifyDataManager {
     // 缓存管理
     private val cache = mutableMapOf<String, CacheEntry>()
     
-    // JS存储管理器
-    private val jsStorageManager = JSStorageManager()
+    // 使用localStorage作为存储
+    private val storage = localStorage
     
-    override suspend fun putString(key: String, value: String) {
-        jsStorageManager.putString(key, value)
+    override suspend fun saveString(key: String, value: String) {
+        storage.setItem(key, value)
         notifyDataChange(key, value)
     }
     
     override suspend fun getString(key: String, defaultValue: String): String {
-        return jsStorageManager.getString(key, defaultValue)
+        return storage.getItem(key) ?: defaultValue
     }
     
-    override suspend fun putInt(key: String, value: Int) {
-        jsStorageManager.putInt(key, value)
+    override suspend fun saveInt(key: String, value: Int) {
+        storage.setItem(key, value.toString())
         notifyDataChange(key, value)
     }
     
     override suspend fun getInt(key: String, defaultValue: Int): Int {
-        return jsStorageManager.getInt(key, defaultValue)
+        return storage.getItem(key)?.toIntOrNull() ?: defaultValue
     }
     
-    override suspend fun putLong(key: String, value: Long) {
-        jsStorageManager.putLong(key, value)
-        notifyDataChange(key, value)
-    }
-    
-    override suspend fun getLong(key: String, defaultValue: Long): Long {
-        return jsStorageManager.getLong(key, defaultValue)
-    }
-    
-    override suspend fun putFloat(key: String, value: Float) {
-        jsStorageManager.putFloat(key, value)
+    override suspend fun saveFloat(key: String, value: Float) {
+        storage.setItem(key, value.toString())
         notifyDataChange(key, value)
     }
     
     override suspend fun getFloat(key: String, defaultValue: Float): Float {
-        return jsStorageManager.getFloat(key, defaultValue)
+        return storage.getItem(key)?.toFloatOrNull() ?: defaultValue
     }
     
-    override suspend fun putBoolean(key: String, value: Boolean) {
-        jsStorageManager.putBoolean(key, value)
+    override suspend fun saveBoolean(key: String, value: Boolean) {
+        storage.setItem(key, value.toString())
         notifyDataChange(key, value)
     }
     
-    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        return jsStorageManager.getBoolean(key, defaultValue)
+    override suspend fun saveLong(key: String, value: Long) {
+        storage.setItem(key, value.toString())
+        notifyDataChange(key, value)
     }
     
-    override suspend fun <T> putObject(key: String, value: T) {
+    override suspend fun getLong(key: String, defaultValue: Long): Long {
+        return storage.getItem(key)?.toLongOrNull() ?: defaultValue
+    }
+    
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean {
+        return storage.getItem(key)?.toBooleanStrictOrNull() ?: defaultValue
+    }
+    
+    override suspend fun saveObject(key: String, value: Any) {
         try {
-            val jsonString = Json.encodeToString(value)
-            jsStorageManager.putString(key, jsonString)
+            val jsonString = JSON.stringify(value)
+            storage.setItem(key, jsonString)
             notifyDataChange(key, value)
         } catch (e: Exception) {
-            throw DataException("Failed to serialize object: ${e.message}")
+            throw Exception("Failed to save data: ${e.message}")
         }
     }
     
-    override suspend fun <T> getObject(key: String, defaultValue: T): T {
+    override suspend fun <T> getObject(key: String, defaultValue: T, serializer: kotlinx.serialization.KSerializer<T>): T {
         return try {
-            val jsonString = jsStorageManager.getString(key, "")
-            if (jsonString.isNotEmpty()) {
-                Json.decodeFromString<T>(jsonString)
+            val jsonString = storage.getItem(key)
+            if (!jsonString.isNullOrEmpty()) {
+                Json.decodeFromString(serializer, jsonString)
             } else {
                 defaultValue
             }
@@ -91,41 +97,99 @@ class UnifyDataManagerImpl : UnifyDataManager {
         }
     }
     
+    override suspend fun contains(key: String): Boolean {
+        return storage.getItem(key) != null
+    }
+    
     override suspend fun remove(key: String) {
-        jsStorageManager.remove(key)
+        storage.removeItem(key)
         notifyDataChange(key, null)
     }
     
     override suspend fun clear() {
-        jsStorageManager.clear()
+        storage.clear()
         dataChangeFlows.values.forEach { flow ->
             flow.value = null
         }
     }
     
-    override suspend fun contains(key: String): Boolean {
-        return jsStorageManager.contains(key)
-    }
     
     override suspend fun getAllKeys(): Set<String> {
-        return jsStorageManager.getAllKeys()
-    }
-    
-    override fun <T> observeData(key: String): Flow<T?> {
-        val flow = dataChangeFlows.getOrPut(key) {
-            MutableStateFlow(jsStorageManager.getString(key, ""))
+        val keys = mutableSetOf<String>()
+        for (i in 0 until storage.length) {
+            storage.key(i)?.let { keys.add(it) }
         }
-        return flow.asStateFlow() as Flow<T?>
+        return keys
     }
     
-    override suspend fun putCache(key: String, value: Any, ttlMillis: Long) {
-        val expiryTime = System.currentTimeMillis() + ttlMillis
+    override fun observeString(key: String, defaultValue: String): Flow<String> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(storage.getItem(key) ?: defaultValue)
+        }
+        return flow.asStateFlow() as Flow<String>
+    }
+    
+    override fun observeInt(key: String, defaultValue: Int): Flow<Int> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(storage.getItem(key)?.toIntOrNull() ?: defaultValue)
+        }
+        return flow.asStateFlow() as Flow<Int>
+    }
+    
+    override fun observeBoolean(key: String, defaultValue: Boolean): Flow<Boolean> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(storage.getItem(key)?.toBooleanStrictOrNull() ?: defaultValue)
+        }
+        return flow.asStateFlow() as Flow<Boolean>
+    }
+    
+    override fun observeFloat(key: String, defaultValue: Float): Flow<Float> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(storage.getItem(key)?.toFloatOrNull() ?: defaultValue)
+        }
+        return flow.asStateFlow() as Flow<Float>
+    }
+    
+    override fun observeLong(key: String, defaultValue: Long): Flow<Long> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            MutableStateFlow(storage.getItem(key)?.toLongOrNull() ?: defaultValue)
+        }
+        return flow.asStateFlow() as Flow<Long>
+    }
+    
+    override suspend fun saveToSecureStorage(key: String, value: String) {
+        // JS平台使用localStorage作为安全存储
+        storage.setItem("secure_$key", value)
+        notifyDataChange(key, value)
+    }
+    
+    
+    private fun <T> observeObjectInternal(key: String, defaultValue: T, serializer: kotlinx.serialization.KSerializer<T>): Flow<T> {
+        val flow = dataChangeFlows.getOrPut(key) {
+            val storedValue = try {
+                val jsonString = storage.getItem(key)
+                if (!jsonString.isNullOrEmpty()) {
+                    Json.decodeFromString(serializer, jsonString)
+                } else {
+                    defaultValue
+                }
+            } catch (e: Exception) {
+                defaultValue
+            }
+            MutableStateFlow(storedValue)
+        }
+        return flow.asStateFlow() as Flow<T>
+    }
+    
+    // 缓存相关方法（简化实现）
+    private fun putCache(key: String, value: Any, ttlMillis: Long) {
+        val expiryTime = Date.now() + ttlMillis
         cache[key] = CacheEntry(value, expiryTime)
     }
     
-    override suspend fun <T> getCache(key: String): T? {
+    private fun <T> getCache(key: String): T? {
         val entry = cache[key]
-        return if (entry != null && !entry.isExpired()) {
+        return if (entry != null && !isExpired(entry)) {
             entry.value as? T
         } else {
             cache.remove(key)
@@ -133,34 +197,15 @@ class UnifyDataManagerImpl : UnifyDataManager {
         }
     }
     
-    override suspend fun removeCache(key: String) {
+    private fun removeCache(key: String) {
         cache.remove(key)
     }
     
-    override suspend fun clearCache() {
+    private fun clearCache() {
         cache.clear()
     }
     
-    override suspend fun clearExpiredCache() {
-        val expiredKeys = cache.filter { it.value.isExpired() }.keys
-        expiredKeys.forEach { cache.remove(it) }
-    }
     
-    override suspend fun syncToCloud() {
-        try {
-            jsStorageManager.syncToCloud()
-        } catch (e: Exception) {
-            throw DataException("Cloud sync failed: ${e.message}")
-        }
-    }
-    
-    override suspend fun syncFromCloud() {
-        try {
-            jsStorageManager.syncFromCloud()
-        } catch (e: Exception) {
-            throw DataException("Cloud sync failed: ${e.message}")
-        }
-    }
     
     private fun notifyDataChange(key: String, value: Any?) {
         val flow = dataChangeFlows.getOrPut(key) {
@@ -169,93 +214,63 @@ class UnifyDataManagerImpl : UnifyDataManager {
         flow.value = value
     }
     
+    private fun isExpired(entry: CacheEntry): Boolean {
+        return Date.now() > entry.expiryTime
+    }
+    
+    /**
+     * 缓存条目
+     */
     private data class CacheEntry(
         val value: Any,
-        val expiryTime: Long
-    ) {
-        fun isExpired(): Boolean = System.currentTimeMillis() > expiryTime
+        val expiryTime: Double
+    )
+    
+    /**
+     * 清理过期缓存
+     */
+    private fun cleanupExpiredCache() {
+        val currentTime = Date.now()
+        val expiredKeys = cache.filter { (_, entry) ->
+            currentTime > entry.expiryTime
+        }.keys
+        expiredKeys.forEach { cache.remove(it) }
+    }
+    
+    override suspend fun getFromSecureStorage(key: String, defaultValue: String): String {
+        return storage.getItem("secure_$key") ?: defaultValue
+    }
+    
+    override suspend fun saveFile(fileName: String, data: ByteArray) {
+        // JS平台文件保存的简化实现
+        val base64Data = data.joinToString("") { UnifyStringUtils.format("%02x", it) }
+        storage.setItem("file_$fileName", base64Data)
+    }
+    
+    override suspend fun getFile(fileName: String): ByteArray? {
+        // JS平台文件读取的简化实现
+        val hexString = storage.getItem("file_$fileName") ?: return null
+        return try {
+            hexString.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+        } catch (e: Exception) {
+            null
+        }
+    }
+    
+    override suspend fun deleteFile(fileName: String): Boolean {
+        return try {
+            storage.removeItem("file_$fileName")
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+    
+    override suspend fun fileExists(fileName: String): Boolean {
+        return storage.getItem("file_$fileName") != null
     }
 }
 
-// JS存储管理器模拟实现
-private class JSStorageManager {
-    private val localStorage = mutableMapOf<String, String>()
-    
-    fun putString(key: String, value: String) {
-        localStorage[key] = value
-        // 实际实现中会使用window.localStorage.setItem(key, value)
-    }
-    
-    fun getString(key: String, defaultValue: String): String {
-        return localStorage[key] ?: defaultValue
-        // 实际实现中会使用window.localStorage.getItem(key) ?: defaultValue
-    }
-    
-    fun putInt(key: String, value: Int) {
-        localStorage[key] = value.toString()
-    }
-    
-    fun getInt(key: String, defaultValue: Int): Int {
-        return localStorage[key]?.toIntOrNull() ?: defaultValue
-    }
-    
-    fun putLong(key: String, value: Long) {
-        localStorage[key] = value.toString()
-    }
-    
-    fun getLong(key: String, defaultValue: Long): Long {
-        return localStorage[key]?.toLongOrNull() ?: defaultValue
-    }
-    
-    fun putFloat(key: String, value: Float) {
-        localStorage[key] = value.toString()
-    }
-    
-    fun getFloat(key: String, defaultValue: Float): Float {
-        return localStorage[key]?.toFloatOrNull() ?: defaultValue
-    }
-    
-    fun putBoolean(key: String, value: Boolean) {
-        localStorage[key] = value.toString()
-    }
-    
-    fun getBoolean(key: String, defaultValue: Boolean): Boolean {
-        return localStorage[key]?.toBooleanStrictOrNull() ?: defaultValue
-    }
-    
-    fun remove(key: String) {
-        localStorage.remove(key)
-        // 实际实现中会使用window.localStorage.removeItem(key)
-    }
-    
-    fun clear() {
-        localStorage.clear()
-        // 实际实现中会使用window.localStorage.clear()
-    }
-    
-    fun contains(key: String): Boolean {
-        return localStorage.containsKey(key)
-        // 实际实现中会使用window.localStorage.getItem(key) != null
-    }
-    
-    fun getAllKeys(): Set<String> {
-        return localStorage.keys.toSet()
-        // 实际实现中会遍历window.localStorage.length和window.localStorage.key(i)
-    }
-    
-    suspend fun syncToCloud() {
-        // 实际实现中会使用Service Worker或Web API同步到云端
-        println("Syncing to cloud via Service Worker")
-    }
-    
-    suspend fun syncFromCloud() {
-        // 实际实现中会从云端同步数据
-        println("Syncing from cloud via Service Worker")
-    }
-}
-
-actual object UnifyDataManagerFactory {
-    actual fun create(): UnifyDataManager {
-        return UnifyDataManagerImpl()
-    }
-}
+/**
+ * JS平台UnifyDataManager工厂
+ */

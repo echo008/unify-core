@@ -62,8 +62,8 @@ actual fun UnifyFloatingActionButton(
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
-        containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else FloatingActionButtonDefaults.containerColor,
-        contentColor = if (contentColor != Color.Unspecified) contentColor else FloatingActionButtonDefaults.contentColor,
+        containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primaryContainer,
+        contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimaryContainer,
         content = content
     )
 }

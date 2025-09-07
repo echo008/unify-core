@@ -7,6 +7,8 @@
 gradle-app.setting
 .gradletasknamecache
 
+.windsurf/
+
 # IntelliJ IDEA / Android Studio
 .idea/
 *.iml

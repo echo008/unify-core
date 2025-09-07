@@ -1,7 +1,7 @@
 package com.unify.helloworld
 
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import kotlinx.serialization.Serializable
+import com.unify.core.utils.UnifyTimeUtils
 
 /**
  * 跨平台信息接口
@@ -45,7 +45,7 @@ class SimplePlatformInfo {
     }
     
     private fun getArchitecture(): String {
-        return System.getProperty("os.arch") ?: "unknown"
+        return "unknown" // 简化实现，避免System引用
     }
     
     private fun isDebugBuild(): Boolean {

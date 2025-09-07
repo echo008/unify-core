@@ -21,6 +21,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
 
 /**
  * Unify复选框组件
@@ -530,7 +532,7 @@ fun UnifySliderWithLabel(
     steps: Int = 0,
     enabled: Boolean = true,
     showValue: Boolean = true,
-    valueFormatter: (Float) -> String = { "%.1f".format(it) }
+    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it) }
 ) {
     Column(
         modifier = modifier,

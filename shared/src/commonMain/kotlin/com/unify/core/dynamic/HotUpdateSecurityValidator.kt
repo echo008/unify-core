@@ -6,13 +6,11 @@ import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import com.unify.core.utils.UnifyTimeUtils
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 import kotlin.collections.mutableListOf
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlin.collections.mutableSetOf
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 
@@ -27,7 +25,7 @@ data class SecurityValidationResult(
     val warnings: List<String> = emptyList(),
     val reason: String = "",
     val checksum: String = "",
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = UnifyTimeUtils.currentTimeMillis()
 )
 
 @Serializable
@@ -574,7 +572,7 @@ class HotUpdateSecurityValidatorImpl(
     }
     
     private fun generateResultChecksum(component: DynamicComponent, violations: List<SecurityViolation>): String {
-        val content = "${component.id}${violations.size}${getCurrentTimeMillis()}"
+        val content = "${component.id}${violations.size}${UnifyTimeUtils.currentTimeMillis()}"
         return calculateChecksum(content)
     }
     

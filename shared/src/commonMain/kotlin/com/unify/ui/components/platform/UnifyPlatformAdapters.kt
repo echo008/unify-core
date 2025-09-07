@@ -112,6 +112,36 @@ enum class NetworkType {
 }
 
 /**
+ * 平台按钮样式枚举
+ */
+@Serializable
+enum class PlatformButtonStyle {
+    PRIMARY,
+    SECONDARY,
+    DESTRUCTIVE
+}
+
+/**
+ * 平台文本输入框样式枚举
+ */
+@Serializable
+enum class PlatformTextFieldStyle {
+    DEFAULT,
+    OUTLINED,
+    FILLED
+}
+
+/**
+ * 操作表项目样式枚举
+ */
+@Serializable
+enum class ActionSheetItemStyle {
+    DEFAULT,
+    DESTRUCTIVE,
+    CANCEL
+}
+
+/**
  * 平台适配器工厂
  */
 expect object UnifyPlatformAdapterFactory {

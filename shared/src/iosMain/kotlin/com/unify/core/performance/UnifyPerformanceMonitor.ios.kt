@@ -1,6 +1,7 @@
 package com.unify.core.performance
 
 import com.unify.core.types.UnifyResult
+import com.unify.core.error.UnifyException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -9,6 +10,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import platform.Foundation.NSDate
+import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.NSProcessInfo
 import platform.UIKit.UIDevice
 
@@ -48,8 +51,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             _isMonitoring.value = true
             startMetricsCollection()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("启动iOS性能监控失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("启动iOS性能监控失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -60,8 +63,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             monitoringJob = null
             frameHistory.clear()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("停止iOS性能监控失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("停止iOS性能监控失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -71,8 +74,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             _metrics.value = currentMetrics
             checkThresholds(currentMetrics)
             UnifyResult.Success(currentMetrics)
-        } catch (e: Exception) {
-            UnifyResult.Error("获取iOS性能指标失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("获取iOS性能指标失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -81,8 +84,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             val currentMetrics = _metrics.value
             val level = calculatePerformanceLevel(currentMetrics)
             UnifyResult.Success(level)
-        } catch (e: Exception) {
-            UnifyResult.Error("计算iOS性能等级失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("获取iOS内存信息失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -90,8 +93,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
         return try {
             this.thresholds = thresholds
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("设置iOS性能阈值失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("设置iOS性能阈值失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -99,8 +102,8 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
         return try {
             _alerts.value = emptyList()
             UnifyResult.Success(Unit)
-        } catch (e: Exception) {
-            UnifyResult.Error("清除iOS性能警告失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("清除iOS性能警告失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -119,9 +122,9 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
                 appendLine()
                 appendLine("性能指标:")
                 appendLine("- 内存使用: ${currentMetrics.memoryUsage / BYTES_TO_MB}MB")
-                appendLine("- 帧率: ${String.format("%.1f", currentMetrics.frameRate)} FPS")
+                appendLine("- 帧率: ${currentMetrics.frameRate} FPS")
                 appendLine("- 渲染时间: ${currentMetrics.renderTime}ms")
-                appendLine("- 电池电量: ${String.format("%.1f", currentMetrics.batteryLevel)}%")
+                appendLine("- 电池电量: ${currentMetrics.batteryLevel}%")
                 appendLine()
                 appendLine("性能等级: ${calculatePerformanceLevel(currentMetrics)}")
                 
@@ -129,14 +132,13 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
                     appendLine()
                     appendLine("性能警告:")
                     currentAlerts.forEach { alert ->
-                        appendLine("- [${alert.level}] ${alert.message}")
                     }
                 }
             }
             
             UnifyResult.Success(report)
-        } catch (e: Exception) {
-            UnifyResult.Error("导出iOS性能报告失败: ${e.message}")
+        } catch (e: Throwable) {
+            UnifyResult.Failure(UnifyException("导出iOS性能报告失败: ${e.message ?: "未知错误"}"))
         }
     }
     
@@ -147,7 +149,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
                     val metrics = collectCurrentMetrics()
                     _metrics.value = metrics
                     checkThresholds(metrics)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     // 记录错误但继续监控
                 }
                 delay(MONITORING_INTERVAL)
@@ -162,9 +164,9 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             memoryTotal = getTotalMemory(),
             frameRate = calculateFrameRate(),
             renderTime = getLastRenderTime(),
+            batteryLevel = UIDevice.currentDevice.batteryLevel * 100f,
             networkLatency = 0L, // 需要网络测试实现
-            batteryLevel = getBatteryLevel(),
-            timestamp = platform.Foundation.NSDate().timeIntervalSince1970.toLong() * 1000
+            timestamp = (NSDate().timeIntervalSince1970 * 1000).toLong()
         )
     }
     
@@ -173,7 +175,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             // 使用mach API获取内存使用情况
             // 这里简化实现，实际需要调用mach_task_basic_info
             0L
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             0L
         }
     }
@@ -182,7 +184,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
         return try {
             // 使用NSProcessInfo获取物理内存
             NSProcessInfo.processInfo.physicalMemory.toLong()
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             0L
         }
     }
@@ -211,13 +213,13 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             } else {
                 100f // 无法获取时默认满电
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             100f
         }
     }
     
-    fun recordFrameTime(frameTime: Long) {
-        frameHistory.add(frameTime)
+    override fun recordFrameTime(frameDuration: Long) {
+        frameHistory.add(frameDuration)
         if (frameHistory.size > FRAME_HISTORY_SIZE) {
             frameHistory.removeAt(0)
         }
@@ -235,7 +237,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             newAlerts.add(
                 UnifyPerformanceAlert(
                     level = if (memoryPercent > 95f) UnifyPerformanceLevel.CRITICAL else UnifyPerformanceLevel.POOR,
-                    message = "内存使用率过高: ${String.format("%.1f", memoryPercent)}%",
+                    message = "内存使用率过高: ${memoryPercent}%",
                     metric = "memory_usage",
                     value = memoryPercent,
                     threshold = thresholds.maxMemoryUsage
@@ -248,7 +250,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             newAlerts.add(
                 UnifyPerformanceAlert(
                     level = if (metrics.frameRate < 15f) UnifyPerformanceLevel.CRITICAL else UnifyPerformanceLevel.POOR,
-                    message = "帧率过低: ${String.format("%.1f", metrics.frameRate)} FPS",
+                    message = "帧率过低: ${metrics.frameRate} FPS",
                     metric = "frame_rate",
                     value = metrics.frameRate,
                     threshold = thresholds.minFrameRate
@@ -261,7 +263,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             newAlerts.add(
                 UnifyPerformanceAlert(
                     level = if (metrics.batteryLevel < 10f) UnifyPerformanceLevel.CRITICAL else UnifyPerformanceLevel.POOR,
-                    message = "电池电量过低: ${String.format("%.1f", metrics.batteryLevel)}%",
+                    message = "电池电量过低: ${metrics.batteryLevel}%",
                     metric = "battery_level",
                     value = metrics.batteryLevel,
                     threshold = thresholds.minBatteryLevel

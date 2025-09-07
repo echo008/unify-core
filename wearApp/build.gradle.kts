@@ -1,7 +1,55 @@
 plugins {
-    alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.compose.multiplatform)
+    alias(libs.plugins.android.application)
+}
+
+kotlin {
+    jvmToolchain(17)
+    
+    androidTarget {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
+    
+    sourceSets {
+        val androidMain by getting {
+            dependencies {
+                implementation(project(":shared"))
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                
+                // Wear Compose
+                implementation("androidx.wear.compose:compose-foundation:1.3.0")
+                implementation("androidx.wear.compose:compose-material:1.3.0")
+                implementation("androidx.wear.compose:compose-navigation:1.3.0")
+                
+                // Activity
+                implementation("androidx.activity:activity-compose:1.8.2")
+                
+                // Core libraries
+                implementation("androidx.core:core-ktx:1.12.0")
+                implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
+                
+                // Coroutines
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+            }
+        }
+        
+        val androidUnitTest by getting {
+            dependencies {
+                implementation(libs.kotlin.test)
+            }
+        }
+    }
 }
 
 android {
@@ -29,18 +77,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
-    }
-    
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-    
-    buildFeatures {
-        compose = true
-    }
-    
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
     }
 }
 

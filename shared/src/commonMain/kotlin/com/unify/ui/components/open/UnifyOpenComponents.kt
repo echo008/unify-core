@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -504,7 +506,7 @@ private fun SliderRow(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(text = label)
-            Text(text = "%.1f".format(value))
+            Text(text = UnifyStringUtils.format("%.1f", value))
         }
         Slider(
             value = value,

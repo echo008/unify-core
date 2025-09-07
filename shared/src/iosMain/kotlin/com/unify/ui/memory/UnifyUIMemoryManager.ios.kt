@@ -1,7 +1,9 @@
 package com.unify.ui.memory
 
 import platform.Foundation.*
+import platform.UIKit.*
 import platform.darwin.*
+import kotlinx.cinterop.autoreleasepool
 
 /**
  * iOS平台内存信息实现
@@ -39,7 +41,7 @@ actual fun requestGarbageCollection() {
         // iOS使用ARC，手动触发内存清理
         NSURLCache.sharedURLCache.removeAllCachedResponses()
         
-        // 清理自动释放池 - 使用autoreleasepool函数
+        // 清理自动释放池 - 使用kotlinx.cinterop.autoreleasepool函数
         autoreleasepool {
             // 自动释放池清理
         }
@@ -68,7 +70,7 @@ private fun getTaskMemoryUsage(): Long {
 private fun getGCCount(): Int {
     return try {
         // iOS使用ARC，没有传统的GC，返回内存警告次数的模拟值
-        (kotlin.system.getTimeMillis() / 15000).toInt() % 50
+        (kotlin.time.TimeSource.Monotonic.markNow().elapsedNow().inWholeMilliseconds / 15000).toInt() % 50
     } catch (e: Exception) {
         0
     }
@@ -139,12 +141,20 @@ object IOSMemoryUtils {
      */
     private fun getThermalState(): IOSThermalState {
         return try {
-            val processInfo = NSProcessInfo.processInfo
-            when (processInfo.thermalState) {
-                NSProcessInfoThermalStateNominal -> IOSThermalState.NOMINAL
-                NSProcessInfoThermalStateFair -> IOSThermalState.FAIR
-                NSProcessInfoThermalStateSerious -> IOSThermalState.SERIOUS
-                NSProcessInfoThermalStateCritical -> IOSThermalState.CRITICAL
+            val thermalState = platform.Foundation.NSProcessInfo.processInfo.thermalState
+            mapThermalState(thermalState)
+        } catch (e: Exception) {
+            IOSThermalState.NOMINAL
+        }
+    }
+    
+    private fun mapThermalState(state: platform.Foundation.NSProcessInfoThermalState): IOSThermalState {
+        return try {
+            when (state.value) {
+                0L -> IOSThermalState.NOMINAL
+                1L -> IOSThermalState.FAIR
+                2L -> IOSThermalState.SERIOUS
+                3L -> IOSThermalState.CRITICAL
                 else -> IOSThermalState.NOMINAL
             }
         } catch (e: Exception) {

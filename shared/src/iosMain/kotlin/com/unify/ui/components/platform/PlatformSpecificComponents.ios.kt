@@ -426,37 +426,24 @@ class IOSPlatformUI : PlatformSpecificUI {
                     onClick = {
                         datePickerState.selectedDateMillis?.let { onDateSelected(it) }
                         onDismiss()
-                    },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF007AFF)
-                    )
+                    }
                 ) {
-                    Text("确定", fontWeight = FontWeight.SemiBold)
+                    Text("确定")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF007AFF)
-                    )
+                    onClick = onDismiss
                 ) {
                     Text("取消")
                 }
             },
-            containerColor = Color(0xFFF2F2F7),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            DatePicker(
-                state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    containerColor = Color(0xFFF2F2F7),
-                    selectedDayContainerColor = Color(0xFF007AFF),
-                    selectedDayContentColor = Color.White,
-                    todayDateBorderColor = Color(0xFF007AFF)
+            text = {
+                DatePicker(
+                    state = datePickerState
                 )
-            )
-        }
+            }
+        )
     }
     
     @Composable

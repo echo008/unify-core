@@ -1,19 +1,34 @@
 package com.unify.core.ui.components
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -33,7 +48,7 @@ actual fun Modifier.platformClickable(
     return this.clickable(
         enabled = enabled,
         indication = null, // iOS通常不使用ripple效果
-        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+        interactionSource = remember { MutableInteractionSource() },
         onClick = {
             if (enabled) {
                 // iOS触觉反馈
@@ -99,13 +114,13 @@ actual fun Modifier.platformBorder(
     color: Color,
     shape: Shape
 ): Modifier {
-    return this.then(
-        androidx.compose.foundation.border(
-            width = width,
+    return this.drawBehind {
+        drawRect(
             color = color,
-            shape = shape
+            topLeft = Offset.Zero,
+            size = Size(size.width, width.value * density)
         )
-    )
+    }
 }
 
 /**
@@ -157,18 +172,18 @@ actual fun Modifier.platformAccessibility(
     role: String?
 ): Modifier {
     return this.then(
-        androidx.compose.ui.semantics.semantics {
+        semantics {
             contentDescription?.let { desc ->
                 this.contentDescription = desc
             }
             role?.let { r ->
                 when (r) {
-                    "button" -> this.role = androidx.compose.ui.semantics.Role.Button
-                    "checkbox" -> this.role = androidx.compose.ui.semantics.Role.Checkbox
-                    "switch" -> this.role = androidx.compose.ui.semantics.Role.Switch
-                    "radiobutton" -> this.role = androidx.compose.ui.semantics.Role.RadioButton
-                    "tab" -> this.role = androidx.compose.ui.semantics.Role.Tab
-                    "image" -> this.role = androidx.compose.ui.semantics.Role.Image
+                    "button" -> this.role = Role.Button
+                    "checkbox" -> this.role = Role.Checkbox
+                    "switch" -> this.role = Role.Switch
+                    "radiobutton" -> this.role = Role.RadioButton
+                    "tab" -> this.role = Role.Tab
+                    "image" -> this.role = Role.Image
                 }
             }
         }
@@ -184,8 +199,8 @@ actual fun Modifier.platformScrollable(
 ): Modifier {
     return if (enabled) {
         this.then(
-            androidx.compose.foundation.verticalScroll(
-                androidx.compose.foundation.rememberScrollState()
+            verticalScroll(
+                rememberScrollState()
             )
         )
     } else {
@@ -202,10 +217,10 @@ actual fun Modifier.platformAnimated(
 ): Modifier {
     return if (enabled) {
         this.then(
-            androidx.compose.animation.animateContentSize(
-                animationSpec = androidx.compose.animation.core.spring(
-                    dampingRatio = androidx.compose.animation.core.Spring.DampingRatioNoBouncy,
-                    stiffness = androidx.compose.animation.core.Spring.StiffnessMedium
+            animateContentSize(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioNoBouncy,
+                    stiffness = Spring.StiffnessMedium
                 )
             )
         )

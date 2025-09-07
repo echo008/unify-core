@@ -1,20 +1,23 @@
 package com.unify.ui.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,99 +34,139 @@ import javax.imageio.ImageIO
  */
 @Composable
 actual fun UnifyImage(
-    source: String,
+    imageUrl: String,
     contentDescription: String?,
     modifier: Modifier,
+    alignment: Alignment,
     contentScale: ContentScale,
-    placeholder: String?,
-    error: String?,
-    width: Dp,
-    height: Dp,
-    cornerRadius: Dp
+    alpha: Float,
+    colorFilter: ColorFilter?,
+    filterQuality: FilterQuality
 ) {
     var painter by remember { mutableStateOf<Painter?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var hasError by remember { mutableStateOf(false) }
     
     // 加载图片
-    LaunchedEffect(source) {
+    LaunchedEffect(imageUrl) {
         isLoading = true
         hasError = false
         
         try {
-            val loadedPainter = loadDesktopImage(source)
+            val loadedPainter = loadDesktopImage(imageUrl)
             painter = loadedPainter
             isLoading = false
         } catch (e: Exception) {
             hasError = true
             isLoading = false
-            // 尝试加载错误图片
-            error?.let { errorSource ->
-                try {
-                    painter = loadDesktopImage(errorSource)
-                } catch (e: Exception) {
-                    // 忽略错误图片加载失败
-                }
-            }
         }
     }
     
     val imageModifier = modifier
-        .let { if (width != Dp.Unspecified) it.size(width = width, height = height) else it }
-        .let { if (cornerRadius > 0.dp) it.clip(RoundedCornerShape(cornerRadius)) else it }
     
-    Box(
+    painter?.let {
+        Image(
+            painter = it,
+            contentDescription = contentDescription,
+            modifier = imageModifier,
+            alignment = alignment,
+            contentScale = contentScale,
+            alpha = alpha,
+            colorFilter = colorFilter
+        )
+    } ?: Box(
         modifier = imageModifier,
         contentAlignment = Alignment.Center
     ) {
-        when {
-            isLoading -> {
-                // 显示加载占位符
-                if (placeholder != null) {
-                    LaunchedEffect(placeholder) {
-                        try {
-                            painter = loadDesktopImage(placeholder)
-                        } catch (e: Exception) {
-                            // 显示默认加载指示器
-                        }
-                    }
-                    painter?.let { placeholderPainter ->
-                        Image(
-                            painter = placeholderPainter,
-                            contentDescription = contentDescription,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = contentScale,
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-                        )
-                    } ?: CircularProgressIndicator()
-                } else {
-                    CircularProgressIndicator()
-                }
-            }
-            hasError -> {
-                // 显示错误状态
-                painter?.let { errorPainter ->
-                    Image(
-                        painter = errorPainter,
-                        contentDescription = "Error loading image",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = contentScale,
-                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.error)
-                    )
-                }
-            }
-            painter != null -> {
-                // 显示加载成功的图片
-                Image(
-                    painter = painter!!,
-                    contentDescription = contentDescription,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = contentScale
+        if (isLoading) {
+            CircularProgressIndicator()
+        }
+    }
+}
+
+@Composable
+actual fun UnifyResourceImage(
+    resourcePath: String,
+    contentDescription: String?,
+    modifier: Modifier,
+    alignment: Alignment,
+    contentScale: ContentScale,
+    alpha: Float,
+    colorFilter: ColorFilter?
+) {
+    try {
+        val painter = painterResource(resourcePath)
+        Image(
+            painter = painter,
+            contentDescription = contentDescription,
+            modifier = modifier,
+            alignment = alignment,
+            contentScale = contentScale,
+            alpha = alpha,
+            colorFilter = colorFilter
+        )
+    } catch (e: Exception) {
+        Box(
+            modifier = modifier,
+            contentAlignment = Alignment.Center
+        ) {
+            // Placeholder for missing resource
+        }
+    }
+}
+
+@Composable
+actual fun UnifyAvatar(
+    imageUrl: String?,
+    name: String,
+    modifier: Modifier,
+    size: Dp,
+    backgroundColor: androidx.compose.ui.graphics.Color
+) {
+    Box(
+        modifier = modifier.size(size),
+        contentAlignment = Alignment.Center
+    ) {
+        if (imageUrl != null) {
+            UnifyImage(
+                imageUrl = imageUrl,
+                contentDescription = name,
+                modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(50%))
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(50%))
+                    .background(backgroundColor),
+                contentAlignment = Alignment.Center
+            ) {
+                androidx.compose.material3.Text(
+                    text = name.take(1).uppercase(),
+                    color = androidx.compose.ui.graphics.Color.White
                 )
             }
         }
     }
 }
+
+@Composable
+actual fun UnifyImagePlaceholder(
+    modifier: Modifier,
+    backgroundColor: androidx.compose.ui.graphics.Color,
+    cornerRadius: Dp,
+    content: (@Composable () -> Unit)?
+) {
+    Box(
+        modifier = modifier
+            .background(
+                backgroundColor,
+                if (cornerRadius > 0.dp) RoundedCornerShape(cornerRadius) else RoundedCornerShape(0.dp)
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        content?.invoke()
+    }
 
 /**
  * 加载Desktop平台图片

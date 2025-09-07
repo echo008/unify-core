@@ -1,8 +1,13 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package com.unify.core.dynamic
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import platform.Foundation.*
+import kotlinx.cinterop.*
+import com.unify.core.dynamic.convertByteArrayToNSData
+import com.unify.core.dynamic.convertNSDataToByteArray
 import platform.darwin.NSObject
 
 /**
@@ -138,18 +143,12 @@ actual class PlatformStorageAdapter : StorageAdapter {
             
             if (value.startsWith("FILE:")) {
                 val fileName = value.removePrefix("FILE:")
-                val fileURL = documentsDirectory.URLByAppendingPathComponent(fileName)
+                val filePath = documentsDirectory.path!! + "/$fileName"
                 
-                val fileManager = NSFileManager.defaultManager
-                if (fileManager.fileExistsAtPath(fileURL!!.path!!)) {
-                    val attributes = fileManager.attributesOfItemAtPath(fileURL.path!!, error = null)
-                    val fileSize = attributes?.get(NSFileSize) as? NSNumber
-                    fileSize?.longValue ?: 0L
-                } else {
-                    0L
-                }
+                val data = NSData.dataWithContentsOfFile(filePath) ?: return@withContext 0L
+                return@withContext data.length.toLong()
             } else {
-                value.toByteArray().size.toLong()
+                return@withContext value.encodeToByteArray().size.toLong()
             }
         } catch (e: Exception) {
             0L
@@ -178,7 +177,8 @@ actual class PlatformStorageAdapter : StorageAdapter {
             val allValues = userDefaults.dictionaryRepresentation().values
             allValues.forEach { value ->
                 if (value is String && !value.startsWith("FILE:")) {
-                    totalSize += value.toByteArray().size
+                    val dataSize = value.encodeToByteArray().size
+                    totalSize += dataSize.toLong()
                 }
             }
             

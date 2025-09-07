@@ -16,6 +16,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.unify.core.utils.UnifyMathUtils
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -360,12 +361,12 @@ private fun SpinnerLoading(
             drawLine(
                 color = color.copy(alpha = alpha),
                 start = Offset(
-                    x = center.x + cos(Math.toRadians(angle.toDouble())).toFloat() * (radius - strokeWidth * 2),
-                    y = center.y + sin(Math.toRadians(angle.toDouble())).toFloat() * (radius - strokeWidth * 2)
+                    x = center.x + cos(UnifyMathUtils.toRadians(angle.toDouble())).toFloat() * (radius - strokeWidth * 2),
+                    y = center.y + sin(UnifyMathUtils.toRadians(angle.toDouble())).toFloat() * (radius - strokeWidth * 2)
                 ),
                 end = Offset(
-                    x = center.x + cos(Math.toRadians(angle.toDouble())).toFloat() * radius,
-                    y = center.y + sin(Math.toRadians(angle.toDouble())).toFloat() * radius
+                    x = center.x + cos(UnifyMathUtils.toRadians(angle.toDouble())).toFloat() * radius,
+                    y = center.y + sin(UnifyMathUtils.toRadians(angle.toDouble())).toFloat() * radius
                 ),
                 strokeWidth = strokeWidth,
                 cap = StrokeCap.Round

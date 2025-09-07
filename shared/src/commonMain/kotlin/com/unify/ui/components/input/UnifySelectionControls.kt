@@ -7,8 +7,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
+import androidx.compose.ui.semantics.Role
 
 /**
  * Unify跨平台选择控件组件
@@ -210,7 +212,7 @@ fun UnifySliderWithLabel(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     showValue: Boolean = true,
-    valueFormatter: (Float) -> String = { "%.1f".format(it) }
+    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it) }
 ) {
     Column(
         modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)

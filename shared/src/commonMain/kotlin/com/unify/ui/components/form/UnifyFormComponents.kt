@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
 import com.unify.ui.components.input.UnifyTextField
 import com.unify.ui.input.UnifyCheckbox
 import com.unify.ui.input.UnifyRadioButton
@@ -249,7 +251,7 @@ private fun UnifyFormFieldRenderer(
                             style = MaterialTheme.typography.bodyMedium
                         )
                         Text(
-                            text = "%.1f".format(value as Float),
+                            text = UnifyStringUtils.format("%.1f", (value as Float) * 100),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )

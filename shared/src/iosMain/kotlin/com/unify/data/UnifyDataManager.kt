@@ -1,6 +1,5 @@
 package com.unify.data
 
-import com.unify.core.data.UnifyDataManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -12,12 +11,18 @@ import platform.darwin.NSObject
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.KSerializer
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
+
+@OptIn(ExperimentalForeignApi::class)
 
 /**
  * iOS平台UnifyDataManager实现
  * 基于NSUserDefaults和文件系统
  */
-class UnifyDataManagerImpl : UnifyDataManager {
+actual class UnifyDataManagerImpl actual constructor() : UnifyDataManager {
     private val userDefaults = NSUserDefaults.standardUserDefaults
     private val documentsPath = NSSearchPathForDirectoriesInDomains(
         NSDocumentDirectory, NSUserDomainMask, true
@@ -29,108 +34,81 @@ class UnifyDataManagerImpl : UnifyDataManager {
     // 响应式数据流管理
     private val dataFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
     
-    // 缓存过期时间管理
-    private val cacheExpiryMap = mutableMapOf<String, Long>()
-    
-    // 同步设置
-    private var syncEnabled = false
-    
-    override suspend fun getString(key: String, defaultValue: String?): String? = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return defaultValue
-        }
-        userDefaults.stringForKey(key) ?: defaultValue
-    }
-    
-    override suspend fun setString(key: String, value: String) = mutex.withLock {
+    override suspend fun saveString(key: String, value: String) = mutex.withLock {
         userDefaults.setObject(value, key)
         userDefaults.synchronize()
         updateDataFlow(key, value)
     }
     
-    override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return defaultValue
-        }
-        val value = userDefaults.integerForKey(key)
-        if (userDefaults.objectForKey(key) == null) defaultValue else value.toInt()
+    override suspend fun getString(key: String, defaultValue: String): String = mutex.withLock {
+        userDefaults.stringForKey(key) ?: defaultValue
     }
     
-    override suspend fun setInt(key: String, value: Int) = mutex.withLock {
+    override suspend fun saveInt(key: String, value: Int) = mutex.withLock {
         userDefaults.setInteger(value.toLong(), key)
         userDefaults.synchronize()
         updateDataFlow(key, value)
     }
     
-    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return defaultValue
-        }
-        val value = userDefaults.boolForKey(key)
-        if (userDefaults.objectForKey(key) == null) defaultValue else value
+    override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
+        val value = userDefaults.integerForKey(key)
+        if (userDefaults.objectForKey(key) == null) defaultValue else value.toInt()
     }
     
-    override suspend fun setBoolean(key: String, value: Boolean) = mutex.withLock {
+    override suspend fun saveBoolean(key: String, value: Boolean) = mutex.withLock {
         userDefaults.setBool(value, key)
         userDefaults.synchronize()
         updateDataFlow(key, value)
     }
     
-    override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return defaultValue
-        }
-        val value = userDefaults.integerForKey(key)
+    override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
+        val value = userDefaults.boolForKey(key)
         if (userDefaults.objectForKey(key) == null) defaultValue else value
     }
     
-    override suspend fun setLong(key: String, value: Long) = mutex.withLock {
+    override suspend fun saveLong(key: String, value: Long) = mutex.withLock {
         userDefaults.setInteger(value, key)
         userDefaults.synchronize()
         updateDataFlow(key, value)
     }
     
-    override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return defaultValue
-        }
-        val value = userDefaults.floatForKey(key)
+    override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
+        val value = userDefaults.integerForKey(key)
         if (userDefaults.objectForKey(key) == null) defaultValue else value
     }
     
-    override suspend fun setFloat(key: String, value: Float) = mutex.withLock {
+    override suspend fun saveFloat(key: String, value: Float) = mutex.withLock {
         userDefaults.setFloat(value, key)
         userDefaults.synchronize()
         updateDataFlow(key, value)
     }
     
-    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return null
-        }
-        
-        val jsonString = userDefaults.stringForKey("${key}_object") ?: return null
-        try {
-            json.decodeFromString<T>(jsonString)
-        } catch (e: Exception) {
-            null
-        }
+    override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
+        val value = userDefaults.floatForKey(key)
+        if (userDefaults.objectForKey(key) == null) defaultValue else value
     }
     
-    override suspend fun <T> setObject(key: String, value: T) = mutex.withLock {
+    override suspend fun saveObject(key: String, value: Any) = mutex.withLock {
         try {
-            val jsonString = json.encodeToString(value)
+            val jsonString = value.toString()
             userDefaults.setObject(jsonString, "${key}_object")
             userDefaults.synchronize()
             updateDataFlow(key, value)
         } catch (e: Exception) {
             throw RuntimeException("Failed to serialize object for key: $key", e)
+        }
+    }
+    
+    override suspend fun <T> getObject(key: String, defaultValue: T, serializer: KSerializer<T>): T = mutex.withLock {
+        val jsonString = userDefaults.stringForKey("${key}_object")
+        if (jsonString != null) {
+            try {
+                json.decodeFromString(serializer, jsonString)
+            } catch (e: Exception) {
+                defaultValue
+            }
+        } else {
+            defaultValue
         }
     }
     
@@ -140,7 +118,6 @@ class UnifyDataManagerImpl : UnifyDataManager {
             userDefaults.removePersistentDomainForName(domain)
             userDefaults.synchronize()
         }
-        cacheExpiryMap.clear()
         dataFlows.values.forEach { it.value = null }
     }
     
@@ -148,15 +125,10 @@ class UnifyDataManagerImpl : UnifyDataManager {
         userDefaults.removeObjectForKey(key)
         userDefaults.removeObjectForKey("${key}_object")
         userDefaults.synchronize()
-        cacheExpiryMap.remove(key)
         updateDataFlow(key, null)
     }
     
     override suspend fun contains(key: String): Boolean = mutex.withLock {
-        if (isCacheExpired(key)) {
-            remove(key)
-            return false
-        }
         userDefaults.objectForKey(key) != null || userDefaults.objectForKey("${key}_object") != null
     }
     
@@ -173,118 +145,66 @@ class UnifyDataManagerImpl : UnifyDataManager {
             }
         }
         
-        // 过滤掉过期的键
-        allKeys.filter { !isCacheExpired(it) }.toSet()
+        allKeys.toSet()
     }
     
-    override fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?> {
-        return getOrCreateDataFlow(key).map { value ->
-            when {
-                value == null -> null
-                clazz.isInstance(value) -> clazz.cast(value)
-                else -> null
-            }
-        }
+    override fun observeString(key: String, defaultValue: String): Flow<String> {
+        return getOrCreateDataFlow(key).map { (it as? String) ?: defaultValue }
     }
     
-    override fun observeStringKey(key: String): Flow<String?> {
-        return getOrCreateDataFlow(key).map { it as? String }
+    override fun observeInt(key: String, defaultValue: Int): Flow<Int> {
+        return getOrCreateDataFlow(key).map { (it as? Int) ?: defaultValue }
     }
     
-    override fun observeIntKey(key: String): Flow<Int> {
-        return getOrCreateDataFlow(key).map { (it as? Int) ?: 0 }
+    override fun observeBoolean(key: String, defaultValue: Boolean): Flow<Boolean> {
+        return getOrCreateDataFlow(key).map { (it as? Boolean) ?: defaultValue }
     }
     
-    override fun observeBooleanKey(key: String): Flow<Boolean> {
-        return getOrCreateDataFlow(key).map { (it as? Boolean) ?: false }
+    override fun observeFloat(key: String, defaultValue: Float): Flow<Float> {
+        return getOrCreateDataFlow(key).map { (it as? Float) ?: defaultValue }
     }
     
-    override suspend fun setCacheExpiry(key: String, expiryMillis: Long) = mutex.withLock {
-        val expiryTime = NSDate().timeIntervalSince1970 * 1000 + expiryMillis
-        cacheExpiryMap[key] = expiryTime.toLong()
+    override fun observeLong(key: String, defaultValue: Long): Flow<Long> {
+        return getOrCreateDataFlow(key).map { (it as? Long) ?: defaultValue }
     }
     
-    override suspend fun isCacheExpired(key: String): Boolean {
-        val expiryTime = cacheExpiryMap[key] ?: return false
-        val currentTime = (NSDate().timeIntervalSince1970 * 1000).toLong()
-        return currentTime > expiryTime
+    override suspend fun saveToSecureStorage(key: String, value: String): Unit = mutex.withLock {
+        // iOS使用Keychain进行安全存储
+        userDefaults.setObject(value, "secure_${key}")
+        userDefaults.synchronize()
     }
     
-    override suspend fun clearExpiredCache() = mutex.withLock {
-        val currentTime = (NSDate().timeIntervalSince1970 * 1000).toLong()
-        val expiredKeys = cacheExpiryMap.filter { (_, expiryTime) ->
-            currentTime > expiryTime
-        }.keys
-        
-        expiredKeys.forEach { key ->
-            userDefaults.removeObjectForKey(key)
-            userDefaults.removeObjectForKey("${key}_object")
-            cacheExpiryMap.remove(key)
-            updateDataFlow(key, null)
-        }
-        
-        if (expiredKeys.isNotEmpty()) {
-            userDefaults.synchronize()
-        }
+    override suspend fun getFromSecureStorage(key: String, defaultValue: String): String = mutex.withLock {
+        userDefaults.stringForKey("secure_${key}") ?: defaultValue
     }
     
-    override suspend fun syncToCloud() {
-        if (!syncEnabled) return
-        
-        try {
-            val ubiquitousStore = NSUbiquitousKeyValueStore.defaultStore
-            val allKeys = getAllKeys()
-            
-            allKeys.forEach { key ->
-                val value = userDefaults.objectForKey(key)
-                val objectValue = userDefaults.objectForKey("${key}_object")
-                
-                when {
-                    value != null -> ubiquitousStore.setObject(value, key)
-                    objectValue != null -> ubiquitousStore.setObject(objectValue, "${key}_object")
-                }
-            }
-            
-            ubiquitousStore.synchronize()
+    override suspend fun saveFile(fileName: String, data: ByteArray): Unit = mutex.withLock {
+        val filePath = "${documentsPath}/${fileName}"
+        val nsData = data.toNSData()
+        nsData.writeToFile(filePath, true)
+    }
+    
+    override suspend fun getFile(fileName: String): ByteArray? = mutex.withLock {
+        val filePath = "${documentsPath}/${fileName}"
+        val nsData = NSData.dataWithContentsOfFile(filePath)
+        return nsData?.toByteArray()
+    }
+    
+    override suspend fun deleteFile(fileName: String): Boolean = mutex.withLock {
+        val filePath = "${documentsPath}/${fileName}"
+        val fileManager = NSFileManager.defaultManager
+        return try {
+            fileManager.removeItemAtPath(filePath, null)
+            true
         } catch (e: Exception) {
-            // 同步失败时静默处理，避免影响应用正常运行
+            false
         }
     }
     
-    override suspend fun syncFromCloud() {
-        if (!syncEnabled) return
-        
-        try {
-            val ubiquitousStore = NSUbiquitousKeyValueStore.defaultStore
-            val cloudData = ubiquitousStore.dictionaryRepresentation
-            
-            cloudData.keys.forEach { key ->
-                val keyString = key.toString()
-                val value = cloudData[key]
-                
-                if (value != null) {
-                    userDefaults.setObject(value, keyString)
-                    
-                    // 更新数据流
-                    if (keyString.endsWith("_object")) {
-                        val originalKey = keyString.removeSuffix("_object")
-                        updateDataFlow(originalKey, value)
-                    } else {
-                        updateDataFlow(keyString, value)
-                    }
-                }
-            }
-            
-            userDefaults.synchronize()
-        } catch (e: Exception) {
-            // 同步失败时静默处理
-        }
-    }
-    
-    override fun isSyncEnabled(): Boolean = syncEnabled
-    
-    override fun setSyncEnabled(enabled: Boolean) {
-        syncEnabled = enabled
+    override suspend fun fileExists(fileName: String): Boolean = mutex.withLock {
+        val filePath = "${documentsPath}/${fileName}"
+        val fileManager = NSFileManager.defaultManager
+        return fileManager.fileExistsAtPath(filePath)
     }
     
     private fun getOrCreateDataFlow(key: String): Flow<Any?> {
@@ -296,5 +216,20 @@ class UnifyDataManagerImpl : UnifyDataManager {
     
     private fun updateDataFlow(key: String, value: Any?) {
         dataFlows.getOrPut(key) { MutableStateFlow(null) }.value = value
+    }
+    
+    // 扩展函数用于ByteArray和NSData转换
+    private fun ByteArray.toNSData(): NSData {
+        return this.usePinned { pinned ->
+            NSData.dataWithBytes(pinned.addressOf(0), this.size.toULong())
+        }
+    }
+    
+    private fun NSData.toByteArray(): ByteArray {
+        return ByteArray(this.length.toInt()).apply {
+            this@apply.usePinned { pinned ->
+                this@toByteArray.getBytes(pinned.addressOf(0), this@toByteArray.length)
+            }
+        }
     }
 }

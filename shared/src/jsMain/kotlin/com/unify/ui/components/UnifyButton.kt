@@ -28,7 +28,7 @@ actual fun UnifyButton(
         enabled = enabled,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primary,
-            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary
+            contentColor = if (MaterialTheme.colorScheme.onPrimary != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary
         ),
         contentPadding = contentPadding
     ) {
@@ -63,7 +63,7 @@ actual fun UnifyFloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else FloatingActionButtonDefaults.containerColor,
-        contentColor = if (contentColor != Color.Unspecified) contentColor else FloatingActionButtonDefaults.contentColor,
+        contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimaryContainer,
         content = content
     )
 }

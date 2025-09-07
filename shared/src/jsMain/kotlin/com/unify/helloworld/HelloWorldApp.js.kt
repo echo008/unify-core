@@ -1,5 +1,3 @@
 package com.unify.helloworld
 
-actual fun getPlatformName(): String {
-    return "Web (Kotlin/JS)"
-}
+// getPlatformName实现已移至PlatformInfo.js.kt

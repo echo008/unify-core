@@ -3,6 +3,7 @@ package com.unify.core.network
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
+import com.unify.core.utils.UnifyPlatformUtils
 
 /**
  * 统一网络管理器 - 跨平台网络通信核心接口
@@ -113,7 +114,7 @@ data class NetworkError(
     val code: NetworkErrorCode,
     val message: String,
     val details: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = UnifyPlatformUtils.currentTimeMillis()
 )
 
 /**

@@ -60,9 +60,10 @@ actual fun UnifyPlatformCard(
             containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
             contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface
         ),
-        border = borderStroke,
-        content = content
-    )
+        border = borderStroke
+    ) {
+        content()
+    }
 }
 
 @Composable

@@ -40,7 +40,8 @@ actual suspend fun getPlatformMemoryUsage(): MemoryUsage {
         directMemoryMax = 0L,
         gcCount = 0L, // Not directly available
         gcTime = 0L,
-        usagePercentage = usagePercentage
+        usagePercentage = usagePercentage,
+        timestamp = System.currentTimeMillis()
     )
 }
 

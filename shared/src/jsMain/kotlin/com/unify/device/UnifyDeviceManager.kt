@@ -29,8 +29,8 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
     
     init {
         // 监听网络状态变化
-        window.addEventListener("online") { _networkStatus.value = NetworkStatus.CONNECTED }
-        window.addEventListener("offline") { _networkStatus.value = NetworkStatus.DISCONNECTED }
+        window.addEventListener("online", { _networkStatus.value = NetworkStatus.CONNECTED })
+        window.addEventListener("offline", { _networkStatus.value = NetworkStatus.DISCONNECTED })
         
         // 监听电池状态变化（如果支持）
         setupBatteryMonitoring()
@@ -129,7 +129,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
         
         when (sensorType) {
             SensorType.ACCELEROMETER, SensorType.GYROSCOPE -> {
-                window.addEventListener("devicemotion") { event ->
+                window.addEventListener("devicemotion", { event ->
                     val motionEvent = event.asDynamic()
                     when (sensorType) {
                         SensorType.ACCELEROMETER -> {
@@ -156,10 +156,10 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                         }
                         else -> {}
                     }
-                }
+                })
             }
             SensorType.ORIENTATION -> {
-                window.addEventListener("deviceorientation") { event ->
+                window.addEventListener("deviceorientation", { event ->
                     val orientationEvent = event.asDynamic()
                     val values = floatArrayOf(
                         (orientationEvent.alpha as? Double)?.toFloat() ?: 0f,
@@ -167,7 +167,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                         (orientationEvent.gamma as? Double)?.toFloat() ?: 0f
                     )
                     listener.onSensorChanged(sensorType, values, js("Date.now()") as Long)
-                }
+                })
             }
             else -> {
                 // 其他传感器暂不支持
@@ -499,12 +499,12 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
         if (js("'getBattery' in navigator") as Boolean) {
             js("navigator.getBattery()").then({ battery ->
                 // 监听电池状态变化
-                battery.addEventListener("chargingchange") {
+                battery.addEventListener("chargingchange", {
                     _batteryStatus.value = getCurrentBatteryStatus()
-                }
-                battery.addEventListener("levelchange") {
+                })
+                battery.addEventListener("levelchange", {
                     _batteryStatus.value = getCurrentBatteryStatus()
-                }
+                })
             })
         }
     }

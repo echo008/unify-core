@@ -1,8 +1,10 @@
 package com.unify.network.cache
 
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import com.unify.core.utils.UnifyTimeUtils
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 /**
@@ -19,7 +21,7 @@ class UnifyNetworkCacheImpl {
     fun put(key: String, data: String, ttl: Long = 300000L) {
         val entry = CacheEntry(
             data = data,
-            timestamp = System.currentTimeMillis(),
+            timestamp = UnifyTimeUtils.currentTimeMillis(),
             ttl = ttl
         )
         memoryCache[key] = entry
@@ -45,7 +47,7 @@ class UnifyNetworkCacheImpl {
     fun isExpired(key: String, customTtl: Long? = null): Boolean {
         val entry = memoryCache[key] ?: return true
         val ttl = customTtl ?: entry.ttl
-        return System.currentTimeMillis() - entry.timestamp > ttl
+        return UnifyTimeUtils.currentTimeMillis() - entry.timestamp > ttl
     }
     
     /**
@@ -104,7 +106,7 @@ class UnifyNetworkCacheImpl {
 /**
  * 缓存条目
  */
-@Serializable
+@kotlinx.serialization.Serializable
 private data class CacheEntry(
     val data: String,
     val timestamp: Long,
@@ -114,7 +116,7 @@ private data class CacheEntry(
 /**
  * 缓存统计信息
  */
-@Serializable
+@kotlinx.serialization.Serializable
 data class CacheStats(
     val totalEntries: Int,
     val totalSize: Long,

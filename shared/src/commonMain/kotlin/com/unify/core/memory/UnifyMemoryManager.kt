@@ -317,7 +317,7 @@ object UnifyMemoryUtils {
             unitIndex++
         }
         
-        return "%.2f %s".format(size, units[unitIndex])
+        return "${size} ${units[unitIndex]}"
     }
     
     /**

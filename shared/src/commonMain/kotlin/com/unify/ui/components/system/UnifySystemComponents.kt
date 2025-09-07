@@ -196,7 +196,8 @@ data class NotificationItem(
     val timestamp: Long,
     val priority: NotificationPriority,
     val category: String,
-    val actions: List<NotificationAction> = emptyList()
+    val actions: List<NotificationAction> = emptyList(),
+    val isRead: Boolean = false
 )
 
 data class NotificationAction(

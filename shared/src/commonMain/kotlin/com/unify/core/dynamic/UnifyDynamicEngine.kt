@@ -271,7 +271,7 @@ class UnifyDynamicEngineImpl(
                 success = false,
                 componentId = component.id,
                 message = "加载异常: ${e.message}",
-                error = e.javaClass.simpleName
+                error = e::class.simpleName ?: "UnknownError"
             )
         }
     }
@@ -383,7 +383,7 @@ class UnifyDynamicEngineImpl(
                 success = false,
                 componentId = component.id,
                 message = "更新失败: ${e.message}",
-                error = e.javaClass.simpleName
+                error = e::class.simpleName ?: "UnknownError"
             )
         }
     }

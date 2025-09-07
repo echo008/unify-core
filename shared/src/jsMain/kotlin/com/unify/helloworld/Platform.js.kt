@@ -1,3 +1,3 @@
 package com.unify.helloworld
 
-actual fun getPlatformName(): String = "Web"
+// getPlatformName实现已移至PlatformInfo.js.kt

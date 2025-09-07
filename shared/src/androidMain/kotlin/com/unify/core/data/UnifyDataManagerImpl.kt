@@ -16,12 +16,28 @@ import java.lang.reflect.Type
  * Android平台UnifyDataManager实现
  * 基于SharedPreferences和内存缓存
  */
-class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
-    private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
-        "unify_data_manager", Context.MODE_PRIVATE
-    )
+actual class UnifyDataManagerImpl : UnifyDataManager {
+    private var context: Context? = null
+    private var sharedPreferences: SharedPreferences? = null
     private val gson = Gson()
     private val mutex = Mutex()
+    
+    actual constructor() {
+        // Default constructor for expect/actual
+    }
+    
+    fun initialize(context: Context) {
+        this.context = context
+        this.sharedPreferences = context.getSharedPreferences(
+            "unify_data_manager", Context.MODE_PRIVATE
+        )
+    }
+    
+    private fun ensureInitialized() {
+        if (context == null || sharedPreferences == null) {
+            throw IllegalStateException("UnifyDataManagerImpl not initialized. Call initialize(context) first.")
+        }
+    }
     
     // 响应式数据流管理
     private val dataFlows = mutableMapOf<String, MutableStateFlow<Any?>>()
@@ -33,123 +49,139 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
     private var syncEnabled = false
     
     override suspend fun getString(key: String, defaultValue: String?): String? = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return defaultValue
         }
-        sharedPreferences.getString(key, defaultValue)
+        sharedPreferences!!.getString(key, defaultValue)
     }
     
     override suspend fun setString(key: String, value: String) = mutex.withLock {
-        sharedPreferences.edit().putString(key, value).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().putString(key, value).apply()
         updateDataFlow(key, value)
     }
     
     override suspend fun getInt(key: String, defaultValue: Int): Int = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return defaultValue
         }
-        sharedPreferences.getInt(key, defaultValue)
+        sharedPreferences!!.getInt(key, defaultValue)
     }
     
     override suspend fun setInt(key: String, value: Int) = mutex.withLock {
-        sharedPreferences.edit().putInt(key, value).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().putInt(key, value).apply()
         updateDataFlow(key, value)
     }
     
     override suspend fun getBoolean(key: String, defaultValue: Boolean): Boolean = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return defaultValue
         }
-        sharedPreferences.getBoolean(key, defaultValue)
+        sharedPreferences!!.getBoolean(key, defaultValue)
     }
     
     override suspend fun setBoolean(key: String, value: Boolean) = mutex.withLock {
-        sharedPreferences.edit().putBoolean(key, value).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().putBoolean(key, value).apply()
         updateDataFlow(key, value)
     }
     
     override suspend fun getLong(key: String, defaultValue: Long): Long = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return defaultValue
         }
-        sharedPreferences.getLong(key, defaultValue)
+        sharedPreferences!!.getLong(key, defaultValue)
     }
     
     override suspend fun setLong(key: String, value: Long) = mutex.withLock {
-        sharedPreferences.edit().putLong(key, value).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().putLong(key, value).apply()
         updateDataFlow(key, value)
     }
     
     override suspend fun getFloat(key: String, defaultValue: Float): Float = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return defaultValue
         }
-        sharedPreferences.getFloat(key, defaultValue)
+        sharedPreferences!!.getFloat(key, defaultValue)
     }
     
     override suspend fun setFloat(key: String, value: Float) = mutex.withLock {
-        sharedPreferences.edit().putFloat(key, value).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().putFloat(key, value).apply()
         updateDataFlow(key, value)
     }
     
-    override suspend fun <T> getObject(key: String, clazz: Class<T>): T? = mutex.withLock {
+    override suspend fun <T : Any> getObject(key: String, clazz: kotlin.reflect.KClass<T>): T? = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return null
         }
-        val json = sharedPreferences.getString(key, null) ?: return null
+        val json = sharedPreferences!!.getString(key, null) ?: return null
         try {
-            gson.fromJson(json, clazz)
+            gson.fromJson(json, clazz.java)
         } catch (e: Exception) {
             null
         }
     }
     
     override suspend fun <T> setObject(key: String, value: T) = mutex.withLock {
+        ensureInitialized()
         val json = gson.toJson(value)
-        sharedPreferences.edit().putString(key, json).apply()
+        sharedPreferences!!.edit().putString(key, json).apply()
         updateDataFlow(key, value)
     }
     
     override suspend fun clear() = mutex.withLock {
-        sharedPreferences.edit().clear().apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().clear().apply()
         cacheExpiryMap.clear()
         dataFlows.values.forEach { it.value = null }
     }
     
     override suspend fun remove(key: String) = mutex.withLock {
-        sharedPreferences.edit().remove(key).apply()
+        ensureInitialized()
+        sharedPreferences!!.edit().remove(key).apply()
         cacheExpiryMap.remove(key)
         updateDataFlow(key, null)
     }
     
     override suspend fun contains(key: String): Boolean = mutex.withLock {
+        ensureInitialized()
         if (isCacheExpired(key)) {
             remove(key)
             return false
         }
-        sharedPreferences.contains(key)
+        sharedPreferences!!.contains(key)
     }
     
     override suspend fun getAllKeys(): Set<String> = mutex.withLock {
-        val allKeys = sharedPreferences.all.keys
+        ensureInitialized()
+        val allKeys = sharedPreferences!!.all.keys
         // 过滤掉过期的键
         allKeys.filter { !isCacheExpired(it) }.toSet()
     }
     
-    override fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?> {
+    override fun <T : Any> observeKey(key: String, clazz: kotlin.reflect.KClass<T>): Flow<T?> {
         return getOrCreateDataFlow(key).map { value ->
             when {
                 value == null -> null
-                clazz.isInstance(value) -> clazz.cast(value)
+                clazz.java.isInstance(value) -> clazz.java.cast(value)
                 value is String -> {
                     try {
-                        gson.fromJson(value, clazz)
+                        gson.fromJson(value, clazz.java)
                     } catch (e: Exception) {
                         null
                     }
@@ -182,13 +214,14 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
     }
     
     override suspend fun clearExpiredCache() = mutex.withLock {
+        ensureInitialized()
         val currentTime = System.currentTimeMillis()
         val expiredKeys = cacheExpiryMap.filter { (_, expiryTime) ->
             currentTime > expiryTime
         }.keys
         
         expiredKeys.forEach { key ->
-            sharedPreferences.edit().remove(key).apply()
+            sharedPreferences!!.edit().remove(key).apply()
             cacheExpiryMap.remove(key)
             updateDataFlow(key, null)
         }
@@ -199,7 +232,8 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
         
         try {
             // 收集所有数据进行云端同步
-            val allData = sharedPreferences.all
+            ensureInitialized()
+            val allData = sharedPreferences!!.all
             val syncData = mutableMapOf<String, Any?>()
             
             allData.forEach { (key, value) ->
@@ -210,7 +244,7 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
             
             // 将同步数据保存到应用私有存储（模拟云端存储）
             val syncJson = gson.toJson(syncData)
-            val syncFile = context.getFileStreamPath("cloud_sync_backup.json")
+            val syncFile = context!!.getFileStreamPath("cloud_sync_backup.json")
             syncFile.writeText(syncJson)
             
         } catch (e: Exception) {
@@ -223,14 +257,15 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
         
         try {
             // 从应用私有存储读取同步数据（模拟从云端获取）
-            val syncFile = context.getFileStreamPath("cloud_sync_backup.json")
+            ensureInitialized()
+            val syncFile = context!!.getFileStreamPath("cloud_sync_backup.json")
             if (!syncFile.exists()) return
             
             val syncJson = syncFile.readText()
             val type: Type = object : TypeToken<Map<String, Any>>() {}.type
             val syncData: Map<String, Any> = gson.fromJson(syncJson, type)
             
-            val editor = sharedPreferences.edit()
+            val editor = sharedPreferences!!.edit()
             syncData.forEach { (key, value) ->
                 when (value) {
                     is String -> {
@@ -276,7 +311,7 @@ class UnifyDataManagerImpl(private val context: Context) : UnifyDataManager {
     
     private fun getOrCreateDataFlow(key: String): Flow<Any?> {
         return dataFlows.getOrPut(key) {
-            MutableStateFlow(sharedPreferences.all[key])
+            MutableStateFlow(sharedPreferences?.all?.get(key))
         }.asStateFlow()
     }
     
@@ -293,8 +328,9 @@ actual object UnifyDataManagerFactory {
     }
     
     actual fun create(): UnifyDataManager {
-        return UnifyDataManagerImpl(
-            context ?: throw IllegalStateException("UnifyDataManagerFactory not initialized. Call initialize(context) first.")
-        )
+        val manager = UnifyDataManagerImpl()
+        val ctx = context ?: throw IllegalStateException("UnifyDataManagerFactory not initialized. Call initialize(context) first.")
+        manager.initialize(ctx)
+        return manager
     }
 }

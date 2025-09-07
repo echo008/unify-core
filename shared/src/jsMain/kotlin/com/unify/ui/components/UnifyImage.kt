@@ -90,6 +90,7 @@ actual fun UnifyAvatar(
 actual fun UnifyImagePlaceholder(
     modifier: Modifier,
     backgroundColor: Color,
+    cornerRadius: Dp,
     content: (@Composable () -> Unit)?
 ) {
     Box(

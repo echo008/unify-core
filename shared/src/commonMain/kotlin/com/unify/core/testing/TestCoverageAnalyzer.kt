@@ -1,14 +1,16 @@
 package com.unify.core.testing
 
-import kotlinx.coroutines.*
+import com.unify.core.utils.UnifyPlatformUtils
+
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.*
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.json.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 代码覆盖率数据
@@ -174,22 +176,22 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
         
         // 检查整体覆盖率
         if (report.summary.lineCoverage < thresholds.minLineCoverage) {
-            violations.add("整体行覆盖率 ${String.format("%.1f", report.summary.lineCoverage)}% 低于阈值 ${thresholds.minLineCoverage}%")
+            violations.add("整体行覆盖率 ${UnifyStringUtils.format("%.1f", report.summary.lineCoverage)}% 低于阈值 ${thresholds.minLineCoverage}%")
         }
         
         if (report.summary.branchCoverage < thresholds.minBranchCoverage) {
-            violations.add("整体分支覆盖率 ${String.format("%.1f", report.summary.branchCoverage)}% 低于阈值 ${thresholds.minBranchCoverage}%")
+            violations.add("整体分支覆盖率 ${UnifyStringUtils.format("%.1f", report.summary.branchCoverage)}% 低于阈值 ${thresholds.minBranchCoverage}%")
         }
         
         if (report.summary.functionCoverage < thresholds.minFunctionCoverage) {
-            violations.add("整体函数覆盖率 ${String.format("%.1f", report.summary.functionCoverage)}% 低于阈值 ${thresholds.minFunctionCoverage}%")
+            violations.add("整体函数覆盖率 ${UnifyStringUtils.format("%.1f", report.summary.functionCoverage)}% 低于阈值 ${thresholds.minFunctionCoverage}%")
         }
         
         // 检查关键模块
         thresholds.criticalModules.forEach { moduleId ->
             val moduleData = report.modulesCoverage.find { it.moduleId == moduleId }
             if (moduleData != null && moduleData.coveragePercentage < thresholds.minLineCoverage) {
-                violations.add("关键模块 $moduleId 覆盖率 ${String.format("%.1f", moduleData.coveragePercentage)}% 低于阈值")
+                violations.add("关键模块 $moduleId 覆盖率 ${UnifyStringUtils.format("%.1f", moduleData.coveragePercentage)}% 低于阈值")
             }
         }
         
@@ -331,10 +333,10 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
         coverageData.forEach { data ->
             when {
                 data.coveragePercentage < 70.0 -> {
-                    recommendations.add("${data.moduleName} 覆盖率过低 (${String.format("%.1f", data.coveragePercentage)}%)，建议增加单元测试")
+                    recommendations.add("${data.moduleName} 覆盖率过低 (${UnifyStringUtils.format("%.1f", data.coveragePercentage)}%)，建议增加单元测试")
                 }
                 data.coveragePercentage < 80.0 -> {
-                    recommendations.add("${data.moduleName} 覆盖率偏低 (${String.format("%.1f", data.coveragePercentage)}%)，建议补充边界测试")
+                    recommendations.add("${data.moduleName} 覆盖率偏低 (${UnifyStringUtils.format("%.1f", data.coveragePercentage)}%)，建议补充边界测试")
                 }
                 data.branchCoverage < 70.0 -> {
                     recommendations.add("${data.moduleName} 分支覆盖率不足，建议增加条件分支测试")
@@ -393,18 +395,18 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
                 <div class="summary">
                     <h2>总体覆盖率</h2>
                     <p class="${getCoverageClass(report.overallCoverage)}">
-                        整体覆盖率: ${String.format("%.1f", report.overallCoverage)}%
+                        整体覆盖率: ${UnifyStringUtils.format("%.1f", report.overallCoverage)}%
                     </p>
-                    <p>行覆盖率: ${String.format("%.1f", report.summary.lineCoverage)}%</p>
-                    <p>分支覆盖率: ${String.format("%.1f", report.summary.branchCoverage)}%</p>
-                    <p>函数覆盖率: ${String.format("%.1f", report.summary.functionCoverage)}%</p>
+                    <p>行覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.lineCoverage)}%</p>
+                    <p>分支覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.branchCoverage)}%</p>
+                    <p>函数覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.functionCoverage)}%</p>
                 </div>
                 
                 <h2>模块覆盖率详情</h2>
                 <table>
                     <tr><th>模块名称</th><th>覆盖率</th><th>总行数</th><th>覆盖行数</th><th>分支覆盖率</th></tr>
                     ${report.modulesCoverage.joinToString("\n") { module ->
-                        "<tr><td>${module.moduleName}</td><td class=\"${getCoverageClass(module.coveragePercentage)}\">${String.format("%.1f", module.coveragePercentage)}%</td><td>${module.totalLines}</td><td>${module.coveredLines}</td><td>${String.format("%.1f", module.branchCoverage)}%</td></tr>"
+                        "<tr><td>${module.moduleName}</td><td class=\"${getCoverageClass(module.coveragePercentage)}\">${UnifyStringUtils.format("%.1f", module.coveragePercentage)}%</td><td>${module.totalLines}</td><td>${module.coveredLines}</td><td>${UnifyStringUtils.format("%.1f", module.branchCoverage)}%</td></tr>"
                     }}
                 </table>
                 
@@ -422,14 +424,14 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
             代码覆盖率报告
             ==============
             
-            总体覆盖率: ${String.format("%.1f", report.overallCoverage)}%
-            行覆盖率: ${String.format("%.1f", report.summary.lineCoverage)}%
-            分支覆盖率: ${String.format("%.1f", report.summary.branchCoverage)}%
-            函数覆盖率: ${String.format("%.1f", report.summary.functionCoverage)}%
+            总体覆盖率: ${UnifyStringUtils.format("%.1f", report.overallCoverage)}%
+            行覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.lineCoverage)}%
+            分支覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.branchCoverage)}%
+            函数覆盖率: ${UnifyStringUtils.format("%.1f", report.summary.functionCoverage)}%
             
             模块详情:
             ${report.modulesCoverage.joinToString("\n") { module ->
-                "- ${module.moduleName}: ${String.format("%.1f", module.coveragePercentage)}% (${module.coveredLines}/${module.totalLines})"
+                "- ${module.moduleName}: ${UnifyStringUtils.format("%.1f", module.coveragePercentage)}% (${module.coveredLines}/${module.totalLines})"
             }}
             
             改进建议:

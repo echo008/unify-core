@@ -181,7 +181,7 @@ class TestCoverageAnalyzer {
                         CoverageRecommendation(
                             type = RecommendationType.CRITICAL,
                             module = module.moduleName,
-                            message = "模块 ${module.moduleName} 覆盖率过低 (${String.format("%.1f", module.coverage)}%)，需要紧急增加测试用例",
+                            message = "模块 ${module.moduleName} 覆盖率过低 (${module.coverage}%)，需要紧急增加测试用例",
                             priority = RecommendationPriority.HIGH
                         )
                     )
@@ -191,7 +191,7 @@ class TestCoverageAnalyzer {
                         CoverageRecommendation(
                             type = RecommendationType.IMPROVEMENT,
                             module = module.moduleName,
-                            message = "模块 ${module.moduleName} 未达到目标覆盖率 (当前: ${String.format("%.1f", module.coverage)}%, 目标: ${String.format("%.1f", module.target)}%)",
+                            message = "模块 ${module.moduleName} 未达到目标覆盖率 (当前: ${module.coverage}%, 目标: ${module.target}%)",
                             priority = RecommendationPriority.MEDIUM
                         )
                     )
@@ -206,7 +206,7 @@ class TestCoverageAnalyzer {
                     CoverageRecommendation(
                         type = RecommendationType.PLATFORM_SPECIFIC,
                         platform = platform.platformName,
-                        message = "平台 ${platform.platformName} 覆盖率较低 (${String.format("%.1f", platform.coverage)}%)，建议增加平台特定测试",
+                        message = "平台 ${platform.platformName} 覆盖率较低 (${platform.coverage}%)，建议增加平台特定测试",
                         priority = RecommendationPriority.MEDIUM
                     )
                 )
@@ -257,15 +257,15 @@ class TestCoverageAnalyzer {
             <body>
                 <div class="header">
                     <h1>Unify-Core 测试覆盖率报告</h1>
-                    <p>总体覆盖率: <span class="${getCoverageClass(report.overallCoverage)}">${String.format("%.1f", report.overallCoverage)}%</span></p>
-                    <p>生成时间: ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(java.util.Date(report.timestamp))}</p>
+                    <p>总体覆盖率: <span class="${getCoverageClass(report.overallCoverage)}">${report.overallCoverage}%</span></p>
+                    <p>生成时间: ${report.timestamp}</p>
                 </div>
                 
                 <h2>模块覆盖率</h2>
                 <table>
                     <tr><th>模块</th><th>覆盖率</th><th>目标</th><th>测试数量</th><th>状态</th></tr>
                     ${report.modulesCoverage.values.joinToString("") { module ->
-                        "<tr><td>${module.moduleName}</td><td>${String.format("%.1f", module.coverage)}%</td><td>${String.format("%.1f", module.target)}%</td><td>${module.testCount}</td><td>${if (module.coverage >= module.target) "✅" else "❌"}</td></tr>"
+                        "<tr><td>${module.moduleName}</td><td>${module.coverage}%</td><td>${module.target}%</td><td>${module.testCount}</td><td>${if (module.coverage >= module.target) "✅" else "❌"}</td></tr>"
                     }}
                 </table>
                 
@@ -273,7 +273,7 @@ class TestCoverageAnalyzer {
                 <table>
                     <tr><th>平台</th><th>覆盖率</th><th>测试数量</th><th>通过/失败</th></tr>
                     ${report.platformsCoverage.values.joinToString("") { platform ->
-                        "<tr><td>${platform.platformName}</td><td>${String.format("%.1f", platform.coverage)}%</td><td>${platform.testCount}</td><td>${platform.passedTests}/${platform.failedTests}</td></tr>"
+                        "<tr><td>${platform.platformName}</td><td>${platform.coverage}%</td><td>${platform.testCount}</td><td>${platform.passedTests}/${platform.failedTests}</td></tr>"
                     }}
                 </table>
             </body>

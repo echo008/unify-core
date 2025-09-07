@@ -283,7 +283,7 @@ class UnifyCodeQualityManager {
                 QualityRecommendation(
                     type = QualityIssueType.DUPLICATION,
                     severity = IssueSeverity.MEDIUM,
-                    message = "代码重复率过高 (${String.format("%.1f", duplication.duplicationPercentage)}%)，建议提取公共方法",
+                    message = "代码重复率过高 (${duplication.duplicationPercentage}%)，建议提取公共方法",
                     affectedFiles = duplication.duplicatedBlocks.map { it.fileName }
                 )
             )
@@ -295,7 +295,7 @@ class UnifyCodeQualityManager {
                 QualityRecommendation(
                     type = QualityIssueType.COVERAGE,
                     severity = IssueSeverity.HIGH,
-                    message = "测试覆盖率不足 (${String.format("%.1f", coverage.lineCoverage)}%)，需要增加测试用例",
+                    message = "测试覆盖率不足 (${coverage.lineCoverage}%)，需要增加测试用例",
                     affectedFiles = emptyList()
                 )
             )

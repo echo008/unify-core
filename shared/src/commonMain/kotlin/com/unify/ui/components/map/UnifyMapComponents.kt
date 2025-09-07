@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.unify.core.utils.UnifyStringUtils
 import kotlinx.coroutines.delay
 
 /**
@@ -434,17 +435,17 @@ fun UnifyMapInfo(
             modifier = Modifier.padding(8.dp)
         ) {
             Text(
-                text = "经度: ${String.format("%.4f", center.longitude)}",
-                color = Color.White,
+                text = "经度: ${center.longitude}",
+                style = MaterialTheme.typography.bodyMedium,
                 fontSize = 10.sp
             )
             Text(
-                text = "纬度: ${String.format("%.4f", center.latitude)}",
-                color = Color.White,
+                text = "纬度: ${center.latitude}",
+                style = MaterialTheme.typography.bodyMedium,
                 fontSize = 10.sp
             )
             Text(
-                text = "缩放: ${String.format("%.1f", zoomLevel)}",
+                text = "缩放: $zoomLevel",
                 color = Color.White,
                 fontSize = 10.sp
             )
@@ -456,6 +457,24 @@ fun UnifyMapInfo(
         }
     }
 }
+
+/**
+ * 地图搜索结果数据类
+ */
+data class UnifyMapSearchResult(
+    val name: String,
+    val location: UnifyLocation,
+    val distance: Float? = null
+)
+
+/**
+ * 地理位置数据类
+ */
+data class UnifyLocation(
+    val latitude: Double,
+    val longitude: Double,
+    val accuracy: Float = 0f
+)
 
 /**
  * 地图搜索组件
@@ -517,18 +536,6 @@ fun UnifyMapSearch(
 }
 
 /**
- * 地图搜索结果数据类
- */
-data class UnifyMapSearchResult(
-    val id: String,
-    val name: String,
-    val address: String,
-    val location: UnifyLatLng,
-    val type: String = "",
-    val distance: Double? = null
-)
-
-/**
  * 搜索结果项组件
  */
 @Composable
@@ -538,11 +545,11 @@ fun UnifyMapSearchResultItem(
 ) {
     ListItem(
         headlineContent = { Text(result.name) },
-        supportingContent = { Text(result.address) },
+        supportingContent = { Text(UnifyStringUtils.format("%.6f", result.location.latitude)) },
         trailingContent = {
             result.distance?.let { distance ->
                 Text(
-                    text = "${String.format("%.1f", distance)}km",
+                    text = "${UnifyStringUtils.format("%.2f", distance)}km",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -625,7 +632,7 @@ private fun calculateDuration(start: UnifyLatLng, end: UnifyLatLng, type: UnifyR
 private fun generateInstructions(start: UnifyLatLng, end: UnifyLatLng): List<String> {
     return listOf(
         "从起点出发",
-        "直行 ${String.format("%.1f", calculateDistance(start, end) / 1000)}公里",
+        "直行 ${(calculateDistance(start, end) / 1000.0).toString()}公里",
         "到达目的地"
     )
 }

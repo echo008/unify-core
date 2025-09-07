@@ -320,7 +320,7 @@ class DynamicTestFramework {
                 "test_type" to "performance",
                 "load_time_ms" to loadTime.toString(),
                 "memory_usage_mb" to memoryUsage.toString(),
-                "cpu_usage_percent" to String.format("%.2f", cpuUsage)
+                "cpu_usage_percent" to cpuUsage.toString()
             )
         )
     }

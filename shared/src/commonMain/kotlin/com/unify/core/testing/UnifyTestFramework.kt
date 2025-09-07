@@ -1,5 +1,7 @@
 package com.unify.core.testing
 
+import com.unify.core.utils.UnifyPlatformUtils
+
 import kotlinx.coroutines.*
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
@@ -464,7 +466,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
                     <p class="passed">通过: ${report.passedTests}</p>
                     <p class="failed">失败: ${report.failedTests}</p>
                     <p class="skipped">跳过: ${report.skippedTests}</p>
-                    <p>成功率: ${String.format("%.2f", report.successRate * 100)}%</p>
+                    <p>成功率: ${UnifyPlatformUtils.formatDouble(report.successRate * 100, 2)}%</p>
                 </div>
                 <h2>详细结果</h2>
                 <table border="1">
@@ -488,7 +490,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
             - 通过: ${report.passedTests}
             - 失败: ${report.failedTests}
             - 跳过: ${report.skippedTests}
-            - 成功率: ${String.format("%.2f", report.successRate * 100)}%
+            - 成功率: ${UnifyPlatformUtils.formatDouble(report.successRate * 100, 2)}%
             - 总耗时: ${report.duration}ms
             
             详细结果:

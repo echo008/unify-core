@@ -20,7 +20,7 @@ interface UnifyDataManager {
     suspend fun setFloat(key: String, value: Float)
     
     // 对象存储
-    suspend fun <T> getObject(key: String, clazz: Class<T>): T?
+    suspend fun <T : Any> getObject(key: String, clazz: kotlin.reflect.KClass<T>): T?
     suspend fun <T> setObject(key: String, value: T)
     
     // 批量操作
@@ -30,7 +30,7 @@ interface UnifyDataManager {
     suspend fun getAllKeys(): Set<String>
     
     // 响应式数据流
-    fun <T> observeKey(key: String, clazz: Class<T>): Flow<T?>
+    fun <T : Any> observeKey(key: String, clazz: kotlin.reflect.KClass<T>): Flow<T?>
     fun observeStringKey(key: String): Flow<String?>
     fun observeIntKey(key: String): Flow<Int>
     fun observeBooleanKey(key: String): Flow<Boolean>
@@ -53,3 +53,8 @@ interface UnifyDataManager {
 expect object UnifyDataManagerFactory {
     fun create(): UnifyDataManager
 }
+
+/**
+ * 数据管理器expect声明
+ */
+expect class UnifyDataManagerImpl() : UnifyDataManager

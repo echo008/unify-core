@@ -1,20 +1,13 @@
 package com.unify.performance.enhanced
 
 import kotlinx.coroutines.flow.Flow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.flow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
+import com.unify.core.utils.UnifyPlatformUtils
 import com.unify.performance.analysis.PerformanceMetrics
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import com.unify.performance.analysis.UnifyPerformanceAnalyzer
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * Unify增强性能监控
@@ -392,7 +385,7 @@ class UnifyPerformanceEnhancedImpl : UnifyPerformanceEnhanced {
     
     private fun optimizeMemoryUsage() {
         // 内存使用优化逻辑
-        System.gc() // 触发垃圾回收
+        UnifyPlatformUtils.gc() // 触发垃圾回收
     }
     
     private fun optimizeGPUUsage() {

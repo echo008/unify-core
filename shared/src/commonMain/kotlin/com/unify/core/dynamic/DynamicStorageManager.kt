@@ -336,9 +336,9 @@ class DynamicStorageManagerImpl(
     override suspend fun compress(data: String): String {
         return try {
             // 简化的压缩实现 - 实际应使用真正的压缩算法
-            val compressed = data.toByteArray().let { bytes ->
+            val compressed = data.encodeToByteArray().let { bytes ->
                 // 这里应该使用真正的压缩算法如GZIP
-                bytes.toString()
+                bytes.decodeToString()
             }
             "$COMPRESSION_MARKER$compressed"
         } catch (e: Exception) {

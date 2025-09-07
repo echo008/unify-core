@@ -259,7 +259,7 @@ class DynamicTestRunner(
             message = if (performanceGood) "性能测试通过" else "性能测试未达标",
             executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
-                "cpuUsage" to String.format("%.2f", cpuUsage),
+                "cpuUsage" to cpuUsage.toString(),
                 "memoryUsage" to memoryUsage.toString(),
                 "responseTime" to responseTime.toString()
             )
@@ -364,7 +364,7 @@ class DynamicTestRunner(
             executionTime = getCurrentTimeMillis() - startTime,
             details = mapOf(
                 "maxConcurrentUsers" to maxConcurrentUsers.toString(),
-                "errorRate" to String.format("%.2f", errorRate),
+                "responseTime" to avgResponseTime.toString(),
                 "avgResponseTime" to avgResponseTime.toString()
             )
         )
@@ -398,7 +398,7 @@ class DynamicTestRunner(
             details = mapOf(
                 "totalPlatforms" to platforms.size.toString(),
                 "compatiblePlatforms" to compatiblePlatforms.size.toString(),
-                "compatibilityRate" to String.format("%.2f", compatiblePlatforms.size.toDouble() / platforms.size * 100)
+                "compatibilityRate" to (compatiblePlatforms.size.toDouble() / platforms.size * 100).toString()
             )
         )
     }

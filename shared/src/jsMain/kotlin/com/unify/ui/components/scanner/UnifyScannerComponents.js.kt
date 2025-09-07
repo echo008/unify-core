@@ -645,7 +645,7 @@ object WebScannerUtils {
             
             val link = document.createElement("a") as HTMLAnchorElement
             link.href = url
-            link.download = "scan_results_${Date.now()}.$format"
+            link.download = "scan_results_${js("Date.now()")}.$format"
             link.click()
             
             URL.revokeObjectURL(url)

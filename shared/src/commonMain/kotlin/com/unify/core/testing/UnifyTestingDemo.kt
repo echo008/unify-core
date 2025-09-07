@@ -1,32 +1,17 @@
 package com.unify.core.testing
 
 import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
 import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.platform.getNanoTime
+import com.unify.core.utils.UnifyPlatformUtils
 import kotlinx.coroutines.launch
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 测试框架演示应用
@@ -146,7 +131,13 @@ private fun TestExecutionDemo() {
             }
             
             items(testResults) { result ->
-                TestResultCard(result)
+                Card {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Test: ${result.testName}")
+                        Text("Status: ${result.status}")
+                        Text("Duration: ${result.duration}ms")
+                    }
+                }
             }
         }
     }
@@ -195,7 +186,13 @@ private fun CoverageAnalysisDemo() {
         
         coverageReport?.let { report ->
             item {
-                CoverageSummaryCard(report)
+                Card {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("Coverage Report")
+                        Text("Line Coverage: ${report.summary.lineCoverage}%")
+                        Text("Branch Coverage: ${report.summary.branchCoverage}%")
+                    }
+                }
             }
             
             items(report.modulesCoverage) { moduleData ->
@@ -355,78 +352,16 @@ private fun TestSummaryCard(results: List<TestResult>) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text("总计: $total")
-                Text("通过: $passed", color = MaterialTheme.colorScheme.primary)
-                Text("失败: $failed", color = MaterialTheme.colorScheme.error)
-                Text("跳过: $skipped", color = MaterialTheme.colorScheme.outline)
+                Text("通过: $passed")
+                Text("失败: $failed")
+                Text("跳过: $skipped")
             }
             
             Spacer(modifier = Modifier.height(8.dp))
-            Text("成功率: ${String.format("%.1f", successRate)}%")
+            Text("成功率: ${successRate.toFloat()}%")
             
             LinearProgressIndicator(
-                progress = { successRate / 100f },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-private fun TestResultCard(result: TestResult) {
-    Card {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = result.testName,
-                    style = MaterialTheme.typography.titleSmall
-                )
-                Text(
-                    text = result.status.name,
-                    color = when (result.status) {
-                        TestStatus.PASSED -> MaterialTheme.colorScheme.primary
-                        TestStatus.FAILED -> MaterialTheme.colorScheme.error
-                        TestStatus.SKIPPED -> MaterialTheme.colorScheme.outline
-                        else -> MaterialTheme.colorScheme.onSurface
-                    }
-                )
-            }
-            
-            if (result.message.isNotEmpty()) {
-                Text(
-                    text = result.message,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            
-            Text(
-                text = "耗时: ${result.duration}ms",
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-private fun CoverageSummaryCard(report: CoverageReport) {
-    Card {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "覆盖率摘要",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Text("整体覆盖率: ${String.format("%.1f", report.overallCoverage)}%")
-            Text("行覆盖率: ${String.format("%.1f", report.summary.lineCoverage)}%")
-            Text("分支覆盖率: ${String.format("%.1f", report.summary.branchCoverage)}%")
-            Text("函数覆盖率: ${String.format("%.1f", report.summary.functionCoverage)}%")
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            LinearProgressIndicator(
-                progress = { (report.overallCoverage / 100).toFloat() },
+                progress = (successRate / 100.0).toFloat(),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -435,6 +370,9 @@ private fun CoverageSummaryCard(report: CoverageReport) {
 
 @Composable
 private fun ModuleCoverageCard(moduleData: CoverageData) {
+    val completedTests = moduleData.coveredLines
+    val totalTests = moduleData.totalLines
+    
     Card {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -446,7 +384,7 @@ private fun ModuleCoverageCard(moduleData: CoverageData) {
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
-                    text = "${String.format("%.1f", moduleData.coveragePercentage)}%",
+                    text = "${moduleData.coveragePercentage.toFloat()}%",
                     color = when {
                         moduleData.coveragePercentage >= 90 -> MaterialTheme.colorScheme.primary
                         moduleData.coveragePercentage >= 70 -> MaterialTheme.colorScheme.tertiary
@@ -461,13 +399,12 @@ private fun ModuleCoverageCard(moduleData: CoverageData) {
             )
             
             LinearProgressIndicator(
-                progress = { (moduleData.coveragePercentage / 100).toFloat() },
+                progress = if (totalTests > 0) (completedTests.toFloat() / totalTests.toFloat()) else 0f,
                 modifier = Modifier.fillMaxWidth()
             )
         }
     }
 }
-
 @Composable
 private fun QualityMetricsCard(metrics: QualityMetrics) {
     Card {
@@ -478,13 +415,13 @@ private fun QualityMetricsCard(metrics: QualityMetrics) {
             )
             Spacer(modifier = Modifier.height(8.dp))
             
-            Text("总体分数: ${String.format("%.1f", metrics.overallScore)}")
-            Text("代码质量: ${String.format("%.1f", metrics.codeQuality)}")
-            Text("测试覆盖率: ${String.format("%.1f", metrics.testCoverage)}")
-            Text("性能: ${String.format("%.1f", metrics.performance)}")
-            Text("安全性: ${String.format("%.1f", metrics.security)}")
-            Text("可维护性: ${String.format("%.1f", metrics.maintainability)}")
-            Text("可靠性: ${String.format("%.1f", metrics.reliability)}")
+            Text("总体分数: ${metrics.overallScore.toFloat()}")
+            Text("代码质量: ${metrics.codeQuality.toFloat()}")
+            Text("测试覆盖率: ${metrics.testCoverage.toFloat()}")
+            Text("性能: ${metrics.performance.toFloat()}")
+            Text("安全性: ${metrics.security.toFloat()}")
+            Text("可维护性: ${metrics.maintainability.toFloat()}")
+            Text("可靠性: ${metrics.reliability.toFloat()}")
         }
     }
 }
@@ -542,7 +479,7 @@ private fun QualityCheckCard(checkResult: QualityCheckResult) {
             }
             
             Text(
-                text = "分数: ${String.format("%.1f", checkResult.score)}",
+                text = "分数: ${UnifyPlatformUtils.formatFloat(checkResult.score.toFloat(), 1)}",
                 style = MaterialTheme.typography.bodySmall
             )
             

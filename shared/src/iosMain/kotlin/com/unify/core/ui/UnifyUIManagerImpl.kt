@@ -1,12 +1,19 @@
+@file:OptIn(ExperimentalForeignApi::class)
 package com.unify.core.ui
 
-import androidx.compose.runtime.Composable
+import com.unify.core.ui.UnifyUIManager
+import com.unify.ui.theme.UnifyTheme
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import platform.UIKit.*
 import platform.Foundation.*
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.useContents
 
 /**
  * iOS平台UnifyUIManager实现
@@ -43,15 +50,15 @@ class UnifyUIManagerImpl : UnifyUIManager {
     
     override fun isDarkMode(): Boolean = _currentTheme.value.isDark
     
-    override fun getPrimaryColor(): Color = _currentTheme.value.primaryColor
+    override fun getPrimaryColor(): androidx.compose.ui.graphics.Color = _currentTheme.value.primaryColor
     
-    override fun getSecondaryColor(): Color = _currentTheme.value.secondaryColor
+    override fun getSecondaryColor(): androidx.compose.ui.graphics.Color = _currentTheme.value.secondaryColor
     
-    override fun getBackgroundColor(): Color = _currentTheme.value.backgroundColor
+    override fun getBackgroundColor(): androidx.compose.ui.graphics.Color = _currentTheme.value.backgroundColor
     
-    override fun getSurfaceColor(): Color = _currentTheme.value.surfaceColor
+    override fun getSurfaceColor(): androidx.compose.ui.graphics.Color = _currentTheme.value.surfaceColor
     
-    override fun getErrorColor(): Color = _currentTheme.value.errorColor
+    override fun getErrorColor(): androidx.compose.ui.graphics.Color = _currentTheme.value.errorColor
     
     override fun setFontScale(scale: Float) {
         _fontScale.value = scale.coerceIn(0.5f, 3.0f)
@@ -61,9 +68,9 @@ class UnifyUIManagerImpl : UnifyUIManager {
     
     override fun observeFontScale(): StateFlow<Float> = _fontScale.asStateFlow()
     
-    override fun getScreenWidth(): Int = (screen.bounds.useContents { size.width } * screen.scale).toInt()
+    override fun getScreenWidth(): Int = (screen.bounds.useContents { this.size.width } * screen.scale).toInt()
     
-    override fun getScreenHeight(): Int = (screen.bounds.useContents { size.height } * screen.scale).toInt()
+    override fun getScreenHeight(): Int = (screen.bounds.useContents { this.size.height } * screen.scale).toInt()
     
     override fun getScreenDensity(): Float = screen.scale.toFloat()
     
@@ -73,8 +80,8 @@ class UnifyUIManagerImpl : UnifyUIManager {
     
     override fun isLandscape(): Boolean {
         val orientation = device.orientation
-        return orientation == UIDeviceOrientationLandscapeLeft || 
-               orientation == UIDeviceOrientationLandscapeRight
+        return orientation == UIDeviceOrientation.UIDeviceOrientationLandscapeLeft || 
+               orientation == UIDeviceOrientation.UIDeviceOrientationLandscapeRight
     }
     
     override fun setAnimationsEnabled(enabled: Boolean) {
@@ -92,12 +99,12 @@ class UnifyUIManagerImpl : UnifyUIManager {
     }
     
     override fun isAccessibilityEnabled(): Boolean {
-        return accessibilityEnabled || UIAccessibility.isVoiceOverRunning()
+        return accessibilityEnabled || UIAccessibilityIsVoiceOverRunning()
     }
     
     override fun announceForAccessibility(message: String) {
         if (isAccessibilityEnabled()) {
-            UIAccessibility.post(UIAccessibilityAnnouncementNotification, message)
+            UIAccessibilityPostNotification(UIAccessibilityAnnouncementNotification, message)
         }
     }
     
@@ -141,11 +148,7 @@ class UnifyUIManagerImpl : UnifyUIManager {
     }
     
     private fun isSystemInDarkMode(): Boolean {
-        return if (UITraitCollection.currentTraitCollection.userInterfaceStyle == UIUserInterfaceStyleDark) {
-            true
-        } else {
-            false
-        }
+        return UITraitCollection.currentTraitCollection.userInterfaceStyle == UIUserInterfaceStyle.UIUserInterfaceStyleDark
     }
 }
 

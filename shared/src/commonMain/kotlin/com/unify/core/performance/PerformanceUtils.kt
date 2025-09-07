@@ -1,5 +1,7 @@
 package com.unify.core.performance
 
+import com.unify.core.utils.UnifyPlatformUtils
+
 /**
  * 性能工具类
  * 提供性能相关的实用方法
@@ -19,28 +21,26 @@ object PerformanceUtils {
             unitIndex++
         }
         
-        return String.format("%.1f %s", size, units[unitIndex])
+        return "${size.toFloat()} ${units[unitIndex]}"
     }
     
     /**
      * 获取已使用内存
      */
     val usedMemory: Long
-        get() = Runtime.getRuntime().let { runtime ->
-            runtime.totalMemory() - runtime.freeMemory()
-        }
+        get() = UnifyPlatformUtils.getUsedMemory()
     
     /**
      * 获取总内存
      */
     val totalMemory: Long
-        get() = Runtime.getRuntime().totalMemory()
+        get() = UnifyPlatformUtils.getTotalMemory()
     
     /**
      * 获取最大内存
      */
     val maxMemory: Long
-        get() = Runtime.getRuntime().maxMemory()
+        get() = UnifyPlatformUtils.getMaxMemory()
     
     /**
      * 计算内存使用百分比
@@ -57,8 +57,8 @@ object PerformanceUtils {
     fun formatDuration(milliseconds: Long): String {
         return when {
             milliseconds < 1000 -> "${milliseconds}ms"
-            milliseconds < 60000 -> String.format("%.1fs", milliseconds / 1000.0)
-            else -> String.format("%.1fm", milliseconds / 60000.0)
+            milliseconds < 60000 -> "${UnifyPlatformUtils.formatDouble(milliseconds / 1000.0, 1)}s"
+            else -> "${UnifyPlatformUtils.formatDouble(milliseconds / 60000.0, 1)}m"
         }
     }
     

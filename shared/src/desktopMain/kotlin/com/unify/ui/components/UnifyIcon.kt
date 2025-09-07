@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 actual fun UnifyIcon(
     iconName: String,
     contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
 ) {
     val iconVector = getDesktopIconVector(iconName)
     val iconSize = if (size == Dp.Unspecified) 24.dp else size
@@ -42,9 +42,9 @@ actual fun UnifyIcon(
 actual fun UnifyVectorIcon(
     vectorPath: String,
     contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
 ) {
     // Desktop平台使用Material Icons作为矢量图标
     val iconVector = getDesktopIconVector(vectorPath)
@@ -66,9 +66,9 @@ actual fun UnifyVectorIcon(
 actual fun UnifySystemIcon(
     systemIconType: SystemIconType,
     contentDescription: String?,
-    modifier: Modifier = Modifier,
-    tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    modifier: Modifier,
+    tint: Color,
+    size: Dp
 ) {
     val iconVector = getSystemIconVector(systemIconType)
     val iconSize = if (size == Dp.Unspecified) 24.dp else size

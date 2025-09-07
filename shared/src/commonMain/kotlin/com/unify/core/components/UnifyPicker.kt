@@ -1,6 +1,7 @@
 package com.unify.core.components
 
 import androidx.compose.foundation.clickable
+import com.unify.core.utils.UnifyPlatformUtils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -261,7 +262,7 @@ fun UnifySlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     showValue: Boolean = true,
-    valueFormatter: (Float) -> String = { "%.1f".format(it) },
+    valueFormatter: (Float) -> String = { UnifyPlatformUtils.formatFloat(it, 1) },
     label: String? = null
 ) {
     Column(
