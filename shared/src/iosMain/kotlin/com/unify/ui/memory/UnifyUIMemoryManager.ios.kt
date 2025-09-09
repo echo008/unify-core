@@ -1,9 +1,9 @@
 package com.unify.ui.memory
 
+import kotlinx.cinterop.autoreleasepool
 import platform.Foundation.*
 import platform.UIKit.*
 import platform.darwin.*
-import kotlinx.cinterop.autoreleasepool
 
 /**
  * iOS平台内存信息实现
@@ -12,23 +12,23 @@ actual fun getPlatformMemoryInfo(): PlatformMemoryInfo {
     return try {
         val processInfo = NSProcessInfo.processInfo
         val physicalMemory = processInfo.physicalMemory.toLong()
-        
+
         // 获取当前进程内存使用情况
         val usedMemory = getTaskMemoryUsage()
-        
+
         PlatformMemoryInfo(
             totalMemory = physicalMemory,
             usedMemory = usedMemory,
             availableMemory = physicalMemory - usedMemory,
-            gcCount = getGCCount()
+            gcCount = getGCCount(),
         )
     } catch (e: Exception) {
         // 返回默认值
         PlatformMemoryInfo(
             totalMemory = 1024 * 1024 * 1024L, // 1GB
-            usedMemory = 512 * 1024 * 1024L,   // 512MB
+            usedMemory = 512 * 1024 * 1024L, // 512MB
             availableMemory = 512 * 1024 * 1024L,
-            gcCount = 0
+            gcCount = 0,
         )
     }
 }
@@ -40,7 +40,7 @@ actual fun requestGarbageCollection() {
     try {
         // iOS使用ARC，手动触发内存清理
         NSURLCache.sharedURLCache.removeAllCachedResponses()
-        
+
         // 清理自动释放池 - 使用kotlinx.cinterop.autoreleasepool函数
         autoreleasepool {
             // 自动释放池清理
@@ -80,7 +80,6 @@ private fun getGCCount(): Int {
  * iOS特定的内存管理工具
  */
 object IOSMemoryUtils {
-    
     /**
      * 获取设备内存信息
      */
@@ -88,23 +87,23 @@ object IOSMemoryUtils {
         return try {
             val processInfo = NSProcessInfo.processInfo
             val physicalMemory = processInfo.physicalMemory.toLong()
-            
+
             IOSDeviceMemoryInfo(
                 totalPhysicalMemory = physicalMemory,
                 availableMemory = getAvailableMemory(),
                 memoryPressure = getMemoryPressureLevel(),
-                thermalState = getThermalState()
+                thermalState = getThermalState(),
             )
         } catch (e: Exception) {
             IOSDeviceMemoryInfo(
                 totalPhysicalMemory = 4L * 1024 * 1024 * 1024, // 4GB
-                availableMemory = 2L * 1024 * 1024 * 1024,     // 2GB
+                availableMemory = 2L * 1024 * 1024 * 1024, // 2GB
                 memoryPressure = IOSMemoryPressure.NORMAL,
-                thermalState = IOSThermalState.NOMINAL
+                thermalState = IOSThermalState.NOMINAL,
             )
         }
     }
-    
+
     /**
      * 获取可用内存
      */
@@ -117,7 +116,7 @@ object IOSMemoryUtils {
             2L * 1024 * 1024 * 1024 // 2GB默认值
         }
     }
-    
+
     /**
      * 获取内存压力级别
      */
@@ -135,7 +134,7 @@ object IOSMemoryUtils {
             IOSMemoryPressure.NORMAL
         }
     }
-    
+
     /**
      * 获取热状态
      */
@@ -147,7 +146,7 @@ object IOSMemoryUtils {
             IOSThermalState.NOMINAL
         }
     }
-    
+
     private fun mapThermalState(state: platform.Foundation.NSProcessInfoThermalState): IOSThermalState {
         return try {
             when (state.value) {
@@ -161,7 +160,7 @@ object IOSMemoryUtils {
             IOSThermalState.NOMINAL
         }
     }
-    
+
     /**
      * 清理URL缓存
      */
@@ -172,7 +171,7 @@ object IOSMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 清理图片缓存
      */
@@ -184,7 +183,7 @@ object IOSMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 监听内存警告
      */
@@ -196,7 +195,7 @@ object IOSMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 获取应用内存使用情况
      */
@@ -217,19 +216,24 @@ data class IOSDeviceMemoryInfo(
     val totalPhysicalMemory: Long,
     val availableMemory: Long,
     val memoryPressure: IOSMemoryPressure,
-    val thermalState: IOSThermalState
+    val thermalState: IOSThermalState,
 )
 
 /**
  * iOS内存压力级别
  */
 enum class IOSMemoryPressure {
-    NORMAL, WARNING, CRITICAL
+    NORMAL,
+    WARNING,
+    CRITICAL,
 }
 
 /**
  * iOS热状态
  */
 enum class IOSThermalState {
-    NOMINAL, FAIR, SERIOUS, CRITICAL
+    NOMINAL,
+    FAIR,
+    SERIOUS,
+    CRITICAL,
 }

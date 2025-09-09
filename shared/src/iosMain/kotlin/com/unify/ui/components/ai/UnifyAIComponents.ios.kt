@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.Flow
 
 @Composable
@@ -16,7 +15,7 @@ actual fun UnifyAIChat(
     isLoading: Boolean,
     placeholder: String,
     enableVoiceInput: Boolean,
-    enableImageUpload: Boolean
+    enableImageUpload: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS AI Chat - ${messages.size} messages")
@@ -33,7 +32,7 @@ actual fun UnifyAIAssistant(
     config: AIConfig,
     suggestions: List<String>,
     enableContextMemory: Boolean,
-    maxHistorySize: Int
+    maxHistorySize: Int,
 ) {
     Column(modifier = modifier) {
         Text("iOS AI Assistant")
@@ -41,7 +40,7 @@ actual fun UnifyAIAssistant(
         suggestions.forEach { suggestion ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { /* Handle suggestion click */ }
+                onClick = { /* Handle suggestion click */ },
             ) {
                 Text(suggestion)
             }
@@ -55,14 +54,14 @@ actual fun UnifySmartRecommendation(
     onItemSelected: (RecommendationItem) -> Unit,
     modifier: Modifier,
     maxRecommendations: Int,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     Column(modifier = modifier) {
         Text("Smart Recommendations")
         items.take(maxRecommendations).forEach { item ->
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                onClick = { onItemSelected(item) }
+                onClick = { onItemSelected(item) },
             ) {
                 Text(item.title)
             }
@@ -77,17 +76,17 @@ actual fun UnifyAITranslator(
     modifier: Modifier,
     sourceLanguage: String,
     targetLanguage: String,
-    enableAutoDetect: Boolean
+    enableAutoDetect: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS AI Translator")
         OutlinedTextField(
             value = sourceText,
             onValueChange = { /* Handle text change */ },
-            placeholder = { Text("Enter text to translate") }
+            placeholder = { Text("Enter text to translate") },
         )
         Button(
-            onClick = { onTranslated("Translated: $sourceText") }
+            onClick = { onTranslated("Translated: $sourceText") },
         ) {
             Text("Translate")
         }
@@ -101,7 +100,7 @@ actual fun UnifySmartForm(
     modifier: Modifier,
     enableAutoComplete: Boolean,
     enableValidation: Boolean,
-    onSubmit: (Map<String, Any>) -> Unit
+    onSubmit: (Map<String, Any>) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("iOS Smart Form")
@@ -109,11 +108,11 @@ actual fun UnifySmartForm(
             OutlinedTextField(
                 value = field.value?.toString() ?: "",
                 onValueChange = { onFieldValueChange(field.id, it) },
-                label = { Text(field.label) }
+                label = { Text(field.label) },
             )
         }
         Button(
-            onClick = { onSubmit(emptyMap()) }
+            onClick = { onSubmit(emptyMap()) },
         ) {
             Text("Submit")
         }
@@ -128,17 +127,17 @@ actual fun UnifyAIImageGenerator(
     prompt: String,
     onPromptChange: (String) -> Unit,
     isGenerating: Boolean,
-    generatedImages: List<String>
+    generatedImages: List<String>,
 ) {
     Column(modifier = modifier) {
         Text("iOS AI Image Generator")
         OutlinedTextField(
             value = prompt,
             onValueChange = onPromptChange,
-            placeholder = { Text("Enter image prompt...") }
+            placeholder = { Text("Enter image prompt...") },
         )
         Button(
-            onClick = { onImageGenerated("generated_image_url") }
+            onClick = { onImageGenerated("generated_image_url") },
         ) {
             Text("Generate")
         }
@@ -155,17 +154,17 @@ actual fun UnifyVoiceRecognition(
     isListening: Boolean,
     onListeningChange: (Boolean) -> Unit,
     language: String,
-    continuous: Boolean
+    continuous: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Voice Recognition")
         Button(
-            onClick = { 
+            onClick = {
                 onListeningChange(!isListening)
                 if (!isListening) {
                     onTextRecognized("Recognized text from iOS")
                 }
-            }
+            },
         ) {
             Text(if (isListening) "Stop Listening" else "Start Listening")
         }
@@ -180,13 +179,13 @@ actual fun UnifyTextToSpeech(
     language: String,
     rate: Float,
     pitch: Float,
-    autoPlay: Boolean
+    autoPlay: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Text to Speech")
         Text("Text: $text")
         Button(
-            onClick = { onSpeechComplete() }
+            onClick = { onSpeechComplete() },
         ) {
             Text("Speak")
         }

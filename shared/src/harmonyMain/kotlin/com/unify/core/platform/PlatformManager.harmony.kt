@@ -3,17 +3,16 @@ package com.unify.core.platform
 import com.unify.core.exceptions.PlatformException
 
 actual class PlatformManagerImpl : PlatformManager {
-    
     override fun getPlatformInfo(): PlatformInfo {
         return PlatformInfo(
             name = "HarmonyOS",
             version = getHarmonyOSVersion(),
             architecture = getSystemArchitecture(),
             isDebug = isDebugMode(),
-            capabilities = getHarmonyOSCapabilities()
+            capabilities = getHarmonyOSCapabilities(),
         )
     }
-    
+
     override fun isFeatureSupported(feature: PlatformFeature): Boolean {
         return when (feature) {
             PlatformFeature.CAMERA -> true
@@ -28,7 +27,7 @@ actual class PlatformManagerImpl : PlatformManager {
             PlatformFeature.SENSORS -> true
         }
     }
-    
+
     override suspend fun requestPermission(permission: PlatformPermission): Boolean {
         return try {
             when (permission) {
@@ -43,7 +42,7 @@ actual class PlatformManagerImpl : PlatformManager {
             throw PlatformException("权限请求失败: ${e.message}", e)
         }
     }
-    
+
     override fun getSystemProperty(key: String): String? {
         return try {
             // HarmonyOS 系统属性获取
@@ -58,8 +57,11 @@ actual class PlatformManagerImpl : PlatformManager {
             null
         }
     }
-    
-    override suspend fun executeNativeCode(code: String, params: Map<String, Any>): Any? {
+
+    override suspend fun executeNativeCode(
+        code: String,
+        params: Map<String, Any>,
+    ): Any? {
         return try {
             // HarmonyOS 原生代码执行
             executeHarmonyOSNativeCode(code, params)
@@ -67,7 +69,7 @@ actual class PlatformManagerImpl : PlatformManager {
             throw PlatformException("原生代码执行失败: ${e.message}", e)
         }
     }
-    
+
     // HarmonyOS 特定实现
     private fun getHarmonyOSVersion(): String {
         return try {
@@ -77,7 +79,7 @@ actual class PlatformManagerImpl : PlatformManager {
             "Unknown"
         }
     }
-    
+
     private fun getSystemArchitecture(): String {
         return try {
             // 获取系统架构
@@ -86,7 +88,7 @@ actual class PlatformManagerImpl : PlatformManager {
             "Unknown"
         }
     }
-    
+
     private fun isDebugMode(): Boolean {
         return try {
             // 检查是否为调试模式
@@ -95,7 +97,7 @@ actual class PlatformManagerImpl : PlatformManager {
             false
         }
     }
-    
+
     private fun getHarmonyOSCapabilities(): List<String> {
         return listOf(
             "分布式能力",
@@ -104,40 +106,40 @@ actual class PlatformManagerImpl : PlatformManager {
             "原子化服务",
             "方舟编译器",
             "分布式数据管理",
-            "分布式任务调度"
+            "分布式任务调度",
         )
     }
-    
+
     private suspend fun requestCameraPermission(): Boolean {
         // HarmonyOS 相机权限请求
         return true // 模拟权限授予
     }
-    
+
     private suspend fun requestLocationPermission(): Boolean {
         // HarmonyOS 位置权限请求
         return true // 模拟权限授予
     }
-    
+
     private suspend fun requestStoragePermission(): Boolean {
         // HarmonyOS 存储权限请求
         return true // 模拟权限授予
     }
-    
+
     private suspend fun requestMicrophonePermission(): Boolean {
         // HarmonyOS 麦克风权限请求
         return true // 模拟权限授予
     }
-    
+
     private suspend fun requestContactsPermission(): Boolean {
         // HarmonyOS 联系人权限请求
         return true // 模拟权限授予
     }
-    
+
     private suspend fun requestNotificationPermission(): Boolean {
         // HarmonyOS 通知权限请求
         return true // 模拟权限授予
     }
-    
+
     private fun getDeviceModel(): String {
         return try {
             // 获取设备型号
@@ -146,7 +148,7 @@ actual class PlatformManagerImpl : PlatformManager {
             "Unknown"
         }
     }
-    
+
     private fun getDeviceManufacturer(): String {
         return try {
             // 获取设备制造商
@@ -155,15 +157,19 @@ actual class PlatformManagerImpl : PlatformManager {
             "Unknown"
         }
     }
-    
-    private suspend fun executeHarmonyOSNativeCode(code: String, params: Map<String, Any>): Any? {
+
+    private suspend fun executeHarmonyOSNativeCode(
+        code: String,
+        params: Map<String, Any>,
+    ): Any? {
         // HarmonyOS 原生代码执行逻辑
         return when (code) {
-            "getDeviceInfo" -> mapOf(
-                "model" to getDeviceModel(),
-                "manufacturer" to getDeviceManufacturer(),
-                "osVersion" to getHarmonyOSVersion()
-            )
+            "getDeviceInfo" ->
+                mapOf(
+                    "model" to getDeviceModel(),
+                    "manufacturer" to getDeviceManufacturer(),
+                    "osVersion" to getHarmonyOSVersion(),
+                )
             "vibrate" -> {
                 val duration = params["duration"] as? Long ?: 100L
                 // 执行震动

@@ -9,32 +9,34 @@ actual fun getPlatformMemoryInfo(): PlatformMemoryInfo {
     return try {
         val performance = window.performance
         val memory = js("performance.memory")
-        
-        val totalMemory = if (memory != null) {
-            (memory.jsHeapSizeLimit as? Number)?.toLong() ?: (4L * 1024 * 1024 * 1024) // 4GB默认
-        } else {
-            4L * 1024 * 1024 * 1024 // 4GB默认
-        }
-        
-        val usedMemory = if (memory != null) {
-            (memory.usedJSHeapSize as? Number)?.toLong() ?: (512L * 1024 * 1024) // 512MB默认
-        } else {
-            512L * 1024 * 1024 // 512MB默认
-        }
-        
+
+        val totalMemory =
+            if (memory != null) {
+                (memory.jsHeapSizeLimit as? Number)?.toLong() ?: (4L * 1024 * 1024 * 1024) // 4GB默认
+            } else {
+                4L * 1024 * 1024 * 1024 // 4GB默认
+            }
+
+        val usedMemory =
+            if (memory != null) {
+                (memory.usedJSHeapSize as? Number)?.toLong() ?: (512L * 1024 * 1024) // 512MB默认
+            } else {
+                512L * 1024 * 1024 // 512MB默认
+            }
+
         PlatformMemoryInfo(
             totalMemory = totalMemory,
             usedMemory = usedMemory,
             availableMemory = totalMemory - usedMemory,
-            gcCount = getGCCount()
+            gcCount = getGCCount(),
         )
     } catch (e: Exception) {
         // 返回默认值
         PlatformMemoryInfo(
             totalMemory = 4L * 1024 * 1024 * 1024, // 4GB
-            usedMemory = 512L * 1024 * 1024,       // 512MB
-            availableMemory = 3584L * 1024 * 1024,  // 3.5GB
-            gcCount = 0
+            usedMemory = 512L * 1024 * 1024, // 512MB
+            availableMemory = 3584L * 1024 * 1024, // 3.5GB
+            gcCount = 0,
         )
     }
 }
@@ -48,7 +50,7 @@ actual fun requestGarbageCollection() {
         if (js("window.gc") != null) {
             js("window.gc()")
         }
-        
+
         // 清理各种缓存
         clearWebCaches()
     } catch (e: Exception) {
@@ -84,7 +86,6 @@ private fun clearWebCaches() {
  * Web特定的内存管理工具
  */
 object WebMemoryUtils {
-    
     /**
      * 获取浏览器内存信息
      */
@@ -95,7 +96,7 @@ object WebMemoryUtils {
                 WebBrowserMemoryInfo(
                     jsHeapSizeLimit = (memory.jsHeapSizeLimit as Number).toLong(),
                     totalJSHeapSize = (memory.totalJSHeapSize as Number).toLong(),
-                    usedJSHeapSize = (memory.usedJSHeapSize as Number).toLong()
+                    usedJSHeapSize = (memory.usedJSHeapSize as Number).toLong(),
                 )
             } else {
                 null
@@ -104,7 +105,7 @@ object WebMemoryUtils {
             null
         }
     }
-    
+
     /**
      * 检查是否支持内存API
      */
@@ -115,7 +116,7 @@ object WebMemoryUtils {
             false
         }
     }
-    
+
     /**
      * 获取存储配额信息
      */
@@ -125,7 +126,7 @@ object WebMemoryUtils {
                 val estimate = js("navigator.storage.estimate()").await()
                 WebStorageQuota(
                     quota = (estimate.quota as? Number)?.toLong() ?: 0L,
-                    usage = (estimate.usage as? Number)?.toLong() ?: 0L
+                    usage = (estimate.usage as? Number)?.toLong() ?: 0L,
                 )
             } else {
                 null
@@ -134,7 +135,7 @@ object WebMemoryUtils {
             null
         }
     }
-    
+
     /**
      * 清理Service Worker缓存
      */
@@ -150,7 +151,7 @@ object WebMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 清理IndexedDB
      */
@@ -163,7 +164,7 @@ object WebMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 清理localStorage
      */
@@ -176,7 +177,7 @@ object WebMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 清理sessionStorage
      */
@@ -189,7 +190,7 @@ object WebMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 监听内存压力
      */
@@ -201,7 +202,7 @@ object WebMemoryUtils {
             // 忽略异常
         }
     }
-    
+
     /**
      * 获取网络连接信息
      */
@@ -213,7 +214,7 @@ object WebMemoryUtils {
                     effectiveType = connection.effectiveType as? String ?: "unknown",
                     downlink = (connection.downlink as? Number)?.toDouble() ?: 0.0,
                     rtt = (connection.rtt as? Number)?.toInt() ?: 0,
-                    saveData = connection.saveData as? Boolean ?: false
+                    saveData = connection.saveData as? Boolean ?: false,
                 )
             } else {
                 null
@@ -230,7 +231,7 @@ object WebMemoryUtils {
 data class WebBrowserMemoryInfo(
     val jsHeapSizeLimit: Long,
     val totalJSHeapSize: Long,
-    val usedJSHeapSize: Long
+    val usedJSHeapSize: Long,
 ) {
     val availableHeapSize: Long get() = jsHeapSizeLimit - usedJSHeapSize
     val heapUsagePercentage: Double get() = usedJSHeapSize.toDouble() / jsHeapSizeLimit.toDouble()
@@ -241,7 +242,7 @@ data class WebBrowserMemoryInfo(
  */
 data class WebStorageQuota(
     val quota: Long,
-    val usage: Long
+    val usage: Long,
 ) {
     val available: Long get() = quota - usage
     val usagePercentage: Double get() = usage.toDouble() / quota.toDouble()
@@ -251,7 +252,10 @@ data class WebStorageQuota(
  * Web内存压力级别
  */
 enum class WebMemoryPressure {
-    LOW, MEDIUM, HIGH, CRITICAL
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL,
 }
 
 /**
@@ -259,7 +263,7 @@ enum class WebMemoryPressure {
  */
 data class WebNetworkInfo(
     val effectiveType: String, // "slow-2g", "2g", "3g", "4g"
-    val downlink: Double,      // Mbps
-    val rtt: Int,             // ms
-    val saveData: Boolean
+    val downlink: Double, // Mbps
+    val rtt: Int, // ms
+    val saveData: Boolean,
 )

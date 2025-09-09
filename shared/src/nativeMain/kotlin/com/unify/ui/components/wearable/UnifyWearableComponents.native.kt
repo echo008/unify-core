@@ -6,39 +6,63 @@ import com.unify.core.types.HealthMetric
 import com.unify.core.types.WorkoutType
 
 enum class ConnectionStatus {
-    CONNECTED, DISCONNECTED, CONNECTING, ERROR
+    CONNECTED,
+    DISCONNECTED,
+    CONNECTING,
+    ERROR,
 }
 
 enum class WatchFaceStyle {
-    ANALOG, DIGITAL, HYBRID
+    ANALOG,
+    DIGITAL,
+    HYBRID,
 }
 
 enum class ComplicationType {
-    SHORT_TEXT, LONG_TEXT, ICON, PROGRESS, IMAGE
+    SHORT_TEXT,
+    LONG_TEXT,
+    ICON,
+    PROGRESS,
+    IMAGE,
 }
 
 enum class WatchInputType {
-    TEXT, VOICE, GESTURE
+    TEXT,
+    VOICE,
+    GESTURE,
 }
 
 enum class MenuLayout {
-    LIST, GRID, CIRCULAR
+    LIST,
+    GRID,
+    CIRCULAR,
 }
 
 enum class WorkoutType {
-    RUNNING, WALKING, CYCLING, SWIMMING, OTHER
+    RUNNING,
+    WALKING,
+    CYCLING,
+    SWIMMING,
+    OTHER,
 }
 
 enum class TemperatureUnit {
-    CELSIUS, FAHRENHEIT
+    CELSIUS,
+    FAHRENHEIT,
 }
 
 data class ComplicationData(val value: String)
+
 data class WearableNotification(val id: String, val title: String, val message: String)
+
 data class WatchMenuItem(val id: String, val title: String, val icon: String)
+
 data class WorkoutMetrics(val duration: Long, val distance: Double, val calories: Int)
+
 data class WeatherData(val temperature: Double, val condition: String, val humidity: Int)
+
 data class WatchAlarm(val id: String, val time: String, val enabled: Boolean)
+
 data class Position(val x: Float, val y: Float)
 
 @Composable
@@ -46,7 +70,7 @@ actual fun UnifyWatchFace(
     time: String,
     date: String,
     healthMetrics: List<com.unify.device.enhanced.HealthMetric>,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台表盘组件实现
 }
@@ -57,7 +81,7 @@ actual fun UnifyWatchWorkout(
     duration: Long,
     metrics: Map<String, String>,
     onWorkoutAction: (WorkoutAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台手表运动组件实现
 }
@@ -68,7 +92,7 @@ fun NativeWatchComplication(
     type: ComplicationType,
     data: ComplicationData,
     onTap: () -> Unit,
-    isActive: Boolean
+    isActive: Boolean,
 ) {
     // Native平台表盘复杂功能组件实现
 }
@@ -77,7 +101,7 @@ fun NativeWatchComplication(
 actual fun UnifyWatchNotifications(
     notifications: List<WatchNotification>,
     onNotificationAction: (WatchNotification, NotificationAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台手表通知组件实现
 }
@@ -88,7 +112,7 @@ fun NativeWatchInput(
     inputType: WatchInputType,
     onInput: (String) -> Unit,
     onCancel: () -> Unit,
-    placeholder: String
+    placeholder: String,
 ) {
     // Native平台手表输入组件实现
 }
@@ -99,7 +123,7 @@ fun NativeWatchMenu(
     items: List<WatchMenuItem>,
     onItemSelect: (String) -> Unit,
     layout: MenuLayout,
-    isScrollable: Boolean
+    isScrollable: Boolean,
 ) {
     // Native平台手表菜单组件实现
 }
@@ -110,7 +134,7 @@ fun NativeWatchHealth(
     metrics: List<HealthMetric>,
     onMetricTap: (String) -> Unit,
     refreshInterval: Long,
-    showTrends: Boolean
+    showTrends: Boolean,
 ) {
     // Native平台手表健康组件实现
 }
@@ -122,7 +146,7 @@ fun NativeWatchFitness(
     onWorkoutStart: () -> Unit,
     onWorkoutPause: () -> Unit,
     onWorkoutStop: () -> Unit,
-    currentMetrics: WorkoutMetrics
+    currentMetrics: WorkoutMetrics,
 ) {
     // Native平台手表健身组件实现
 }
@@ -133,7 +157,7 @@ fun NativeWatchWeather(
     weatherData: WeatherData,
     onRefresh: () -> Unit,
     showForecast: Boolean,
-    units: TemperatureUnit
+    units: TemperatureUnit,
 ) {
     // Native平台手表天气组件实现
 }
@@ -146,7 +170,7 @@ fun NativeWatchTimer(
     onPause: () -> Unit,
     onReset: () -> Unit,
     onComplete: () -> Unit,
-    isRunning: Boolean
+    isRunning: Boolean,
 ) {
     // Native平台手表计时器组件实现
 }
@@ -158,7 +182,7 @@ fun NativeWatchAlarm(
     onAlarmToggle: (String, Boolean) -> Unit,
     onAlarmEdit: (String) -> Unit,
     onAlarmDelete: (String) -> Unit,
-    onAddAlarm: () -> Unit
+    onAddAlarm: () -> Unit,
 ) {
     // Native平台手表闹钟组件实现
 }
@@ -167,7 +191,7 @@ fun NativeWatchAlarm(
 actual fun UnifyHealthMonitor(
     metrics: List<HealthMetric>,
     onMetricSelected: (HealthMetric) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台健康监控组件实现
 }
@@ -176,15 +200,19 @@ actual fun UnifyHealthMonitor(
 actual fun UnifyWatchQuickActions(
     actions: List<QuickAction>,
     onActionSelected: (QuickAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台手表快捷操作组件实现
 }
 
 class NativePlatformWearableManager {
     fun isWearableConnected(): Boolean = false
+
     fun sendDataToWearable(data: Map<String, Any>): Boolean = true
+
     fun receiveDataFromWearable(): Map<String, Any>? = null
+
     fun getWearableBatteryLevel(): Float = 0.8f
+
     fun getWearableConnectionStatus(): ConnectionStatus = ConnectionStatus.DISCONNECTED
 }

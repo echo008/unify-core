@@ -14,19 +14,19 @@ actual fun UnifyCamera(
     modifier: Modifier,
     showControls: Boolean,
     enableGestures: Boolean,
-    onPermissionDenied: () -> Unit
+    onPermissionDenied: () -> Unit,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("Camera (JS Implementation)")
         Button(
-            onClick = { 
+            onClick = {
                 // Simulate capture
                 onCaptureResult(CaptureResult(success = true, filePath = "sample_photo.jpg"))
-            }
+            },
         ) {
             Text("Capture Photo")
         }
-        
+
         if (showControls) {
             Text("Camera controls enabled")
         }
@@ -38,7 +38,7 @@ actual fun UnifyCameraPreview(
     config: CameraConfig,
     modifier: Modifier,
     onCameraReady: () -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier.padding(16.dp)) {
         Text("Camera Preview (JS Implementation)")
@@ -54,21 +54,21 @@ actual fun UnifyImageCapture(
     modifier: Modifier,
     facing: CameraFacing,
     flashMode: FlashMode,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("Image Capture (JS Implementation)")
         Button(
-            onClick = { 
+            onClick = {
                 // Create a simple ImageBitmap placeholder
                 // In real implementation, this would be actual camera capture
                 // For now, we'll simulate with null since ImageBitmap creation is complex in JS
                 // onImageCaptured(imageBitmap)
-            }
+            },
         ) {
             Text("Capture Image")
         }
-        
+
         if (showPreview) {
             Text("Preview enabled")
         }
@@ -82,12 +82,12 @@ actual fun UnifyVideoCapture(
     facing: CameraFacing,
     quality: VideoQuality,
     maxDuration: Long,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("Video Capture (JS Implementation)")
         Button(
-            onClick = { onVideoRecorded("video_path") }
+            onClick = { onVideoRecorded("video_path") },
         ) {
             Text("Record Video")
         }
@@ -100,20 +100,20 @@ actual fun UnifyQRScanner(
     modifier: Modifier,
     showOverlay: Boolean,
     overlayColor: Color,
-    enableFlash: Boolean
+    enableFlash: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("QR Scanner (JS Implementation)")
         Button(
-            onClick = { onQRCodeDetected("sample_qr_data") }
+            onClick = { onQRCodeDetected("sample_qr_data") },
         ) {
             Text("Simulate QR Scan")
         }
-        
+
         if (showOverlay) {
             Text("Overlay enabled")
         }
-        
+
         if (enableFlash) {
             Text("Flash available")
         }
@@ -126,22 +126,22 @@ actual fun UnifyBarcodeScanner(
     modifier: Modifier,
     supportedFormats: List<String>,
     showOverlay: Boolean,
-    enableFlash: Boolean
+    enableFlash: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("Barcode Scanner (JS Implementation)")
         Button(
-            onClick = { onBarcodeDetected("sample_barcode", "CODE_128") }
+            onClick = { onBarcodeDetected("sample_barcode", "CODE_128") },
         ) {
             Text("Simulate Barcode Scan")
         }
-        
+
         Text("Supported formats: ${supportedFormats.joinToString(", ")}")
-        
+
         if (showOverlay) {
             Text("Overlay enabled")
         }
-        
+
         if (enableFlash) {
             Text("Flash available")
         }

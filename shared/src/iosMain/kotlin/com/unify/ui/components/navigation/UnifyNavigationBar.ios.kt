@@ -6,7 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -17,7 +16,7 @@ actual fun UnifyTopAppBar(
     actions: @Composable RowScope.() -> Unit,
     backgroundColor: Color,
     contentColor: Color,
-    elevation: Dp
+    elevation: Dp,
 ) {
     if (navigationIcon != null) {
         TopAppBar(
@@ -25,20 +24,22 @@ actual fun UnifyTopAppBar(
             modifier = modifier,
             navigationIcon = navigationIcon,
             actions = actions,
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = backgroundColor,
-                titleContentColor = contentColor
-            )
+            colors =
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor,
+                    titleContentColor = contentColor,
+                ),
         )
     } else {
         TopAppBar(
             title = { Text(title) },
             modifier = modifier,
             actions = actions,
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = backgroundColor,
-                titleContentColor = contentColor
-            )
+            colors =
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = backgroundColor,
+                    titleContentColor = contentColor,
+                ),
         )
     }
 }
@@ -52,12 +53,12 @@ actual fun UnifyBottomNavigationBar(
     backgroundColor: Color,
     contentColor: Color,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     NavigationBar(
         modifier = modifier,
         containerColor = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         items.forEach { item ->
             NavigationBarItem(
@@ -65,7 +66,7 @@ actual fun UnifyBottomNavigationBar(
                 onClick = { onItemSelected(item.id) },
                 icon = { item.icon?.invoke() ?: Text(item.title) },
                 label = { Text(item.title) },
-                enabled = item.enabled
+                enabled = item.enabled,
             )
         }
     }
@@ -81,13 +82,13 @@ actual fun UnifyNavigationRail(
     backgroundColor: Color,
     contentColor: Color,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     NavigationRail(
         modifier = modifier,
         containerColor = backgroundColor,
         contentColor = contentColor,
-        header = header
+        header = header,
     ) {
         items.forEach { item ->
             NavigationRailItem(
@@ -95,7 +96,7 @@ actual fun UnifyNavigationRail(
                 onClick = { onItemSelected(item.id) },
                 icon = { item.icon?.invoke() ?: Text(item.title) },
                 label = { Text(item.title) },
-                enabled = item.enabled
+                enabled = item.enabled,
             )
         }
     }
@@ -111,12 +112,12 @@ actual fun UnifyNavigationBarItem(
     label: (@Composable () -> Unit)?,
     alwaysShowLabel: Boolean,
     selectedIcon: (@Composable () -> Unit)?,
-    badge: (@Composable () -> Unit)?
+    badge: (@Composable () -> Unit)?,
 ) {
     // iOS简化实现
     Column(
         modifier = modifier,
-        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
     ) {
         if (selectedIcon != null && selected) {
             selectedIcon()
@@ -136,7 +137,7 @@ actual fun UnifyTabRow(
     contentColor: Color,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRow(
         selectedTabIndex = selectedTabIndex,
@@ -147,7 +148,7 @@ actual fun UnifyTabRow(
             indicator(positions.map { TabPosition(it.left, it.width) })
         },
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -160,7 +161,7 @@ actual fun UnifyTab(
     text: (@Composable () -> Unit)?,
     icon: (@Composable () -> Unit)?,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     Tab(
         selected = selected,
@@ -168,6 +169,6 @@ actual fun UnifyTab(
         modifier = modifier,
         enabled = enabled,
         text = text,
-        icon = icon
+        icon = icon,
     )
 }

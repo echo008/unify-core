@@ -1,6 +1,5 @@
 package com.unify.device
 
-import com.unify.device.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -10,16 +9,15 @@ import kotlinx.coroutines.flow.asStateFlow
  * 基于HarmonyOS系统API和分布式设备能力
  */
 class UnifyDeviceManagerImpl : UnifyDeviceManager {
-    
     // 传感器数据流
     private val sensorDataFlows = mutableMapOf<SensorType, MutableStateFlow<SensorData>>()
-    
+
     // HarmonyOS设备管理器
     private val harmonyDeviceManager = HarmonyDeviceManager()
-    
+
     // 分布式设备管理
     private val distributedDeviceManager = HarmonyDistributedDeviceManager()
-    
+
     override suspend fun requestPermission(permission: DevicePermission): PermissionStatus {
         return try {
             harmonyDeviceManager.requestPermission(permission)
@@ -27,7 +25,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             PermissionStatus.DENIED
         }
     }
-    
+
     override suspend fun checkPermission(permission: DevicePermission): PermissionStatus {
         return try {
             harmonyDeviceManager.checkPermission(permission)
@@ -35,13 +33,13 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             PermissionStatus.DENIED
         }
     }
-    
+
     override suspend fun requestMultiplePermissions(permissions: List<DevicePermission>): Map<DevicePermission, PermissionStatus> {
         return permissions.associateWith { permission ->
             requestPermission(permission)
         }
     }
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return try {
             harmonyDeviceManager.getDeviceInfo()
@@ -63,11 +61,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 batteryLevel = 80,
                 isCharging = false,
                 networkType = "WiFi",
-                isRooted = false
+                isRooted = false,
             )
         }
     }
-    
+
     override suspend fun getSystemInfo(): SystemInfo {
         return try {
             harmonyDeviceManager.getSystemInfo()
@@ -86,11 +84,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 javaVmVersion = "OpenJDK 11",
                 timezone = "Asia/Shanghai",
                 language = "zh-CN",
-                country = "CN"
+                country = "CN",
             )
         }
     }
-    
+
     override suspend fun getHardwareInfo(): HardwareInfo {
         return try {
             harmonyDeviceManager.getHardwareInfo()
@@ -115,11 +113,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 hasNfc = true,
                 hasGps = true,
                 hasCellular = true,
-                sensors = listOf("Accelerometer", "Gyroscope", "Magnetometer", "Proximity", "Light")
+                sensors = listOf("Accelerometer", "Gyroscope", "Magnetometer", "Proximity", "Light"),
             )
         }
     }
-    
+
     override suspend fun getBatteryInfo(): BatteryInfo {
         return try {
             harmonyDeviceManager.getBatteryInfo()
@@ -133,11 +131,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 voltage = 4200,
                 capacity = 4000,
                 technology = "Li-ion",
-                estimatedTimeRemaining = 480L
+                estimatedTimeRemaining = 480L,
             )
         }
     }
-    
+
     override suspend fun getNetworkInfo(): NetworkInfo {
         return try {
             harmonyDeviceManager.getNetworkInfo()
@@ -153,11 +151,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 isMetered = false,
                 isRoaming = false,
                 downloadSpeed = 100000L,
-                uploadSpeed = 50000L
+                uploadSpeed = 50000L,
             )
         }
     }
-    
+
     override suspend fun getStorageInfo(): StorageInfo {
         return try {
             harmonyDeviceManager.getStorageInfo()
@@ -172,11 +170,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 systemSize = 32000L,
                 isExternalAvailable = false,
                 isExternalRemovable = false,
-                isExternalEmulated = false
+                isExternalEmulated = false,
             )
         }
     }
-    
+
     override suspend fun getDisplayInfo(): DisplayInfo {
         return try {
             harmonyDeviceManager.getDisplayInfo()
@@ -191,27 +189,28 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
                 isHdr = true,
                 colorSpace = "sRGB",
                 brightnessLevel = 128,
-                isAutoRotationEnabled = true
+                isAutoRotationEnabled = true,
             )
         }
     }
-    
+
     override suspend fun getSupportedFeatures(): List<String> {
         return try {
             harmonyDeviceManager.getSupportedFeatures()
         } catch (e: Exception) {
             listOf(
-                "Camera", "GPS", "Bluetooth", "WiFi", "NFC", "Sensors", 
-                "Biometric", "Distributed", "ArkUI", "Multi-screen"
+                "Camera", "GPS", "Bluetooth", "WiFi", "NFC", "Sensors",
+                "Biometric", "Distributed", "ArkUI", "Multi-screen",
             )
         }
     }
-    
+
     override suspend fun startSensorMonitoring(sensorType: SensorType): Flow<SensorData> {
-        val flow = sensorDataFlows.getOrPut(sensorType) {
-            MutableStateFlow(SensorData(sensorType, floatArrayOf(0f, 0f, 0f), System.currentTimeMillis()))
-        }
-        
+        val flow =
+            sensorDataFlows.getOrPut(sensorType) {
+                MutableStateFlow(SensorData(sensorType, floatArrayOf(0f, 0f, 0f), System.currentTimeMillis()))
+            }
+
         try {
             harmonyDeviceManager.startSensorMonitoring(sensorType) { data ->
                 flow.value = data
@@ -219,10 +218,10 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
         } catch (e: Exception) {
             // 传感器启动失败，使用模拟数据
         }
-        
+
         return flow.asStateFlow()
     }
-    
+
     override suspend fun stopSensorMonitoring(sensorType: SensorType) {
         try {
             harmonyDeviceManager.stopSensorMonitoring(sensorType)
@@ -231,7 +230,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 忽略停止传感器的错误
         }
     }
-    
+
     override suspend fun vibrate(durationMillis: Long) {
         try {
             harmonyDeviceManager.vibrate(durationMillis)
@@ -239,7 +238,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 振动失败，忽略
         }
     }
-    
+
     override suspend fun vibratePattern(pattern: LongArray) {
         try {
             harmonyDeviceManager.vibratePattern(pattern)
@@ -247,15 +246,18 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 振动失败，忽略
         }
     }
-    
-    override suspend fun setVolume(streamType: String, volume: Int) {
+
+    override suspend fun setVolume(
+        streamType: String,
+        volume: Int,
+    ) {
         try {
             harmonyDeviceManager.setVolume(streamType, volume)
         } catch (e: Exception) {
             // 音量设置失败，忽略
         }
     }
-    
+
     override suspend fun getVolume(streamType: String): Int {
         return try {
             harmonyDeviceManager.getVolume(streamType)
@@ -263,7 +265,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             50 // 默认音量
         }
     }
-    
+
     override suspend fun setBrightness(brightness: Int) {
         try {
             harmonyDeviceManager.setBrightness(brightness)
@@ -271,7 +273,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 亮度设置失败，忽略
         }
     }
-    
+
     override suspend fun getBrightness(): Int {
         return try {
             harmonyDeviceManager.getBrightness()
@@ -279,15 +281,19 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             128 // 默认亮度
         }
     }
-    
-    override suspend fun showNotification(title: String, message: String, channelId: String) {
+
+    override suspend fun showNotification(
+        title: String,
+        message: String,
+        channelId: String,
+    ) {
         try {
             harmonyDeviceManager.showNotification(title, message, channelId)
         } catch (e: Exception) {
             // 通知显示失败，忽略
         }
     }
-    
+
     override suspend fun copyToClipboard(text: String) {
         try {
             harmonyDeviceManager.copyToClipboard(text)
@@ -295,7 +301,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 剪贴板操作失败，忽略
         }
     }
-    
+
     override suspend fun getFromClipboard(): String {
         return try {
             harmonyDeviceManager.getFromClipboard()
@@ -303,15 +309,18 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             "" // 默认空字符串
         }
     }
-    
-    override suspend fun shareText(text: String, title: String) {
+
+    override suspend fun shareText(
+        text: String,
+        title: String,
+    ) {
         try {
             harmonyDeviceManager.shareText(text, title)
         } catch (e: Exception) {
             // 分享失败，忽略
         }
     }
-    
+
     override suspend fun setScreenOrientation(orientation: String) {
         try {
             harmonyDeviceManager.setScreenOrientation(orientation)
@@ -319,7 +328,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             // 屏幕方向设置失败，忽略
         }
     }
-    
+
     override suspend fun getScreenOrientation(): String {
         return try {
             harmonyDeviceManager.getScreenOrientation()
@@ -327,7 +336,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             "Portrait" // 默认竖屏
         }
     }
-    
+
     override suspend fun takePicture(outputPath: String): Boolean {
         return try {
             harmonyDeviceManager.takePicture(outputPath)
@@ -335,23 +344,29 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             false
         }
     }
-    
-    override suspend fun recordVideo(outputPath: String, durationSeconds: Int): Boolean {
+
+    override suspend fun recordVideo(
+        outputPath: String,
+        durationSeconds: Int,
+    ): Boolean {
         return try {
             harmonyDeviceManager.recordVideo(outputPath, durationSeconds)
         } catch (e: Exception) {
             false
         }
     }
-    
-    override suspend fun recordAudio(outputPath: String, durationSeconds: Int): Boolean {
+
+    override suspend fun recordAudio(
+        outputPath: String,
+        durationSeconds: Int,
+    ): Boolean {
         return try {
             harmonyDeviceManager.recordAudio(outputPath, durationSeconds)
         } catch (e: Exception) {
             false
         }
     }
-    
+
     override suspend fun getCurrentLocation(): LocationData? {
         return try {
             harmonyDeviceManager.getCurrentLocation()
@@ -359,7 +374,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             null
         }
     }
-    
+
     override suspend fun scanBluetooth(): List<BluetoothDevice> {
         return try {
             harmonyDeviceManager.scanBluetooth()
@@ -367,7 +382,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             emptyList()
         }
     }
-    
+
     override suspend fun readNfc(): String? {
         return try {
             harmonyDeviceManager.readNfc()
@@ -375,7 +390,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             null
         }
     }
-    
+
     override suspend fun authenticateBiometric(): Boolean {
         return try {
             harmonyDeviceManager.authenticateBiometric()
@@ -383,7 +398,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             false
         }
     }
-    
+
     // HarmonyOS特有功能
     suspend fun getDistributedDevices(): List<DistributedDevice> {
         return try {
@@ -392,7 +407,7 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             emptyList()
         }
     }
-    
+
     suspend fun connectToDistributedDevice(deviceId: String): Boolean {
         return try {
             distributedDeviceManager.connectDevice(deviceId)
@@ -400,8 +415,11 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
             false
         }
     }
-    
-    suspend fun syncDataToDistributedDevice(deviceId: String, data: Map<String, Any>): Boolean {
+
+    suspend fun syncDataToDistributedDevice(
+        deviceId: String,
+        data: Map<String, Any>,
+    ): Boolean {
         return try {
             distributedDeviceManager.syncData(deviceId, data)
         } catch (e: Exception) {
@@ -412,17 +430,16 @@ class UnifyDeviceManagerImpl : UnifyDeviceManager {
 
 // HarmonyOS设备管理器模拟实现
 private class HarmonyDeviceManager {
-    
     fun requestPermission(permission: DevicePermission): PermissionStatus {
         // 模拟HarmonyOS权限请求
         return PermissionStatus.GRANTED
     }
-    
+
     fun checkPermission(permission: DevicePermission): PermissionStatus {
         // 模拟HarmonyOS权限检查
         return PermissionStatus.GRANTED
     }
-    
+
     fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             deviceId = "harmony_device_001",
@@ -441,10 +458,10 @@ private class HarmonyDeviceManager {
             batteryLevel = 85,
             isCharging = false,
             networkType = "5G",
-            isRooted = false
+            isRooted = false,
         )
     }
-    
+
     fun getSystemInfo(): SystemInfo {
         return SystemInfo(
             osName = "HarmonyOS",
@@ -460,10 +477,10 @@ private class HarmonyDeviceManager {
             javaVmVersion = "OpenJDK 11.0.1",
             timezone = "Asia/Shanghai",
             language = "zh-CN",
-            country = "CN"
+            country = "CN",
         )
     }
-    
+
     fun getHardwareInfo(): HardwareInfo {
         return HardwareInfo(
             cpuModel = "Kirin 9000s",
@@ -485,13 +502,14 @@ private class HarmonyDeviceManager {
             hasNfc = true,
             hasGps = true,
             hasCellular = true,
-            sensors = listOf(
-                "Accelerometer", "Gyroscope", "Magnetometer", "Proximity", 
-                "Light", "Pressure", "Temperature", "Humidity", "Heart Rate"
-            )
+            sensors =
+                listOf(
+                    "Accelerometer", "Gyroscope", "Magnetometer", "Proximity",
+                    "Light", "Pressure", "Temperature", "Humidity", "Heart Rate",
+                ),
         )
     }
-    
+
     fun getBatteryInfo(): BatteryInfo {
         return BatteryInfo(
             level = 85,
@@ -502,10 +520,10 @@ private class HarmonyDeviceManager {
             voltage = 4350,
             capacity = 5000,
             technology = "Li-Polymer",
-            estimatedTimeRemaining = 720L
+            estimatedTimeRemaining = 720L,
         )
     }
-    
+
     fun getNetworkInfo(): NetworkInfo {
         return NetworkInfo(
             isConnected = true,
@@ -518,10 +536,10 @@ private class HarmonyDeviceManager {
             isMetered = false,
             isRoaming = false,
             downloadSpeed = 500000L,
-            uploadSpeed = 100000L
+            uploadSpeed = 100000L,
         )
     }
-    
+
     fun getStorageInfo(): StorageInfo {
         return StorageInfo(
             totalInternal = 512000L,
@@ -533,10 +551,10 @@ private class HarmonyDeviceManager {
             systemSize = 64000L,
             isExternalAvailable = false,
             isExternalRemovable = false,
-            isExternalEmulated = false
+            isExternalEmulated = false,
         )
     }
-    
+
     fun getDisplayInfo(): DisplayInfo {
         return DisplayInfo(
             width = 1260,
@@ -548,106 +566,125 @@ private class HarmonyDeviceManager {
             isHdr = true,
             colorSpace = "P3",
             brightnessLevel = 150,
-            isAutoRotationEnabled = true
+            isAutoRotationEnabled = true,
         )
     }
-    
+
     fun getSupportedFeatures(): List<String> {
         return listOf(
-            "Camera", "GPS", "Bluetooth", "WiFi", "NFC", "5G", "Sensors", 
-            "Biometric", "Distributed", "ArkUI", "Multi-screen", "AI", "HiSilicon"
+            "Camera", "GPS", "Bluetooth", "WiFi", "NFC", "5G", "Sensors",
+            "Biometric", "Distributed", "ArkUI", "Multi-screen", "AI", "HiSilicon",
         )
     }
-    
-    fun startSensorMonitoring(sensorType: SensorType, callback: (SensorData) -> Unit) {
+
+    fun startSensorMonitoring(
+        sensorType: SensorType,
+        callback: (SensorData) -> Unit,
+    ) {
         // 模拟传感器数据监听
     }
-    
+
     fun stopSensorMonitoring(sensorType: SensorType) {
         // 模拟停止传感器监听
     }
-    
+
     fun vibrate(durationMillis: Long) {
         // 模拟振动
     }
-    
+
     fun vibratePattern(pattern: LongArray) {
         // 模拟振动模式
     }
-    
-    fun setVolume(streamType: String, volume: Int) {
+
+    fun setVolume(
+        streamType: String,
+        volume: Int,
+    ) {
         // 模拟音量设置
     }
-    
+
     fun getVolume(streamType: String): Int {
         return 70
     }
-    
+
     fun setBrightness(brightness: Int) {
         // 模拟亮度设置
     }
-    
+
     fun getBrightness(): Int {
         return 150
     }
-    
-    fun showNotification(title: String, message: String, channelId: String) {
+
+    fun showNotification(
+        title: String,
+        message: String,
+        channelId: String,
+    ) {
         // 模拟通知显示
     }
-    
+
     fun copyToClipboard(text: String) {
         // 模拟剪贴板操作
     }
-    
+
     fun getFromClipboard(): String {
         return ""
     }
-    
-    fun shareText(text: String, title: String) {
+
+    fun shareText(
+        text: String,
+        title: String,
+    ) {
         // 模拟分享功能
     }
-    
+
     fun setScreenOrientation(orientation: String) {
         // 模拟屏幕方向设置
     }
-    
+
     fun getScreenOrientation(): String {
         return "Portrait"
     }
-    
+
     fun takePicture(outputPath: String): Boolean {
         return true
     }
-    
-    fun recordVideo(outputPath: String, durationSeconds: Int): Boolean {
+
+    fun recordVideo(
+        outputPath: String,
+        durationSeconds: Int,
+    ): Boolean {
         return true
     }
-    
-    fun recordAudio(outputPath: String, durationSeconds: Int): Boolean {
+
+    fun recordAudio(
+        outputPath: String,
+        durationSeconds: Int,
+    ): Boolean {
         return true
     }
-    
+
     fun getCurrentLocation(): LocationData {
         return LocationData(
             latitude = 39.9042,
             longitude = 116.4074,
             altitude = 43.5,
             accuracy = 5.0f,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
         )
     }
-    
+
     fun scanBluetooth(): List<BluetoothDevice> {
         return listOf(
             BluetoothDevice("Device1", "00:11:22:33:44:55", -45),
-            BluetoothDevice("Device2", "00:11:22:33:44:66", -60)
+            BluetoothDevice("Device2", "00:11:22:33:44:66", -60),
         )
     }
-    
+
     fun readNfc(): String {
         return "NFC_DATA"
     }
-    
+
     fun authenticateBiometric(): Boolean {
         return true
     }
@@ -655,20 +692,22 @@ private class HarmonyDeviceManager {
 
 // HarmonyOS分布式设备管理器
 private class HarmonyDistributedDeviceManager {
-    
     fun getAvailableDevices(): List<DistributedDevice> {
         return listOf(
             DistributedDevice("tablet_001", "HUAWEI MatePad Pro", "Tablet"),
             DistributedDevice("watch_001", "HUAWEI WATCH GT 4", "Watch"),
-            DistributedDevice("tv_001", "HUAWEI Vision S", "TV")
+            DistributedDevice("tv_001", "HUAWEI Vision S", "TV"),
         )
     }
-    
+
     fun connectDevice(deviceId: String): Boolean {
         return true
     }
-    
-    fun syncData(deviceId: String, data: Map<String, Any>): Boolean {
+
+    fun syncData(
+        deviceId: String,
+        data: Map<String, Any>,
+    ): Boolean {
         return true
     }
 }
@@ -676,7 +715,7 @@ private class HarmonyDistributedDeviceManager {
 data class DistributedDevice(
     val deviceId: String,
     val deviceName: String,
-    val deviceType: String
+    val deviceType: String,
 )
 
 actual object UnifyDeviceManagerFactory {

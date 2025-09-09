@@ -1,11 +1,13 @@
 package com.unify.ui.components.advanced
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -15,13 +17,13 @@ actual fun UnifyCalendar(
     viewType: CalendarViewType,
     onDateSelected: (SimpleDate) -> Unit,
     onEventClicked: (CalendarEvent) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("iOS Calendar - ${viewType.name}")
         Text("Events: ${events.size}")
         Button(
-            onClick = { onDateSelected(SimpleDate(2024, 1, 1)) }
+            onClick = { onDateSelected(SimpleDate(2024, 1, 1)) },
         ) {
             Text("Select Date")
         }
@@ -34,15 +36,15 @@ actual fun UnifyDatePicker(
     minDate: SimpleDate?,
     maxDate: SimpleDate?,
     onDateSelected: (SimpleDate) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("iOS Date Picker")
-        selectedDate?.let { 
+        selectedDate?.let {
             Text("Selected: ${it.year}-${it.month}-${it.day}")
         }
         Button(
-            onClick = { onDateSelected(SimpleDate(2024, 1, 1)) }
+            onClick = { onDateSelected(SimpleDate(2024, 1, 1)) },
         ) {
             Text("Select Date")
         }
@@ -53,7 +55,7 @@ actual fun UnifyDatePicker(
 actual fun UnifyTimePicker(
     selectedTime: SimpleTime?,
     onTimeSelected: (SimpleTime) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("iOS Time Picker")
@@ -61,7 +63,7 @@ actual fun UnifyTimePicker(
             Text("Selected: ${it.hour}:${it.minute}")
         }
         Button(
-            onClick = { onTimeSelected(SimpleTime(12, 0)) }
+            onClick = { onTimeSelected(SimpleTime(12, 0)) },
         ) {
             Text("Select Time")
         }
@@ -72,7 +74,7 @@ actual fun UnifyTimePicker(
 actual fun UnifyDateTimePicker(
     selectedDateTime: Pair<SimpleDate, SimpleTime>?,
     onDateTimeSelected: (Pair<SimpleDate, SimpleTime>) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("iOS DateTime Picker")
@@ -80,11 +82,11 @@ actual fun UnifyDateTimePicker(
             Text("Selected: ${date.year}-${date.month}-${date.day} ${time.hour}:${time.minute}")
         }
         Button(
-            onClick = { 
+            onClick = {
                 onDateTimeSelected(
-                    Pair(SimpleDate(2024, 1, 1), SimpleTime(12, 0))
+                    Pair(SimpleDate(2024, 1, 1), SimpleTime(12, 0)),
                 )
-            }
+            },
         ) {
             Text("Select DateTime")
         }
@@ -99,7 +101,7 @@ actual fun UnifyCalendarView(
     onEventClick: (CalendarEvent) -> Unit,
     onDateClick: (SimpleDate) -> Unit,
     showWeekNumbers: Boolean,
-    firstDayOfWeek: Int
+    firstDayOfWeek: Int,
 ) {
     Column(modifier = modifier) {
         Text("iOS Calendar View - ${viewType.name}")
@@ -107,7 +109,7 @@ actual fun UnifyCalendarView(
         events.forEach { event ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(4.dp),
-                onClick = { onEventClick(event) }
+                onClick = { onEventClick(event) },
             ) {
                 Text(event.title)
             }

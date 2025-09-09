@@ -2,13 +2,12 @@ package com.unify.ui.components.navigation
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.material3.DrawerValue as MaterialDrawerValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.navigation.DrawerValue
+import androidx.compose.material3.DrawerValue as MaterialDrawerValue
 
 @Composable
 actual fun UnifyDrawer(
@@ -18,19 +17,23 @@ actual fun UnifyDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     scrimColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val state = rememberDrawerState(initialValue = when(drawerState) {
-        DrawerValue.Open -> MaterialDrawerValue.Open
-        DrawerValue.Closed -> MaterialDrawerValue.Closed
-    })
+    val state =
+        rememberDrawerState(
+            initialValue =
+                when (drawerState) {
+                    DrawerValue.Open -> MaterialDrawerValue.Open
+                    DrawerValue.Closed -> MaterialDrawerValue.Closed
+                },
+        )
     ModalNavigationDrawer(
         drawerContent = { ModalDrawerSheet { drawerContent() } },
         modifier = modifier,
         drawerState = state,
         gesturesEnabled = gesturesEnabled,
         scrimColor = scrimColor,
-        content = content
+        content = content,
     )
 }
 
@@ -43,19 +46,23 @@ actual fun UnifyModalDrawer(
     gesturesEnabled: Boolean,
     scrimColor: Color,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val state = rememberDrawerState(initialValue = when(drawerState) {
-        DrawerValue.Open -> MaterialDrawerValue.Open
-        DrawerValue.Closed -> MaterialDrawerValue.Closed
-    })
+    val state =
+        rememberDrawerState(
+            initialValue =
+                when (drawerState) {
+                    DrawerValue.Open -> MaterialDrawerValue.Open
+                    DrawerValue.Closed -> MaterialDrawerValue.Closed
+                },
+        )
     ModalNavigationDrawer(
         drawerContent = { ModalDrawerSheet { drawerContent() } },
         modifier = modifier,
         drawerState = state,
         gesturesEnabled = gesturesEnabled,
         scrimColor = scrimColor,
-        content = content
+        content = content,
     )
 }
 
@@ -64,12 +71,12 @@ actual fun UnifyPermanentDrawer(
     drawerContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     PermanentNavigationDrawer(
         drawerContent = { PermanentDrawerSheet { drawerContent() } },
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -81,18 +88,22 @@ actual fun UnifyDismissibleDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val state = rememberDrawerState(initialValue = when(drawerState) {
-        DrawerValue.Open -> MaterialDrawerValue.Open
-        DrawerValue.Closed -> MaterialDrawerValue.Closed
-    })
+    val state =
+        rememberDrawerState(
+            initialValue =
+                when (drawerState) {
+                    DrawerValue.Open -> MaterialDrawerValue.Open
+                    DrawerValue.Closed -> MaterialDrawerValue.Closed
+                },
+        )
     ModalNavigationDrawer(
         drawerContent = { ModalDrawerSheet { drawerContent() } },
         modifier = modifier,
         drawerState = state,
         gesturesEnabled = gesturesEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -102,7 +113,7 @@ actual fun UnifyDrawerItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier,
-    colors: DrawerItemColors
+    colors: DrawerItemColors,
 ) {
     NavigationDrawerItem(
         { Text(item.title) },
@@ -110,7 +121,12 @@ actual fun UnifyDrawerItem(
         onClick = onClick,
         modifier = modifier,
         icon = item.icon,
-        badge = if (item.badge != null) { { Text(item.badge!!) } } else null
+        badge =
+            if (item.badge != null) {
+                { Text(item.badge!!) }
+            } else {
+                null
+            },
     )
 }
 
@@ -121,20 +137,20 @@ actual fun UnifyDrawerHeader(
     avatar: (@Composable () -> Unit)?,
     background: (@Composable () -> Unit)?,
     modifier: Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Column(
-        modifier = modifier.padding(16.dp)
+        modifier = modifier.padding(16.dp),
     ) {
         avatar?.invoke()
         Text(
             title,
-            style = MaterialTheme.typography.titleMedium
+            style = MaterialTheme.typography.titleMedium,
         )
         subtitle?.let { subtitleText ->
             Text(
                 subtitleText,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
         background?.invoke()

@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 @Composable
 actual fun UnifyTVRemoteControl(
     onKeyPressed: (TVKey) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台TV遥控器组件实现
 }
@@ -21,7 +21,7 @@ actual fun UnifyTVMediaPlayer(
     onPlaybackStateChange: (TVPlaybackState) -> Unit,
     modifier: Modifier,
     showControls: Boolean,
-    autoPlay: Boolean
+    autoPlay: Boolean,
 ) {
     // Native平台TV媒体播放器组件实现
 }
@@ -31,7 +31,7 @@ actual fun UnifyTVGridMenu(
     items: List<String>,
     onItemSelected: (String) -> Unit,
     modifier: Modifier,
-    columns: Int
+    columns: Int,
 ) {
     // Native平台TV网格菜单组件实现
 }
@@ -41,7 +41,7 @@ actual fun UnifyTVVolumeControl(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     modifier: Modifier,
-    showMute: Boolean
+    showMute: Boolean,
 ) {
     // Native平台TV音量控制组件实现
 }
@@ -51,7 +51,7 @@ actual fun UnifyTVChannelList(
     channels: List<TVChannel>,
     currentChannel: String,
     onChannelSelected: (TVChannel) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Native平台TV频道列表组件实现
 }

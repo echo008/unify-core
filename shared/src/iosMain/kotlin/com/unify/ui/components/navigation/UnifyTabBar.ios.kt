@@ -6,7 +6,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @Composable
 actual fun UnifyTabBar(
@@ -20,10 +19,10 @@ actual fun UnifyTabBar(
     selectedContentColor: Color,
     unselectedContentColor: Color,
     indicatorColor: Color,
-    onTabClosed: ((String) -> Unit)?
+    onTabClosed: ((String) -> Unit)?,
 ) {
     val selectedIndex = tabs.indexOfFirst { it.id == selectedTabId }.coerceAtLeast(0)
-    
+
     if (mode == TabMode.SCROLLABLE) {
         ScrollableTabRow(
             selectedTabIndex = selectedIndex,
@@ -37,10 +36,10 @@ actual fun UnifyTabBar(
                         onClick = { onTabSelected(tab.id) },
                         text = { Text(tab.title) },
                         icon = tab.icon,
-                        enabled = tab.enabled
+                        enabled = tab.enabled,
                     )
                 }
-            }
+            },
         )
     } else {
         TabRow(
@@ -55,10 +54,10 @@ actual fun UnifyTabBar(
                         onClick = { onTabSelected(tab.id) },
                         text = { Text(tab.title) },
                         icon = tab.icon,
-                        enabled = tab.enabled
+                        enabled = tab.enabled,
                     )
                 }
-            }
+            },
         )
     }
 }
@@ -72,7 +71,7 @@ actual fun UnifyScrollableTabRow(
     edgePadding: Dp,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -83,7 +82,7 @@ actual fun UnifyScrollableTabRow(
             indicator(positions.map { TabPosition(it.left, it.width) })
         },
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -95,7 +94,7 @@ actual fun UnifyFixedTabRow(
     contentColor: Color,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRow(
         selectedTabIndex = selectedTabIndex,
@@ -106,7 +105,7 @@ actual fun UnifyFixedTabRow(
             indicator(positions.map { TabPosition(it.left, it.width) })
         },
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -119,7 +118,7 @@ actual fun UnifyTabBarItem(
     enabled: Boolean,
     selectedContentColor: Color,
     unselectedContentColor: Color,
-    onClose: (() -> Unit)?
+    onClose: (() -> Unit)?,
 ) {
     Tab(
         selected = selected,
@@ -127,7 +126,7 @@ actual fun UnifyTabBarItem(
         text = { Text(tab.title) },
         modifier = modifier,
         enabled = enabled,
-        icon = tab.icon
+        icon = tab.icon,
     )
 }
 
@@ -135,12 +134,13 @@ actual fun UnifyTabBarItem(
 actual fun UnifyTabIndicator(
     modifier: Modifier,
     color: Color,
-    height: Dp
+    height: Dp,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(height)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(height),
     )
 }
 
@@ -149,12 +149,12 @@ actual fun UnifyTabBadge(
     text: String,
     modifier: Modifier,
     backgroundColor: Color,
-    contentColor: Color
+    contentColor: Color,
 ) {
     Badge(
         modifier = modifier,
         containerColor = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         Text(text)
     }

@@ -20,21 +20,21 @@ actual fun UnifyPicker(
     placeholder: String,
     maxSelections: Int,
     searchEnabled: Boolean,
-    showClearButton: Boolean
+    showClearButton: Boolean,
 ) {
     Column(modifier = modifier) {
         Text(title)
         var localExpanded by remember { mutableStateOf(false) }
-        
+
         Button(
-            onClick = { localExpanded = true }
+            onClick = { localExpanded = true },
         ) {
             Text(if (selectedItems.isEmpty()) placeholder else selectedItems.joinToString(", "))
         }
-        
+
         DropdownMenu(
             expanded = localExpanded,
-            onDismissRequest = { localExpanded = false }
+            onDismissRequest = { localExpanded = false },
         ) {
             items.forEach { item ->
                 DropdownMenuItem(
@@ -46,11 +46,12 @@ actual fun UnifyPicker(
                                 localExpanded = false
                             }
                             PickerType.MULTI -> {
-                                val newSelection = if (selectedItems.contains(item.id)) {
-                                    selectedItems - item.id
-                                } else {
-                                    if (selectedItems.size < maxSelections) selectedItems + item.id else selectedItems
-                                }
+                                val newSelection =
+                                    if (selectedItems.contains(item.id)) {
+                                        selectedItems - item.id
+                                    } else {
+                                        if (selectedItems.size < maxSelections) selectedItems + item.id else selectedItems
+                                    }
                                 onSelectionChanged(newSelection)
                             }
                             else -> {
@@ -58,11 +59,11 @@ actual fun UnifyPicker(
                                 localExpanded = false
                             }
                         }
-                    }
+                    },
                 )
             }
         }
-        
+
         if (showClearButton && selectedItems.isNotEmpty()) {
             TextButton(onClick = { onSelectionChanged(emptyList()) }) {
                 Text("Clear")
@@ -79,17 +80,17 @@ actual fun UnifyWheelPicker(
     modifier: Modifier,
     visibleItemCount: Int,
     infiniteLoop: Boolean,
-    textColor: Color
+    textColor: Color,
 ) {
     Column(modifier = modifier) {
         Text("Wheel Picker (JS Implementation)")
         LazyColumn(modifier = Modifier.height(200.dp)) {
             items(items) { item ->
                 Button(
-                    onClick = { 
+                    onClick = {
                         val index = items.indexOf(item)
                         onSelectionChanged(index, item)
-                    }
+                    },
                 ) {
                     Text(item, color = textColor)
                 }
@@ -105,7 +106,7 @@ actual fun UnifyMultiWheelPicker(
     onSelectionChanged: (List<Int>, List<String>) -> Unit,
     modifier: Modifier,
     visibleItemCount: Int,
-    wheelSpacing: Int
+    wheelSpacing: Int,
 ) {
     Row(modifier = modifier) {
         wheels.forEachIndexed { wheelIndex, wheelItems ->
@@ -114,7 +115,7 @@ actual fun UnifyMultiWheelPicker(
                 LazyColumn(modifier = Modifier.height(150.dp)) {
                     items(wheelItems) { item ->
                         Button(
-                            onClick = { 
+                            onClick = {
                                 val newIndices = selectedIndices.toMutableList()
                                 if (wheelIndex < newIndices.size) {
                                     newIndices[wheelIndex] = wheelItems.indexOf(item)
@@ -122,15 +123,16 @@ actual fun UnifyMultiWheelPicker(
                                     while (newIndices.size <= wheelIndex) newIndices.add(0)
                                     newIndices[wheelIndex] = wheelItems.indexOf(item)
                                 }
-                                val selectedValues = wheels.mapIndexed { index, wheel ->
-                                    if (index < newIndices.size && newIndices[index] < wheel.size) {
-                                        wheel[newIndices[index]]
-                                    } else {
-                                        wheel.firstOrNull() ?: ""
+                                val selectedValues =
+                                    wheels.mapIndexed { index, wheel ->
+                                        if (index < newIndices.size && newIndices[index] < wheel.size) {
+                                            wheel[newIndices[index]]
+                                        } else {
+                                            wheel.firstOrNull() ?: ""
+                                        }
                                     }
-                                }
                                 onSelectionChanged(newIndices, selectedValues)
-                            }
+                            },
                         ) {
                             Text(item)
                         }
@@ -148,7 +150,7 @@ actual fun UnifyCascadePicker(
     onSelectionChanged: (List<String>) -> Unit,
     modifier: Modifier,
     maxLevels: Int,
-    showFullPath: Boolean
+    showFullPath: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("Cascade Picker (JS Implementation)")
@@ -157,11 +159,11 @@ actual fun UnifyCascadePicker(
         } else {
             Text("Selected: ${selectedPath.lastOrNull() ?: "None"}")
         }
-        
+
         // Simple cascade implementation
         var currentLevel by remember { mutableStateOf(0) }
         var currentData by remember { mutableStateOf(cascadeData) }
-        
+
         LazyColumn(modifier = Modifier.height(200.dp)) {
             items(currentData.take(maxLevels)) { item ->
                 Button(
@@ -172,7 +174,7 @@ actual fun UnifyCascadePicker(
                             currentData = item.children
                             currentLevel++
                         }
-                    }
+                    },
                 ) {
                     Text(item.label)
                 }
@@ -190,36 +192,37 @@ actual fun UnifyDropdownPicker(
     placeholder: String,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    searchEnabled: Boolean
+    searchEnabled: Boolean,
 ) {
     var searchText by remember { mutableStateOf("") }
-    
+
     Column(modifier = modifier) {
         Button(
-            onClick = { onExpandedChange(!expanded) }
+            onClick = { onExpandedChange(!expanded) },
         ) {
             Text(selectedItem?.let { id -> items.find { it.id == id }?.label } ?: placeholder)
         }
-        
+
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { onExpandedChange(false) }
+            onDismissRequest = { onExpandedChange(false) },
         ) {
             if (searchEnabled) {
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = { searchText = it },
                     placeholder = { Text("Search...") },
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp),
                 )
             }
-            
-            val filteredItems = if (searchEnabled && searchText.isNotEmpty()) {
-                items.filter { it.label.contains(searchText, ignoreCase = true) }
-            } else {
-                items
-            }
-            
+
+            val filteredItems =
+                if (searchEnabled && searchText.isNotEmpty()) {
+                    items.filter { it.label.contains(searchText, ignoreCase = true) }
+                } else {
+                    items
+                }
+
             filteredItems.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item.label) },
@@ -228,7 +231,7 @@ actual fun UnifyDropdownPicker(
                         onExpandedChange(false)
                         searchText = ""
                     },
-                    enabled = item.enabled
+                    enabled = item.enabled,
                 )
             }
         }
@@ -242,17 +245,28 @@ actual fun UnifyColorPicker(
     modifier: Modifier,
     showAlphaSlider: Boolean,
     showHexInput: Boolean,
-    presetColors: List<Color>
+    presetColors: List<Color>,
 ) {
     Column(modifier = modifier) {
         Text("Color Picker (JS Implementation)")
-        
+
         // Use preset colors if provided, otherwise default colors
-        val colors = if (presetColors.isNotEmpty()) presetColors else listOf(
-            Color.Red, Color.Green, Color.Blue, Color.Yellow,
-            Color.Cyan, Color.Magenta, Color.Black, Color.White
-        )
-        
+        val colors =
+            if (presetColors.isNotEmpty()) {
+                presetColors
+            } else {
+                listOf(
+                    Color.Red,
+                    Color.Green,
+                    Color.Blue,
+                    Color.Yellow,
+                    Color.Cyan,
+                    Color.Magenta,
+                    Color.Black,
+                    Color.White,
+                )
+            }
+
         LazyColumn {
             items(colors.chunked(4)) { colorRow ->
                 Row {
@@ -260,7 +274,7 @@ actual fun UnifyColorPicker(
                         Button(
                             onClick = { onColorSelected(color) },
                             modifier = Modifier.weight(1f).padding(2.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = color)
+                            colors = ButtonDefaults.buttonColors(containerColor = color),
                         ) {
                             Text(" ")
                         }
@@ -268,11 +282,11 @@ actual fun UnifyColorPicker(
                 }
             }
         }
-        
+
         if (showAlphaSlider) {
             Text("Alpha: ${selectedColor.alpha}")
         }
-        
+
         if (showHexInput) {
             Text("Selected: #${selectedColor.value.toString(16).uppercase()}")
         }

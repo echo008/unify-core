@@ -1,22 +1,21 @@
 package com.unify.ui.components.tv
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -112,12 +111,12 @@ actual fun UnifyTVGridMenu(
             LazyVerticalGrid(
                 columns = GridCells.Fixed(columns),
             ) {
-                items(items) { item ->
+                items(items.size) { index ->
                     Button(
-                        onClick = { onItemSelected(item) },
+                        onClick = { onItemSelected(items[index]) },
                         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     ) {
-                        Text(item)
+                        Text(items[index])
                     }
                 }
             }

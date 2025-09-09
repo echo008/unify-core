@@ -9,7 +9,7 @@ actual object UnifyTimeUtils {
     actual fun currentTimeMillis(): Long {
         return Date.now().toLong()
     }
-    
+
     actual fun nanoTime(): Long {
         return (Date.now() * 1_000_000).toLong()
     }

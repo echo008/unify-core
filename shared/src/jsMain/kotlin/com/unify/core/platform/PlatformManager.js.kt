@@ -1,24 +1,23 @@
 package com.unify.core.platform
 
-import kotlinx.browser.window
-import kotlinx.browser.document
-import org.w3c.dom.Navigator
-import com.unify.core.types.PlatformType
 import com.unify.core.types.DeviceInfo
+import com.unify.core.types.PlatformType
+import kotlinx.browser.document
+import kotlinx.browser.window
+import org.w3c.dom.Navigator
 
 /**
  * Web平台管理器实现
  */
 class WebPlatformManager : BasePlatformManager() {
-    
     private val navigator: Navigator = window.navigator
-    
+
     override fun getPlatformType(): PlatformType = PlatformType.WEB
-    
+
     override fun getPlatformName(): String = "Web"
-    
+
     override fun getPlatformVersion(): String = window.navigator.appVersion
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = getBrowserVendor(),
@@ -26,10 +25,10 @@ class WebPlatformManager : BasePlatformManager() {
             systemName = getOperatingSystem(),
             systemVersion = getBrowserVersion(),
             deviceId = generateDeviceId(),
-            isEmulator = false // Web环境不是模拟器
+            isEmulator = false, // Web环境不是模拟器
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean {
         return when (capability) {
             "camera" -> hasMediaDevices() && js("navigator.mediaDevices.getUserMedia") != null
@@ -56,10 +55,10 @@ class WebPlatformManager : BasePlatformManager() {
             else -> false
         }
     }
-    
+
     override fun getSupportedCapabilities(): List<String> {
         val capabilities = mutableListOf<String>()
-        
+
         if (hasCapability("camera")) capabilities.add("camera")
         if (hasCapability("gps")) capabilities.add("gps")
         if (hasCapability("bluetooth")) capabilities.add("bluetooth")
@@ -79,10 +78,10 @@ class WebPlatformManager : BasePlatformManager() {
         if (hasCapability("webrtc")) capabilities.add("webrtc")
         if (hasCapability("webgl")) capabilities.add("webgl")
         if (hasCapability("webassembly")) capabilities.add("webassembly")
-        
+
         return capabilities
     }
-    
+
     override suspend fun performPlatformInitialization() {
         // Web特定初始化
         config["user_agent"] = navigator.userAgent
@@ -93,22 +92,22 @@ class WebPlatformManager : BasePlatformManager() {
         config["online"] = navigator.onLine.toString()
         config["java_enabled"] = js("navigator.javaEnabled()").toString()
         config["do_not_track"] = (js("navigator.doNotTrack") as? String) ?: "unknown"
-        
+
         // 屏幕信息
         config["screen_width"] = js("window.screen.width").toString()
         config["screen_height"] = js("window.screen.height").toString()
         config["screen_color_depth"] = js("window.screen.colorDepth").toString()
         config["screen_pixel_depth"] = js("window.screen.pixelDepth").toString()
-        
+
         // 窗口信息
         config["window_width"] = js("window.innerWidth").toString()
         config["window_height"] = js("window.innerHeight").toString()
         config["device_pixel_ratio"] = js("window.devicePixelRatio").toString()
-        
+
         // 时区信息
         config["timezone"] = js("Intl.DateTimeFormat().resolvedOptions().timeZone") as? String ?: "unknown"
         config["timezone_offset"] = js("new Date().getTimezoneOffset()").toString()
-        
+
         // 连接信息
         val connection = js("navigator.connection")
         if (connection != null) {
@@ -116,25 +115,25 @@ class WebPlatformManager : BasePlatformManager() {
             config["connection_downlink"] = js("navigator.connection.downlink").toString()
             config["connection_rtt"] = js("navigator.connection.rtt").toString()
         }
-        
+
         // 内存信息
         val memory = js("navigator.deviceMemory")
         if (memory != null) {
             config["device_memory"] = memory.toString()
         }
-        
+
         // 硬件并发
         val hardwareConcurrency = js("navigator.hardwareConcurrency")
         if (hardwareConcurrency != null) {
             config["hardware_concurrency"] = hardwareConcurrency.toString()
         }
     }
-    
+
     override suspend fun performPlatformCleanup() {
         // Web特定清理
         config.clear()
     }
-    
+
     private fun getBrowserName(): String {
         val userAgent = navigator.userAgent
         return when {
@@ -146,11 +145,11 @@ class WebPlatformManager : BasePlatformManager() {
             else -> "Unknown Browser"
         }
     }
-    
+
     private fun getBrowserVersion(): String {
         val userAgent = navigator.userAgent
         val browserName = getBrowserName()
-        
+
         return try {
             when (browserName) {
                 "Chrome" -> {
@@ -175,7 +174,7 @@ class WebPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBrowserVendor(): String {
         return when (getBrowserName()) {
             "Chrome" -> "Google"
@@ -186,11 +185,11 @@ class WebPlatformManager : BasePlatformManager() {
             else -> "Unknown"
         }
     }
-    
+
     private fun getOperatingSystem(): String {
         val platform = navigator.platform
         val userAgent = navigator.userAgent
-        
+
         return when {
             platform.contains("Win") -> "Windows"
             platform.contains("Mac") -> "macOS"
@@ -200,25 +199,26 @@ class WebPlatformManager : BasePlatformManager() {
             else -> "Unknown OS"
         }
     }
-    
+
     private fun generateDeviceId(): String {
         // 生成基于浏览器特征的设备ID
-        val features = listOf(
-            navigator.userAgent,
-            navigator.language,
-            js("window.screen.width").toString(),
-            js("window.screen.height").toString(),
-            js("window.screen.colorDepth").toString(),
-            js("new Date().getTimezoneOffset()").toString()
-        )
-        
+        val features =
+            listOf(
+                navigator.userAgent,
+                navigator.language,
+                js("window.screen.width").toString(),
+                js("window.screen.height").toString(),
+                js("window.screen.colorDepth").toString(),
+                js("new Date().getTimezoneOffset()").toString(),
+            )
+
         return features.joinToString("|").hashCode().toString()
     }
-    
+
     private fun hasMediaDevices(): Boolean {
         return js("navigator.mediaDevices") != null
     }
-    
+
     private fun hasWebGL(): Boolean {
         return try {
             val canvas = document.createElement("canvas")

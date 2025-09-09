@@ -7,7 +7,10 @@ import platform.Foundation.stringWithFormat
  * iOS平台字符串工具实现
  */
 actual object UnifyStringUtils {
-    actual fun format(format: String, vararg args: Any?): String {
+    actual fun format(
+        format: String,
+        vararg args: Any?,
+    ): String {
         return when (args.size) {
             0 -> format
             1 -> NSString.stringWithFormat(format, args[0])

@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 
 @Composable
 actual fun UnifyVideoPlayer(
@@ -14,7 +13,7 @@ actual fun UnifyVideoPlayer(
     showControls: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS Video Player: ${mediaItem.title}")
@@ -30,7 +29,7 @@ actual fun UnifyAudioPlayer(
     showWaveform: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS Audio Player: ${mediaItem.title}")
@@ -46,7 +45,7 @@ actual fun UnifyImageViewer(
     enableZoom: Boolean,
     enableSwipe: Boolean,
     showIndicator: Boolean,
-    onImageClick: (Int) -> Unit
+    onImageClick: (Int) -> Unit,
 ) {
     Box(modifier = modifier) {
         if (images.isNotEmpty() && currentIndex < images.size) {
@@ -67,7 +66,7 @@ actual fun UnifyMediaGallery(
     showPlayIcon: Boolean,
     enableSelection: Boolean,
     selectedItems: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit
+    onSelectionChange: (Set<String>) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("iOS Media Gallery: ${mediaItems.size} items")
@@ -82,7 +81,7 @@ actual fun UnifyLiveStream(
     enableChat: Boolean,
     onChatMessage: (String) -> Unit,
     onViewerCountChange: (Int) -> Unit,
-    onStreamStateChange: (PlaybackState) -> Unit
+    onStreamStateChange: (PlaybackState) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS Live Stream: $streamUrl")
@@ -97,7 +96,7 @@ actual fun UnifyMediaRecorder(
     maxDuration: Long,
     quality: RecordingQuality,
     showTimer: Boolean,
-    enablePause: Boolean
+    enablePause: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Media Recorder: $mediaType")
@@ -119,7 +118,7 @@ actual fun UnifyMediaControls(
     onFullscreen: () -> Unit,
     showSpeed: Boolean,
     playbackSpeed: Float,
-    onSpeedChange: (Float) -> Unit
+    onSpeedChange: (Float) -> Unit,
 ) {
     Row(modifier = modifier) {
         Button(onClick = onPlay) { Text("Play") }
@@ -137,7 +136,7 @@ actual fun UnifyMediaThumbnail(
     size: androidx.compose.ui.unit.Dp,
     showDuration: Boolean,
     showPlayIcon: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS Thumbnail")
@@ -154,7 +153,7 @@ actual fun UnifyMediaUploader(
     allowedTypes: Set<MediaType>,
     maxFileSize: Long,
     maxFiles: Int,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Media Uploader")

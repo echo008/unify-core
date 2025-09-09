@@ -7,7 +7,10 @@ actual fun createStorage(config: StorageConfig): UnifyStorage {
     return IOSUnifyStorage(config.name, config.encrypted)
 }
 
-actual fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage {
+actual fun createEncryptedStorage(
+    config: StorageConfig,
+    encryptionKey: String,
+): UnifyStorage {
     return IOSUnifyStorage(config.name, true, encryptionKey)
 }
 

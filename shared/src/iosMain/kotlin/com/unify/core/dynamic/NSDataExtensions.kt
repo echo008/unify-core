@@ -2,8 +2,8 @@
 
 package com.unify.core.dynamic
 
-import platform.Foundation.*
 import kotlinx.cinterop.*
+import platform.Foundation.*
 
 /**
  * NSData扩展函数

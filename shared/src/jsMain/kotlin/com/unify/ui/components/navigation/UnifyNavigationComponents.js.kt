@@ -4,14 +4,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 
 @Composable
 actual fun UnifyNavigationHost(
     startDestination: String,
     modifier: Modifier,
     route: String?,
-    builder: NavigationGraphBuilder.() -> Unit
+    builder: NavigationGraphBuilder.() -> Unit,
 ) {
     // Simple implementation for JS
     Box(modifier = modifier) {
@@ -26,22 +25,25 @@ actual fun UnifyNavController(): NavController {
         override fun navigate(route: String) {
             console.log("Navigate to: $route")
         }
-        
+
         override fun navigateUp(): Boolean {
             console.log("Navigate up")
             return true
         }
-        
+
         override fun popBackStack(): Boolean {
             console.log("Pop back stack")
             return true
         }
-        
-        override fun popBackStack(route: String, inclusive: Boolean): Boolean {
+
+        override fun popBackStack(
+            route: String,
+            inclusive: Boolean,
+        ): Boolean {
             console.log("Pop back stack to: $route")
             return true
         }
-        
+
         override val currentDestination: NavDestination?
             get() = null
     }
@@ -50,7 +52,7 @@ actual fun UnifyNavController(): NavController {
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // JS back handler implementation
     LaunchedEffect(enabled) {
@@ -66,7 +68,7 @@ actual fun UnifyNavigationSuite(
     modifier: Modifier,
     layoutType: NavigationSuiteType,
     colors: NavigationSuiteColors,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // Simple navigation suite implementation
     Box(modifier = modifier) {

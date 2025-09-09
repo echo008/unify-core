@@ -9,9 +9,6 @@ import kotlin.random.Random
 
 /**
  * Desktop平台测试套件实现
- */
-
-/**
  * 执行测试用例的Desktop实现
  */
 actual suspend fun executeTestCase(testCase: TestCase): TestResult {

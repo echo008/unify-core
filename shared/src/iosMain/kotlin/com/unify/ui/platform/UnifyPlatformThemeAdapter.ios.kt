@@ -1,10 +1,13 @@
 package com.unify.ui.platform
 
-import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.graphics.Color
-import platform.UIKit.*
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
+import platform.UIKit.UIColor
+import platform.UIKit.UIScreen
+import platform.UIKit.UITraitCollection
+import platform.UIKit.UIUserInterfaceStyle
 
 /**
  * iOS平台主题适配器实现
@@ -18,15 +21,15 @@ actual class UnifyPlatformThemeAdapter {
             getLightColorScheme()
         }
     }
-    
+
     actual fun getSystemTypography(): UnifyTypography {
         return getDefaultTypography()
     }
-    
+
     actual fun getSystemShapes(): UnifyShapes {
         return getDefaultShapes()
     }
-    
+
     actual fun applyPlatformSpecificTheme(theme: UnifyThemeConfig): UnifyThemeConfig {
         // Apply iOS-specific theme adjustments
         return theme
@@ -62,7 +65,7 @@ private fun getLightColorScheme(): UnifyColorScheme {
         scrim = 0xFF000000,
         inverseSurface = 0xFF313033,
         inverseOnSurface = 0xFFF4EFF4,
-        inversePrimary = 0xFF64B5F6
+        inversePrimary = 0xFF64B5F6,
     )
 }
 
@@ -95,7 +98,7 @@ private fun getDarkColorScheme(): UnifyColorScheme {
         scrim = 0xFF000000,
         inverseSurface = 0xFFE6E1E5,
         inverseOnSurface = 0xFF313033,
-        inversePrimary = 0xFF007AFF
+        inversePrimary = 0xFF007AFF,
     )
 }
 
@@ -115,7 +118,7 @@ private fun getDefaultTypography(): UnifyTypography {
         bodySmall = UnifyTextStyle(12f, 16f, 400, 0.4f),
         labelLarge = UnifyTextStyle(14f, 20f, 500, 0.1f),
         labelMedium = UnifyTextStyle(12f, 16f, 500, 0.5f),
-        labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f)
+        labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f),
     )
 }
 
@@ -125,6 +128,6 @@ private fun getDefaultShapes(): UnifyShapes {
         small = 8f,
         medium = 12f,
         large = 16f,
-        extraLarge = 28f
+        extraLarge = 28f,
     )
 }

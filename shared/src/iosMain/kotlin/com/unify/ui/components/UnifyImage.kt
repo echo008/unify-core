@@ -1,6 +1,5 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -13,7 +12,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.DefaultAlpha
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
@@ -27,7 +25,7 @@ actual fun UnifyImage(
     contentScale: ContentScale,
     alpha: Float,
     colorFilter: ColorFilter?,
-    filterQuality: FilterQuality
+    filterQuality: FilterQuality,
 ) {
     // iOS平台使用Compose Multiplatform的AsyncImage
     // 这里使用占位符实现，实际项目中需要集成网络图片加载库
@@ -36,9 +34,9 @@ actual fun UnifyImage(
         content = {
             Text(
                 text = "🖼️",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
             )
-        }
+        },
     )
 }
 
@@ -50,7 +48,7 @@ actual fun UnifyResourceImage(
     alignment: Alignment,
     contentScale: ContentScale,
     alpha: Float,
-    colorFilter: ColorFilter?
+    colorFilter: ColorFilter?,
 ) {
     // iOS资源图片实现
     UnifyImagePlaceholder(
@@ -58,9 +56,9 @@ actual fun UnifyResourceImage(
         content = {
             Text(
                 text = "📱",
-                style = MaterialTheme.typography.headlineMedium
+                style = MaterialTheme.typography.headlineMedium,
             )
-        }
+        },
     )
 }
 
@@ -70,19 +68,20 @@ actual fun UnifyAvatar(
     name: String,
     modifier: Modifier,
     size: Dp,
-    backgroundColor: Color
+    backgroundColor: Color,
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(CircleShape)
-            .background(backgroundColor),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(size)
+                .clip(CircleShape)
+                .background(backgroundColor),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = name.firstOrNull()?.uppercase() ?: "?",
             style = MaterialTheme.typography.headlineSmall,
-            color = Color.White
+            color = Color.White,
         )
     }
 }
@@ -92,16 +91,16 @@ actual fun UnifyImagePlaceholder(
     modifier: Modifier,
     backgroundColor: Color,
     cornerRadius: Dp,
-    content: (@Composable () -> Unit)?
+    content: (@Composable () -> Unit)?,
 ) {
     Box(
         modifier = modifier.background(backgroundColor),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         content?.invoke() ?: Text(
             text = "📷",
             style = MaterialTheme.typography.headlineMedium,
-            color = Color.Gray
+            color = Color.Gray,
         )
     }
 }

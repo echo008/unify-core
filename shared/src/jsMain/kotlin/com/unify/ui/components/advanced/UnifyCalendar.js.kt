@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -16,7 +15,7 @@ actual fun UnifyCalendar(
     viewType: CalendarViewType,
     onDateSelected: (SimpleDate) -> Unit,
     onEventClicked: (CalendarEvent) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("Calendar (JS Implementation)")
@@ -26,9 +25,9 @@ actual fun UnifyCalendar(
         Text("Events: ${events.size}")
         Text("View Type: $viewType")
         Button(
-            onClick = { 
+            onClick = {
                 onDateSelected(SimpleDate(2024, 1, 15))
-            }
+            },
         ) {
             Text("Select Sample Date")
         }
@@ -41,7 +40,7 @@ actual fun UnifyDatePicker(
     minDate: SimpleDate?,
     maxDate: SimpleDate?,
     onDateSelected: (SimpleDate) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("Date Picker (JS Implementation)")
@@ -49,9 +48,9 @@ actual fun UnifyDatePicker(
             Text("Selected: ${it.year}-${it.month}-${it.day}")
         }
         Button(
-            onClick = { 
+            onClick = {
                 onDateSelected(SimpleDate(2024, 1, 15))
-            }
+            },
         ) {
             Text("Select Date")
         }
@@ -62,7 +61,7 @@ actual fun UnifyDatePicker(
 actual fun UnifyTimePicker(
     selectedTime: SimpleTime?,
     onTimeSelected: (SimpleTime) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("Time Picker (JS Implementation)")
@@ -70,9 +69,9 @@ actual fun UnifyTimePicker(
             Text("Selected: ${it.hour}:${it.minute}")
         }
         Button(
-            onClick = { 
+            onClick = {
                 onTimeSelected(SimpleTime(14, 30))
-            }
+            },
         ) {
             Text("Select Time")
         }
@@ -83,7 +82,7 @@ actual fun UnifyTimePicker(
 actual fun UnifyDateTimePicker(
     selectedDateTime: Pair<SimpleDate, SimpleTime>?,
     onDateTimeSelected: (Pair<SimpleDate, SimpleTime>) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("DateTime Picker (JS Implementation)")
@@ -91,9 +90,9 @@ actual fun UnifyDateTimePicker(
             Text("Selected: ${date.year}-${date.month}-${date.day} ${time.hour}:${time.minute}")
         }
         Button(
-            onClick = { 
+            onClick = {
                 onDateTimeSelected(Pair(SimpleDate(2024, 1, 15), SimpleTime(14, 30)))
-            }
+            },
         ) {
             Text("Select DateTime")
         }
@@ -108,29 +107,29 @@ actual fun UnifyCalendarView(
     onEventClick: (CalendarEvent) -> Unit,
     onDateClick: (SimpleDate) -> Unit,
     showWeekNumbers: Boolean,
-    firstDayOfWeek: Int
+    firstDayOfWeek: Int,
 ) {
     Column(modifier = modifier.padding(16.dp)) {
         Text("Calendar View (JS Implementation)")
         Text("Events: ${events.size}")
         Text("View Type: $viewType")
         Text("First Day of Week: $firstDayOfWeek")
-        
+
         LazyColumn {
             items((1..7).toList()) { week ->
                 Row {
                     if (showWeekNumbers) {
                         Text(
                             text = "W$week",
-                            modifier = Modifier.padding(4.dp)
+                            modifier = Modifier.padding(4.dp),
                         )
                     }
                     repeat(7) { day ->
                         Button(
-                            onClick = { 
+                            onClick = {
                                 onDateClick(SimpleDate(2024, 1, (week - 1) * 7 + day + 1))
                             },
-                            modifier = Modifier.weight(1f).padding(2.dp)
+                            modifier = Modifier.weight(1f).padding(2.dp),
                         ) {
                             Text("${(week - 1) * 7 + day + 1}")
                         }
@@ -138,16 +137,16 @@ actual fun UnifyCalendarView(
                 }
             }
         }
-        
+
         // Display events
         events.forEach { event ->
             Card(
                 modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                onClick = { onEventClick(event) }
+                onClick = { onEventClick(event) },
             ) {
                 Text(
                     text = event.title,
-                    modifier = Modifier.padding(8.dp)
+                    modifier = Modifier.padding(8.dp),
                 )
             }
         }

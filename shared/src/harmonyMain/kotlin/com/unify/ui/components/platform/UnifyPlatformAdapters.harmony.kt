@@ -19,15 +19,16 @@ actual fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,
-    text: String
+    text: String,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+            ),
     ) {
         Text(text = text)
     }
@@ -39,7 +40,7 @@ actual fun UnifyPlatformTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier,
     placeholder: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = value,
@@ -47,9 +48,10 @@ actual fun UnifyPlatformTextField(
         modifier = modifier,
         placeholder = { Text(placeholder) },
         enabled = enabled,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -58,16 +60,17 @@ actual fun UnifyPlatformSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         enabled = enabled,
-        colors = SwitchDefaults.colors(
-            checkedThumbColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            SwitchDefaults.colors(
+                checkedThumbColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -77,7 +80,7 @@ actual fun UnifyPlatformSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier,
     valueRange: ClosedFloatingPointRange<Float>,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Slider(
         value = value,
@@ -85,10 +88,11 @@ actual fun UnifyPlatformSlider(
         modifier = modifier,
         valueRange = valueRange,
         enabled = enabled,
-        colors = SliderDefaults.colors(
-            thumbColor = MaterialTheme.colorScheme.primary,
-            activeTrackColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            SliderDefaults.colors(
+                thumbColor = MaterialTheme.colorScheme.primary,
+                activeTrackColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -96,12 +100,12 @@ actual fun UnifyPlatformSlider(
 actual fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier,
-    color: Color
+    color: Color,
 ) {
     LinearProgressIndicator(
         progress = progress,
         modifier = modifier,
-        color = color
+        color = color,
     )
 }
 
@@ -111,14 +115,14 @@ actual fun UnifyPlatformDialog(
     title: String,
     content: @Composable () -> Unit,
     confirmButton: @Composable () -> Unit,
-    dismissButton: @Composable (() -> Unit)?
+    dismissButton: @Composable (() -> Unit)?,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(title) },
         text = content,
         confirmButton = confirmButton,
-        dismissButton = dismissButton
+        dismissButton = dismissButton,
     )
 }
 
@@ -126,14 +130,15 @@ actual fun UnifyPlatformDialog(
 actual fun UnifyPlatformCard(
     modifier: Modifier,
     onClick: (() -> Unit)?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Card(
         modifier = modifier,
         onClick = onClick ?: {},
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
     ) {
         content()
     }
@@ -144,16 +149,17 @@ actual fun UnifyPlatformChip(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier,
-    selected: Boolean
+    selected: Boolean,
 ) {
     FilterChip(
         onClick = onClick,
         label = { Text(text) },
         selected = selected,
         modifier = modifier,
-        colors = FilterChipDefaults.filterChipColors(
-            selectedContainerColor = MaterialTheme.colorScheme.primary
-        )
+        colors =
+            FilterChipDefaults.filterChipColors(
+                selectedContainerColor = MaterialTheme.colorScheme.primary,
+            ),
     )
 }
 
@@ -161,7 +167,6 @@ actual fun UnifyPlatformChip(
  * HarmonyOS平台特有的UI组件和交互方式
  */
 object HarmonyUnifyPlatformAdapters {
-    
     /**
      * HarmonyOS分布式设备选择器
      */
@@ -170,65 +175,67 @@ object HarmonyUnifyPlatformAdapters {
         devices: List<HarmonyDevice>,
         selectedDevice: HarmonyDevice?,
         onDeviceSelected: (HarmonyDevice) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "选择设备",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                
+
                 devices.forEach { device ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
                             selected = selectedDevice == device,
-                            onClick = { onDeviceSelected(device) }
+                            onClick = { onDeviceSelected(device) },
                         )
-                        
+
                         Spacer(modifier = Modifier.width(12.dp))
-                        
+
                         Column {
                             Text(
                                 text = device.name,
-                                style = MaterialTheme.typography.bodyLarge
+                                style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
                                 text = device.type,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                             )
                         }
-                        
+
                         Spacer(modifier = Modifier.weight(1f))
-                        
+
                         // 连接状态指示器
                         Surface(
                             shape = RoundedCornerShape(50),
                             color = if (device.isConnected) Color.Green else Color.Gray,
-                            modifier = Modifier.size(8.dp)
+                            modifier = Modifier.size(8.dp),
                         ) {}
                     }
                 }
             }
         }
     }
-    
+
     /**
      * HarmonyOS多屏协同面板
      */
@@ -236,54 +243,59 @@ object HarmonyUnifyPlatformAdapters {
     fun HarmonyMultiScreenPanel(
         screens: List<HarmonyScreen>,
         onScreenSelected: (HarmonyScreen) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         LazyRow(
             modifier = modifier,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(horizontal = 16.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp),
         ) {
             items(screens.size) { index ->
                 val screen = screens[index]
                 Card(
-                    modifier = Modifier
-                        .width(120.dp)
-                        .height(80.dp),
+                    modifier =
+                        Modifier
+                            .width(120.dp)
+                            .height(80.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (screen.isActive) {
-                            MaterialTheme.colorScheme.primaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.surface
-                        }
-                    ),
-                    onClick = { onScreenSelected(screen) }
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                if (screen.isActive) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surface
+                                },
+                        ),
+                    onClick = { onScreenSelected(screen) },
                 ) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
+                        contentAlignment = Alignment.Center,
                     ) {
                         Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             Icon(
                                 imageVector = screen.icon,
                                 contentDescription = screen.name,
-                                tint = if (screen.isActive) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
+                                tint =
+                                    if (screen.isActive) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = screen.name,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (screen.isActive) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
+                                color =
+                                    if (screen.isActive) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
                             )
                         }
                     }
@@ -291,7 +303,7 @@ object HarmonyUnifyPlatformAdapters {
             }
         }
     }
-    
+
     /**
      * HarmonyOS原子化服务卡片
      */
@@ -299,80 +311,82 @@ object HarmonyUnifyPlatformAdapters {
     fun HarmonyAtomicServiceCard(
         service: AtomicService,
         onServiceClick: (AtomicService) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            ),
-            onClick = { onServiceClick(service) }
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
+            onClick = { onServiceClick(service) },
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
                         color = service.iconColor,
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(48.dp),
                     ) {
                         Box(
-                            contentAlignment = Alignment.Center
+                            contentAlignment = Alignment.Center,
                         ) {
                             Icon(
                                 imageVector = service.icon,
                                 contentDescription = service.name,
-                                tint = Color.White
+                                tint = Color.White,
                             )
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.width(12.dp))
-                    
+
                     Column {
                         Text(
                             text = service.name,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Text(
                             text = service.description,
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         )
                     }
                 }
-                
+
                 // 服务状态
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = "状态: ${service.status}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
-                    
+
                     Surface(
                         shape = RoundedCornerShape(50),
-                        color = when (service.status) {
-                            "运行中" -> Color.Green
-                            "已停止" -> Color.Gray
-                            "错误" -> Color.Red
-                            else -> Color.Gray
-                        },
-                        modifier = Modifier.size(8.dp)
+                        color =
+                            when (service.status) {
+                                "运行中" -> Color.Green
+                                "已停止" -> Color.Gray
+                                "错误" -> Color.Red
+                                else -> Color.Gray
+                            },
+                        modifier = Modifier.size(8.dp),
                     ) {}
                 }
             }
         }
     }
-    
+
     /**
      * HarmonyOS分布式任务面板
      */
@@ -380,65 +394,66 @@ object HarmonyUnifyPlatformAdapters {
     fun HarmonyDistributedTaskPanel(
         tasks: List<DistributedTask>,
         onTaskAction: (DistributedTask, String) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         LazyColumn(
             modifier = modifier,
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(16.dp)
+            contentPadding = PaddingValues(16.dp),
         ) {
             items(tasks.size) { index ->
                 val task = tasks[index]
                 Card(
                     shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(
                                 text = task.name,
-                                style = MaterialTheme.typography.titleMedium
+                                style = MaterialTheme.typography.titleMedium,
                             )
-                            
+
                             Text(
                                 text = task.progress,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
                             )
                         }
-                        
+
                         Text(
                             text = "设备: ${task.deviceName}",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         )
-                        
+
                         LinearProgressIndicator(
                             progress = task.progressValue,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                        
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
+                            horizontalArrangement = Arrangement.End,
                         ) {
                             TextButton(
-                                onClick = { onTaskAction(task, "pause") }
+                                onClick = { onTaskAction(task, "pause") },
                             ) {
                                 Text("暂停")
                             }
-                            
+
                             TextButton(
-                                onClick = { onTaskAction(task, "cancel") }
+                                onClick = { onTaskAction(task, "cancel") },
                             ) {
                                 Text("取消")
                             }
@@ -448,7 +463,7 @@ object HarmonyUnifyPlatformAdapters {
             }
         }
     }
-    
+
     /**
      * HarmonyOS智能推荐卡片
      */
@@ -456,61 +471,63 @@ object HarmonyUnifyPlatformAdapters {
     fun HarmonySmartRecommendationCard(
         recommendations: List<SmartRecommendation>,
         onRecommendationClick: (SmartRecommendation) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                ),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 Text(
                     text = "智能推荐",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
-                
+
                 recommendations.forEach { recommendation ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = recommendation.icon,
                             contentDescription = recommendation.title,
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                         )
-                        
+
                         Spacer(modifier = Modifier.width(12.dp))
-                        
+
                         Column(
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         ) {
                             Text(
                                 text = recommendation.title,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                             Text(
                                 text = recommendation.description,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                             )
                         }
-                        
+
                         TextButton(
-                            onClick = { onRecommendationClick(recommendation) }
+                            onClick = { onRecommendationClick(recommendation) },
                         ) {
                             Text(
                                 text = "查看",
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                color = MaterialTheme.colorScheme.onPrimaryContainer,
                             )
                         }
                     }
@@ -527,7 +544,7 @@ data class HarmonyDevice(
     val id: String,
     val name: String,
     val type: String,
-    val isConnected: Boolean
+    val isConnected: Boolean,
 )
 
 /**
@@ -537,7 +554,7 @@ data class HarmonyScreen(
     val id: String,
     val name: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val isActive: Boolean
+    val isActive: Boolean,
 )
 
 /**
@@ -549,7 +566,7 @@ data class AtomicService(
     val description: String,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val iconColor: Color,
-    val status: String
+    val status: String,
 )
 
 /**
@@ -560,7 +577,7 @@ data class DistributedTask(
     val name: String,
     val deviceName: String,
     val progress: String,
-    val progressValue: Float
+    val progressValue: Float,
 )
 
 /**
@@ -570,5 +587,5 @@ data class SmartRecommendation(
     val id: String,
     val title: String,
     val description: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
 )

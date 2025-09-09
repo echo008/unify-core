@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.font.FontWeight
 import com.unify.core.types.HealthMetric
 import com.unify.core.types.WorkoutType
 import com.unify.ui.components.system.NotificationAction
@@ -16,7 +14,7 @@ actual fun UnifyWatchFace(
     time: String,
     date: String,
     healthMetrics: List<HealthMetric>,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS Watch Face")
@@ -30,7 +28,7 @@ actual fun UnifyWatchFace(
 actual fun UnifyHealthMonitor(
     metrics: List<HealthMetric>,
     onMetricSelected: (HealthMetric) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS Health Monitor")
@@ -46,7 +44,7 @@ actual fun UnifyHealthMonitor(
 actual fun UnifyWatchNotifications(
     notifications: List<WatchNotification>,
     onNotificationAction: (WatchNotification, NotificationAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS Watch Notifications")
@@ -75,7 +73,7 @@ actual fun UnifyWatchWorkout(
     duration: Long,
     metrics: Map<String, String>,
     onWorkoutAction: (WorkoutAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS Watch Workout")
@@ -97,7 +95,7 @@ actual fun UnifyWatchWorkout(
 actual fun UnifyWatchQuickActions(
     actions: List<QuickAction>,
     onActionSelected: (QuickAction) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS Watch Quick Actions")

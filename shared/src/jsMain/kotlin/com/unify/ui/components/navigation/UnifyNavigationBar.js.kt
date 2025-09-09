@@ -18,17 +18,18 @@ actual fun UnifyTopAppBar(
     actions: @Composable RowScope.() -> Unit,
     backgroundColor: Color,
     contentColor: Color,
-    elevation: androidx.compose.ui.unit.Dp
+    elevation: androidx.compose.ui.unit.Dp,
 ) {
     TopAppBar(
         title = { Text(title) },
         modifier = modifier,
         navigationIcon = navigationIcon ?: {},
         actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = backgroundColor,
-            titleContentColor = contentColor
-        )
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = backgroundColor,
+                titleContentColor = contentColor,
+            ),
     )
 }
 
@@ -41,24 +42,25 @@ actual fun UnifyBottomNavigationBar(
     backgroundColor: Color,
     contentColor: Color,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     NavigationBar(
         modifier = modifier,
         containerColor = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         items.forEach { item ->
             Column(
-                modifier = Modifier
-                    .clickable { onItemSelected(item.id) }
-                    .padding(8.dp),
-                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .clickable { onItemSelected(item.id) }
+                        .padding(8.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
             ) {
                 item.icon?.invoke()
                 Text(
                     text = item.title,
-                    color = if (item.id == selectedItemId) selectedContentColor else unselectedContentColor
+                    color = if (item.id == selectedItemId) selectedContentColor else unselectedContentColor,
                 )
             }
         }
@@ -75,25 +77,26 @@ actual fun UnifyNavigationRail(
     backgroundColor: Color,
     contentColor: Color,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     NavigationRail(
         modifier = modifier,
         containerColor = backgroundColor,
         contentColor = contentColor,
-        header = header?.let { { it() } }
+        header = header?.let { { it() } },
     ) {
         items.forEach { item ->
             Column(
-                modifier = Modifier
-                    .clickable { onItemSelected(item.id) }
-                    .padding(8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                modifier =
+                    Modifier
+                        .clickable { onItemSelected(item.id) }
+                        .padding(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item.icon?.invoke()
                 Text(
                     text = item.title,
-                    color = if (item.id == selectedItemId) selectedContentColor else unselectedContentColor
+                    color = if (item.id == selectedItemId) selectedContentColor else unselectedContentColor,
                 )
             }
         }
@@ -110,13 +113,14 @@ actual fun UnifyNavigationBarItem(
     label: (@Composable () -> Unit)?,
     alwaysShowLabel: Boolean,
     selectedIcon: (@Composable () -> Unit)?,
-    badge: (@Composable () -> Unit)?
+    badge: (@Composable () -> Unit)?,
 ) {
     Column(
-        modifier = modifier
-            .clickable(enabled = enabled) { onClick() }
-            .padding(8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        modifier =
+            modifier
+                .clickable(enabled = enabled) { onClick() }
+                .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         if (selectedIcon != null && selected) {
             selectedIcon()
@@ -138,7 +142,7 @@ actual fun UnifyTabRow(
     contentColor: Color,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRow(
         selectedTabIndex = selectedTabIndex,
@@ -147,7 +151,7 @@ actual fun UnifyTabRow(
         contentColor = contentColor,
         indicator = { tabPositions -> indicator(tabPositions.map { TabPosition(it.left, it.width) }) },
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -160,7 +164,7 @@ actual fun UnifyTab(
     text: (@Composable () -> Unit)?,
     icon: (@Composable () -> Unit)?,
     selectedContentColor: Color,
-    unselectedContentColor: Color
+    unselectedContentColor: Color,
 ) {
     Tab(
         selected = selected,
@@ -170,6 +174,6 @@ actual fun UnifyTab(
         text = text,
         icon = icon,
         selectedContentColor = selectedContentColor,
-        unselectedContentColor = unselectedContentColor
+        unselectedContentColor = unselectedContentColor,
     )
 }

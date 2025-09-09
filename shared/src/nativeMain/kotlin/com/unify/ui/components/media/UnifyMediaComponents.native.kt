@@ -3,7 +3,6 @@ package com.unify.ui.components.media
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 // 根据commonMain expect声明，只保留匹配的actual实现
 
@@ -15,7 +14,7 @@ actual fun UnifyVideoPlayer(
     showControls: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     // Native平台视频播放器组件实现
 }
@@ -29,7 +28,7 @@ actual fun UnifyAudioPlayer(
     showWaveform: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     // Native平台音频播放器组件实现
 }
@@ -43,7 +42,7 @@ actual fun UnifyImageViewer(
     enableZoom: Boolean,
     enableSwipe: Boolean,
     showIndicator: Boolean,
-    onImageClick: (Int) -> Unit
+    onImageClick: (Int) -> Unit,
 ) {
     // Native平台图片查看器组件实现
 }
@@ -58,7 +57,7 @@ actual fun UnifyMediaGallery(
     showPlayIcon: Boolean,
     enableSelection: Boolean,
     selectedItems: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit
+    onSelectionChange: (Set<String>) -> Unit,
 ) {
     // Native平台媒体画廊组件实现
 }
@@ -71,7 +70,7 @@ actual fun UnifyLiveStream(
     enableChat: Boolean,
     onChatMessage: (String) -> Unit,
     onViewerCountChange: (Int) -> Unit,
-    onStreamStateChange: (PlaybackState) -> Unit
+    onStreamStateChange: (PlaybackState) -> Unit,
 ) {
     // Native平台直播流组件实现
 }
@@ -84,7 +83,7 @@ actual fun UnifyMediaRecorder(
     maxDuration: Long,
     quality: RecordingQuality,
     showTimer: Boolean,
-    enablePause: Boolean
+    enablePause: Boolean,
 ) {
     // Native平台媒体录制组件实现
 }
@@ -101,7 +100,7 @@ actual fun UnifyMediaControls(
     onFullscreen: () -> Unit,
     showSpeed: Boolean,
     playbackSpeed: Float,
-    onSpeedChange: (Float) -> Unit
+    onSpeedChange: (Float) -> Unit,
 ) {
     // Native平台媒体控制组件实现
 }
@@ -113,7 +112,7 @@ actual fun UnifyMediaThumbnail(
     size: Dp,
     showDuration: Boolean,
     showPlayIcon: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     // Native平台媒体缩略图组件实现
 }
@@ -125,7 +124,7 @@ actual fun UnifyMediaUploader(
     allowedTypes: Set<MediaType>,
     maxFileSize: Long,
     maxFiles: Int,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     // Native平台媒体上传组件实现
 }

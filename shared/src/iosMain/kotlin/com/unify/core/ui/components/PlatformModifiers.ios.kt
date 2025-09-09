@@ -11,17 +11,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
@@ -30,7 +27,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 /**
  * iOS平台特定的Modifier扩展
@@ -43,7 +39,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 actual fun Modifier.platformClickable(
     enabled: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ): Modifier {
     return this.clickable(
         enabled = enabled,
@@ -54,7 +50,7 @@ actual fun Modifier.platformClickable(
                 // iOS触觉反馈
                 onClick()
             }
-        }
+        },
     )
 }
 
@@ -64,7 +60,7 @@ actual fun Modifier.platformClickable(
 @Composable
 actual fun Modifier.platformLongClickable(
     enabled: Boolean,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
 ): Modifier {
     return this.pointerInput(enabled) {
         if (enabled) {
@@ -72,7 +68,7 @@ actual fun Modifier.platformLongClickable(
                 onLongPress = {
                     // iOS长按触觉反馈
                     onLongClick()
-                }
+                },
             )
         }
     }
@@ -85,13 +81,13 @@ actual fun Modifier.platformLongClickable(
 actual fun Modifier.platformShadow(
     elevation: Dp,
     shape: Shape,
-    clip: Boolean
+    clip: Boolean,
 ): Modifier {
     return this
         .shadow(
             elevation = elevation,
             shape = shape,
-            clip = clip
+            clip = clip,
         )
 }
 
@@ -99,9 +95,7 @@ actual fun Modifier.platformShadow(
  * iOS平台圆角效果
  */
 @Composable
-actual fun Modifier.platformRoundedCorners(
-    radius: Dp
-): Modifier {
+actual fun Modifier.platformRoundedCorners(radius: Dp): Modifier {
     return this.clip(RoundedCornerShape(radius))
 }
 
@@ -112,13 +106,13 @@ actual fun Modifier.platformRoundedCorners(
 actual fun Modifier.platformBorder(
     width: Dp,
     color: Color,
-    shape: Shape
+    shape: Shape,
 ): Modifier {
     return this.drawBehind {
         drawRect(
             color = color,
             topLeft = Offset.Zero,
-            size = Size(size.width, width.value * density)
+            size = Size(size.width, width.value * density),
         )
     }
 }
@@ -129,7 +123,7 @@ actual fun Modifier.platformBorder(
 @Composable
 actual fun Modifier.platformPadding(
     horizontal: Dp,
-    vertical: Dp
+    vertical: Dp,
 ): Modifier {
     return this.padding(horizontal = horizontal, vertical = vertical)
 }
@@ -140,7 +134,7 @@ actual fun Modifier.platformPadding(
 @Composable
 actual fun Modifier.platformSize(
     width: Dp,
-    height: Dp
+    height: Dp,
 ): Modifier {
     return this.size(width = width, height = height)
 }
@@ -149,15 +143,13 @@ actual fun Modifier.platformSize(
  * iOS平台触摸反馈
  */
 @Composable
-actual fun Modifier.platformTouchFeedback(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformTouchFeedback(enabled: Boolean): Modifier {
     return this.pointerInput(enabled) {
         if (enabled) {
             detectTapGestures(
                 onPress = {
                     // iOS触觉反馈实现
-                }
+                },
             )
         }
     }
@@ -169,7 +161,7 @@ actual fun Modifier.platformTouchFeedback(
 @Composable
 actual fun Modifier.platformAccessibility(
     contentDescription: String?,
-    role: String?
+    role: String?,
 ): Modifier {
     return this.then(
         semantics {
@@ -186,7 +178,7 @@ actual fun Modifier.platformAccessibility(
                     "image" -> this.role = Role.Image
                 }
             }
-        }
+        },
     )
 }
 
@@ -194,14 +186,12 @@ actual fun Modifier.platformAccessibility(
  * iOS平台滚动行为
  */
 @Composable
-actual fun Modifier.platformScrollable(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformScrollable(enabled: Boolean): Modifier {
     return if (enabled) {
         this.then(
             verticalScroll(
-                rememberScrollState()
-            )
+                rememberScrollState(),
+            ),
         )
     } else {
         this
@@ -212,17 +202,16 @@ actual fun Modifier.platformScrollable(
  * iOS平台动画效果
  */
 @Composable
-actual fun Modifier.platformAnimated(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformAnimated(enabled: Boolean): Modifier {
     return if (enabled) {
         this.then(
             animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioNoBouncy,
-                    stiffness = Spring.StiffnessMedium
-                )
-            )
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMedium,
+                    ),
+            ),
         )
     } else {
         this

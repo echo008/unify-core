@@ -6,20 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import platform.UIKit.UITextField
-import platform.UIKit.UIView
-import platform.UIKit.UIColor
-import platform.UIKit.UIFont
-import platform.UIKit.UIScreen
-import platform.UIKit.UIDevice
-import platform.Foundation.NSString
 import platform.Foundation.NSDate
 import platform.Foundation.timeIntervalSince1970
-import platform.Foundation.NSBundle
 
 /**
  * iOS平台特定组件适配器
@@ -31,15 +21,16 @@ actual fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier,
     text: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF007AFF) // iOS Blue
-        )
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF007AFF), // iOS Blue
+            ),
     ) {
         Text(text)
     }
@@ -51,7 +42,7 @@ actual fun UnifyPlatformTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier,
     placeholder: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = value,
@@ -59,10 +50,11 @@ actual fun UnifyPlatformTextField(
         modifier = modifier,
         enabled = enabled,
         placeholder = { Text(placeholder) },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF007AFF),
-            unfocusedBorderColor = Color(0xFFE5E5EA)
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF007AFF),
+                unfocusedBorderColor = Color(0xFFE5E5EA),
+            ),
     )
 }
 
@@ -71,18 +63,19 @@ actual fun UnifyPlatformSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
-        colors = SwitchDefaults.colors(
-            checkedThumbColor = Color.White,
-            checkedTrackColor = Color(0xFF34C759), // iOS Green
-            uncheckedThumbColor = Color.White,
-            uncheckedTrackColor = Color(0xFFE5E5EA)
-        )
+        colors =
+            SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF34C759), // iOS Green
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFE5E5EA),
+            ),
     )
 }
 
@@ -92,7 +85,7 @@ actual fun UnifyPlatformSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier,
     valueRange: ClosedFloatingPointRange<Float>,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Slider(
         value = value,
@@ -100,11 +93,12 @@ actual fun UnifyPlatformSlider(
         modifier = modifier,
         valueRange = valueRange,
         enabled = enabled,
-        colors = SliderDefaults.colors(
-            thumbColor = Color.White,
-            activeTrackColor = Color(0xFF007AFF),
-            inactiveTrackColor = Color(0xFFE5E5EA)
-        )
+        colors =
+            SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = Color(0xFF007AFF),
+                inactiveTrackColor = Color(0xFFE5E5EA),
+            ),
     )
 }
 
@@ -112,21 +106,21 @@ actual fun UnifyPlatformSlider(
 actual fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     Column(modifier = modifier) {
         LinearProgressIndicator(
             progress = progress,
             modifier = Modifier.fillMaxWidth(),
             color = Color(0xFF007AFF),
-            trackColor = Color(0xFFE5E5EA)
+            trackColor = Color(0xFFE5E5EA),
         )
         if (showPercentage) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${(progress * 100).toInt()}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF8E8E93)
+                color = Color(0xFF8E8E93),
             )
         }
     }
@@ -138,7 +132,7 @@ actual fun UnifyPlatformAlert(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
@@ -156,7 +150,7 @@ actual fun UnifyPlatformAlert(
         },
         containerColor = Color(0xFFF2F2F7), // iOS Background
         titleContentColor = Color.Black,
-        textContentColor = Color(0xFF8E8E93)
+        textContentColor = Color(0xFF8E8E93),
     )
 }
 
@@ -166,39 +160,42 @@ actual fun UnifyPlatformActionSheet(
     actions: List<String>,
     onActionSelected: (Int) -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // iOS风格的ActionSheet实现
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             color = Color(0xFF8E8E93),
-            modifier = Modifier.padding(bottom = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp),
         )
-        
+
         actions.forEachIndexed { index, action ->
             TextButton(
                 onClick = { onActionSelected(index) },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = Color(0xFF007AFF)
-                )
+                colors =
+                    ButtonDefaults.textButtonColors(
+                        contentColor = Color(0xFF007AFF),
+                    ),
             ) {
                 Text(action)
             }
         }
-        
+
         TextButton(
             onClick = onCancel,
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = Color(0xFF8E8E93)
-            )
+            colors =
+                ButtonDefaults.textButtonColors(
+                    contentColor = Color(0xFF8E8E93),
+                ),
         ) {
             Text("取消")
         }
@@ -210,23 +207,25 @@ actual fun UnifyPlatformSegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onSelectionChanged: (Int) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // iOS风格的分段控制器
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(4.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(4.dp),
     ) {
         items.forEachIndexed { index, item ->
             val isSelected = index == selectedIndex
             TextButton(
                 onClick = { onSelectionChanged(index) },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.textButtonColors(
-                    containerColor = if (isSelected) Color(0xFF007AFF) else Color.Transparent,
-                    contentColor = if (isSelected) Color.White else Color(0xFF007AFF)
-                )
+                colors =
+                    ButtonDefaults.textButtonColors(
+                        containerColor = if (isSelected) Color(0xFF007AFF) else Color.Transparent,
+                        contentColor = if (isSelected) Color.White else Color(0xFF007AFF),
+                    ),
             ) {
                 Text(item)
             }
@@ -240,16 +239,16 @@ actual fun UnifyPlatformDatePicker(
     onDateSelected: (Long) -> Unit,
     modifier: Modifier,
     minDate: Long?,
-    maxDate: Long?
+    maxDate: Long?,
 ) {
     // iOS风格的日期选择器
     Column(modifier = modifier) {
         Text(
             text = "选择日期",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         )
-        
+
         // 这里应该集成iOS原生的UIDatePicker
         // 暂时使用Material Design的实现
         var timestamp by remember { mutableStateOf(selectedDate) }
@@ -259,7 +258,7 @@ actual fun UnifyPlatformDatePicker(
             chargingType = ChargingType.NONE,
             temperature = 25.0f,
             voltage = 3700,
-            health = BatteryHealth.GOOD
+            health = BatteryHealth.GOOD,
         )
         Button(
             onClick = {
@@ -268,9 +267,10 @@ actual fun UnifyPlatformDatePicker(
                 timestamp = (platform.Foundation.NSDate().timeIntervalSince1970.toLong() * 1000)
                 onDateSelected(timestamp)
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF007AFF)
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF007AFF),
+                ),
         ) {
             Text("选择日期")
         }
@@ -283,14 +283,14 @@ actual fun UnifyVideoPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Card(
         modifier = modifier.padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Video Player")
             Text("URL: $url")
@@ -306,14 +306,14 @@ actual fun UnifyAudioPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Card(
         modifier = modifier.padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Audio Player")
             Text("URL: $url")
@@ -327,19 +327,19 @@ actual fun UnifyAudioPlayer(
 actual fun UnifyQRCodeScanner(
     modifier: Modifier,
     onQRCodeScanned: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
         modifier = modifier.padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("QR Code Scanner")
             Text("QR Scanner Ready")
             Button(
-                onClick = { onQRCodeScanned("sample_qr_code") }
+                onClick = { onQRCodeScanned("sample_qr_code") },
             ) {
                 Text("Simulate Scan")
             }
@@ -353,20 +353,20 @@ actual fun UnifyBiometricAuth(
     subtitle: String,
     onAuthSuccess: () -> Unit,
     onAuthError: (String) -> Unit,
-    onAuthCancel: () -> Unit
+    onAuthCancel: () -> Unit,
 ) {
     Card(
         modifier = Modifier.padding(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Biometric Authentication")
             Text(title)
             Text(subtitle)
             Button(
-                onClick = { onAuthSuccess() }
+                onClick = { onAuthSuccess() },
             ) {
                 Text("Authenticate")
             }
@@ -377,7 +377,7 @@ actual fun UnifyBiometricAuth(
 actual fun shareContent(
     content: String,
     title: String,
-    mimeType: String
+    mimeType: String,
 ) {
     // iOS sharing implementation
     // Use UIActivityViewController for iOS sharing
@@ -387,7 +387,7 @@ actual fun showNotification(
     title: String,
     content: String,
     channelId: String,
-    importance: Int
+    importance: Int,
 ) {
     // iOS notification implementation
     // Use UNUserNotificationCenter for iOS notifications
@@ -395,7 +395,7 @@ actual fun showNotification(
 
 actual fun vibrate(
     duration: Long,
-    amplitude: Int
+    amplitude: Int,
 ) {
     // iOS vibration implementation
     // Use AudioServicesPlaySystemSound for iOS vibration
@@ -411,7 +411,10 @@ actual fun setScreenBrightness(brightness: Float) {
     // Use UIScreen.main.brightness for iOS brightness control
 }
 
-actual fun setVolume(volume: Float, streamType: Int) {
+actual fun setVolume(
+    volume: Float,
+    streamType: Int,
+) {
     // iOS volume implementation
     // Use AVAudioSession for iOS volume control
 }
@@ -424,14 +427,16 @@ actual fun observeNetworkStatus(): Flow<NetworkType> {
 
 actual fun observeBatteryStatus(): Flow<BatteryStatus> {
     return flow {
-        emit(BatteryStatus(
-            level = 0.75f,
-            isCharging = false,
-            chargingType = ChargingType.NONE,
-            temperature = 25.0f,
-            voltage = 3700,
-            health = BatteryHealth.GOOD
-        ))
+        emit(
+            BatteryStatus(
+                level = 0.75f,
+                isCharging = false,
+                chargingType = ChargingType.NONE,
+                temperature = 25.0f,
+                voltage = 3700,
+                health = BatteryHealth.GOOD,
+            ),
+        )
     }
 }
 
@@ -451,11 +456,11 @@ actual fun Modifier.platformSpecific(): Modifier {
 // iOS平台适配器实现
 class IOSPlatformAdapter : UnifyPlatformAdapter {
     override fun getPlatformName(): String = "iOS"
-    
+
     override fun getPlatformVersion(): String = "15.0+"
-    
+
     override fun isFeatureSupported(feature: PlatformFeature): Boolean = true
-    
+
     override fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             deviceId = "ios-device-id",
@@ -473,10 +478,10 @@ class IOSPlatformAdapter : UnifyPlatformAdapter {
             totalMemory = 4096,
             availableMemory = 2048,
             totalStorage = 64000,
-            availableStorage = 32000
+            availableStorage = 32000,
         )
     }
-    
+
     override fun getSystemInfo(): SystemInfo {
         return SystemInfo(
             platformType = PlatformType.IOS,
@@ -488,11 +493,12 @@ class IOSPlatformAdapter : UnifyPlatformAdapter {
             networkType = NetworkType.WIFI,
             isOnline = true,
             isDarkMode = false,
-            systemFeatures = listOf(
-                PlatformFeature.CAMERA,
-                PlatformFeature.BIOMETRIC,
-                PlatformFeature.NFC
-            )
+            systemFeatures =
+                listOf(
+                    PlatformFeature.CAMERA,
+                    PlatformFeature.BIOMETRIC,
+                    PlatformFeature.NFC,
+                ),
         )
     }
 }

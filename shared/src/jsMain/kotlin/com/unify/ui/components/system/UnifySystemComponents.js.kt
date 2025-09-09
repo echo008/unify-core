@@ -14,7 +14,7 @@ actual fun UnifyDeviceOrientation(
     onOrientationChange: (DeviceOrientation) -> Unit,
     modifier: Modifier,
     showIndicator: Boolean,
-    lockOrientation: DeviceOrientation?
+    lockOrientation: DeviceOrientation?,
 ) {
     Column(modifier = modifier) {
         Text("JS Device Orientation")
@@ -32,11 +32,11 @@ actual fun UnifyVibrationControl(
     onVibrate: (VibrationPattern) -> Unit,
     modifier: Modifier,
     enableCustomPatterns: Boolean,
-    presetPatterns: List<VibrationPattern>
+    presetPatterns: List<VibrationPattern>,
 ) {
     Column(modifier = modifier) {
         Text("JS Vibration Control")
-        Button(onClick = { 
+        Button(onClick = {
             onVibrate(VibrationPattern("Default", longArrayOf(100, 200, 100), -1))
         }) {
             Text("Vibrate")
@@ -53,7 +53,7 @@ actual fun UnifyBrightnessControl(
     onBrightnessChange: (Float) -> Unit,
     modifier: Modifier,
     enableAutoAdjust: Boolean,
-    showSlider: Boolean
+    showSlider: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Brightness Control")
@@ -61,7 +61,7 @@ actual fun UnifyBrightnessControl(
             Slider(
                 value = brightness,
                 onValueChange = onBrightnessChange,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         if (enableAutoAdjust) {
@@ -77,7 +77,7 @@ actual fun UnifyVolumeControl(
     modifier: Modifier,
     volumeType: VolumeType,
     showSlider: Boolean,
-    enableMute: Boolean
+    enableMute: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Volume Control - ${volumeType.name}")
@@ -85,7 +85,7 @@ actual fun UnifyVolumeControl(
             Slider(
                 value = volume,
                 onValueChange = onVolumeChange,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         if (enableMute) {
@@ -100,7 +100,7 @@ actual fun UnifyClipboard(
     modifier: Modifier,
     showHistory: Boolean,
     maxHistorySize: Int,
-    enableAutoDetect: Boolean
+    enableAutoDetect: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Clipboard")
@@ -119,7 +119,7 @@ actual fun UnifyClipboard(
 @Composable
 actual fun UnifyBatteryStatus(
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Battery Status")
@@ -132,7 +132,7 @@ actual fun UnifyBatteryStatus(
 @Composable
 actual fun UnifyCPUUsage(
     modifier: Modifier,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     Column(modifier = modifier) {
         Text("JS CPU Usage")
@@ -146,7 +146,7 @@ actual fun UnifyNotificationManager(
     onNotificationAction: (String, NotificationAction) -> Unit,
     modifier: Modifier,
     enableGrouping: Boolean,
-    showBadges: Boolean
+    showBadges: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Notification Manager")
@@ -157,12 +157,12 @@ actual fun UnifyNotificationManager(
                     Text(notification.title)
                     Text(notification.content)
                     Row {
-                        Button(onClick = { 
+                        Button(onClick = {
                             onNotificationAction(notification.id, NotificationAction.OPEN)
                         }) {
                             Text("View")
                         }
-                        Button(onClick = { 
+                        Button(onClick = {
                             onNotificationAction(notification.id, NotificationAction.DISMISS)
                         }) {
                             Text("Dismiss")
@@ -188,7 +188,7 @@ actual fun UnifySystemInfo(
     showMemory: Boolean,
     showStorage: Boolean,
     showNetwork: Boolean,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     Column(modifier = modifier) {
         Text("JS System Info")
@@ -217,20 +217,22 @@ actual fun UnifyPerformanceMonitor(
     modifier: Modifier,
     showRealTimeChart: Boolean,
     maxDataPoints: Int,
-    updateInterval: Long
+    updateInterval: Long,
 ) {
     Column(modifier = modifier) {
         Text("JS Performance Monitor")
         metrics.forEach { metric ->
-            Text("${metric}: ${when(metric) {
-                PerformanceMetric.CPU_USAGE -> "25%"
-                PerformanceMetric.MEMORY_USAGE -> "512MB"
-                PerformanceMetric.BATTERY_LEVEL -> "85%"
-                PerformanceMetric.NETWORK_SPEED -> "100Mbps"
-                PerformanceMetric.FPS -> "60fps"
-                PerformanceMetric.TEMPERATURE -> "45°C"
-                else -> "N/A"
-            }}")
+            Text(
+                "$metric: ${when (metric) {
+                    PerformanceMetric.CPU_USAGE -> "25%"
+                    PerformanceMetric.MEMORY_USAGE -> "512MB"
+                    PerformanceMetric.BATTERY_LEVEL -> "85%"
+                    PerformanceMetric.NETWORK_SPEED -> "100Mbps"
+                    PerformanceMetric.FPS -> "60fps"
+                    PerformanceMetric.TEMPERATURE -> "45°C"
+                    else -> "N/A"
+                }}",
+            )
         }
         if (showRealTimeChart) Text("Real-time chart enabled")
         Text("Max points: $maxDataPoints")
@@ -253,7 +255,7 @@ actual fun UnifyBatteryIndicator(
     lowBatteryThreshold: Float,
     warningColor: Color,
     normalColor: Color,
-    chargingColor: Color
+    chargingColor: Color,
 ) {
     Column(modifier = modifier) {
         Text("JS Battery Indicator")
@@ -262,15 +264,16 @@ actual fun UnifyBatteryIndicator(
         }
         Text(if (isCharging) "Charging" else "Not charging")
         Text("Threshold: ${(lowBatteryThreshold * 100).toInt()}%")
-        val indicatorColor = when {
-            isCharging -> chargingColor
-            batteryLevel < lowBatteryThreshold -> warningColor
-            else -> normalColor
-        }
+        val indicatorColor =
+            when {
+                isCharging -> chargingColor
+                batteryLevel < lowBatteryThreshold -> warningColor
+                else -> normalColor
+            }
         LinearProgressIndicator(
             progress = batteryLevel,
             color = indicatorColor,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -282,7 +285,7 @@ actual fun UnifyMemoryUsage(
     modifier: Modifier,
     showChart: Boolean,
     showDetails: Boolean,
-    warningThreshold: Float
+    warningThreshold: Float,
 ) {
     Column(modifier = modifier) {
         Text("JS Memory Usage")
@@ -293,7 +296,7 @@ actual fun UnifyMemoryUsage(
             LinearProgressIndicator(
                 progress = usagePercent,
                 color = if (usagePercent > warningThreshold) Color.Red else Color.Green,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
         if (showDetails) {
@@ -310,7 +313,7 @@ actual fun UnifyStorageUsage(
     modifier: Modifier,
     showBreakdown: Boolean,
     categories: Map<String, Long>,
-    warningThreshold: Float
+    warningThreshold: Float,
 ) {
     Column(modifier = modifier) {
         Text("JS Storage Usage")
@@ -320,7 +323,7 @@ actual fun UnifyStorageUsage(
         LinearProgressIndicator(
             progress = usagePercent,
             color = if (usagePercent > warningThreshold) Color.Red else Color.Green,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         if (showBreakdown) {
             Text("Storage breakdown:")
@@ -339,7 +342,7 @@ actual fun UnifyNetworkStatus(
     modifier: Modifier,
     showSpeed: Boolean,
     onNetworkTest: () -> Unit,
-    showDetails: Boolean
+    showDetails: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Network Status")
@@ -352,7 +355,7 @@ actual fun UnifyNetworkStatus(
         if (showDetails) {
             LinearProgressIndicator(
                 progress = signalStrength,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
             Button(onClick = onNetworkTest) {
                 Text("Test Network")

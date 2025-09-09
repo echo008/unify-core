@@ -10,7 +10,7 @@ actual fun UnifyNavigationHost(
     startDestination: String,
     modifier: Modifier,
     route: String?,
-    builder: NavigationGraphBuilder.() -> Unit
+    builder: NavigationGraphBuilder.() -> Unit,
 ) {
     // Native平台导航宿主组件实现
 }
@@ -20,9 +20,16 @@ actual fun UnifyNavController(): NavController {
     // Native平台导航控制器实现
     return object : NavController {
         override fun navigate(route: String) {}
+
         override fun navigateUp(): Boolean = true
+
         override fun popBackStack(): Boolean = true
-        override fun popBackStack(route: String, inclusive: Boolean): Boolean = true
+
+        override fun popBackStack(
+            route: String,
+            inclusive: Boolean,
+        ): Boolean = true
+
         override val currentDestination: NavDestination? = null
     }
 }
@@ -30,7 +37,7 @@ actual fun UnifyNavController(): NavController {
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // Native平台返回处理器实现
 }
@@ -41,7 +48,7 @@ actual fun UnifyNavigationSuite(
     modifier: Modifier,
     layoutType: NavigationSuiteType,
     colors: NavigationSuiteColors,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // Native平台导航套件组件实现
 }

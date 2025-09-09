@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.browser.document
-import kotlinx.browser.window
 import org.w3c.dom.HTMLInputElement
 
 /**
@@ -20,15 +19,16 @@ actual fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier,
     text: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFF0066CC) // Web Blue
-        )
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF0066CC), // Web Blue
+            ),
     ) {
         Text(text)
     }
@@ -40,7 +40,7 @@ actual fun UnifyPlatformTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier,
     placeholder: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = value,
@@ -48,10 +48,11 @@ actual fun UnifyPlatformTextField(
         modifier = modifier,
         enabled = enabled,
         placeholder = { Text(placeholder) },
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = Color(0xFF0066CC),
-            unfocusedBorderColor = Color(0xFFCED4DA)
-        )
+        colors =
+            OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color(0xFF0066CC),
+                unfocusedBorderColor = Color(0xFFCED4DA),
+            ),
     )
 }
 
@@ -60,18 +61,19 @@ actual fun UnifyPlatformSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
-        colors = SwitchDefaults.colors(
-            checkedThumbColor = Color.White,
-            checkedTrackColor = Color(0xFF28A745), // Web Green
-            uncheckedThumbColor = Color.White,
-            uncheckedTrackColor = Color(0xFFCED4DA)
-        )
+        colors =
+            SwitchDefaults.colors(
+                checkedThumbColor = Color.White,
+                checkedTrackColor = Color(0xFF28A745), // Web Green
+                uncheckedThumbColor = Color.White,
+                uncheckedTrackColor = Color(0xFFCED4DA),
+            ),
     )
 }
 
@@ -81,7 +83,7 @@ actual fun UnifyPlatformSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier,
     valueRange: ClosedFloatingPointRange<Float>,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Slider(
         value = value,
@@ -89,11 +91,12 @@ actual fun UnifyPlatformSlider(
         modifier = modifier,
         valueRange = valueRange,
         enabled = enabled,
-        colors = SliderDefaults.colors(
-            thumbColor = Color(0xFF0066CC),
-            activeTrackColor = Color(0xFF0066CC),
-            inactiveTrackColor = Color(0xFFCED4DA)
-        )
+        colors =
+            SliderDefaults.colors(
+                thumbColor = Color(0xFF0066CC),
+                activeTrackColor = Color(0xFF0066CC),
+                inactiveTrackColor = Color(0xFFCED4DA),
+            ),
     )
 }
 
@@ -101,21 +104,21 @@ actual fun UnifyPlatformSlider(
 actual fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     Column(modifier = modifier) {
         LinearProgressIndicator(
             progress = progress,
             modifier = Modifier.fillMaxWidth(),
             color = Color(0xFF0066CC),
-            trackColor = Color(0xFFE9ECEF)
+            trackColor = Color(0xFFE9ECEF),
         )
         if (showPercentage) {
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${(progress * 100).toInt()}%",
                 style = MaterialTheme.typography.bodySmall,
-                color = Color(0xFF6C757D)
+                color = Color(0xFF6C757D),
             )
         }
     }
@@ -127,7 +130,7 @@ actual fun UnifyPlatformAlert(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
@@ -145,7 +148,7 @@ actual fun UnifyPlatformAlert(
         },
         containerColor = Color.White,
         titleContentColor = Color.Black,
-        textContentColor = Color(0xFF6C757D)
+        textContentColor = Color(0xFF6C757D),
     )
 }
 
@@ -155,42 +158,44 @@ actual fun UnifyPlatformActionSheet(
     actions: List<String>,
     onActionSelected: (Int) -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Web风格的ActionSheet实现
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.Black,
-                modifier = Modifier.padding(bottom = 16.dp)
+                modifier = Modifier.padding(bottom = 16.dp),
             )
-            
+
             actions.forEachIndexed { index, action ->
                 TextButton(
                     onClick = { onActionSelected(index) },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF0066CC)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF0066CC),
+                        ),
                 ) {
                     Text(action)
                 }
             }
-            
+
             Divider(modifier = Modifier.padding(vertical = 8.dp))
-            
+
             TextButton(
                 onClick = onCancel,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("取消", color = Color(0xFF6C757D))
             }
@@ -203,26 +208,29 @@ actual fun UnifyPlatformSegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onSelectionChanged: (Int) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     // Web风格的分段控制器
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(4.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(4.dp),
     ) {
         items.forEachIndexed { index, item ->
             val isSelected = index == selectedIndex
             OutlinedButton(
                 onClick = { onSelectionChanged(index) },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = if (isSelected) Color(0xFF0066CC) else Color.Transparent,
-                    contentColor = if (isSelected) Color.White else Color(0xFF0066CC)
-                ),
-                border = ButtonDefaults.outlinedButtonBorder.copy(
-                    brush = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0066CC)).brush
-                )
+                colors =
+                    ButtonDefaults.outlinedButtonColors(
+                        containerColor = if (isSelected) Color(0xFF0066CC) else Color.Transparent,
+                        contentColor = if (isSelected) Color.White else Color(0xFF0066CC),
+                    ),
+                border =
+                    ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF0066CC)).brush,
+                    ),
             ) {
                 Text(item)
             }
@@ -236,16 +244,16 @@ actual fun UnifyPlatformDatePicker(
     onDateSelected: (Long) -> Unit,
     modifier: Modifier,
     minDate: Long?,
-    maxDate: Long?
+    maxDate: Long?,
 ) {
     // Web风格的日期选择器
     Column(modifier = modifier) {
         Text(
             text = "选择日期",
             style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         )
-        
+
         Button(
             onClick = {
                 // 使用Web原生日期选择器
@@ -258,9 +266,10 @@ actual fun UnifyPlatformDatePicker(
                 }
                 input.click()
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0066CC)
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0066CC),
+                ),
         ) {
             Text("选择日期")
         }
@@ -268,7 +277,10 @@ actual fun UnifyPlatformDatePicker(
 }
 
 // Missing platform adapter functions
-actual fun setVolume(volume: Float, streamType: Int) {
+actual fun setVolume(
+    volume: Float,
+    streamType: Int,
+) {
     // JavaScript implementation for volume control
     console.log("Setting volume to $volume for stream type $streamType")
 }
@@ -285,21 +297,33 @@ actual fun observeBatteryStatus(): kotlinx.coroutines.flow.Flow<BatteryStatus> {
             chargingType = ChargingType.AC,
             temperature = 25.0f,
             voltage = 3,
-            health = BatteryHealth.GOOD
-        )
+            health = BatteryHealth.GOOD,
+        ),
     )
 }
 
 // Missing platform adapter functions
-actual fun shareContent(content: String, title: String, mimeType: String) {
+actual fun shareContent(
+    content: String,
+    title: String,
+    mimeType: String,
+) {
     console.log("Sharing: $title - $content")
 }
 
-actual fun showNotification(title: String, content: String, channelId: String, importance: Int) {
+actual fun showNotification(
+    title: String,
+    content: String,
+    channelId: String,
+    importance: Int,
+) {
     console.log("Notification: $title - $content")
 }
 
-actual fun vibrate(duration: Long, amplitude: Int) {
+actual fun vibrate(
+    duration: Long,
+    amplitude: Int,
+) {
     console.log("Vibrating for ${duration}ms")
 }
 
@@ -316,38 +340,44 @@ actual object UnifyPlatformAdapterFactory {
     actual fun createAdapter(): UnifyPlatformAdapter {
         return object : UnifyPlatformAdapter {
             override fun getPlatformName(): String = "JavaScript"
+
             override fun getPlatformVersion(): String = "1.0.0"
+
             override fun isFeatureSupported(feature: PlatformFeature): Boolean = false
-            override fun getDeviceInfo(): DeviceInfo = DeviceInfo(
-                deviceId = "js-device",
-                deviceName = "Browser",
-                manufacturer = "Unknown",
-                model = "Web",
-                brand = "Browser",
-                osVersion = "1.0",
-                apiLevel = 1,
-                screenWidth = 1920,
-                screenHeight = 1080,
-                density = 1.0f,
-                isTablet = false,
-                isEmulator = false,
-                totalMemory = 8192L,
-                availableMemory = 4096L,
-                totalStorage = 1024L,
-                availableStorage = 512L
-            )
-            override fun getSystemInfo(): SystemInfo = SystemInfo(
-                platformType = PlatformType.WEB,
-                architecture = "x64",
-                locale = "en-US",
-                timezone = "UTC",
-                batteryLevel = 1.0f,
-                isCharging = false,
-                networkType = NetworkType.WIFI,
-                isOnline = true,
-                isDarkMode = false,
-                systemFeatures = emptyList()
-            )
+
+            override fun getDeviceInfo(): DeviceInfo =
+                DeviceInfo(
+                    deviceId = "js-device",
+                    deviceName = "Browser",
+                    manufacturer = "Unknown",
+                    model = "Web",
+                    brand = "Browser",
+                    osVersion = "1.0",
+                    apiLevel = 1,
+                    screenWidth = 1920,
+                    screenHeight = 1080,
+                    density = 1.0f,
+                    isTablet = false,
+                    isEmulator = false,
+                    totalMemory = 8192L,
+                    availableMemory = 4096L,
+                    totalStorage = 1024L,
+                    availableStorage = 512L,
+                )
+
+            override fun getSystemInfo(): SystemInfo =
+                SystemInfo(
+                    platformType = PlatformType.WEB,
+                    architecture = "x64",
+                    locale = "en-US",
+                    timezone = "UTC",
+                    batteryLevel = 1.0f,
+                    isCharging = false,
+                    networkType = NetworkType.WIFI,
+                    isOnline = true,
+                    isDarkMode = false,
+                    systemFeatures = emptyList(),
+                )
         }
     }
 }
@@ -360,7 +390,7 @@ actual fun Modifier.platformSpecific(): Modifier {
 @Composable
 actual fun UnifyStatusBarController(
     statusBarColor: androidx.compose.ui.graphics.Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // JS implementation - no-op
 }
@@ -368,7 +398,7 @@ actual fun UnifyStatusBarController(
 @Composable
 actual fun UnifyNavigationBarController(
     navigationBarColor: androidx.compose.ui.graphics.Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // JS implementation - no-op
 }
@@ -378,22 +408,20 @@ actual fun UnifySystemUIController(
     statusBarColor: androidx.compose.ui.graphics.Color,
     navigationBarColor: androidx.compose.ui.graphics.Color,
     statusBarDarkIcons: Boolean,
-    navigationBarDarkIcons: Boolean
+    navigationBarDarkIcons: Boolean,
 ) {
     // JS implementation - no-op
 }
 
 @Composable
-actual fun UnifySafeAreaHandler(
-    content: @Composable () -> Unit
-) {
+actual fun UnifySafeAreaHandler(content: @Composable () -> Unit) {
     content()
 }
 
 @Composable
 actual fun UnifyKeyboardHandler(
     onKeyboardVisibilityChanged: (Boolean) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     content()
 }
@@ -401,7 +429,7 @@ actual fun UnifyKeyboardHandler(
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // JS back handler implementation
 }
@@ -410,7 +438,7 @@ actual fun UnifyBackHandler(
 actual fun UnifyLifecycleHandler(
     onResume: () -> Unit,
     onPause: () -> Unit,
-    onDestroy: () -> Unit
+    onDestroy: () -> Unit,
 ) {
     // JS lifecycle handler implementation
 }
@@ -418,7 +446,7 @@ actual fun UnifyLifecycleHandler(
 @Composable
 actual fun UnifyPermissionHandler(
     permissions: List<String>,
-    onPermissionResult: (Map<String, Boolean>) -> Unit
+    onPermissionResult: (Map<String, Boolean>) -> Unit,
 ) {
     LaunchedEffect(permissions) {
         onPermissionResult(permissions.associateWith { true })
@@ -430,10 +458,10 @@ actual fun UnifyPermissionHandler(
 actual fun UnifyFilePicker(
     fileTypes: List<String>,
     multipleSelection: Boolean,
-    onFileSelected: (List<String>) -> Unit
+    onFileSelected: (List<String>) -> Unit,
 ) {
     Button(
-        onClick = { onFileSelected(listOf("mock_file.txt")) }
+        onClick = { onFileSelected(listOf("mock_file.txt")) },
     ) {
         Text("Pick File (JS)")
     }
@@ -443,11 +471,11 @@ actual fun UnifyFilePicker(
 actual fun UnifyCameraComponent(
     modifier: Modifier,
     onImageCaptured: (ByteArray) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Button(
         onClick = { onImageCaptured(byteArrayOf()) },
-        modifier = modifier
+        modifier = modifier,
     ) {
         Text("Capture Image (JS)")
     }
@@ -459,11 +487,11 @@ actual fun UnifyMapComponent(
     latitude: Double,
     longitude: Double,
     zoom: Float,
-    onLocationSelected: (Double, Double) -> Unit
+    onLocationSelected: (Double, Double) -> Unit,
 ) {
     Button(
         onClick = { onLocationSelected(latitude, longitude) },
-        modifier = modifier
+        modifier = modifier,
     ) {
         Text("Map View (JS)")
     }
@@ -474,7 +502,7 @@ actual fun UnifyWebView(
     url: String,
     modifier: Modifier,
     onPageLoaded: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("WebView (JS): $url")
@@ -490,7 +518,7 @@ actual fun UnifyVideoPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("Video Player (JS): $url")
@@ -506,7 +534,7 @@ actual fun UnifyAudioPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("Audio Player (JS): $url")
@@ -520,7 +548,7 @@ actual fun UnifyAudioPlayer(
 actual fun UnifyQRCodeScanner(
     modifier: Modifier,
     onQRCodeScanned: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("QR Scanner (JS)")
@@ -536,7 +564,7 @@ actual fun UnifyBiometricAuth(
     subtitle: String,
     onAuthSuccess: () -> Unit,
     onAuthError: (String) -> Unit,
-    onAuthCancel: () -> Unit
+    onAuthCancel: () -> Unit,
 ) {
     Column {
         Text(title)

@@ -1,30 +1,28 @@
 package com.unify.core.platform
 
-import platform.UIKit.UIDevice
+import com.unify.core.types.DeviceInfo
+import com.unify.core.types.PlatformType
+import platform.AVFoundation.AVCaptureDevice
+import platform.CoreLocation.CLLocationManager
+import platform.CoreMotion.CMMotionManager
 import platform.Foundation.NSBundle
 import platform.Foundation.NSProcessInfo
-import platform.CoreMotion.CMMotionManager
-import platform.AVFoundation.AVCaptureDevice
-import platform.CoreBluetooth.CBCentralManager
-import platform.CoreLocation.CLLocationManager
-import com.unify.core.types.PlatformType
-import com.unify.core.types.DeviceInfo
+import platform.UIKit.UIDevice
 
 /**
  * iOS平台管理器实现
  */
 class IOSPlatformManager : BasePlatformManager() {
-    
     private val device = UIDevice.currentDevice
     private val processInfo = NSProcessInfo.processInfo
     private val bundle = NSBundle.mainBundle
-    
+
     override fun getPlatformType(): PlatformType = PlatformType.IOS
-    
+
     override fun getPlatformName(): String = "iOS"
-    
+
     override fun getPlatformVersion(): String = device.systemVersion
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = "Apple",
@@ -32,10 +30,10 @@ class IOSPlatformManager : BasePlatformManager() {
             systemName = device.systemName,
             systemVersion = device.systemVersion,
             deviceId = device.identifierForVendor?.UUIDString ?: "unknown",
-            isEmulator = isSimulator()
+            isEmulator = isSimulator(),
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean {
         return when (capability) {
             "camera" -> AVCaptureDevice.defaultDeviceWithMediaType("vide") != null
@@ -53,10 +51,10 @@ class IOSPlatformManager : BasePlatformManager() {
             else -> false
         }
     }
-    
+
     override fun getSupportedCapabilities(): List<String> {
         val capabilities = mutableListOf<String>()
-        
+
         if (hasCapability("camera")) capabilities.add("camera")
         if (hasCapability("gps")) capabilities.add("gps")
         if (hasCapability("bluetooth")) capabilities.add("bluetooth")
@@ -69,10 +67,10 @@ class IOSPlatformManager : BasePlatformManager() {
         if (hasCapability("microphone")) capabilities.add("microphone")
         if (hasCapability("telephony")) capabilities.add("telephony")
         if (hasCapability("vibration")) capabilities.add("vibration")
-        
+
         return capabilities
     }
-    
+
     override suspend fun performPlatformInitialization() {
         // iOS特定初始化
         config["system_name"] = device.systemName
@@ -84,12 +82,12 @@ class IOSPlatformManager : BasePlatformManager() {
         config["battery_monitoring_enabled"] = device.batteryMonitoringEnabled.toString()
         config["proximity_monitoring_enabled"] = device.proximityMonitoringEnabled.toString()
         config["multitasking_supported"] = device.multitaskingSupported.toString()
-        
+
         // Bundle信息
         config["bundle_identifier"] = bundle.bundleIdentifier ?: "unknown"
         config["app_version"] = bundle.objectForInfoDictionaryKey("CFBundleShortVersionString")?.toString() ?: "unknown"
         config["build_number"] = bundle.objectForInfoDictionaryKey("CFBundleVersion")?.toString() ?: "unknown"
-        
+
         // 进程信息
         config["process_name"] = processInfo.processName
         config["host_name"] = processInfo.hostName
@@ -98,15 +96,15 @@ class IOSPlatformManager : BasePlatformManager() {
         config["active_processor_count"] = processInfo.activeProcessorCount.toString()
         config["physical_memory"] = processInfo.physicalMemory.toString()
     }
-    
+
     override suspend fun performPlatformCleanup() {
         // iOS特定清理
         config.clear()
     }
-    
+
     private fun isSimulator(): Boolean {
-        return device.model.contains("Simulator") || 
-               processInfo.environment.containsKey("SIMULATOR_DEVICE_NAME")
+        return device.model.contains("Simulator") ||
+            processInfo.environment.containsKey("SIMULATOR_DEVICE_NAME")
     }
 }
 

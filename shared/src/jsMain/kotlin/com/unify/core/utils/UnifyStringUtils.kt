@@ -4,7 +4,10 @@ package com.unify.core.utils
  * JS平台字符串工具实现
  */
 actual object UnifyStringUtils {
-    actual fun format(format: String, vararg args: Any?): String {
+    actual fun format(
+        format: String,
+        vararg args: Any?,
+    ): String {
         var result = format
         args.forEachIndexed { index, arg ->
             result = result.replace("%s", arg.toString())

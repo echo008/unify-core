@@ -4,7 +4,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 enum class PerformanceMetric {
-    CPU_USAGE, MEMORY_USAGE, BATTERY_LEVEL, NETWORK_SPEED, FPS, TEMPERATURE
+    CPU_USAGE,
+    MEMORY_USAGE,
+    BATTERY_LEVEL,
+    NETWORK_SPEED,
+    FPS,
+    TEMPERATURE,
 }
 
 class NativePlatformSystemInfo {
@@ -17,9 +22,13 @@ class NativePlatformSystemInfo {
 
 class NativePlatformPerformanceMetrics {
     fun getCpuUsage(): Double = 0.5
+
     fun getMemoryUsage(): Double = 0.6
+
     fun getDiskUsage(): Double = 0.4
+
     fun getNetworkUsage(): Double = 0.3
+
     fun getBatteryLevel(): Double = 0.8
 }
 
@@ -31,7 +40,7 @@ actual fun UnifySystemInfo(
     showMemory: Boolean,
     showStorage: Boolean,
     showNetwork: Boolean,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     // Native平台系统信息组件实现
 }
@@ -43,7 +52,7 @@ actual fun UnifyPerformanceMonitor(
     modifier: Modifier,
     showRealTimeChart: Boolean,
     maxDataPoints: Int,
-    updateInterval: Long
+    updateInterval: Long,
 ) {
     // Native平台性能监控组件实现
 }
@@ -52,7 +61,7 @@ actual fun UnifyPerformanceMonitor(
 fun NativeDeviceStatus(
     modifier: Modifier,
     showBattery: Boolean,
-    showNetwork: Boolean
+    showNetwork: Boolean,
 ) {
     // Native平台设备状态组件实现
 }
@@ -62,7 +71,7 @@ fun NativeSystemNotifications(
     modifier: Modifier,
     maxNotifications: Int,
     autoHide: Boolean,
-    actions: List<NotificationAction>
+    actions: List<NotificationAction>,
 ) {
     // Native平台系统通知组件实现
 }
@@ -70,7 +79,7 @@ fun NativeSystemNotifications(
 @Composable
 fun NativeSystemSettings(
     modifier: Modifier,
-    categories: List<String>
+    categories: List<String>,
 ) {
     // Native平台系统设置组件实现
 }
@@ -79,7 +88,7 @@ fun NativeSystemSettings(
 fun NativeSystemTheme(
     modifier: Modifier,
     isDarkMode: Boolean,
-    accentColor: String
+    accentColor: String,
 ) {
     // Native平台系统主题组件实现
 }
@@ -88,7 +97,7 @@ fun NativeSystemTheme(
 fun NativeSystemAccessibility(
     modifier: Modifier,
     fontSize: Float,
-    highContrast: Boolean
+    highContrast: Boolean,
 ) {
     // Native平台系统无障碍组件实现
 }
@@ -96,7 +105,7 @@ fun NativeSystemAccessibility(
 @Composable
 fun NativeSystemUpdates(
     modifier: Modifier,
-    checkInterval: Long
+    checkInterval: Long,
 ) {
     // Native平台系统更新组件实现
 }
@@ -104,7 +113,7 @@ fun NativeSystemUpdates(
 @Composable
 fun NativeSystemDiagnostics(
     modifier: Modifier,
-    enableLogging: Boolean
+    enableLogging: Boolean,
 ) {
     // Native平台系统诊断组件实现
 }
@@ -113,7 +122,7 @@ fun NativeSystemDiagnostics(
 fun NativeSystemBackup(
     modifier: Modifier,
     autoBackup: Boolean,
-    backupLocation: String
+    backupLocation: String,
 ) {
     // Native平台系统备份组件实现
 }
@@ -124,7 +133,7 @@ actual fun UnifyDeviceOrientation(
     onOrientationChange: (DeviceOrientation) -> Unit,
     modifier: Modifier,
     showIndicator: Boolean,
-    lockOrientation: DeviceOrientation?
+    lockOrientation: DeviceOrientation?,
 ) {
     // Native平台设备方向组件实现
 }
@@ -134,7 +143,7 @@ actual fun UnifyVibrationControl(
     onVibrate: (VibrationPattern) -> Unit,
     modifier: Modifier,
     enableCustomPatterns: Boolean,
-    presetPatterns: List<VibrationPattern>
+    presetPatterns: List<VibrationPattern>,
 ) {
     // Native平台震动控制组件实现
 }
@@ -145,7 +154,7 @@ actual fun UnifyBrightnessControl(
     onBrightnessChange: (Float) -> Unit,
     modifier: Modifier,
     enableAutoAdjust: Boolean,
-    showSlider: Boolean
+    showSlider: Boolean,
 ) {
     // Native平台亮度控制组件实现
 }
@@ -157,7 +166,7 @@ actual fun UnifyVolumeControl(
     modifier: Modifier,
     volumeType: VolumeType,
     showSlider: Boolean,
-    enableMute: Boolean
+    enableMute: Boolean,
 ) {
     // Native平台音量控制组件实现
 }
@@ -168,7 +177,7 @@ actual fun UnifyClipboard(
     modifier: Modifier,
     showHistory: Boolean,
     maxHistorySize: Int,
-    enableAutoDetect: Boolean
+    enableAutoDetect: Boolean,
 ) {
     // Native平台剪贴板组件实现
 }
@@ -176,7 +185,7 @@ actual fun UnifyClipboard(
 @Composable
 actual fun UnifyBatteryStatus(
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     // Native平台电池状态组件实现
 }
@@ -184,7 +193,7 @@ actual fun UnifyBatteryStatus(
 @Composable
 actual fun UnifyCPUUsage(
     modifier: Modifier,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     // Native平台CPU使用率组件实现
 }
@@ -195,7 +204,7 @@ actual fun UnifyNotificationManager(
     onNotificationAction: (String, NotificationAction) -> Unit,
     modifier: Modifier,
     enableGrouping: Boolean,
-    showBadges: Boolean
+    showBadges: Boolean,
 ) {
     // Native平台通知管理组件实现
 }

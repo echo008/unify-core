@@ -10,7 +10,7 @@ actual object UnifyTimeUtils {
     actual fun currentTimeMillis(): Long {
         return (NSDate().timeIntervalSince1970 * 1000).toLong()
     }
-    
+
     actual fun nanoTime(): Long {
         return (NSDate().timeIntervalSince1970 * 1_000_000_000).toLong()
     }

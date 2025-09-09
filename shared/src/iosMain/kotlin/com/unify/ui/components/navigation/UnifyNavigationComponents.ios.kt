@@ -4,14 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 
 @Composable
 actual fun UnifyNavigationHost(
     startDestination: String,
     modifier: Modifier,
     route: String?,
-    builder: NavigationGraphBuilder.() -> Unit
+    builder: NavigationGraphBuilder.() -> Unit,
 ) {
     // iOS Navigation Host implementation
     Box(modifier = modifier) {
@@ -23,19 +22,22 @@ class IOSNavController : NavController {
     override fun navigate(route: String) {
         // iOS navigation implementation
     }
-    
+
     override fun navigateUp(): Boolean {
         return true
     }
-    
+
     override fun popBackStack(): Boolean {
         return true
     }
-    
-    override fun popBackStack(route: String, inclusive: Boolean): Boolean {
+
+    override fun popBackStack(
+        route: String,
+        inclusive: Boolean,
+    ): Boolean {
         return true
     }
-    
+
     override val currentDestination: NavDestination?
         get() = null
 }
@@ -45,15 +47,10 @@ actual fun UnifyNavController(): NavController {
     return remember { IOSNavController() }
 }
 
-
-
-
-
-
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // iOS back handler implementation
 }
@@ -64,12 +61,10 @@ actual fun UnifyNavigationSuite(
     modifier: Modifier,
     layoutType: NavigationSuiteType,
     colors: NavigationSuiteColors,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("iOS Navigation Suite")
         content()
     }
 }
-
-

@@ -9,7 +9,10 @@ actual fun getCurrentTimeMillis(): Long = Date.now().toLong()
 
 actual fun getNanoTime(): Long = (Date.now() * 1_000_000).toLong()
 
-actual fun formatTimestamp(timestamp: Long, pattern: String): String {
+actual fun formatTimestamp(
+    timestamp: Long,
+    pattern: String,
+): String {
     val date = Date(timestamp.toDouble())
     return when (pattern) {
         "yyyy-MM-dd HH:mm:ss" -> {

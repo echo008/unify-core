@@ -209,7 +209,7 @@ class TestCoverageAnalyzerImpl : TestCoverageAnalyzer {
         val report = generateReport()
 
         return when (format) {
-            ReportFormat.JSON -> Json.encodeToString(report)
+            ReportFormat.JSON -> Json.encodeToString(CoverageReport.serializer(), report)
             ReportFormat.XML -> exportToXML(report)
             ReportFormat.HTML -> exportToHTML(report)
             ReportFormat.TEXT -> exportToText(report)

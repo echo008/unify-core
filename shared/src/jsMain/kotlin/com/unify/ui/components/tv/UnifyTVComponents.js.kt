@@ -4,13 +4,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 
 @Composable
 actual fun UnifyTVRemoteControl(
     onKeyPressed: (TVKey) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS TV Remote Control")
@@ -26,7 +24,7 @@ actual fun UnifyTVMediaPlayer(
     onPlaybackStateChange: (TVPlaybackState) -> Unit,
     modifier: Modifier,
     showControls: Boolean,
-    autoPlay: Boolean
+    autoPlay: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS TV Media Player")
@@ -45,7 +43,7 @@ actual fun UnifyTVGridMenu(
     items: List<String>,
     onItemSelected: (String) -> Unit,
     modifier: Modifier,
-    columns: Int
+    columns: Int,
 ) {
     Column(modifier = modifier) {
         Text("JS TV Grid Menu")
@@ -63,14 +61,14 @@ actual fun UnifyTVVolumeControl(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     modifier: Modifier,
-    showMute: Boolean
+    showMute: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS TV Volume Control")
         Slider(
             value = volume,
             onValueChange = onVolumeChange,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         if (showMute) {
             Button(onClick = {}) { Text("Mute") }
@@ -83,7 +81,7 @@ actual fun UnifyTVChannelList(
     channels: List<TVChannel>,
     currentChannel: String,
     onChannelSelected: (TVChannel) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Column(modifier = modifier) {
         Text("JS TV Channel List")

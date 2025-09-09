@@ -404,7 +404,7 @@ class UnifyTestFrameworkImpl : UnifyTestFramework {
         val report = generateReport()
 
         return when (format) {
-            ReportFormat.JSON -> Json.encodeToString(report)
+            ReportFormat.JSON -> Json.encodeToString(TestReport.serializer(), report)
             ReportFormat.XML -> exportToXML(report)
             ReportFormat.HTML -> exportToHTML(report)
             ReportFormat.TEXT -> exportToText(report)

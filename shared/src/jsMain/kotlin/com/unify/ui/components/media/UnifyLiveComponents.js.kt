@@ -16,7 +16,6 @@ import kotlinx.coroutines.delay
  * 使用简化的实现，避免复杂的Web媒体API调用
  */
 actual object UnifyLiveComponents {
-    
     /**
      * 实时相机预览组件
      */
@@ -24,11 +23,11 @@ actual object UnifyLiveComponents {
     actual fun LiveCameraPreview(
         modifier: Modifier,
         onCameraReady: () -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         var isInitialized by remember { mutableStateOf(false) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
-        
+
         LaunchedEffect(Unit) {
             try {
                 // 简化相机初始化，避免复杂的JS API调用
@@ -40,45 +39,46 @@ actual object UnifyLiveComponents {
                 onError(errorMessage!!)
             }
         }
-        
+
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black, RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .background(Color.Black, RoundedCornerShape(8.dp)),
+            contentAlignment = Alignment.Center,
         ) {
             if (errorMessage != null) {
                 Column(
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
                         text = "📷",
                         style = MaterialTheme.typography.displayLarge,
-                        color = Color.White
+                        color = Color.White,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = errorMessage ?: "相机加载中...",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             } else if (isInitialized) {
                 Text(
                     text = "📹 Web相机预览已就绪",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = Color.White
+                    color = Color.White,
                 )
             } else {
                 Text(
                     text = "📷 相机初始化中...",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = Color.Gray
+                    color = Color.Gray,
                 )
             }
         }
     }
-    
+
     /**
      * 实时音频波形显示组件
      */
@@ -86,11 +86,11 @@ actual object UnifyLiveComponents {
     actual fun LiveAudioWaveform(
         modifier: Modifier,
         isRecording: Boolean,
-        onRecordingToggle: (Boolean) -> Unit
+        onRecordingToggle: (Boolean) -> Unit,
     ) {
         var amplitude by remember { mutableStateOf(0f) }
         var recordingTime by remember { mutableStateOf(0) }
-        
+
         LaunchedEffect(isRecording) {
             if (isRecording) {
                 recordingTime = 0
@@ -105,61 +105,65 @@ actual object UnifyLiveComponents {
                 recordingTime = 0
             }
         }
-        
+
         Column(
             modifier = modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // 音频波形可视化区域
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color.Black, RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Color.Black, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
             ) {
                 if (isRecording) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
                             text = "🎵 录音中...",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White
+                            color = Color.White,
                         )
                         Text(
                             text = "音量: ${(amplitude * 100).toInt()}%",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
+                            color = Color.Gray,
                         )
                         Text(
                             text = "时间: ${recordingTime / 10}s",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = Color.Gray,
                         )
                     }
                 } else {
                     Text(
                         text = "🎤 点击开始录音",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // 录音控制按钮
             Button(
                 onClick = {
                     onRecordingToggle(!isRecording)
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecording) 
-                        MaterialTheme.colorScheme.error 
-                    else 
-                        MaterialTheme.colorScheme.primary
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor =
+                            if (isRecording) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                    ),
             ) {
                 Text(if (isRecording) "停止录制" else "开始录制")
             }
@@ -172,7 +176,6 @@ actual object UnifyLiveComponents {
  * 提供简化的媒体功能实现
  */
 object WebMediaUtils {
-    
     /**
      * 请求相机和麦克风权限
      */
@@ -185,7 +188,7 @@ object WebMediaUtils {
             false
         }
     }
-    
+
     /**
      * 获取可用的摄像头设备
      */
@@ -197,7 +200,7 @@ object WebMediaUtils {
             emptyList()
         }
     }
-    
+
     /**
      * 获取可用的音频设备
      */
@@ -209,7 +212,7 @@ object WebMediaUtils {
             emptyList()
         }
     }
-    
+
     /**
      * 检查浏览器媒体支持
      */
@@ -221,7 +224,7 @@ object WebMediaUtils {
             false
         }
     }
-    
+
     /**
      * 格式化文件大小
      */
@@ -232,7 +235,7 @@ object WebMediaUtils {
             else -> "${bytes / (1024 * 1024)} MB"
         }
     }
-    
+
     /**
      * 格式化时间
      */
@@ -249,7 +252,7 @@ object WebMediaUtils {
 private fun stopAudioRecording(
     mediaRecorder: dynamic,
     onRecordingComplete: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     try {
         // 简化录音停止逻辑

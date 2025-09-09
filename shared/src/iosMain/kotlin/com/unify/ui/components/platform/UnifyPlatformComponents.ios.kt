@@ -9,7 +9,7 @@ import androidx.compose.ui.graphics.Color
 @Composable
 actual fun UnifyStatusBarController(
     statusBarColor: Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // iOS状态栏控制实现
 }
@@ -17,7 +17,7 @@ actual fun UnifyStatusBarController(
 @Composable
 actual fun UnifyNavigationBarController(
     navigationBarColor: Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // iOS导航栏控制实现
 }
@@ -27,22 +27,20 @@ actual fun UnifySystemUIController(
     statusBarColor: Color,
     navigationBarColor: Color,
     statusBarDarkIcons: Boolean,
-    navigationBarDarkIcons: Boolean
+    navigationBarDarkIcons: Boolean,
 ) {
     // iOS系统UI控制实现
 }
 
 @Composable
-actual fun UnifySafeAreaHandler(
-    content: @Composable () -> Unit
-) {
+actual fun UnifySafeAreaHandler(content: @Composable () -> Unit) {
     content()
 }
 
 @Composable
 actual fun UnifyKeyboardHandler(
     onKeyboardVisibilityChanged: (Boolean) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     content()
 }
@@ -50,7 +48,7 @@ actual fun UnifyKeyboardHandler(
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // iOS返回处理实现
 }
@@ -59,7 +57,7 @@ actual fun UnifyBackHandler(
 actual fun UnifyLifecycleHandler(
     onResume: () -> Unit,
     onPause: () -> Unit,
-    onDestroy: () -> Unit
+    onDestroy: () -> Unit,
 ) {
     // iOS生命周期处理实现
 }
@@ -67,7 +65,7 @@ actual fun UnifyLifecycleHandler(
 @Composable
 actual fun UnifyPermissionHandler(
     permissions: List<String>,
-    onPermissionResult: (Map<String, Boolean>) -> Unit
+    onPermissionResult: (Map<String, Boolean>) -> Unit,
 ) {
     // iOS权限处理实现
 }
@@ -76,10 +74,10 @@ actual fun UnifyPermissionHandler(
 actual fun UnifyFilePicker(
     fileTypes: List<String>,
     multipleSelection: Boolean,
-    onFileSelected: (List<String>) -> Unit
+    onFileSelected: (List<String>) -> Unit,
 ) {
     Button(
-        onClick = { onFileSelected(emptyList()) }
+        onClick = { onFileSelected(emptyList()) },
     ) {
         Text("iOS File Picker")
     }
@@ -89,7 +87,7 @@ actual fun UnifyFilePicker(
 actual fun UnifyCameraComponent(
     modifier: Modifier,
     onImageCaptured: (ByteArray) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("iOS Camera Component")
@@ -105,7 +103,7 @@ actual fun UnifyMapComponent(
     latitude: Double,
     longitude: Double,
     zoom: Float,
-    onLocationSelected: (Double, Double) -> Unit
+    onLocationSelected: (Double, Double) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS Map Component")
@@ -118,7 +116,7 @@ actual fun UnifyWebView(
     url: String,
     modifier: Modifier,
     onPageLoaded: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("iOS WebView: $url")

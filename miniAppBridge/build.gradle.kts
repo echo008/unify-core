@@ -12,6 +12,10 @@ kotlin {
     sourceSets {
         val jsMain by getting {
             dependencies {
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
                 // 与桥接逻辑相关的依赖若未来需要可在此添加
             }
             kotlin.srcDir("src/main/kotlin")

@@ -1,7 +1,7 @@
 package com.unify.core.performance
 
-import com.unify.core.types.UnifyResult
 import com.unify.core.error.UnifyException
+import com.unify.core.types.UnifyResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -11,8 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import platform.Foundation.NSDate
-import platform.Foundation.timeIntervalSince1970
 import platform.Foundation.NSProcessInfo
+import platform.Foundation.timeIntervalSince1970
 import platform.UIKit.UIDevice
 
 /**
@@ -25,29 +25,29 @@ actual fun createPlatformPerformanceMonitor(): UnifyPerformanceMonitor {
 class IOSPerformanceMonitor : UnifyPerformanceMonitor {
     private val _metrics = MutableStateFlow(UnifyPerformanceMetrics())
     override val metrics: StateFlow<UnifyPerformanceMetrics> = _metrics.asStateFlow()
-    
+
     private val _alerts = MutableStateFlow<List<UnifyPerformanceAlert>>(emptyList())
     override val alerts: StateFlow<List<UnifyPerformanceAlert>> = _alerts.asStateFlow()
-    
+
     private val _isMonitoring = MutableStateFlow(false)
     override val isMonitoring: StateFlow<Boolean> = _isMonitoring.asStateFlow()
-    
+
     private var monitoringJob: Job? = null
     private var thresholds = UnifyPerformanceThresholds()
     private val frameHistory = mutableListOf<Long>()
-    
+
     companion object {
         private const val MONITORING_INTERVAL = 1000L
         private const val FRAME_HISTORY_SIZE = 60
         private const val BYTES_TO_MB = 1024 * 1024
     }
-    
+
     override suspend fun startMonitoring(): UnifyResult<Unit> {
         return try {
             if (_isMonitoring.value) {
                 return UnifyResult.Success(Unit)
             }
-            
+
             _isMonitoring.value = true
             startMetricsCollection()
             UnifyResult.Success(Unit)
@@ -55,7 +55,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("启动iOS性能监控失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun stopMonitoring(): UnifyResult<Unit> {
         return try {
             _isMonitoring.value = false
@@ -67,7 +67,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("停止iOS性能监控失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun getCurrentMetrics(): UnifyResult<UnifyPerformanceMetrics> {
         return try {
             val currentMetrics = collectCurrentMetrics()
@@ -78,7 +78,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("获取iOS性能指标失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun getPerformanceLevel(): UnifyResult<UnifyPerformanceLevel> {
         return try {
             val currentMetrics = _metrics.value
@@ -88,7 +88,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("获取iOS内存信息失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun setThresholds(thresholds: UnifyPerformanceThresholds): UnifyResult<Unit> {
         return try {
             this.thresholds = thresholds
@@ -97,7 +97,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("设置iOS性能阈值失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun clearAlerts(): UnifyResult<Unit> {
         return try {
             _alerts.value = emptyList()
@@ -106,57 +106,59 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             UnifyResult.Failure(UnifyException("清除iOS性能警告失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     override suspend fun exportMetrics(): UnifyResult<String> {
         return try {
             val currentMetrics = _metrics.value
             val currentAlerts = _alerts.value
             val device = UIDevice.currentDevice
-            
-            val report = buildString {
-                appendLine("=== iOS 性能监控报告 ===")
-                appendLine("时间: ${currentMetrics.timestamp}")
-                appendLine("设备: ${device.model}")
-                appendLine("系统版本: ${device.systemName} ${device.systemVersion}")
-                appendLine("处理器: ${NSProcessInfo.processInfo.processorCount} 核心")
-                appendLine()
-                appendLine("性能指标:")
-                appendLine("- 内存使用: ${currentMetrics.memoryUsage / BYTES_TO_MB}MB")
-                appendLine("- 帧率: ${currentMetrics.frameRate} FPS")
-                appendLine("- 渲染时间: ${currentMetrics.renderTime}ms")
-                appendLine("- 电池电量: ${currentMetrics.batteryLevel}%")
-                appendLine()
-                appendLine("性能等级: ${calculatePerformanceLevel(currentMetrics)}")
-                
-                if (currentAlerts.isNotEmpty()) {
+
+            val report =
+                buildString {
+                    appendLine("=== iOS 性能监控报告 ===")
+                    appendLine("时间: ${currentMetrics.timestamp}")
+                    appendLine("设备: ${device.model}")
+                    appendLine("系统版本: ${device.systemName} ${device.systemVersion}")
+                    appendLine("处理器: ${NSProcessInfo.processInfo.processorCount} 核心")
                     appendLine()
-                    appendLine("性能警告:")
-                    currentAlerts.forEach { alert ->
+                    appendLine("性能指标:")
+                    appendLine("- 内存使用: ${currentMetrics.memoryUsage / BYTES_TO_MB}MB")
+                    appendLine("- 帧率: ${currentMetrics.frameRate} FPS")
+                    appendLine("- 渲染时间: ${currentMetrics.renderTime}ms")
+                    appendLine("- 电池电量: ${currentMetrics.batteryLevel}%")
+                    appendLine()
+                    appendLine("性能等级: ${calculatePerformanceLevel(currentMetrics)}")
+
+                    if (currentAlerts.isNotEmpty()) {
+                        appendLine()
+                        appendLine("性能警告:")
+                        currentAlerts.forEach { alert ->
+                        }
                     }
                 }
-            }
-            
+
             UnifyResult.Success(report)
         } catch (e: Throwable) {
             UnifyResult.Failure(UnifyException("导出iOS性能报告失败: ${e.message ?: "未知错误"}"))
         }
     }
-    
+
     private fun startMetricsCollection() {
-        monitoringJob = CoroutineScope(Dispatchers.Default).launch {
-            while (_isMonitoring.value) {
-                try {
-                    val metrics = collectCurrentMetrics()
-                    _metrics.value = metrics
-                    checkThresholds(metrics)
-                } catch (e: Throwable) {
-                    // 记录错误但继续监控
+        monitoringJob =
+            CoroutineScope(Dispatchers.Default).launch {
+                while (_isMonitoring.value) {
+                    try {
+                        val metrics = collectCurrentMetrics()
+                        _metrics.value = metrics
+                        checkThresholds(metrics)
+                    } catch (e: Throwable) {
+                        // 记录错误但继续监控
+                    }
+                    delay(MONITORING_INTERVAL)
                 }
-                delay(MONITORING_INTERVAL)
             }
-        }
     }
-    
+
     private fun collectCurrentMetrics(): UnifyPerformanceMetrics {
         return UnifyPerformanceMetrics(
             cpuUsage = 0f, // iOS平台CPU使用率需要特殊权限
@@ -166,10 +168,10 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             renderTime = getLastRenderTime(),
             batteryLevel = UIDevice.currentDevice.batteryLevel * 100f,
             networkLatency = 0L, // 需要网络测试实现
-            timestamp = (NSDate().timeIntervalSince1970 * 1000).toLong()
+            timestamp = (NSDate().timeIntervalSince1970 * 1000).toLong(),
         )
     }
-    
+
     private fun getMemoryUsage(): Long {
         return try {
             // 使用mach API获取内存使用情况
@@ -179,7 +181,7 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             0L
         }
     }
-    
+
     private fun getTotalMemory(): Long {
         return try {
             // 使用NSProcessInfo获取物理内存
@@ -188,26 +190,26 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             0L
         }
     }
-    
+
     private fun calculateFrameRate(): Float {
         if (frameHistory.isEmpty()) return 0f
-        
+
         val totalTime = frameHistory.sum()
         val avgFrameTime = totalTime.toFloat() / frameHistory.size
         return if (avgFrameTime > 0) 1000f / avgFrameTime else 0f
     }
-    
+
     private fun getLastRenderTime(): Long {
         return frameHistory.lastOrNull() ?: 0L
     }
-    
+
     private fun getBatteryLevel(): Float {
         return try {
             val device = UIDevice.currentDevice
             device.batteryMonitoringEnabled = true
             val level = device.batteryLevel
             device.batteryMonitoringEnabled = false
-            
+
             if (level >= 0) {
                 level * 100f
             } else {
@@ -217,34 +219,37 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
             100f
         }
     }
-    
+
     override fun recordFrameTime(frameDuration: Long) {
         frameHistory.add(frameDuration)
         if (frameHistory.size > FRAME_HISTORY_SIZE) {
             frameHistory.removeAt(0)
         }
     }
-    
+
     private fun checkThresholds(metrics: UnifyPerformanceMetrics) {
         val newAlerts = mutableListOf<UnifyPerformanceAlert>()
-        
+
         // 内存使用率检查
-        val memoryPercent = if (metrics.memoryTotal > 0) {
-            (metrics.memoryUsage.toFloat() / metrics.memoryTotal) * 100f
-        } else 0f
-        
+        val memoryPercent =
+            if (metrics.memoryTotal > 0) {
+                (metrics.memoryUsage.toFloat() / metrics.memoryTotal) * 100f
+            } else {
+                0f
+            }
+
         if (memoryPercent > thresholds.maxMemoryUsage) {
             newAlerts.add(
                 UnifyPerformanceAlert(
                     level = if (memoryPercent > 95f) UnifyPerformanceLevel.CRITICAL else UnifyPerformanceLevel.POOR,
-                    message = "内存使用率过高: ${memoryPercent}%",
+                    message = "内存使用率过高: $memoryPercent%",
                     metric = "memory_usage",
                     value = memoryPercent,
-                    threshold = thresholds.maxMemoryUsage
-                )
+                    threshold = thresholds.maxMemoryUsage,
+                ),
             )
         }
-        
+
         // 帧率检查
         if (metrics.frameRate < thresholds.minFrameRate && metrics.frameRate > 0) {
             newAlerts.add(
@@ -253,11 +258,11 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
                     message = "帧率过低: ${metrics.frameRate} FPS",
                     metric = "frame_rate",
                     value = metrics.frameRate,
-                    threshold = thresholds.minFrameRate
-                )
+                    threshold = thresholds.minFrameRate,
+                ),
             )
         }
-        
+
         // 电池电量检查
         if (metrics.batteryLevel < thresholds.minBatteryLevel) {
             newAlerts.add(
@@ -266,42 +271,45 @@ class IOSPerformanceMonitor : UnifyPerformanceMonitor {
                     message = "电池电量过低: ${metrics.batteryLevel}%",
                     metric = "battery_level",
                     value = metrics.batteryLevel,
-                    threshold = thresholds.minBatteryLevel
-                )
+                    threshold = thresholds.minBatteryLevel,
+                ),
             )
         }
-        
+
         _alerts.value = newAlerts
     }
-    
+
     private fun calculatePerformanceLevel(metrics: UnifyPerformanceMetrics): UnifyPerformanceLevel {
         var score = 100
-        
+
         // 内存评分
-        val memoryPercent = if (metrics.memoryTotal > 0) {
-            (metrics.memoryUsage.toFloat() / metrics.memoryTotal) * 100f
-        } else 0f
-        
+        val memoryPercent =
+            if (metrics.memoryTotal > 0) {
+                (metrics.memoryUsage.toFloat() / metrics.memoryTotal) * 100f
+            } else {
+                0f
+            }
+
         when {
             memoryPercent > 90f -> score -= 30
             memoryPercent > 70f -> score -= 20
             memoryPercent > 50f -> score -= 10
         }
-        
+
         // 帧率评分
         when {
             metrics.frameRate < 15f && metrics.frameRate > 0 -> score -= 40
             metrics.frameRate < 30f && metrics.frameRate > 0 -> score -= 25
             metrics.frameRate < 45f && metrics.frameRate > 0 -> score -= 15
         }
-        
+
         // 电池评分
         when {
             metrics.batteryLevel < 10f -> score -= 25
             metrics.batteryLevel < 20f -> score -= 15
             metrics.batteryLevel < 30f -> score -= 10
         }
-        
+
         return when {
             score >= 90 -> UnifyPerformanceLevel.EXCELLENT
             score >= 75 -> UnifyPerformanceLevel.GOOD

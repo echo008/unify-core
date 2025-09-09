@@ -14,7 +14,7 @@ actual fun UnifyChart(
     modifier: Modifier,
     title: String,
     showLegend: Boolean,
-    animationEnabled: Boolean
+    animationEnabled: Boolean,
 ) {
     Column(modifier = modifier) {
         if (title.isNotEmpty()) {
@@ -22,7 +22,7 @@ actual fun UnifyChart(
         }
         Text("iOS Chart - ${chartType.name}")
         Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
+            modifier = Modifier.fillMaxWidth().height(200.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text("Chart visualization placeholder")
@@ -41,12 +41,12 @@ actual fun UnifyLineChart(
     lineColor: Color,
     strokeWidth: Float,
     showPoints: Boolean,
-    showGrid: Boolean
+    showGrid: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Line Chart")
         Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
+            modifier = Modifier.fillMaxWidth().height(200.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text("Line chart visualization - ${data.size} points")
@@ -61,12 +61,12 @@ actual fun UnifyBarChart(
     modifier: Modifier,
     barColor: Color,
     showValues: Boolean,
-    horizontal: Boolean
+    horizontal: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Bar Chart")
         Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
+            modifier = Modifier.fillMaxWidth().height(200.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text("Bar chart visualization - ${data.size} bars")
@@ -81,12 +81,12 @@ actual fun UnifyPieChart(
     modifier: Modifier,
     showLabels: Boolean,
     showPercentages: Boolean,
-    centerHoleRadius: Float
+    centerHoleRadius: Float,
 ) {
     Column(modifier = modifier) {
         Text("iOS Pie Chart")
         Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
+            modifier = Modifier.fillMaxWidth().height(200.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text("Pie chart visualization - ${data.size} slices")
@@ -101,12 +101,12 @@ actual fun UnifyAreaChart(
     modifier: Modifier,
     fillColor: Color,
     strokeColor: Color,
-    strokeWidth: Float
+    strokeWidth: Float,
 ) {
     Column(modifier = modifier) {
         Text("iOS Area Chart")
         Card(
-            modifier = Modifier.fillMaxWidth().height(200.dp)
+            modifier = Modifier.fillMaxWidth().height(200.dp),
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text("Area chart visualization - ${data.size} points")

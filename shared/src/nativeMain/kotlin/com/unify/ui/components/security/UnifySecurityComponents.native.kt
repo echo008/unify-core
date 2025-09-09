@@ -4,17 +4,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 enum class KeyboardType { NUMERIC, ALPHANUMERIC, SYMBOLS }
+
 enum class PasswordStrength { WEAK, MEDIUM, STRONG, VERY_STRONG }
+
 enum class AuthMethod { PIN, BIOMETRIC, PASSWORD, TWO_FACTOR }
+
 enum class BiometricType { FINGERPRINT, FACE, VOICE }
+
 enum class BiometricResult { SUCCESS, FAILURE, CANCELLED }
+
 enum class EncryptionLevel { NONE, BASIC, ADVANCED, MILITARY }
 
 data class PasswordRequirement(val type: String, val met: Boolean)
+
 data class SecuritySettings(val enableBiometric: Boolean, val requirePin: Boolean)
+
 data class SecureStorageItem(val id: String, val name: String, val type: String)
+
 data class ConsentItem(val id: String, val title: String, val required: Boolean)
+
 data class SecurityAuditResult(val id: String, val issue: String, val severity: String)
+
 data class AlertAction(val id: String, val label: String, val action: () -> Unit)
 
 @Composable
@@ -26,7 +36,7 @@ actual fun UnifyPasswordField(
     placeholder: String,
     showStrengthIndicator: Boolean,
     enableToggleVisibility: Boolean,
-    onValidationResult: (Boolean, String?) -> Unit
+    onValidationResult: (Boolean, String?) -> Unit,
 ) {
     // Native平台密码输入组件实现
 }
@@ -39,7 +49,7 @@ actual fun UnifyPinCodeInput(
     length: Int,
     maskInput: Boolean,
     showKeypad: Boolean,
-    onComplete: (String) -> Unit
+    onComplete: (String) -> Unit,
 ) {
     // Native平台PIN码输入组件实现
 }
@@ -50,7 +60,7 @@ actual fun UnifySecureKeyboard(
     modifier: Modifier,
     keyboardType: SecureKeyboardType,
     randomizeLayout: Boolean,
-    showDeleteKey: Boolean
+    showDeleteKey: Boolean,
 ) {
     // Native平台安全键盘组件实现
 }
@@ -60,7 +70,7 @@ actual fun UnifyPasswordStrengthIndicator(
     password: String,
     modifier: Modifier,
     showText: Boolean,
-    colors: PasswordStrengthColors
+    colors: PasswordStrengthColors,
 ) {
     // Native平台密码强度指示器组件实现
 }
@@ -74,7 +84,7 @@ actual fun UnifyTwoFactorAuth(
     subtitle: String,
     resendEnabled: Boolean,
     onResendCode: () -> Unit,
-    countdown: Int
+    countdown: Int,
 ) {
     // Native平台双因素认证组件实现
 }
@@ -85,7 +95,7 @@ actual fun UnifySecuritySettings(
     onConfigChange: (SecurityConfig) -> Unit,
     modifier: Modifier,
     availableBiometrics: Set<String>,
-    onTestBiometric: (String) -> Unit
+    onTestBiometric: (String) -> Unit,
 ) {
     // Native平台安全设置组件实现
 }
@@ -96,7 +106,7 @@ actual fun UnifySecureStorage(
     onDataChange: (Map<String, String>) -> Unit,
     modifier: Modifier,
     encryptionEnabled: Boolean,
-    showDataPreview: Boolean
+    showDataPreview: Boolean,
 ) {
     // Native平台安全存储组件实现
 }
@@ -108,7 +118,7 @@ actual fun UnifyPrivacyConsent(
     modifier: Modifier,
     title: String,
     description: String,
-    allowPartialConsent: Boolean
+    allowPartialConsent: Boolean,
 ) {
     // Native平台隐私同意组件实现
 }
@@ -120,7 +130,7 @@ actual fun UnifyBiometricAuth(
     title: String,
     subtitle: String,
     negativeButtonText: String,
-    enabledBiometrics: Set<String>
+    enabledBiometrics: Set<String>,
 ) {
     // Native平台生物识别认证组件实现
 }

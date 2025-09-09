@@ -16,12 +16,12 @@ actual fun UnifyDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     scrimColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // JS implementation - simplified
     Row(modifier = modifier) {
         Column(
-            modifier = Modifier.width(280.dp)
+            modifier = Modifier.width(280.dp),
         ) {
             drawerContent()
         }
@@ -40,7 +40,7 @@ actual fun UnifyModalDrawer(
     gesturesEnabled: Boolean,
     scrimColor: Color,
     drawerWidth: androidx.compose.ui.unit.Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // JS implementation - simplified
     Box(modifier = modifier) {
@@ -53,11 +53,11 @@ actual fun UnifyPermanentDrawer(
     drawerContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier,
     drawerWidth: androidx.compose.ui.unit.Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Row(modifier = modifier) {
         Column(
-            modifier = Modifier.width(drawerWidth)
+            modifier = Modifier.width(drawerWidth),
         ) {
             drawerContent()
         }
@@ -75,11 +75,11 @@ actual fun UnifyDismissibleDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     drawerWidth: androidx.compose.ui.unit.Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Row(modifier = modifier) {
         Column(
-            modifier = Modifier.width(drawerWidth)
+            modifier = Modifier.width(drawerWidth),
         ) {
             drawerContent()
         }
@@ -95,11 +95,11 @@ actual fun UnifyDrawerItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier,
-    colors: DrawerItemColors
+    colors: DrawerItemColors,
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier
+        modifier = modifier,
     ) {
         if (item.icon != null) {
             item.icon.invoke()
@@ -115,10 +115,10 @@ actual fun UnifyDrawerHeader(
     avatar: (@Composable () -> Unit)?,
     background: (@Composable () -> Unit)?,
     modifier: Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Column(
-        modifier = modifier.clickable { onClick() }
+        modifier = modifier.clickable { onClick() },
     ) {
         avatar?.invoke()
         Text(title)

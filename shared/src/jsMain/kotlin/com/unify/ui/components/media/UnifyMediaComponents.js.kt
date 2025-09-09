@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 
 @Composable
 actual fun UnifyImageViewer(
@@ -16,12 +15,12 @@ actual fun UnifyImageViewer(
     enableZoom: Boolean,
     enableSwipe: Boolean,
     showIndicator: Boolean,
-    onImageClick: (Int) -> Unit
+    onImageClick: (Int) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("Image Viewer - JS Implementation")
         Button(
-            onClick = { onImageClick(currentIndex) }
+            onClick = { onImageClick(currentIndex) },
         ) {
             Text("View Image ${currentIndex + 1}/${images.size}")
         }
@@ -36,12 +35,12 @@ actual fun UnifyVideoPlayer(
     showControls: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("Video Player - JS Implementation")
         Button(
-            onClick = { onPlaybackStateChange(PlaybackState.PLAYING) }
+            onClick = { onPlaybackStateChange(PlaybackState.PLAYING) },
         ) {
             Text("Play ${mediaItem.title}")
         }
@@ -57,12 +56,12 @@ actual fun UnifyAudioPlayer(
     showWaveform: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("Audio Player - JS Implementation")
         Button(
-            onClick = { onPlaybackStateChange(PlaybackState.PLAYING) }
+            onClick = { onPlaybackStateChange(PlaybackState.PLAYING) },
         ) {
             Text("Play ${mediaItem.title}")
         }
@@ -76,7 +75,7 @@ actual fun UnifyMediaThumbnail(
     size: androidx.compose.ui.unit.Dp,
     showDuration: Boolean,
     showPlayIcon: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Box(modifier = modifier.size(size)) {
         Text("${mediaItem.title} Thumbnail")
@@ -93,20 +92,22 @@ actual fun UnifyMediaUploader(
     allowedTypes: Set<MediaType>,
     maxFileSize: Long,
     maxFiles: Int,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Box(modifier = modifier) {
         Button(
-            onClick = { 
-                onMediaSelected(listOf(
-                    MediaItem(
-                        id = "mock1",
-                        title = "Mock Media",
-                        url = "mock_media.jpg",
-                        type = MediaType.IMAGE
-                    )
-                ))
-            }
+            onClick = {
+                onMediaSelected(
+                    listOf(
+                        MediaItem(
+                            id = "mock1",
+                            title = "Mock Media",
+                            url = "mock_media.jpg",
+                            type = MediaType.IMAGE,
+                        ),
+                    ),
+                )
+            },
         ) {
             Text("Upload Media")
         }
@@ -123,17 +124,17 @@ actual fun UnifyMediaGallery(
     showPlayIcon: Boolean,
     enableSelection: Boolean,
     selectedItems: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit
+    onSelectionChange: (Set<String>) -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing),
-        verticalArrangement = Arrangement.spacedBy(spacing)
+        verticalArrangement = Arrangement.spacedBy(spacing),
     ) {
         items(mediaItems) { item ->
             Button(
-                onClick = { onItemSelected(item) }
+                onClick = { onItemSelected(item) },
             ) {
                 Text(item.title)
             }
@@ -149,12 +150,12 @@ actual fun UnifyLiveStream(
     enableChat: Boolean,
     onChatMessage: (String) -> Unit,
     onViewerCountChange: (Int) -> Unit,
-    onStreamStateChange: (PlaybackState) -> Unit
+    onStreamStateChange: (PlaybackState) -> Unit,
 ) {
     Box(modifier = modifier) {
         Text("Live Stream - JS Implementation")
         Button(
-            onClick = { onStreamStateChange(PlaybackState.PLAYING) }
+            onClick = { onStreamStateChange(PlaybackState.PLAYING) },
         ) {
             Text("Start Stream")
         }
@@ -169,11 +170,11 @@ actual fun UnifyMediaRecorder(
     maxDuration: Long,
     quality: RecordingQuality,
     showTimer: Boolean,
-    enablePause: Boolean
+    enablePause: Boolean,
 ) {
     Box(modifier = modifier) {
         Button(
-            onClick = { onRecordingComplete("mock_recording.mp4") }
+            onClick = { onRecordingComplete("mock_recording.mp4") },
         ) {
             Text("Record ${mediaType.name}")
         }
@@ -192,7 +193,7 @@ actual fun UnifyMediaControls(
     onFullscreen: () -> Unit,
     showSpeed: Boolean,
     playbackSpeed: Float,
-    onSpeedChange: (Float) -> Unit
+    onSpeedChange: (Float) -> Unit,
 ) {
     Row(modifier = modifier) {
         Button(onClick = if (playbackState == PlaybackState.PLAYING) onPause else onPlay) {

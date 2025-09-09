@@ -1,11 +1,5 @@
 package com.unify.ui.platform
 
-import androidx.compose.material3.ColorScheme
-import androidx.compose.material3.lightColorScheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-
 actual class UnifyPlatformThemeAdapter actual constructor() {
     actual fun getSystemColorScheme(isDark: Boolean): UnifyColorScheme {
         return UnifyColorScheme(
@@ -36,10 +30,10 @@ actual class UnifyPlatformThemeAdapter actual constructor() {
             scrim = 0xFF000000L,
             inverseSurface = if (isDark) 0xFFFFFFFFL else 0xFF121212L,
             inverseOnSurface = if (isDark) 0xFF000000L else 0xFFFFFFFFL,
-            inversePrimary = 0xFF1976D2L
+            inversePrimary = 0xFF1976D2L,
         )
     }
-    
+
     actual fun getSystemTypography(): UnifyTypography {
         return UnifyTypography(
             displayLarge = UnifyTextStyle(57f, 64f, 400, 0f),
@@ -56,20 +50,20 @@ actual class UnifyPlatformThemeAdapter actual constructor() {
             bodySmall = UnifyTextStyle(12f, 16f, 400, 0.4f),
             labelLarge = UnifyTextStyle(14f, 20f, 500, 0.1f),
             labelMedium = UnifyTextStyle(12f, 16f, 500, 0.5f),
-            labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f)
+            labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f),
         )
     }
-    
+
     actual fun getSystemShapes(): UnifyShapes {
         return UnifyShapes(
             extraSmall = 4f,
             small = 8f,
             medium = 12f,
             large = 16f,
-            extraLarge = 28f
+            extraLarge = 28f,
         )
     }
-    
+
     actual fun applyPlatformSpecificTheme(theme: UnifyThemeConfig): UnifyThemeConfig {
         return theme
     }

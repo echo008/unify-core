@@ -1,15 +1,15 @@
 package com.unify.core.memory
 
+import com.unify.core.platform.getCurrentTimeMillis
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import platform.Foundation.NSProcessInfo
-import com.unify.core.platform.getCurrentTimeMillis
 
 internal actual suspend fun getPlatformMemoryInfo(): MemoryInfo {
     val processInfo = NSProcessInfo.processInfo
     val physicalMemory = processInfo.physicalMemory.toLong()
-    
+
     return MemoryInfo(
         totalMemory = physicalMemory,
         availableMemory = physicalMemory / 2,
@@ -19,14 +19,14 @@ internal actual suspend fun getPlatformMemoryInfo(): MemoryInfo {
         memoryClass = 256,
         largeMemoryClass = 512,
         isLowMemory = false,
-        threshold = physicalMemory / 4
+        threshold = physicalMemory / 4,
     )
 }
 
 internal actual suspend fun getPlatformMemoryUsage(): MemoryUsage {
     val processInfo = NSProcessInfo.processInfo
     val physicalMemory = processInfo.physicalMemory.toLong()
-    
+
     return MemoryUsage(
         heapUsed = physicalMemory / 4,
         heapTotal = physicalMemory / 2,
@@ -38,7 +38,7 @@ internal actual suspend fun getPlatformMemoryUsage(): MemoryUsage {
         gcCount = 0L,
         gcTime = 0L,
         usagePercentage = 50.0f,
-        timestamp = getCurrentTimeMillis()
+        timestamp = getCurrentTimeMillis(),
     )
 }
 
@@ -51,7 +51,7 @@ internal actual suspend fun getPlatformGCInfo(): GCInfo {
         totalCollections = 0L,
         totalTime = 0L,
         lastGCTime = 0L,
-        averageGCTime = 0.0
+        averageGCTime = 0.0,
     )
 }
 

@@ -14,7 +14,7 @@ actual suspend fun executeTestCase(testCase: TestCase): TestResult {
             status = TestStatus.PASSED,
             message = "Native平台测试执行成功",
             duration = 100L,
-            timestamp = getCurrentTimeMillis()
+            timestamp = getCurrentTimeMillis(),
         )
     } catch (e: Exception) {
         TestResult(
@@ -22,7 +22,7 @@ actual suspend fun executeTestCase(testCase: TestCase): TestResult {
             status = TestStatus.FAILED,
             message = "测试执行失败: ${e.message}",
             duration = 0L,
-            timestamp = getCurrentTimeMillis()
+            timestamp = getCurrentTimeMillis(),
         )
     }
 }

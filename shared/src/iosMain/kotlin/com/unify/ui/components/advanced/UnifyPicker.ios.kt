@@ -7,7 +7,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -21,14 +20,14 @@ actual fun UnifyPicker(
     placeholder: String,
     maxSelections: Int,
     searchEnabled: Boolean,
-    showClearButton: Boolean
+    showClearButton: Boolean,
 ) {
     Column(modifier = modifier) {
         Text(title)
         Text("iOS Picker - ${items.size} items")
         items.forEach { item ->
             Button(
-                onClick = { onSelectionChanged(listOf(item.id)) }
+                onClick = { onSelectionChanged(listOf(item.id)) },
             ) {
                 Text(item.label)
             }
@@ -44,7 +43,7 @@ actual fun UnifyWheelPicker(
     modifier: Modifier,
     visibleItemCount: Int,
     infiniteLoop: Boolean,
-    textColor: Color
+    textColor: Color,
 ) {
     Column(modifier = modifier) {
         Text("iOS Wheel Picker")
@@ -53,12 +52,12 @@ actual fun UnifyWheelPicker(
                 val index = items.indexOf(item)
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(2.dp),
-                    onClick = { onSelectionChanged(index, item) }
+                    onClick = { onSelectionChanged(index, item) },
                 ) {
                     Text(
                         text = item,
                         modifier = Modifier.padding(8.dp),
-                        color = textColor
+                        color = textColor,
                     )
                 }
             }
@@ -73,7 +72,7 @@ actual fun UnifyMultiWheelPicker(
     onSelectionChanged: (List<Int>, List<String>) -> Unit,
     modifier: Modifier,
     visibleItemCount: Int,
-    wheelSpacing: Int
+    wheelSpacing: Int,
 ) {
     Row(modifier = modifier) {
         wheels.forEachIndexed { wheelIndex, items ->
@@ -81,18 +80,21 @@ actual fun UnifyMultiWheelPicker(
                 Text("Wheel ${wheelIndex + 1}")
                 items.forEachIndexed { itemIndex, item ->
                     Button(
-                        onClick = { 
+                        onClick = {
                             val newIndices = selectedIndices.toMutableList()
                             if (wheelIndex < newIndices.size) {
                                 newIndices[wheelIndex] = itemIndex
                             }
-                            val selectedItems = newIndices.mapIndexed { index, selectedIndex ->
-                                if (index < wheels.size && selectedIndex < wheels[index].size) {
-                                    wheels[index][selectedIndex]
-                                } else ""
-                            }
+                            val selectedItems =
+                                newIndices.mapIndexed { index, selectedIndex ->
+                                    if (index < wheels.size && selectedIndex < wheels[index].size) {
+                                        wheels[index][selectedIndex]
+                                    } else {
+                                        ""
+                                    }
+                                }
                             onSelectionChanged(newIndices, selectedItems)
-                        }
+                        },
                     ) {
                         Text(item)
                     }
@@ -109,13 +111,13 @@ actual fun UnifyCascadePicker(
     onSelectionChanged: (List<String>) -> Unit,
     modifier: Modifier,
     maxLevels: Int,
-    showFullPath: Boolean
+    showFullPath: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("iOS Cascade Picker")
         cascadeData.forEach { item ->
             Button(
-                onClick = { onSelectionChanged(listOf(item.id)) }
+                onClick = { onSelectionChanged(listOf(item.id)) },
             ) {
                 Text(item.label)
             }
@@ -133,31 +135,31 @@ actual fun UnifyDropdownPicker(
     placeholder: String,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    searchEnabled: Boolean
+    searchEnabled: Boolean,
 ) {
     var internalExpanded by remember { mutableStateOf(expanded) }
-    
+
     Column(modifier = modifier) {
         ExposedDropdownMenuBox(
             expanded = internalExpanded,
-            onExpandedChange = { 
+            onExpandedChange = {
                 internalExpanded = !internalExpanded
                 onExpandedChange(internalExpanded)
-            }
+            },
         ) {
             OutlinedTextField(
                 value = selectedItem ?: placeholder,
                 onValueChange = { },
                 readOnly = true,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = internalExpanded) },
-                modifier = Modifier.menuAnchor()
+                modifier = Modifier.menuAnchor(),
             )
             ExposedDropdownMenu(
                 expanded = internalExpanded,
-                onDismissRequest = { 
+                onDismissRequest = {
                     internalExpanded = false
                     onExpandedChange(false)
-                }
+                },
             ) {
                 items.forEach { item ->
                     DropdownMenuItem(
@@ -166,7 +168,7 @@ actual fun UnifyDropdownPicker(
                             onSelectionChanged(item.id)
                             internalExpanded = false
                             onExpandedChange(false)
-                        }
+                        },
                     )
                 }
             }
@@ -181,7 +183,7 @@ actual fun UnifyColorPicker(
     modifier: Modifier,
     showAlphaSlider: Boolean,
     showHexInput: Boolean,
-    presetColors: List<Color>
+    presetColors: List<Color>,
 ) {
     Column(modifier = modifier) {
         Text("iOS Color Picker")
@@ -189,14 +191,14 @@ actual fun UnifyColorPicker(
             presetColors.forEach { color ->
                 Button(
                     onClick = { onColorSelected(color) },
-                    colors = ButtonDefaults.buttonColors(containerColor = color)
+                    colors = ButtonDefaults.buttonColors(containerColor = color),
                 ) {
                     Text(" ")
                 }
             }
         }
         if (showHexInput) {
-            Text("Selected: ${selectedColor.toString()}")
+            Text("Selected: $selectedColor")
         }
     }
 }

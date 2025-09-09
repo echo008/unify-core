@@ -5,7 +5,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -20,7 +19,7 @@ actual fun UnifyBiometricAuth(
     title: String,
     subtitle: String,
     negativeButtonText: String,
-    enabledBiometrics: Set<BiometricType>
+    enabledBiometrics: Set<BiometricType>,
 ) {
     Column(modifier = modifier) {
         Text("JS Biometric Auth")
@@ -44,14 +43,14 @@ actual fun UnifyPasswordField(
     placeholder: String,
     showStrengthIndicator: Boolean,
     enableToggleVisibility: Boolean,
-    onValidationResult: (Boolean, String?) -> Unit
+    onValidationResult: (Boolean, String?) -> Unit,
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
-    
+
     Column {
         OutlinedTextField(
             value = password,
-            onValueChange = { 
+            onValueChange = {
                 onPasswordChange(it)
                 onValidationResult(it.length >= 8, if (it.length < 8) "密码至少需要8位" else null)
             },
@@ -60,21 +59,25 @@ actual fun UnifyPasswordField(
             placeholder = { Text(placeholder) },
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon = if (enableToggleVisibility) {
-                {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Text(if (passwordVisible) "Hide" else "Show")
+            trailingIcon =
+                if (enableToggleVisibility) {
+                    {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Text(if (passwordVisible) "Hide" else "Show")
+                        }
                     }
-                }
-            } else null
+                } else {
+                    null
+                },
         )
-        
+
         if (showStrengthIndicator) {
-            val strength = when {
-                password.length < 6 -> "弱"
-                password.length < 10 -> "中等"
-                else -> "强"
-            }
+            val strength =
+                when {
+                    password.length < 6 -> "弱"
+                    password.length < 10 -> "中等"
+                    else -> "强"
+                }
             Text("密码强度: $strength")
         }
     }
@@ -88,7 +91,7 @@ actual fun UnifyPinCodeInput(
     length: Int,
     maskInput: Boolean,
     showKeypad: Boolean,
-    onComplete: (String) -> Unit
+    onComplete: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("JS PIN Code Input")
@@ -104,7 +107,7 @@ actual fun UnifyPinCodeInput(
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
             visualTransformation = if (maskInput) PasswordVisualTransformation() else VisualTransformation.None,
-            placeholder = { Text("Enter $length digit PIN") }
+            placeholder = { Text("Enter $length digit PIN") },
         )
         if (showKeypad) {
             Text("Virtual keypad enabled")
@@ -118,7 +121,7 @@ actual fun UnifySecureKeyboard(
     modifier: Modifier,
     keyboardType: SecureKeyboardType,
     randomizeLayout: Boolean,
-    showDeleteKey: Boolean
+    showDeleteKey: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Secure Keyboard")
@@ -156,34 +159,37 @@ actual fun UnifyPasswordStrengthIndicator(
     password: String,
     modifier: Modifier,
     showText: Boolean,
-    colors: PasswordStrengthColors
+    colors: PasswordStrengthColors,
 ) {
     Column(modifier = modifier) {
         Text("JS Password Strength")
-        val strength = when {
-            password.length < 4 -> 0.25f
-            password.length < 8 -> 0.5f
-            password.length < 12 -> 0.75f
-            else -> 1f
-        }
-        val strengthColor = when {
-            strength <= 0.25f -> colors.weakColor
-            strength <= 0.5f -> colors.mediumColor
-            strength <= 0.75f -> colors.strongColor
-            else -> colors.veryStrongColor
-        }
+        val strength =
+            when {
+                password.length < 4 -> 0.25f
+                password.length < 8 -> 0.5f
+                password.length < 12 -> 0.75f
+                else -> 1f
+            }
+        val strengthColor =
+            when {
+                strength <= 0.25f -> colors.weakColor
+                strength <= 0.5f -> colors.mediumColor
+                strength <= 0.75f -> colors.strongColor
+                else -> colors.veryStrongColor
+            }
         LinearProgressIndicator(
             progress = strength,
             color = strengthColor,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         if (showText) {
-            val strengthText = when {
-                strength <= 0.25f -> "Weak"
-                strength <= 0.5f -> "Medium"
-                strength <= 0.75f -> "Strong"
-                else -> "Very Strong"
-            }
+            val strengthText =
+                when {
+                    strength <= 0.25f -> "Weak"
+                    strength <= 0.5f -> "Medium"
+                    strength <= 0.75f -> "Strong"
+                    else -> "Very Strong"
+                }
             Text(strengthText, color = strengthColor)
         }
     }
@@ -198,10 +204,10 @@ actual fun UnifyTwoFactorAuth(
     subtitle: String,
     resendEnabled: Boolean,
     onResendCode: () -> Unit,
-    countdown: Int
+    countdown: Int,
 ) {
     var code by remember { mutableStateOf("") }
-    
+
     Column(modifier = modifier) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(subtitle, style = MaterialTheme.typography.bodyMedium)
@@ -217,12 +223,12 @@ actual fun UnifyTwoFactorAuth(
             },
             label = { Text("验证码") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            placeholder = { Text("输入${codeLength}位验证码") }
+            placeholder = { Text("输入${codeLength}位验证码") },
         )
         Row {
             Button(
                 onClick = { onResendCode() },
-                enabled = resendEnabled && countdown <= 0
+                enabled = resendEnabled && countdown <= 0,
             ) {
                 Text(if (countdown > 0) "重发 (${countdown}s)" else "重发验证码")
             }
@@ -236,25 +242,26 @@ actual fun UnifySecuritySettings(
     onConfigChange: (SecurityConfig) -> Unit,
     modifier: Modifier,
     availableBiometrics: Set<String>,
-    onTestBiometric: (String) -> Unit
+    onTestBiometric: (String) -> Unit,
 ) {
     var showBiometrics by remember { mutableStateOf(false) }
-    
+
     Column(modifier = modifier) {
         Text("JS Security Settings")
-        
+
         availableBiometrics.forEach { biometric ->
             Row {
                 Switch(
                     checked = config.enabledBiometrics.contains(biometric),
                     onCheckedChange = { enabled ->
-                        val newBiometrics = if (enabled) {
-                            config.enabledBiometrics + biometric
-                        } else {
-                            config.enabledBiometrics - biometric
-                        }
+                        val newBiometrics =
+                            if (enabled) {
+                                config.enabledBiometrics + biometric
+                            } else {
+                                config.enabledBiometrics - biometric
+                            }
                         onConfigChange(config.copy(enabledBiometrics = newBiometrics))
-                    }
+                    },
                 )
                 Text(biometric)
                 Button(onClick = { onTestBiometric(biometric) }) {
@@ -262,10 +269,10 @@ actual fun UnifySecuritySettings(
                 }
             }
         }
-        
+
         Switch(
             checked = config.enablePinCode,
-            onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) }
+            onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) },
         )
         Text("Two Factor Authentication")
     }
@@ -277,35 +284,35 @@ actual fun UnifySecureStorage(
     onDataChange: (Map<String, String>) -> Unit,
     modifier: Modifier,
     encryptionEnabled: Boolean,
-    showDataPreview: Boolean
+    showDataPreview: Boolean,
 ) {
     var newKey by remember { mutableStateOf("") }
     var newValue by remember { mutableStateOf("") }
-    
+
     Column(modifier = modifier) {
         Text("JS Secure Storage")
         if (encryptionEnabled) {
             Text("Encryption: Enabled")
         }
-        
+
         if (showDataPreview) {
             Text("Stored data (${data.size} items):")
             data.forEach { (key, value) ->
                 Text("$key: ${value.take(20)}...")
             }
         }
-        
+
         OutlinedTextField(
             value = newKey,
             onValueChange = { newKey = it },
-            label = { Text("Key") }
+            label = { Text("Key") },
         )
         OutlinedTextField(
             value = newValue,
             onValueChange = { newValue = it },
-            label = { Text("Value") }
+            label = { Text("Value") },
         )
-        Button(onClick = { 
+        Button(onClick = {
             if (newKey.isNotEmpty()) {
                 onDataChange(data + (newKey to newValue))
                 newKey = ""
@@ -324,28 +331,29 @@ actual fun UnifyPrivacyConsent(
     modifier: Modifier,
     title: String,
     description: String,
-    allowPartialConsent: Boolean
+    allowPartialConsent: Boolean,
 ) {
-    var selectedItems by remember { 
+    var selectedItems by remember {
         mutableStateOf(emptyList<String>())
     }
-    
+
     Column(modifier = modifier) {
         Text(title, style = MaterialTheme.typography.titleMedium)
         Text(description, style = MaterialTheme.typography.bodyMedium)
-        
+
         consentItems.forEach { item ->
             Row {
                 Checkbox(
                     checked = selectedItems.contains(item),
                     onCheckedChange = { checked ->
-                        selectedItems = if (checked) {
-                            selectedItems + item
-                        } else {
-                            selectedItems - item
-                        }
+                        selectedItems =
+                            if (checked) {
+                                selectedItems + item
+                            } else {
+                                selectedItems - item
+                            }
                         onConsentChange(selectedItems)
-                    }
+                    },
                 )
                 Text(item, modifier = Modifier.padding(start = 8.dp))
             }
@@ -359,36 +367,36 @@ actual fun UnifySecurityDashboard(
     onConfigChange: (SecurityConfig) -> Unit,
     modifier: Modifier,
     availableBiometrics: Set<String>,
-    onTestBiometric: (String) -> Unit
+    onTestBiometric: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         Text("JS Security Dashboard", style = MaterialTheme.typography.titleLarge)
-        
+
         Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("Security Settings", style = MaterialTheme.typography.titleMedium)
-                
+
                 Row {
                     Switch(
                         checked = config.enableBiometric,
-                        onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) }
+                        onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) },
                     )
                     Text("Enable Biometric Authentication")
                 }
-                
+
                 Row {
                     Switch(
                         checked = config.enablePinCode,
-                        onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) }
+                        onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) },
                     )
                     Text("Enable PIN Code")
                 }
-                
+
                 Text("Max Attempts: ${config.maxAttempts}")
                 Text("Lockout Duration: ${config.lockoutDuration / 1000}s")
             }
         }
-        
+
         if (availableBiometrics.isNotEmpty()) {
             Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
                 Column(modifier = Modifier.padding(16.dp)) {

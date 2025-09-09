@@ -7,7 +7,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlin.js.Date
 
 @Composable
@@ -17,7 +16,7 @@ actual fun UnifySensorMonitor(
     modifier: Modifier,
     samplingRate: SensorSamplingRate,
     showRealTimeData: Boolean,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Column(modifier = modifier) {
         Text("JS Sensor Monitor")
@@ -31,12 +30,14 @@ actual fun UnifySensorMonitor(
                         Text("Real-time data: [0.1, 0.2, 0.3]")
                     }
                     Button(onClick = {
-                        onSensorData(SensorData(
-                            type = sensor,
-                            values = floatArrayOf(0.1f, 0.2f, 0.3f),
-                            timestamp = Date.now().toLong(),
-                            accuracy = 1
-                        ))
+                        onSensorData(
+                            SensorData(
+                                type = sensor,
+                                values = floatArrayOf(0.1f, 0.2f, 0.3f),
+                                timestamp = Date.now().toLong(),
+                                accuracy = 1,
+                            ),
+                        )
                     }) {
                         Text("Simulate")
                     }
@@ -53,7 +54,7 @@ actual fun UnifyAccelerometerView(
     showGraph: Boolean,
     showValues: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Column(modifier = modifier) {
         Text("JS Accelerometer")
@@ -76,7 +77,7 @@ actual fun UnifyGyroscopeView(
     showGraph: Boolean,
     showValues: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Column(modifier = modifier) {
         Text("JS Gyroscope")
@@ -100,7 +101,7 @@ actual fun UnifyMagnetometerView(
     showValues: Boolean,
     showCompass: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Column(modifier = modifier) {
         Text("JS Magnetometer")
@@ -126,7 +127,7 @@ actual fun UnifyMotionDetector(
     sensitivity: Float,
     enableShakeDetection: Boolean,
     enableTiltDetection: Boolean,
-    enableRotationDetection: Boolean
+    enableRotationDetection: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Motion Detector")
@@ -135,12 +136,14 @@ actual fun UnifyMotionDetector(
         if (enableTiltDetection) Text("Tilt detection enabled")
         if (enableRotationDetection) Text("Rotation detection enabled")
         Button(onClick = {
-            onMotionDetected(MotionEvent(
-                type = MotionType.SHAKE,
-                intensity = 0.8f,
-                direction = floatArrayOf(1.0f, 0.0f, 0.0f),
-                timestamp = Date.now().toLong()
-            ))
+            onMotionDetected(
+                MotionEvent(
+                    type = MotionType.SHAKE,
+                    intensity = 0.8f,
+                    direction = floatArrayOf(1.0f, 0.0f, 0.0f),
+                    timestamp = Date.now().toLong(),
+                ),
+            )
         }) {
             Text("Simulate Motion")
         }
@@ -156,7 +159,7 @@ actual fun UnifyEnvironmentSensor(
     showHumidity: Boolean,
     showPressure: Boolean,
     showLight: Boolean,
-    updateInterval: Long
+    updateInterval: Long,
 ) {
     Column(modifier = modifier) {
         Text("JS Environment Sensor")
@@ -166,12 +169,13 @@ actual fun UnifyEnvironmentSensor(
         if (showLight) Text("Light: 300 lux")
         Text("Update: ${updateInterval}ms")
         Button(onClick = {
-            val mockData = mapOf(
-                SensorType.TEMPERATURE to 22.5f,
-                SensorType.HUMIDITY to 65f,
-                SensorType.PRESSURE to 1013.25f,
-                SensorType.LIGHT to 300f
-            ).filterKeys { it in sensorTypes }
+            val mockData =
+                mapOf(
+                    SensorType.TEMPERATURE to 22.5f,
+                    SensorType.HUMIDITY to 65f,
+                    SensorType.PRESSURE to 1013.25f,
+                    SensorType.LIGHT to 300f,
+                ).filterKeys { it in sensorTypes }
             onEnvironmentData(mockData)
         }) {
             Text("Update Data")
@@ -186,7 +190,7 @@ actual fun UnifyHealthSensor(
     enableHeartRate: Boolean,
     enableStepCounter: Boolean,
     enableCalories: Boolean,
-    showRealTimeChart: Boolean
+    showRealTimeChart: Boolean,
 ) {
     Column(modifier = modifier) {
         Text("JS Health Sensor")
@@ -203,13 +207,15 @@ actual fun UnifyHealthSensor(
             Text("Real-time chart enabled")
         }
         Button(onClick = {
-            onHealthData(HealthData(
-                heartRate = 72,
-                stepCount = 8432,
-                calories = 1850f,
-                distance = 5.2f,
-                timestamp = Date.now().toLong()
-            ))
+            onHealthData(
+                HealthData(
+                    heartRate = 72,
+                    stepCount = 8432,
+                    calories = 1850f,
+                    distance = 5.2f,
+                    timestamp = Date.now().toLong(),
+                ),
+            )
         }) {
             Text("Update Health Data")
         }
@@ -222,7 +228,7 @@ actual fun UnifyProximitySensor(
     modifier: Modifier,
     showIndicator: Boolean,
     indicatorColor: Color,
-    threshold: Float
+    threshold: Float,
 ) {
     Column(modifier = modifier) {
         Text("JS Proximity Sensor")
@@ -246,7 +252,7 @@ actual fun UnifyLightSensor(
     showLux: Boolean,
     showBrightness: Boolean,
     autoAdjustTheme: Boolean,
-    lightThreshold: Float
+    lightThreshold: Float,
 ) {
     Column(modifier = modifier) {
         Text("JS Light Sensor")
@@ -256,7 +262,7 @@ actual fun UnifyLightSensor(
         if (showBrightness) {
             Text("Brightness: Normal")
         }
-        Text("Threshold: ${lightThreshold} lux")
+        Text("Threshold: $lightThreshold lux")
         if (autoAdjustTheme) {
             Text("Auto theme adjustment enabled")
         }

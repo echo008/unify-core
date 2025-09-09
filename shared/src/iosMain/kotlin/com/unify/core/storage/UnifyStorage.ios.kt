@@ -1,34 +1,38 @@
 package com.unify.core.storage
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import platform.Foundation.*
-import kotlinx.cinterop.ExperimentalForeignApi
 
 /**
  * iOS平台存储工厂实现
  */
 actual class PlatformStorageFactory : StorageFactory {
     actual constructor() {}
+
     override fun createStorage(config: StorageConfig): UnifyStorage {
         return IOSUnifyStorage(config.name, config.encrypted)
     }
-    
-    override fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage {
+
+    override fun createEncryptedStorage(
+        config: StorageConfig,
+        encryptionKey: String,
+    ): UnifyStorage {
         return IOSUnifyStorage(config.name, true, encryptionKey)
     }
-    
+
     override fun createMemoryStorage(): UnifyStorage {
         return IOSMemoryStorage()
     }
-    
+
     override fun createFileStorage(path: String): UnifyStorage {
         return IOSFileStorage(path)
     }
@@ -41,15 +45,16 @@ actual suspend fun exportData(keys: List<String>): DataExportResult {
     return try {
         val storage = IOSUnifyStorage("export_temp")
         val exportData = mutableMapOf<String, String>()
-        
+
         keys.forEach { key ->
             exportData[key] = ""
         }
-        
-        val jsonString = exportData.entries.joinToString(",", "{", "}") { (k, v) ->
-            "\"$k\":\"$v\""
-        }
-        
+
+        val jsonString =
+            exportData.entries.joinToString(",", "{", "}") { (k, v) ->
+                "\"$k\":\"$v\""
+            }
+
         DataExportResult.Success(jsonString)
     } catch (e: Exception) {
         DataExportResult.Error("Export failed: ${e.message}")
@@ -81,7 +86,10 @@ actual suspend fun syncWithCloud(): CloudSyncResult {
 /**
  * 安全存储实现
  */
-actual suspend fun storeSecurely(key: String, value: String): SecureStorageResult {
+actual suspend fun storeSecurely(
+    key: String,
+    value: String,
+): SecureStorageResult {
     return try {
         SecureStorageResult.Success("Secure storage completed")
     } catch (e: Exception) {
@@ -109,11 +117,12 @@ actual suspend fun clearSecureStorage(): Boolean {
  * 存储状态监控
  */
 actual fun getStorageStateFlow(): StateFlow<StorageState> {
-    val initialState = StorageState(
-        isConnected = true,
-        syncStatus = "Ready",
-        lastSync = NSDate().timeIntervalSince1970.toLong() * 1000
-    )
+    val initialState =
+        StorageState(
+            isConnected = true,
+            syncStatus = "Ready",
+            lastSync = NSDate().timeIntervalSince1970.toLong() * 1000,
+        )
     return MutableStateFlow(initialState).asStateFlow()
 }
 
@@ -129,15 +138,19 @@ actual fun createPlatformStorage(): PlatformStorage {
  */
 class IOSPlatformStorage : PlatformStorage {
     private val userDefaults = NSUserDefaults.standardUserDefaults
-    private val _stateFlow = MutableStateFlow(
-        StorageState(
-            isConnected = true,
-            syncStatus = "Ready",
-            lastSync = NSDate().timeIntervalSince1970.toLong() * 1000
+    private val _stateFlow =
+        MutableStateFlow(
+            StorageState(
+                isConnected = true,
+                syncStatus = "Ready",
+                lastSync = NSDate().timeIntervalSince1970.toLong() * 1000,
+            ),
         )
-    )
-    
-    override suspend fun store(key: String, value: String): StorageResult<Unit> {
+
+    override suspend fun store(
+        key: String,
+        value: String,
+    ): StorageResult<Unit> {
         return try {
             userDefaults.setObject(value, key)
             userDefaults.synchronize()
@@ -146,7 +159,7 @@ class IOSPlatformStorage : PlatformStorage {
             StorageResult.Error("Storage failed: ${e.message}", e)
         }
     }
-    
+
     override suspend fun retrieve(key: String): RetrievalResult<String> {
         return try {
             val value = userDefaults.stringForKey(key)
@@ -159,7 +172,7 @@ class IOSPlatformStorage : PlatformStorage {
             RetrievalResult.Error("Retrieval failed: ${e.message}", e)
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return try {
             userDefaults.removeObjectForKey(key)
@@ -169,11 +182,11 @@ class IOSPlatformStorage : PlatformStorage {
             false
         }
     }
-    
+
     override suspend fun exists(key: String): Boolean {
         return userDefaults.objectForKey(key) != null
     }
-    
+
     override suspend fun clear(): Boolean {
         return try {
             val domain = NSBundle.mainBundle.bundleIdentifier
@@ -186,7 +199,7 @@ class IOSPlatformStorage : PlatformStorage {
             false
         }
     }
-    
+
     override suspend fun getAllKeys(): List<String> {
         return try {
             // 使用简化的方法获取所有键
@@ -195,15 +208,15 @@ class IOSPlatformStorage : PlatformStorage {
             emptyList()
         }
     }
-    
+
     override suspend fun getStorageInfo(): StorageInfo {
         return StorageInfo(
             type = StorageType.LOCAL,
             size = 0L,
-            lastModified = NSDate().timeIntervalSince1970.toLong() * 1000
+            lastModified = NSDate().timeIntervalSince1970.toLong() * 1000,
         )
     }
-    
+
     override fun getStorageStateFlow(): StateFlow<StorageState> {
         return _stateFlow.asStateFlow()
     }
@@ -215,20 +228,24 @@ class IOSPlatformStorage : PlatformStorage {
 class IOSUnifyStorage(
     private val name: String,
     private val encrypted: Boolean = false,
-    private val encryptionKey: String? = null
+    private val encryptionKey: String? = null,
 ) : UnifyStorage {
-    
     private val userDefaults = NSUserDefaults.standardUserDefaults
     private val _changes = MutableStateFlow<StorageEvent?>(null)
-    
-    override suspend fun <T> save(key: String, value: T, serializer: KSerializer<T>) {
+
+    override suspend fun <T> save(
+        key: String,
+        value: T,
+        serializer: KSerializer<T>,
+    ) {
         try {
             val jsonString = Json.encodeToString(serializer, value)
-            val finalValue = if (encrypted && encryptionKey != null) {
-                encrypt(jsonString, encryptionKey)
-            } else {
-                jsonString
-            }
+            val finalValue =
+                if (encrypted && encryptionKey != null) {
+                    encrypt(jsonString, encryptionKey)
+                } else {
+                    jsonString
+                }
             userDefaults.setObject(finalValue, key)
             userDefaults.synchronize()
             _changes.value = StorageEvent.KeyUpdated(key)
@@ -236,21 +253,25 @@ class IOSUnifyStorage(
             throw StorageException("Failed to save data for key: $key", e)
         }
     }
-    
-    override suspend fun <T> load(key: String, serializer: KSerializer<T>): T? {
+
+    override suspend fun <T> load(
+        key: String,
+        serializer: KSerializer<T>,
+    ): T? {
         return try {
             val storedValue = userDefaults.stringForKey(key) ?: return null
-            val jsonString = if (encrypted && encryptionKey != null) {
-                decrypt(storedValue, encryptionKey)
-            } else {
-                storedValue
-            }
+            val jsonString =
+                if (encrypted && encryptionKey != null) {
+                    decrypt(storedValue, encryptionKey)
+                } else {
+                    storedValue
+                }
             Json.decodeFromString(serializer, jsonString)
         } catch (e: Exception) {
             null
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return try {
             userDefaults.removeObjectForKey(key)
@@ -261,7 +282,7 @@ class IOSUnifyStorage(
             false
         }
     }
-    
+
     override suspend fun clear(): Boolean {
         return try {
             val domain = NSBundle.mainBundle.bundleIdentifier
@@ -275,11 +296,11 @@ class IOSUnifyStorage(
             false
         }
     }
-    
+
     override suspend fun exists(key: String): Boolean {
         return userDefaults.objectForKey(key) != null
     }
-    
+
     override suspend fun getAllKeys(): List<String> {
         return try {
             // 使用简化的方法获取所有键
@@ -288,7 +309,7 @@ class IOSUnifyStorage(
             emptyList()
         }
     }
-    
+
     override suspend fun getSize(): Long {
         return try {
             // 使用简化的方法计算大小
@@ -297,7 +318,7 @@ class IOSUnifyStorage(
             0L
         }
     }
-    
+
     override fun observeChanges(): Flow<StorageEvent> {
         return flow {
             _changes.collect { event ->
@@ -305,7 +326,7 @@ class IOSUnifyStorage(
             }
         }
     }
-    
+
     override suspend fun batch(operations: List<StorageOperation>) {
         operations.forEach { operation ->
             when (operation) {
@@ -317,7 +338,7 @@ class IOSUnifyStorage(
             }
         }
     }
-    
+
     override suspend fun backup(): String {
         val allKeys = getAllKeys()
         val backupData = mutableMapOf<String, String>()
@@ -328,7 +349,7 @@ class IOSUnifyStorage(
         }
         return Json.encodeToString(MapSerializer(String.serializer(), String.serializer()), backupData)
     }
-    
+
     override suspend fun restore(backupData: String) {
         try {
             val data = Json.decodeFromString<Map<String, String>>(backupData)
@@ -340,16 +361,22 @@ class IOSUnifyStorage(
             throw StorageException("Failed to restore backup data", e)
         }
     }
-    
+
     override suspend fun compact() {
         userDefaults.synchronize()
     }
-    
-    private fun encrypt(data: String, key: String): String {
+
+    private fun encrypt(
+        data: String,
+        key: String,
+    ): String {
         return data
     }
-    
-    private fun decrypt(encryptedData: String, key: String): String {
+
+    private fun decrypt(
+        encryptedData: String,
+        key: String,
+    ): String {
         return encryptedData
     }
 }
@@ -360,8 +387,12 @@ class IOSUnifyStorage(
 class IOSMemoryStorage : UnifyStorage {
     private val storage = mutableMapOf<String, String>()
     private val _changes = MutableStateFlow<StorageEvent?>(null)
-    
-    override suspend fun <T> save(key: String, value: T, serializer: KSerializer<T>) {
+
+    override suspend fun <T> save(
+        key: String,
+        value: T,
+        serializer: KSerializer<T>,
+    ) {
         try {
             val jsonString = Json.encodeToString(serializer, value)
             storage[key] = jsonString
@@ -370,8 +401,11 @@ class IOSMemoryStorage : UnifyStorage {
             throw StorageException("Failed to save data for key: $key", e)
         }
     }
-    
-    override suspend fun <T> load(key: String, serializer: KSerializer<T>): T? {
+
+    override suspend fun <T> load(
+        key: String,
+        serializer: KSerializer<T>,
+    ): T? {
         return try {
             val jsonString = storage[key] ?: return null
             Json.decodeFromString(serializer, jsonString)
@@ -379,7 +413,7 @@ class IOSMemoryStorage : UnifyStorage {
             null
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return if (storage.remove(key) != null) {
             _changes.value = StorageEvent.KeyDeleted(key)
@@ -388,19 +422,19 @@ class IOSMemoryStorage : UnifyStorage {
             false
         }
     }
-    
+
     override suspend fun clear(): Boolean {
         storage.clear()
         _changes.value = StorageEvent.Cleared
         return true
     }
-    
+
     override suspend fun exists(key: String): Boolean = storage.containsKey(key)
-    
+
     override suspend fun getAllKeys(): List<String> = storage.keys.toList()
-    
+
     override suspend fun getSize(): Long = storage.values.sumOf { it.length.toLong() }
-    
+
     override fun observeChanges(): Flow<StorageEvent> {
         return flow {
             _changes.collect { event ->
@@ -408,7 +442,7 @@ class IOSMemoryStorage : UnifyStorage {
             }
         }
     }
-    
+
     override suspend fun batch(operations: List<StorageOperation>) {
         operations.forEach { operation ->
             when (operation) {
@@ -420,11 +454,11 @@ class IOSMemoryStorage : UnifyStorage {
             }
         }
     }
-    
+
     override suspend fun backup(): String {
         return Json.encodeToString(MapSerializer(String.serializer(), String.serializer()), storage)
     }
-    
+
     override suspend fun restore(backupData: String) {
         try {
             val data = Json.decodeFromString<Map<String, String>>(backupData)
@@ -434,7 +468,7 @@ class IOSMemoryStorage : UnifyStorage {
             throw StorageException("Failed to restore backup data", e)
         }
     }
-    
+
     override suspend fun compact() {
         // Memory storage doesn't need compaction
     }
@@ -447,14 +481,18 @@ class IOSMemoryStorage : UnifyStorage {
 class IOSFileStorage(private val basePath: String) : UnifyStorage {
     private val fileManager = NSFileManager.defaultManager
     private val _changes = MutableStateFlow<StorageEvent?>(null)
-    
+
     init {
         fileManager.createDirectoryAtPath(basePath, true, null, null)
     }
-    
+
     private fun getFilePath(key: String): String = "$basePath/$key.json"
-    
-    override suspend fun <T> save(key: String, value: T, serializer: KSerializer<T>) {
+
+    override suspend fun <T> save(
+        key: String,
+        value: T,
+        serializer: KSerializer<T>,
+    ) {
         try {
             val jsonString = Json.encodeToString(serializer, value)
             val filePath = getFilePath(key)
@@ -465,8 +503,11 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             throw StorageException("Failed to save data for key: $key", e)
         }
     }
-    
-    override suspend fun <T> load(key: String, serializer: KSerializer<T>): T? {
+
+    override suspend fun <T> load(
+        key: String,
+        serializer: KSerializer<T>,
+    ): T? {
         return try {
             val filePath = getFilePath(key)
             val nsString = NSString.stringWithContentsOfFile(filePath, NSUTF8StringEncoding, null)
@@ -477,7 +518,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             null
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return try {
             val filePath = getFilePath(key)
@@ -488,7 +529,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             false
         }
     }
-    
+
     override suspend fun clear(): Boolean {
         return try {
             val contents = fileManager.contentsOfDirectoryAtPath(basePath, null)
@@ -502,12 +543,12 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             false
         }
     }
-    
+
     override suspend fun exists(key: String): Boolean {
         val filePath = getFilePath(key)
         return fileManager.fileExistsAtPath(filePath)
     }
-    
+
     override suspend fun getAllKeys(): List<String> {
         return try {
             val contents = fileManager.contentsOfDirectoryAtPath(basePath, null)
@@ -515,13 +556,15 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
                 val name = fileName as? String
                 if (name?.endsWith(".json") == true) {
                     name.removeSuffix(".json")
-                } else null
+                } else {
+                    null
+                }
             } ?: emptyList()
         } catch (e: Exception) {
             emptyList()
         }
     }
-    
+
     override suspend fun getSize(): Long {
         return try {
             val contents = fileManager.contentsOfDirectoryAtPath(basePath, null)
@@ -534,7 +577,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             0L
         }
     }
-    
+
     override fun observeChanges(): Flow<StorageEvent> {
         return flow {
             _changes.collect { event ->
@@ -542,7 +585,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             }
         }
     }
-    
+
     override suspend fun batch(operations: List<StorageOperation>) {
         operations.forEach { operation ->
             when (operation) {
@@ -554,7 +597,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             }
         }
     }
-    
+
     override suspend fun backup(): String {
         val allKeys = getAllKeys()
         val backupData = mutableMapOf<String, String>()
@@ -565,7 +608,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
         }
         return Json.encodeToString(MapSerializer(String.serializer(), String.serializer()), backupData)
     }
-    
+
     override suspend fun restore(backupData: String) {
         try {
             val data = Json.decodeFromString<Map<String, String>>(backupData)
@@ -578,7 +621,7 @@ class IOSFileStorage(private val basePath: String) : UnifyStorage {
             throw StorageException("Failed to restore backup data", e)
         }
     }
-    
+
     override suspend fun compact() {
         // File storage doesn't need explicit compaction
     }

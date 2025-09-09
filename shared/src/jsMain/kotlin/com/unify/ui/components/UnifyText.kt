@@ -21,7 +21,7 @@ actual fun UnifyText(
     textAlign: TextAlign?,
     overflow: TextOverflow,
     maxLines: Int,
-    style: TextStyle?
+    style: TextStyle?,
 ) {
     Text(
         text = text,
@@ -32,7 +32,7 @@ actual fun UnifyText(
         textAlign = textAlign,
         overflow = overflow,
         maxLines = maxLines,
-        style = style ?: MaterialTheme.typography.bodyMedium
+        style = style ?: MaterialTheme.typography.bodyMedium,
     )
 }
 
@@ -41,14 +41,14 @@ actual fun UnifyHeadlineText(
     text: String,
     modifier: Modifier,
     color: Color,
-    textAlign: TextAlign?
+    textAlign: TextAlign?,
 ) {
     Text(
         text = text,
         modifier = modifier,
         color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
         textAlign = textAlign,
-        style = MaterialTheme.typography.headlineMedium
+        style = MaterialTheme.typography.headlineMedium,
     )
 }
 
@@ -58,7 +58,7 @@ actual fun UnifyBodyText(
     modifier: Modifier,
     color: Color,
     textAlign: TextAlign?,
-    maxLines: Int
+    maxLines: Int,
 ) {
     Text(
         text = text,
@@ -66,7 +66,7 @@ actual fun UnifyBodyText(
         color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurface,
         textAlign = textAlign,
         maxLines = maxLines,
-        style = MaterialTheme.typography.bodyMedium
+        style = MaterialTheme.typography.bodyMedium,
     )
 }
 
@@ -75,13 +75,13 @@ actual fun UnifyLabelText(
     text: String,
     modifier: Modifier,
     color: Color,
-    textAlign: TextAlign?
+    textAlign: TextAlign?,
 ) {
     Text(
         text = text,
         modifier = modifier,
         color = if (color != Color.Unspecified) color else MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = textAlign,
-        style = MaterialTheme.typography.labelMedium
+        style = MaterialTheme.typography.labelMedium,
     )
 }

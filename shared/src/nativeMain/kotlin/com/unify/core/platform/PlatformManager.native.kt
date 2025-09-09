@@ -1,8 +1,8 @@
 package com.unify.core.platform
 
-import kotlin.native.Platform
-import com.unify.core.types.PlatformType
 import com.unify.core.types.DeviceInfo
+import com.unify.core.types.PlatformType
+import kotlin.native.Platform
 
 /**
  * Native平台管理器实现
@@ -49,11 +49,13 @@ actual fun createTVPlatformManager(): PlatformManager {
 @OptIn(kotlin.experimental.ExperimentalNativeApi::class)
 private class NativePlatformManager : PlatformManager {
     private val config = mutableMapOf<String, String>()
-    
+
     override fun getPlatformType(): PlatformType = PlatformType.NATIVE
+
     override fun getPlatformName(): String = "Native (${Platform.osFamily})"
+
     override fun getPlatformVersion(): String = "1.0.0"
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = "Kotlin/Native",
@@ -61,25 +63,29 @@ private class NativePlatformManager : PlatformManager {
             systemName = Platform.osFamily.name,
             systemVersion = "1.0.0",
             deviceId = "native-device",
-            isEmulator = false
+            isEmulator = false,
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean = false
+
     override fun getSupportedCapabilities(): List<String> = emptyList()
-    
+
     override suspend fun initialize(): Boolean {
         // Native平台初始化
         return true
     }
-    
+
     override suspend fun cleanup() {
         // Native平台清理
     }
-    
+
     override fun getPlatformConfig(): Map<String, String> = config.toMap()
-    
-    override fun setPlatformConfig(key: String, value: String) {
+
+    override fun setPlatformConfig(
+        key: String,
+        value: String,
+    ) {
         config[key] = value
     }
 }

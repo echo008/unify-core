@@ -2,7 +2,6 @@
 
 package com.unify.ui.components.platform
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,15 +9,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.suspendCancellableCoroutine
-import org.w3c.dom.Navigator
 import kotlin.coroutines.resume
 
 /**
@@ -27,17 +22,24 @@ import kotlin.coroutines.resume
 
 actual fun getPlatformInfo(): PlatformInfo {
     val navigator = window.navigator
-    
+
     return PlatformInfo(
         name = "Web",
         version = navigator.appVersion,
         architecture = navigator.platform,
         deviceModel = navigator.userAgent,
         screenSize = "${window.screen.width}x${window.screen.height}",
-        capabilities = listOf(
-            "Camera", "Microphone", "GPS", "Network", "File System",
-            "Push Notifications", "Sensors", "Storage"
-        )
+        capabilities =
+            listOf(
+                "Camera",
+                "Microphone",
+                "GPS",
+                "Network",
+                "File System",
+                "Push Notifications",
+                "Sensors",
+                "Storage",
+            ),
     )
 }
 
@@ -95,97 +97,100 @@ actual fun getPlatformSpecificUI(): PlatformSpecificUI {
  * Web平台UI实现
  */
 class WebPlatformUI : PlatformSpecificUI {
-    
     @Composable
     override fun NativeButton(
         text: String,
         onClick: () -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Button(
             onClick = onClick,
             modifier = modifier,
             enabled = enabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF0066CC), // Web蓝色
-                contentColor = Color.White,
-                disabledContainerColor = Color(0xFF0066CC).copy(alpha = 0.3f)
-            ),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF0066CC), // Web蓝色
+                    contentColor = Color.White,
+                    disabledContainerColor = Color(0xFF0066CC).copy(alpha = 0.3f),
+                ),
             shape = RoundedCornerShape(6.dp), // Web风格圆角
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 2.dp,
-                pressedElevation = 4.dp
-            )
+            elevation =
+                ButtonDefaults.buttonElevation(
+                    defaultElevation = 2.dp,
+                    pressedElevation = 4.dp,
+                ),
         ) {
             Text(
                 text = text,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
         }
     }
-    
+
     @Composable
     override fun NativeTextField(
         value: String,
         onValueChange: (String) -> Unit,
         modifier: Modifier,
         placeholder: String,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         OutlinedTextField(
             value = value,
             onValueChange = onValueChange,
             modifier = modifier,
-            placeholder = { 
+            placeholder = {
                 Text(
                     placeholder,
-                    color = Color(0xFF999999)
-                ) 
+                    color = Color(0xFF999999),
+                )
             },
             enabled = enabled,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Color(0xFF0066CC),
-                unfocusedBorderColor = Color(0xFFCCCCCC),
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                cursorColor = Color(0xFF0066CC)
-            ),
-            shape = RoundedCornerShape(4.dp)
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color(0xFF0066CC),
+                    unfocusedBorderColor = Color(0xFFCCCCCC),
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black,
+                    cursorColor = Color(0xFF0066CC),
+                ),
+            shape = RoundedCornerShape(4.dp),
         )
     }
-    
+
     @Composable
     override fun NativeSwitch(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,
             enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = Color.White,
-                checkedTrackColor = Color(0xFF0066CC),
-                uncheckedThumbColor = Color.White,
-                uncheckedTrackColor = Color(0xFFCCCCCC),
-                checkedBorderColor = Color(0xFF0066CC),
-                uncheckedBorderColor = Color(0xFFCCCCCC)
-            )
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = Color.White,
+                    checkedTrackColor = Color(0xFF0066CC),
+                    uncheckedThumbColor = Color.White,
+                    uncheckedTrackColor = Color(0xFFCCCCCC),
+                    checkedBorderColor = Color(0xFF0066CC),
+                    uncheckedBorderColor = Color(0xFFCCCCCC),
+                ),
         )
     }
-    
+
     @Composable
     override fun NativeSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
         modifier: Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Slider(
             value = value,
@@ -193,28 +198,29 @@ class WebPlatformUI : PlatformSpecificUI {
             modifier = modifier,
             enabled = enabled,
             valueRange = valueRange,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF0066CC),
-                activeTrackColor = Color(0xFF0066CC),
-                inactiveTrackColor = Color(0xFFCCCCCC)
-            )
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = Color(0xFF0066CC),
+                    activeTrackColor = Color(0xFF0066CC),
+                    inactiveTrackColor = Color(0xFFCCCCCC),
+                ),
         )
     }
-    
+
     @Composable
     override fun NativeProgressBar(
         progress: Float,
         modifier: Modifier,
-        color: Color
+        color: Color,
     ) {
         LinearProgressIndicator(
             progress = { progress },
             modifier = modifier,
             color = Color(0xFF0066CC),
-            trackColor = Color(0xFFE6E6E6)
+            trackColor = Color(0xFFE6E6E6),
         )
     }
-    
+
     @Composable
     override fun NativeDialog(
         title: String,
@@ -222,7 +228,7 @@ class WebPlatformUI : PlatformSpecificUI {
         onConfirm: () -> Unit,
         onDismiss: () -> Unit,
         confirmText: String,
-        dismissText: String
+        dismissText: String,
     ) {
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -231,92 +237,98 @@ class WebPlatformUI : PlatformSpecificUI {
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             },
             text = {
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color(0xFF333333)
+                    color = Color(0xFF333333),
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = onConfirm,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF0066CC)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF0066CC),
+                        ),
                 ) {
                     Text(
                         confirmText,
-                        fontWeight = FontWeight.Medium
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             },
             dismissButton = {
                 TextButton(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF666666)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF666666),
+                        ),
                 ) {
                     Text(dismissText)
                 }
             },
             containerColor = Color.White,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         )
     }
-    
+
     @Composable
     override fun NativeToast(
         message: String,
         duration: Long,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
         // Web风格的Toast通知
         LaunchedEffect(message) {
             // 使用浏览器原生通知API
-            js("""
+            js(
+                """
                 if ('Notification' in window && Notification.permission === 'granted') {
                     new Notification(message);
                 }
-            """)
-            
+            """,
+            )
+
             kotlinx.coroutines.delay(duration)
             onDismiss()
         }
-        
+
         // 同时显示页面内Toast
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = Alignment.TopCenter
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF333333)
-                ),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = Color(0xFF333333),
+                    ),
                 shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             ) {
                 Text(
                     text = message,
                     modifier = Modifier.padding(16.dp),
                     color = Color.White,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
         }
     }
-    
+
     @Composable
     override fun NativeActionSheet(
         title: String,
         actions: List<ActionSheetItem>,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
         // Web平台使用模态对话框实现ActionSheet
         AlertDialog(
@@ -326,7 +338,7 @@ class WebPlatformUI : PlatformSpecificUI {
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             },
             text = {
@@ -336,33 +348,37 @@ class WebPlatformUI : PlatformSpecificUI {
                             headlineContent = {
                                 Text(
                                     text = action.title,
-                                    color = if (action.isDestructive) {
-                                        Color(0xFFDC3545) // Web红色
-                                    } else {
-                                        Color(0xFF0066CC)
-                                    }
-                                )
-                            },
-                            leadingContent = action.icon?.let { icon ->
-                                {
-                                    Icon(
-                                        imageVector = icon,
-                                        contentDescription = action.title,
-                                        tint = if (action.isDestructive) {
-                                            Color(0xFFDC3545)
+                                    color =
+                                        if (action.isDestructive) {
+                                            Color(0xFFDC3545) // Web红色
                                         } else {
                                             Color(0xFF0066CC)
-                                        }
-                                    )
-                                }
+                                        },
+                                )
                             },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    action.action()
-                                    onDismiss()
-                                }
-                                .padding(vertical = 4.dp)
+                            leadingContent =
+                                action.icon?.let { icon ->
+                                    {
+                                        Icon(
+                                            imageVector = icon,
+                                            contentDescription = action.title,
+                                            tint =
+                                                if (action.isDestructive) {
+                                                    Color(0xFFDC3545)
+                                                } else {
+                                                    Color(0xFF0066CC)
+                                                },
+                                        )
+                                    }
+                                },
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        action.action()
+                                        onDismiss()
+                                    }
+                                    .padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -370,28 +386,30 @@ class WebPlatformUI : PlatformSpecificUI {
             confirmButton = {
                 TextButton(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF666666)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF666666),
+                        ),
                 ) {
                     Text("取消")
                 }
             },
             containerColor = Color.White,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         )
     }
-    
+
     @Composable
     override fun NativeDatePicker(
         selectedDate: Long?,
         onDateSelected: (Long) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate
-        )
-        
+        val datePickerState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = selectedDate,
+            )
+
         DatePickerDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -400,9 +418,10 @@ class WebPlatformUI : PlatformSpecificUI {
                         datePickerState.selectedDateMillis?.let { onDateSelected(it) }
                         onDismiss()
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF0066CC)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF0066CC),
+                        ),
                 ) {
                     Text("确定", fontWeight = FontWeight.Medium)
                 }
@@ -410,39 +429,43 @@ class WebPlatformUI : PlatformSpecificUI {
             dismissButton = {
                 TextButton(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF666666)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF666666),
+                        ),
                 ) {
                     Text("取消")
                 }
             },
-            colors = DatePickerDefaults.colors(
-                containerColor = Color.White
-            )
+            colors =
+                DatePickerDefaults.colors(
+                    containerColor = Color.White,
+                ),
         ) {
             DatePicker(
                 state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    selectedDayContainerColor = Color(0xFF0066CC),
-                    selectedDayContentColor = Color.White,
-                    todayDateBorderColor = Color(0xFF0066CC)
-                )
+                colors =
+                    DatePickerDefaults.colors(
+                        selectedDayContainerColor = Color(0xFF0066CC),
+                        selectedDayContentColor = Color.White,
+                        todayDateBorderColor = Color(0xFF0066CC),
+                    ),
             )
         }
     }
-    
+
     @Composable
     override fun NativeTimePicker(
         selectedTime: Pair<Int, Int>?,
         onTimeSelected: (Int, Int) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedTime?.first ?: 12,
-            initialMinute = selectedTime?.second ?: 0
-        )
-        
+        val timePickerState =
+            rememberTimePickerState(
+                initialHour = selectedTime?.first ?: 12,
+                initialMinute = selectedTime?.second ?: 0,
+            )
+
         AlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -451,9 +474,10 @@ class WebPlatformUI : PlatformSpecificUI {
                         onTimeSelected(timePickerState.hour, timePickerState.minute)
                         onDismiss()
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF0066CC)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF0066CC),
+                        ),
                 ) {
                     Text("确定", fontWeight = FontWeight.Medium)
                 }
@@ -461,9 +485,10 @@ class WebPlatformUI : PlatformSpecificUI {
             dismissButton = {
                 TextButton(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color(0xFF666666)
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = Color(0xFF666666),
+                        ),
                 ) {
                     Text("取消")
                 }
@@ -471,14 +496,15 @@ class WebPlatformUI : PlatformSpecificUI {
             text = {
                 TimePicker(
                     state = timePickerState,
-                    colors = TimePickerDefaults.colors(
-                        selectorColor = Color(0xFF0066CC),
-                        containerColor = Color.White
-                    )
+                    colors =
+                        TimePickerDefaults.colors(
+                            selectorColor = Color(0xFF0066CC),
+                            containerColor = Color.White,
+                        ),
                 )
             },
             containerColor = Color.White,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         )
     }
 }
@@ -492,7 +518,7 @@ object WebSpecificFeatures {
      */
     fun getBrowserInfo(): Map<String, String> {
         val navigator = window.navigator
-        
+
         return mapOf(
             "USER_AGENT" to navigator.userAgent,
             "APP_NAME" to navigator.appName,
@@ -501,16 +527,16 @@ object WebSpecificFeatures {
             "LANGUAGE" to navigator.language,
             "LANGUAGES" to navigator.languages.joinToString(", "),
             "COOKIE_ENABLED" to navigator.cookieEnabled.toString(),
-            "ONLINE" to navigator.onLine.toString()
+            "ONLINE" to navigator.onLine.toString(),
         )
     }
-    
+
     /**
      * 获取屏幕信息
      */
     fun getScreenInfo(): Map<String, String> {
         val screen = window.screen
-        
+
         return mapOf(
             "WIDTH" to screen.width.toString(),
             "HEIGHT" to screen.height.toString(),
@@ -518,53 +544,53 @@ object WebSpecificFeatures {
             "AVAILABLE_HEIGHT" to screen.availHeight.toString(),
             "COLOR_DEPTH" to screen.colorDepth.toString(),
             "PIXEL_DEPTH" to screen.pixelDepth.toString(),
-            "DEVICE_PIXEL_RATIO" to window.devicePixelRatio.toString()
+            "DEVICE_PIXEL_RATIO" to window.devicePixelRatio.toString(),
         )
     }
-    
+
     /**
      * 检查是否为移动设备
      */
     fun isMobileDevice(): Boolean {
         val userAgent = window.navigator.userAgent.lowercase()
-        return userAgent.contains("mobile") || 
-               userAgent.contains("android") || 
-               userAgent.contains("iphone") || 
-               userAgent.contains("ipad")
+        return userAgent.contains("mobile") ||
+            userAgent.contains("android") ||
+            userAgent.contains("iphone") ||
+            userAgent.contains("ipad")
     }
-    
+
     /**
      * 检查是否支持PWA
      */
     fun supportsPWA(): Boolean {
         return js("'serviceWorker' in navigator") as Boolean
     }
-    
+
     /**
      * 检查是否支持WebAssembly
      */
     fun supportsWebAssembly(): Boolean {
         return js("typeof WebAssembly === 'object'") as Boolean
     }
-    
+
     /**
      * 获取网络连接信息
      */
     fun getNetworkInfo(): Map<String, String> {
         val connection = js("navigator.connection || navigator.mozConnection || navigator.webkitConnection")
-        
+
         return if (connection != null) {
             mapOf(
                 "EFFECTIVE_TYPE" to (js("connection.effectiveType") as? String ?: "unknown"),
                 "DOWNLINK" to (js("connection.downlink") as? String ?: "unknown"),
                 "RTT" to (js("connection.rtt") as? String ?: "unknown"),
-                "SAVE_DATA" to (js("connection.saveData") as? String ?: "unknown")
+                "SAVE_DATA" to (js("connection.saveData") as? String ?: "unknown"),
             )
         } else {
             mapOf("STATUS" to "Connection API not supported")
         }
     }
-    
+
     /**
      * 检查本地存储支持
      */
@@ -573,7 +599,7 @@ object WebSpecificFeatures {
             "LOCAL_STORAGE" to (js("typeof Storage !== 'undefined'") as Boolean),
             "SESSION_STORAGE" to (js("typeof sessionStorage !== 'undefined'") as Boolean),
             "INDEXED_DB" to (js("'indexedDB' in window") as Boolean),
-            "WEB_SQL" to (js("'openDatabase' in window") as Boolean)
+            "WEB_SQL" to (js("'openDatabase' in window") as Boolean),
         )
     }
 }

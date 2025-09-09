@@ -1,8 +1,13 @@
 package com.unify.ui.responsive
 
 import androidx.compose.runtime.Composable
-import platform.UIKit.*
-import platform.Foundation.*
+import platform.Foundation.NSBundle
+import platform.Foundation.NSString
+import platform.UIKit.UIDevice
+import platform.UIKit.UIScreen
+import platform.UIKit.UIUserInterfaceIdiom
+import platform.UIKit.UIUserInterfaceIdiomPad
+import platform.UIKit.UIUserInterfaceIdiomTV
 
 /**
  * iOS平台响应式设计实现
