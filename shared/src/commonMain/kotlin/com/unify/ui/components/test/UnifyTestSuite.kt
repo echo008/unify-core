@@ -357,7 +357,7 @@ private fun TestProgressIndicator(
             }
 
             LinearProgressIndicator(
-                progress = currentTest.toFloat() / totalTests.toFloat(),
+                progress = { currentTest.toFloat() / totalTests.toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
 

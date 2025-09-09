@@ -99,7 +99,8 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     
-    // Testing - 移除测试依赖以避免构建问题
-    // testImplementation(libs.kotlin.test)
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.22")
     debugImplementation(libs.compose.ui.tooling)
 }

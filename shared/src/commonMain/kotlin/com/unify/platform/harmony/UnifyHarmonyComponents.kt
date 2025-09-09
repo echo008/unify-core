@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ScreenShare
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -258,7 +259,7 @@ private fun HarmonyScreenItem(
 
             IconButton(onClick = onMirror) {
                 Icon(
-                    imageVector = Icons.Default.ScreenShare,
+                    imageVector = Icons.AutoMirrored.Filled.ScreenShare,
                     contentDescription = "镜像屏幕",
                     tint =
                         if (isActive) {
@@ -407,7 +408,7 @@ fun UnifyHarmonyDataSync(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     LinearProgressIndicator(
-                        progress = syncStatus.progress,
+                        progress = { syncStatus.progress },
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Text(

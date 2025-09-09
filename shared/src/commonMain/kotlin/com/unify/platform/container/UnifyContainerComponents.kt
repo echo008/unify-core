@@ -249,7 +249,7 @@ fun UnifyCardContainer(
                     }
                 }
 
-                Divider()
+                HorizontalDivider()
             }
 
             // 内容区域

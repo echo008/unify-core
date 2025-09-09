@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -294,7 +295,7 @@ actual fun UnifyTextToSpeech(
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("播放中...")
                 } else {
-                    Icon(Icons.Default.VolumeUp, contentDescription = "播放")
+                    Icon(Icons.AutoMirrored.Filled.VolumeUp, contentDescription = "播放")
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("播放语音")
                 }

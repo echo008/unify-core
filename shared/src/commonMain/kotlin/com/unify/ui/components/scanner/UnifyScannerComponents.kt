@@ -529,7 +529,7 @@ fun UnifyBatchScanner(
 
         // 进度指示器
         LinearProgressIndicator(
-            progress = batchResults.size.toFloat() / maxItems.toFloat(),
+            progress = { batchResults.size.toFloat() / maxItems.toFloat() },
             modifier = Modifier.fillMaxWidth(),
         )
 

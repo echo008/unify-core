@@ -178,7 +178,7 @@ actual fun UnifyPasswordStrengthIndicator(
                 else -> colors.veryStrongColor
             }
         LinearProgressIndicator(
-            progress = strength,
+            progress = { strength },
             color = strengthColor,
             modifier = Modifier.fillMaxWidth(),
         )

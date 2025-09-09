@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -189,7 +190,7 @@ private fun UnifyDesktopMenuButton(menu: DesktopMenu) {
                         )
                     }
                     is DesktopMenuItem.Separator -> {
-                        Divider()
+                        HorizontalDivider()
                     }
                     is DesktopMenuItem.Submenu -> {
                         // 子菜单实现
@@ -197,7 +198,7 @@ private fun UnifyDesktopMenuButton(menu: DesktopMenu) {
                             text = { Text(item.title) },
                             onClick = { /* 展开子菜单 */ },
                             trailingIcon = {
-                                Icon(Icons.Default.ArrowRight, contentDescription = null)
+                                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = null)
                             },
                         )
                     }
@@ -243,7 +244,7 @@ fun UnifyDesktopToolbar(
                         }
                     }
                     is DesktopToolbarAction.Separator -> {
-                        Divider(
+                        HorizontalDivider(
                             modifier =
                                 Modifier
                                     .height(24.dp)
@@ -393,7 +394,7 @@ fun UnifyDesktopSidebar(
                         )
                     }
                     is SidebarItem.Separator -> {
-                        Divider(
+                        HorizontalDivider(
                             modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
@@ -433,7 +434,7 @@ fun UnifyDesktopSplitPane(
 
         // 分割线
         if (resizable) {
-            Divider(
+            HorizontalDivider(
                 modifier =
                     Modifier
                         .fillMaxHeight()

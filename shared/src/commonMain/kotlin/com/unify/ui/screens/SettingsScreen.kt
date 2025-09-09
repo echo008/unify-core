@@ -3,6 +3,8 @@ package com.unify.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Help
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -79,7 +81,7 @@ fun SettingsScreen() {
 
         item {
             SliderSettingItem(
-                icon = Icons.Default.VolumeUp,
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
                 title = "音量",
                 subtitle = "调整应用音量",
                 value = settings.volume,
@@ -182,7 +184,7 @@ fun SettingsScreen() {
 
         item {
             ActionSettingItem(
-                icon = Icons.Default.Help,
+                icon = Icons.AutoMirrored.Filled.Help,
                 title = "帮助与支持",
                 subtitle = "获取帮助和技术支持",
                 onClick = { /* 打开帮助页面 */ },

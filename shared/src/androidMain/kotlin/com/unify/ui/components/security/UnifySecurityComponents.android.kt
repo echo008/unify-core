@@ -233,7 +233,7 @@ actual fun UnifyPasswordStrengthIndicator(
                 }
 
             LinearProgressIndicator(
-                progress =
+                progress = {
                     when (strength) {
                         PasswordStrength.VERY_WEAK -> 0.1f
                         PasswordStrength.WEAK -> 0.25f
@@ -241,7 +241,8 @@ actual fun UnifyPasswordStrengthIndicator(
                         PasswordStrength.GOOD -> 0.6f
                         PasswordStrength.STRONG -> 0.8f
                         PasswordStrength.VERY_STRONG -> 1.0f
-                    },
+                    }
+                },
                 color = strengthColor,
                 modifier = Modifier.fillMaxWidth(),
             )

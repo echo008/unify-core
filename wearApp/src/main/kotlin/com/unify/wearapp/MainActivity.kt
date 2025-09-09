@@ -4,41 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.wear.compose.material.Button
-import androidx.wear.compose.material.ButtonDefaults
-import androidx.wear.compose.material.Card
-import androidx.wear.compose.material.MaterialTheme
-import androidx.wear.compose.material.Text
-import androidx.wear.compose.material.TimeText
-import androidx.wear.compose.navigation.SwipeDismissableNavHost
-import androidx.wear.compose.navigation.composable
-import androidx.wear.compose.navigation.rememberSwipeDismissableNavController
-import com.unify.core.platform.PlatformManager
-import com.unify.helloworld.Greeting
+import androidx.wear.compose.material.*
+import androidx.wear.compose.navigation.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
-        // 初始化平台管理器
-        PlatformManager.initialize()
         
         setContent {
             WearApp()
@@ -76,8 +54,6 @@ fun WearHomeScreen(
     onNavigateToHealth: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
-    val greeting = remember { Greeting().greet() }
-    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -95,7 +71,7 @@ fun WearHomeScreen(
         Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = greeting,
+            text = "基于Kotlin Multiplatform",
             style = MaterialTheme.typography.body2,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colors.onBackground
@@ -103,12 +79,9 @@ fun WearHomeScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // 按钮宽度常量
-        val BUTTON_WIDTH_FRACTION = 0.8f
-        
         Button(
             onClick = onNavigateToHealth,
-            modifier = Modifier.fillMaxWidth(BUTTON_WIDTH_FRACTION)
+            modifier = Modifier.fillMaxWidth(0.8f)
         ) {
             Text("健康数据")
         }
@@ -117,7 +90,7 @@ fun WearHomeScreen(
         
         Button(
             onClick = onNavigateToSettings,
-            modifier = Modifier.fillMaxWidth(BUTTON_WIDTH_FRACTION)
+            modifier = Modifier.fillMaxWidth(0.8f)
         ) {
             Text("设置")
         }
@@ -126,14 +99,8 @@ fun WearHomeScreen(
 
 @Composable
 fun WearHealthScreen() {
-    var stepCount by remember { mutableStateOf(0) }
-    var heartRate by remember { mutableStateOf(0) }
-    
-    LaunchedEffect(Unit) {
-        // 模拟获取健康数据
-        stepCount = 8500
-        heartRate = 72
-    }
+    var stepCount by remember { mutableStateOf(8500) }
+    var heartRate by remember { mutableStateOf(72) }
     
     Column(
         modifier = Modifier
@@ -152,8 +119,8 @@ fun WearHealthScreen() {
         Spacer(modifier = Modifier.height(16.dp))
         
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = MaterialTheme.colors.surface
+            onClick = { },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(12.dp),
@@ -175,8 +142,8 @@ fun WearHealthScreen() {
         Spacer(modifier = Modifier.height(8.dp))
         
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            backgroundColor = MaterialTheme.colors.surface
+            onClick = { },
+            modifier = Modifier.fillMaxWidth()
         ) {
             Column(
                 modifier = Modifier.padding(12.dp),
@@ -215,12 +182,8 @@ fun WearSettingsScreen() {
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        val platformInfo = remember { 
-            "${PlatformManager.getPlatformName()} ${PlatformManager.getPlatformVersion()}"
-        }
-        
         Text(
-            text = "平台: $platformInfo",
+            text = "平台: Wear OS",
             style = MaterialTheme.typography.body2,
             color = MaterialTheme.colors.onBackground,
             textAlign = TextAlign.Center
@@ -228,10 +191,17 @@ fun WearSettingsScreen() {
         
         Spacer(modifier = Modifier.height(8.dp))
         
-        val deviceInfo = remember { PlatformManager.getDeviceInfo() }
+        Text(
+            text = "架构: Kotlin Multiplatform",
+            style = MaterialTheme.typography.body2,
+            color = MaterialTheme.colors.onBackground,
+            textAlign = TextAlign.Center
+        )
+        
+        Spacer(modifier = Modifier.height(8.dp))
         
         Text(
-            text = "设备: ${deviceInfo.manufacturer} ${deviceInfo.model}",
+            text = "基于KuiklyUI架构",
             style = MaterialTheme.typography.body2,
             color = MaterialTheme.colors.onBackground,
             textAlign = TextAlign.Center
@@ -243,15 +213,14 @@ fun WearSettingsScreen() {
 fun UnifyWearTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colors = wearColorPalette,
-        typography = Typography(),
         content = content
     )
 }
 
-private val wearColorPalette = darkColors(
-    primary = Color(0xFF1EB980),
-    primaryVariant = Color(0xFF045D56),
-    secondary = Color(0xFFFF6859),
+private val wearColorPalette = Colors(
+    primary = Color(0xFF6200EE),
+    primaryVariant = Color(0xFF3700B3),
+    secondary = Color(0xFF03DAC6),
     background = Color(0xFF000000),
     surface = Color(0xFF1C1C1C),
     onPrimary = Color.White,

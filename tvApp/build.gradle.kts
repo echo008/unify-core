@@ -61,7 +61,7 @@ android {
 
     defaultConfig {
         applicationId = "com.unify.tvapp"
-        minSdk = 21 // Android TV支持
+        minSdk = 24 // 匹配shared模块要求
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

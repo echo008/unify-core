@@ -311,7 +311,7 @@ fun UnifyProgressLoading(
         }
 
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.fillMaxWidth(),
             color = color,
         )
@@ -335,10 +335,10 @@ fun UnifyCircularProgressLoading(
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.size(size),
-            strokeWidth = strokeWidth,
             color = color,
+            strokeWidth = strokeWidth,
         )
 
         if (showPercentage) {

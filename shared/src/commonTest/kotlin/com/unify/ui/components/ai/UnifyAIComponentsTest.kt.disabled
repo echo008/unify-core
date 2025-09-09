@@ -5,8 +5,11 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 
 /**
  * Unify AI组件测试套件
@@ -431,7 +434,7 @@ class UnifyAIComponentsTest {
                     // 使用示例
                     fun main() {
                         val result = add(5, 3)
-                        println("5 + 3 = \$result")
+                        println("5 + 3 = ${'$'}result")
                     }
                     """.trimIndent()
 
@@ -448,7 +451,7 @@ class UnifyAIComponentsTest {
                         fun isAdult(): Boolean = age >= 18
                         
                         override fun toString(): String {
-                            return "Person(name='\$name', age=\$age, email='\$email')"
+                            return "Person(name='${'$'}name', age=${'$'}age, email='${'$'}email')"
                         }
                     }
                     """.trimIndent()
@@ -492,7 +495,7 @@ class UnifyAIComponentsTest {
                 
                 // 使用示例
                 const result = add(5, 3);
-                console.log(`5 + 3 = \$result`);
+                console.log(`5 + 3 = ${'$'}{result}`);
                 
                 // ES6箭头函数版本
                 const addArrow = (a, b) => a + b;
@@ -503,8 +506,7 @@ class UnifyAIComponentsTest {
             return """
                 # Python示例代码
                 def add(a, b):
-                    """计算两个数的和
-                """
+                    '''计算两个数的和'''
                     return a + b
                 
                 # 使用示例
@@ -743,7 +745,7 @@ class UnifyAIComponentsTest {
                 analysis.edgeCount > 500 -> {
                     objects.add(
                         DetectedObject(
-                            label = "建筑物",
+                            name = "建筑物",
                             confidence = 0.85,
                             boundingBox = BoundingBox(50, 50, 200, 300),
                         ),
@@ -752,25 +754,14 @@ class UnifyAIComponentsTest {
                 analysis.brightness > 150 -> {
                     objects.add(
                         DetectedObject(
-                            label = "人物",
+                            name = "人物",
                             confidence = 0.92,
                             boundingBox = BoundingBox(100, 80, 150, 250),
                         ),
                     )
-                }
-                analysis.colorVariance > 100 -> {
                     objects.add(
                         DetectedObject(
-                            label = "车辆",
-                            confidence = 0.78,
-                            boundingBox = BoundingBox(20, 150, 180, 100),
-                        ),
-                    )
-                }
-                else -> {
-                    objects.add(
-                        DetectedObject(
-                            label = "物体",
+                            name = "物体",
                             confidence = 0.65,
                             boundingBox = BoundingBox(75, 75, 100, 100),
                         ),
@@ -993,15 +984,15 @@ class UnifyAIComponentsTest {
         }
     }
 
-    data class SentimentResult(val sentiment: Sentiment, val confidence: Double)
+    data class SentimentResult(val sentiment: Sentiment, val confidence: Double, val emotions: List<String> = emptyList())
 
     data class UserProfile(val interests: List<String>, val history: List<String>)
 
     data class Recommendation(val title: String, val score: Double)
 
-    data class VoiceRecognitionResult(val text: String, val confidence: Double)
+    data class VoiceRecognitionResult(val text: String, val confidence: Double, val language: String = "unknown")
 
-    data class ImageRecognitionResult(val objects: List<DetectedObject>)
+    data class ImageRecognitionResult(val objects: List<DetectedObject>, val scene: String = "unknown", val colors: List<String> = emptyList())
 
     data class DetectedObject(val name: String, val confidence: Double, val boundingBox: BoundingBox)
 
@@ -1013,7 +1004,7 @@ class UnifyAIComponentsTest {
 
     enum class Sentiment { POSITIVE, NEGATIVE, NEUTRAL }
 
-    enum class BugType { DIVISION_BY_ZERO, NULL_POINTER, MEMORY_LEAK, LOGIC_ERROR }
+    enum class BugType { DIVISION_BY_ZERO, NULL_POINTER, MEMORY_LEAK, LOGIC_ERROR, UNUSED_VARIABLE, HARDCODED_STRING }
 
     // 异常类
     class InvalidInputException(message: String) : Exception(message)

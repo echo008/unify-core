@@ -2,6 +2,7 @@ package com.unify.ui.components.foundation
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.*
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -150,8 +151,8 @@ object UnifyIcons {
     val Menu = Icons.Default.Menu
     val MoreVert = Icons.Default.MoreVert
     val MoreHoriz = Icons.Default.MoreHoriz
-    val ArrowBack = Icons.Default.ArrowBack
-    val ArrowForward = Icons.Default.ArrowForward
+    val ArrowBack = Icons.AutoMirrored.Filled.ArrowBack
+    val ArrowForward = Icons.AutoMirrored.Filled.ArrowForward
     val ArrowUpward = Icons.Default.ArrowUpward
     val ArrowDownward = Icons.Default.ArrowDownward
     val Close = Icons.Default.Close
@@ -164,9 +165,9 @@ object UnifyIcons {
     val Photo = Icons.Default.Photo
     val Mic = Icons.Default.Mic
     val MicOff = Icons.Default.MicOff
-    val VolumeUp = Icons.Default.VolumeUp
-    val VolumeDown = Icons.Default.VolumeDown
-    val VolumeOff = Icons.Default.VolumeOff
+    val VolumeUp = Icons.AutoMirrored.Filled.VolumeUp
+    val VolumeDown = Icons.AutoMirrored.Filled.VolumeDown
+    val VolumeOff = Icons.AutoMirrored.Filled.VolumeOff
     val PlayArrow = Icons.Default.PlayArrow
     val Pause = Icons.Default.Pause
     val Stop = Icons.Default.Stop

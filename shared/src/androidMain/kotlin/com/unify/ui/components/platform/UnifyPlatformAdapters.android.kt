@@ -210,7 +210,7 @@ actual fun UnifyPlatformProgressBar(
 ) {
     Column(modifier = modifier) {
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = Modifier.fillMaxWidth(),
         )
         if (showPercentage) {
@@ -634,7 +634,7 @@ object AndroidPlatformAdapters {
         trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         LinearProgressIndicator(
-            progress = progress,
+            progress = { progress },
             modifier = modifier,
             color = color,
             trackColor = trackColor,

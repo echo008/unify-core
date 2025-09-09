@@ -344,7 +344,7 @@ fun UnifyHarmonyMultiScreenLayout(
                 primaryContent()
             }
 
-            Divider(
+            HorizontalDivider(
                 modifier =
                     Modifier
                         .fillMaxHeight()

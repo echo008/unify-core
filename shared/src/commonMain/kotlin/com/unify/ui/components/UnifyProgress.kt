@@ -32,7 +32,7 @@ fun UnifyLinearProgress(
 ) {
     Column(modifier = modifier) {
         LinearProgressIndicator(
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -86,7 +86,7 @@ fun UnifyCircularProgress(
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             modifier = Modifier.size(size),
             color = color,
             strokeWidth = strokeWidth,
@@ -248,7 +248,7 @@ fun UnifyRingProgress(
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             modifier = Modifier.size(size),
             color = color,
             strokeWidth = strokeWidth,
@@ -306,7 +306,7 @@ fun UnifyMultiProgress(
             var currentOffset = 0f
             segments.forEach { segment ->
                 LinearProgressIndicator(
-                    progress = segment.progress.coerceIn(0f, 1f),
+                    progress = { segment.progress.coerceIn(0f, 1f) },
                     modifier =
                         Modifier
                             .fillMaxWidth(currentOffset + segment.progress.coerceIn(0f, 1f))
@@ -341,7 +341,7 @@ fun UnifyWaveProgress(
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             modifier = Modifier.size(size),
             color = waveColor,
             strokeWidth = 8.dp,
@@ -376,7 +376,7 @@ fun UnifyGaugeProgress(
         contentAlignment = Alignment.Center,
     ) {
         CircularProgressIndicator(
-            progress = progress.coerceIn(0f, 1f),
+            progress = { progress.coerceIn(0f, 1f) },
             modifier = Modifier.size(size),
             color = color,
             strokeWidth = strokeWidth,

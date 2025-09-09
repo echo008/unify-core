@@ -144,12 +144,9 @@ private fun ValidationSummaryCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text("组件: ${summary.validComponents}/${summary.totalComponents}")
-            Text("CPU使用率: 0.0%")
-            Text("内存使用: 0 MB")
-            Text("问题: ${summary.totalIssues} (严重: ${summary.criticalIssues})")
 
             LinearProgressIndicator(
-                progress = if (summary.totalComponents > 0) (summary.validComponents.toFloat() / summary.totalComponents.toFloat()) else 0f,
+                progress = { if (summary.totalComponents > 0) (summary.validComponents.toFloat() / summary.totalComponents.toFloat()) else 0f },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -231,7 +228,7 @@ private fun PlatformValidationCard(platform: PlatformValidationResult) {
             }
 
             LinearProgressIndicator(
-                progress = 0.5f, // Placeholder progress value
+                progress = { 0.5f }, // Placeholder progress value
                 modifier = Modifier.fillMaxWidth(),
             )
         }

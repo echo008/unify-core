@@ -355,7 +355,7 @@ fun UnifyDesktopSplitPane(
             leftContent()
         }
 
-        Divider(
+        HorizontalDivider(
             modifier =
                 Modifier
                     .fillMaxHeight()

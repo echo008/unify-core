@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Help
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -344,7 +345,7 @@ private fun getProfileMenuItems(): List<ProfileMenuItemData> {
             subtitle = "支付方式、账单记录",
         ),
         ProfileMenuItemData(
-            icon = Icons.Default.Help,
+            icon = Icons.AutoMirrored.Filled.Help,
             title = "帮助中心",
             subtitle = "常见问题、联系客服",
         ),

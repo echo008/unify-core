@@ -11,6 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import java.awt.Toolkit
+import java.io.File
 
 /**
  * Desktop平台UI适配器
@@ -448,7 +450,7 @@ class DesktopUnifyPlatformAdapter : UnifyPlatformAdapter {
     }
 
     override fun getDeviceInfo(): DeviceInfo {
-        val toolkit = java.awt.Toolkit.getDefaultToolkit()
+        val toolkit = Toolkit.getDefaultToolkit()
         val screenSize = toolkit.screenSize
         val runtime = Runtime.getRuntime()
 
@@ -467,8 +469,8 @@ class DesktopUnifyPlatformAdapter : UnifyPlatformAdapter {
             isEmulator = false,
             totalMemory = runtime.totalMemory(),
             availableMemory = runtime.freeMemory(),
-            totalStorage = 0L, // 简化实现
-            availableStorage = 0L, // 简化实现
+            totalStorage = getTotalDiskSpace(),
+            availableStorage = getAvailableDiskSpace()
         )
     }
 
@@ -494,5 +496,23 @@ class DesktopUnifyPlatformAdapter : UnifyPlatformAdapter {
                     PlatformFeature.EMAIL,
                 ),
         )
+    }
+    
+    private fun getTotalDiskSpace(): Long {
+        return try {
+            val root = File("/")
+            root.totalSpace
+        } catch (e: Exception) {
+            100_000_000_000L // 默认100GB
+        }
+    }
+    
+    private fun getAvailableDiskSpace(): Long {
+        return try {
+            val root = File("/")
+            root.freeSpace
+        } catch (e: Exception) {
+            50_000_000_000L // 默认50GB
+        }
     }
 }

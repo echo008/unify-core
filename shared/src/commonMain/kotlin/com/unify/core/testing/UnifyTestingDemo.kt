@@ -360,7 +360,7 @@ private fun TestSummaryCard(results: List<TestResult>) {
             Text("成功率: ${successRate.toFloat()}%")
 
             LinearProgressIndicator(
-                progress = (successRate / 100.0).toFloat(),
+                progress = { (successRate / 100.0).toFloat() },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -399,7 +399,7 @@ private fun ModuleCoverageCard(moduleData: CoverageData) {
             )
 
             LinearProgressIndicator(
-                progress = if (totalTests > 0) (completedTests.toFloat() / totalTests.toFloat()) else 0f,
+                progress = { if (totalTests > 0) (completedTests.toFloat() / totalTests.toFloat()) else 0f },
                 modifier = Modifier.fillMaxWidth(),
             )
         }

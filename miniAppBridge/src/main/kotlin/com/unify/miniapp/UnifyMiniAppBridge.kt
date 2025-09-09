@@ -10,14 +10,14 @@ package com.unify.miniapp
 /**
  * 小程序平台类型
  */
-enum class MiniAppPlatform(val platformId: String, val displayName: String) {
-    WECHAT("wechat", "微信小程序"),
-    ALIPAY("alipay", "支付宝小程序"),
-    BAIDU("baidu", "百度智能小程序"),
-    TIKTOK("tiktok", "抖音小程序"),
-    QQ("qq", "QQ小程序"),
-    KUAISHOU("kuaishou", "快手小程序"),
-    HARMONY_MINI("harmony", "HarmonyOS原子化服务")
+enum class MiniAppPlatform {
+    WeChat,      // 微信小程序
+    Alipay,      // 支付宝小程序
+    ByteDance,   // 字节跳动小程序
+    Baidu,       // 百度智能小程序
+    QQ,          // QQ小程序
+    Kuaishou,    // 快手小程序
+    Unknown      // 未知平台
 }
 
 /**
@@ -45,13 +45,13 @@ class UnifyMiniAppBridge {
      */
     private fun detectCurrentPlatform() {
         val platform = when {
-            isWeChatMiniProgram() -> MiniAppPlatform.WECHAT
-            isAlipayMiniProgram() -> MiniAppPlatform.ALIPAY
-            isBaiduMiniProgram() -> MiniAppPlatform.BAIDU
-            isTikTokMiniProgram() -> MiniAppPlatform.TIKTOK
+            isWeChatMiniProgram() -> MiniAppPlatform.WeChat
+            isAlipayMiniProgram() -> MiniAppPlatform.Alipay
+            isBaiduMiniProgram() -> MiniAppPlatform.Baidu
+            isTikTokMiniProgram() -> MiniAppPlatform.ByteDance
             isQQMiniProgram() -> MiniAppPlatform.QQ
-            isKuaishouMiniProgram() -> MiniAppPlatform.KUAISHOU
-            isHarmonyMiniService() -> MiniAppPlatform.HARMONY_MINI
+            isKuaishouMiniProgram() -> MiniAppPlatform.Kuaishou
+            isHarmonyMiniService() -> MiniAppPlatform.Unknown
             else -> null
         }
         _currentPlatform = platform
@@ -250,7 +250,7 @@ data class MiniAppNetworkResponse(
  * 微信小程序适配器
  */
 class WeChatMiniAppAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.WECHAT
+    override val platform = MiniAppPlatform.WeChat
     
     override suspend fun initialize() {
         // 微信小程序初始化逻辑
@@ -291,7 +291,7 @@ class WeChatMiniAppAdapter : MiniAppPlatformAdapter {
  * 支付宝小程序适配器
  */
 class AlipayMiniAppAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.ALIPAY
+    override val platform = MiniAppPlatform.Alipay
     
     override suspend fun initialize() {
         // 支付宝小程序初始化逻辑
@@ -332,7 +332,7 @@ class AlipayMiniAppAdapter : MiniAppPlatformAdapter {
  * 百度小程序适配器
  */
 class BaiduMiniAppAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.BAIDU
+    override val platform = MiniAppPlatform.Baidu
     
     override suspend fun initialize() {
         // 百度小程序初始化逻辑
@@ -373,7 +373,7 @@ class BaiduMiniAppAdapter : MiniAppPlatformAdapter {
  * 字节跳动小程序适配器
  */
 class TikTokMiniAppAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.TIKTOK
+    override val platform = MiniAppPlatform.ByteDance
     
     override suspend fun initialize() {
         // 字节跳动小程序初始化逻辑
@@ -455,7 +455,7 @@ class QQMiniAppAdapter : MiniAppPlatformAdapter {
  * 快手小程序适配器
  */
 class KuaishouMiniAppAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.KUAISHOU
+    override val platform = MiniAppPlatform.Kuaishou
     
     override suspend fun initialize() {
         // 快手小程序初始化逻辑
@@ -496,7 +496,7 @@ class KuaishouMiniAppAdapter : MiniAppPlatformAdapter {
  * HarmonyOS原子化服务适配器
  */
 class HarmonyMiniServiceAdapter : MiniAppPlatformAdapter {
-    override val platform = MiniAppPlatform.HARMONY_MINI
+    override val platform = MiniAppPlatform.Unknown
     
     override suspend fun initialize() {
         // HarmonyOS原子化服务初始化逻辑
@@ -544,12 +544,12 @@ object MiniAppUtils {
      */
     fun detectMiniAppEnvironment(): MiniAppPlatform? {
         return when {
-            js("typeof wx !== 'undefined'") as Boolean -> MiniAppPlatform.WECHAT
-            js("typeof my !== 'undefined'") as Boolean -> MiniAppPlatform.ALIPAY
-            js("typeof swan !== 'undefined'") as Boolean -> MiniAppPlatform.BAIDU
-            js("typeof tt !== 'undefined'") as Boolean -> MiniAppPlatform.TIKTOK
+            js("typeof wx !== 'undefined'") as Boolean -> MiniAppPlatform.WeChat
+            js("typeof my !== 'undefined'") as Boolean -> MiniAppPlatform.Alipay
+            js("typeof swan !== 'undefined'") as Boolean -> MiniAppPlatform.Baidu
+            js("typeof tt !== 'undefined'") as Boolean -> MiniAppPlatform.ByteDance
             js("typeof qq !== 'undefined'") as Boolean -> MiniAppPlatform.QQ
-            js("typeof ks !== 'undefined'") as Boolean -> MiniAppPlatform.KUAISHOU
+            js("typeof ks !== 'undefined'") as Boolean -> MiniAppPlatform.Kuaishou
             else -> null
         }
     }

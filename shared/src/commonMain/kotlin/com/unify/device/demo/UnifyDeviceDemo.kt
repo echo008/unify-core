@@ -3,6 +3,7 @@ package com.unify.device.demo
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.RotateRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -595,7 +596,7 @@ private fun generateSensors(): List<DeviceSensor> {
         ),
         DeviceSensor(
             name = "陀螺仪",
-            icon = Icons.Default.RotateRight,
+            icon = Icons.AutoMirrored.Filled.RotateRight,
             isActive = false,
             currentValue = "",
         ),

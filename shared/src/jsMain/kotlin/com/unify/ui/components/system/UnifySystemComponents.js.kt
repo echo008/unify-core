@@ -271,7 +271,7 @@ actual fun UnifyBatteryIndicator(
                 else -> normalColor
             }
         LinearProgressIndicator(
-            progress = batteryLevel,
+            progress = { batteryLevel },
             color = indicatorColor,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -294,7 +294,7 @@ actual fun UnifyMemoryUsage(
         val usagePercent = usedMemory.toFloat() / totalMemory.toFloat()
         if (showChart) {
             LinearProgressIndicator(
-                progress = usagePercent,
+                progress = { usagePercent },
                 color = if (usagePercent > warningThreshold) Color.Red else Color.Green,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -321,7 +321,7 @@ actual fun UnifyStorageUsage(
         Text("Total: ${totalStorage / (1024 * 1024 * 1024)}GB")
         val usagePercent = usedStorage.toFloat() / totalStorage.toFloat()
         LinearProgressIndicator(
-            progress = usagePercent,
+            progress = { usagePercent },
             color = if (usagePercent > warningThreshold) Color.Red else Color.Green,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -354,7 +354,7 @@ actual fun UnifyNetworkStatus(
         }
         if (showDetails) {
             LinearProgressIndicator(
-                progress = signalStrength,
+                progress = { signalStrength },
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(onClick = onNetworkTest) {

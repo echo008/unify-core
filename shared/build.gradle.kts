@@ -69,14 +69,16 @@ kotlin {
     macosArm64()
     mingwX64()
 
-    // HarmonyOS 目标 (使用 Native 编译)
-    linuxArm64("harmony")
+    // HarmonyOS 目标 (参考KuiklyUI方案，暂时通过Native平台支持)
+    // 注意：HarmonyOS需要专门的Native适配，不能简单使用linuxArm64
+    // 当前通过nativeMain源集提供基础支持，具体实现需要HarmonyOS SDK
 
     // TV 和 Watch 通过 Android 变体支持
 
     sourceSets {
         val commonMain by getting {
             dependencies {
+                // Compose UI框架
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
@@ -100,6 +102,9 @@ kotlin {
         val commonTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation("org.jetbrains.kotlin:kotlin-test-common:${libs.versions.kotlin.get()}")
+                implementation("org.jetbrains.kotlin:kotlin-test-annotations-common:${libs.versions.kotlin.get()}")
             }
         }
 
@@ -179,19 +184,20 @@ kotlin {
         val macosArm64Main by getting { dependsOn(nativeMain) }
         val mingwX64Main by getting { dependsOn(nativeMain) }
 
-        // HarmonyOS 平台配置
-        val harmonyMain by getting {
-            dependsOn(nativeMain)
-            dependencies {
-                implementation(libs.ktor.client.cio)
-            }
-        }
+        // HarmonyOS 平台配置 (暂时禁用)
+        // val harmonyMain by getting {
+        //     dependsOn(nativeMain)
+        //     dependencies {
+        //         implementation(libs.ktor.client.cio)
+        //     }
+        // }
 
         // 小程序和TV/Watch平台通过现有目标支持，无需额外配置
 
         val androidUnitTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
 
@@ -209,12 +215,15 @@ kotlin {
         val desktopTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+                implementation("org.jetbrains.kotlin:kotlin-test-junit:${libs.versions.kotlin.get()}")
             }
         }
 
         val jsTest by getting {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
             }
         }
     }

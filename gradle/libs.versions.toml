@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.0"
-compose = "1.7.0"
+compose = "1.6.11"
 agp = "8.6.1"
 compose-bom = "2024.11.00"
 ktor = "2.3.12"

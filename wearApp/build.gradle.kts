@@ -58,7 +58,7 @@ android {
 
     defaultConfig {
         applicationId = "com.unify.wearapp"
-        minSdk = 26 // Wear OS 2.0+
+        minSdk = 30 // Wear OS 3.0+ (required for health-services-client)
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"

@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Redo
+import androidx.compose.material.icons.automirrored.filled.Undo
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -356,7 +358,7 @@ fun UnifyCanvasToolbar(
                     onClick = onUndo,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Icon(Icons.Default.Undo, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Undo, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("撤销")
                 }
@@ -365,7 +367,7 @@ fun UnifyCanvasToolbar(
                     onClick = onRedo,
                     modifier = Modifier.weight(1f),
                 ) {
-                    Icon(Icons.Default.Redo, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Redo, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("重做")
                 }

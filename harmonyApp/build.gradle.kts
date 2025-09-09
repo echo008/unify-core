@@ -7,7 +7,9 @@ plugins {
 kotlin {
     jvmToolchain(17)
     
-    // HarmonyOS通过JVM目标实现
+    // HarmonyOS通过Native目标实现 (参考KuiklyUI方案)
+    // 注意: 需要HarmonyOS SDK和专门的Native适配
+    // 当前作为独立模块，通过shared模块获得跨平台能力
     jvm("harmony") {
         compilations.all {
             compileTaskProvider.configure {

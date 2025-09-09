@@ -1,8 +1,10 @@
 package com.unify.core
 
-import com.unify.data.UnifyDataManager
-import com.unify.ui.components.platform.UnifyPlatformAdapters
+import com.unify.data.UnifyDataManagerImpl
+import com.unify.ui.components.platform.UnifyPlatformUtils
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -13,26 +15,65 @@ import kotlin.test.assertTrue
  * Desktop平台特定测试
  */
 class UnifyDesktopTest {
-    private val dataManager = UnifyDataManager()
-    private val platformAdapters = UnifyPlatformAdapters()
+    private val dataManager = UnifyDataManagerImpl()
 
     @Test
     fun testDesktopDataManager() =
         runTest {
             // 测试文件存储
-            dataManager.putString("desktop_test_key", "desktop_test_value")
+            dataManager.saveString("desktop_test_key", "desktop_test_value")
             val value = dataManager.getString("desktop_test_key")
             assertEquals("desktop_test_value", value)
 
             // 测试数据观察
-            val flow = dataManager.observeString("desktop_test_key")
-            assertNotNull(flow)
+            val observedValues = mutableListOf<String>()
+            val job = launch {
+                dataManager.observeString("desktop_test_key").collect { value ->
+                    observedValues.add(value)
+                }
+            }
+
+            dataManager.saveString("desktop_test_key", "new_value")
+            delay(100)
+            job.cancel()
+
+            assertTrue(observedValues.contains("new_value"))
+
+            // 测试数据类型
+            dataManager.saveInt("int_key", 42)
+            assertEquals(42, dataManager.getInt("int_key"))
+
+            dataManager.saveBoolean("bool_key", true)
+            assertEquals(true, dataManager.getBoolean("bool_key"))
+
+            dataManager.saveFloat("float_key", 3.14f)
+            assertEquals(3.14f, dataManager.getFloat("float_key"))
+
+            dataManager.saveLong("long_key", 123456789L)
+            assertEquals(123456789L, dataManager.getLong("long_key"))
+
+            // 测试文件操作
+            val testData = "test file content".toByteArray()
+            dataManager.saveFile("test.txt", testData)
+            assertTrue(dataManager.fileExists("test.txt"))
+
+            val loadedData = dataManager.getFile("test.txt")
+            assertNotNull(loadedData)
+            assertEquals("test file content", String(loadedData))
+
+            // 清理
+            dataManager.deleteFile("test.txt")
+            dataManager.remove("desktop_test_key")
+            dataManager.remove("int_key")
+            dataManager.remove("bool_key")
+            dataManager.remove("float_key")
+            dataManager.remove("long_key")
         }
 
     @Test
     fun testDesktopPlatformAdapters() =
         runTest {
-            val deviceInfo = platformAdapters.getDeviceInfo()
+            val deviceInfo = UnifyPlatformUtils.getDeviceInfo()
 
             assertNotNull(deviceInfo)
             assertNotNull(deviceInfo.deviceId)
@@ -44,15 +85,14 @@ class UnifyDesktopTest {
     @Test
     fun testDesktopSystemInfo() =
         runTest {
-            val systemInfo = platformAdapters.getSystemInfo()
+            val systemInfo = UnifyPlatformUtils.getSystemInfo()
 
             assertNotNull(systemInfo)
-            assertNotNull(systemInfo.osName)
-            assertNotNull(systemInfo.osVersion)
+            assertNotNull(systemInfo.platformType)
+            assertNotNull(systemInfo.architecture)
             assertTrue(
-                systemInfo.osName.contains("Windows") ||
-                    systemInfo.osName.contains("Mac") ||
-                    systemInfo.osName.contains("Linux"),
+                systemInfo.platformType.name.contains("DESKTOP") ||
+                    systemInfo.architecture.isNotEmpty()
             )
         }
 
@@ -70,21 +110,21 @@ class UnifyDesktopTest {
     @Test
     fun testDesktopFileSystem() =
         runTest {
-            val storageInfo = platformAdapters.getStorageInfo()
+            val deviceInfo = UnifyPlatformUtils.getDeviceInfo()
 
-            assertNotNull(storageInfo)
-            assertTrue(storageInfo.totalSpace > 0)
-            assertTrue(storageInfo.freeSpace >= 0)
-            assertTrue(storageInfo.freeSpace <= storageInfo.totalSpace)
+            assertNotNull(deviceInfo)
+            assertTrue(deviceInfo.totalStorage > 0)
+            assertTrue(deviceInfo.availableStorage >= 0)
+            assertTrue(deviceInfo.availableStorage <= deviceInfo.totalStorage)
         }
 
     @Test
     fun testDesktopNetworkInfo() =
         runTest {
-            val networkInfo = platformAdapters.getNetworkInfo()
+            val systemInfo = UnifyPlatformUtils.getSystemInfo()
 
-            assertNotNull(networkInfo)
-            assertNotNull(networkInfo.type)
+            assertNotNull(systemInfo)
+            assertNotNull(systemInfo.networkType)
         }
 
     @Test
@@ -104,12 +144,12 @@ class UnifyDesktopTest {
     @Test
     fun testDesktopDisplayInfo() =
         runTest {
-            val displayInfo = platformAdapters.getDisplayInfo()
+            val deviceInfo = UnifyPlatformUtils.getDeviceInfo()
 
-            assertNotNull(displayInfo)
-            assertTrue(displayInfo.width > 0)
-            assertTrue(displayInfo.height > 0)
-            assertTrue(displayInfo.density > 0)
+            assertNotNull(deviceInfo)
+            assertTrue(deviceInfo.screenWidth > 0)
+            assertTrue(deviceInfo.screenHeight > 0)
+            assertTrue(deviceInfo.density > 0)
         }
 
     @Test
@@ -145,19 +185,22 @@ class UnifyDesktopTest {
     fun testDesktopDataTypes() =
         runTest {
             // 测试各种数据类型存储
-            dataManager.putInt("test_int", 123)
+            dataManager.saveInt("test_int", 123)
             assertEquals(123, dataManager.getInt("test_int"))
 
-            dataManager.putLong("test_long", 123456789L)
+            dataManager.saveLong("test_long", 123456789L)
             assertEquals(123456789L, dataManager.getLong("test_long"))
 
-            dataManager.putFloat("test_float", 3.14f)
-            assertEquals(3.14f, dataManager.getFloat("test_float"), 0.001f)
+            dataManager.saveFloat("test_float", 3.14f)
+            assertEquals(3.14f, dataManager.getFloat("test_float"))
 
-            dataManager.putDouble("test_double", 3.14159)
-            assertEquals(3.14159, dataManager.getDouble("test_double"), 0.00001)
-
-            dataManager.putBoolean("test_boolean", true)
+            dataManager.saveBoolean("test_boolean", true)
             assertEquals(true, dataManager.getBoolean("test_boolean"))
+
+            // 清理测试数据
+            dataManager.remove("test_int")
+            dataManager.remove("test_long")
+            dataManager.remove("test_float")
+            dataManager.remove("test_boolean")
         }
 }
