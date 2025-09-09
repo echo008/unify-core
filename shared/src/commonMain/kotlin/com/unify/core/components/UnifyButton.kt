@@ -33,13 +33,13 @@ enum class UnifyButtonType {
     OUTLINED,
     TEXT,
     ELEVATED,
-    TONAL
+    TONAL,
 }
 
 enum class UnifyButtonSize {
     SMALL,
     MEDIUM,
-    LARGE
+    LARGE,
 }
 
 @Composable
@@ -58,72 +58,75 @@ fun UnifyButton(
     border: BorderStroke? = null,
     elevation: androidx.compose.material3.ButtonElevation? = null,
     contentPadding: PaddingValues? = null,
-    content: (@Composable RowScope.() -> Unit)? = null
+    content: (@Composable RowScope.() -> Unit)? = null,
 ) {
-    val actualContentPadding = contentPadding ?: when (size) {
-        UnifyButtonSize.SMALL -> PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-        UnifyButtonSize.MEDIUM -> PaddingValues(horizontal = 16.dp, vertical = 8.dp)
-        UnifyButtonSize.LARGE -> PaddingValues(horizontal = 20.dp, vertical = 12.dp)
-    }
-    
-    val iconSize = when (size) {
-        UnifyButtonSize.SMALL -> 16.dp
-        UnifyButtonSize.MEDIUM -> 20.dp
-        UnifyButtonSize.LARGE -> 24.dp
-    }
-    
-    val buttonContent: @Composable RowScope.() -> Unit = content ?: {
-        if (loading) {
-            UnifyLoadingIndicator(size = iconSize)
-            if (text != null) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text)
-            }
-        } else {
-            when (iconPosition) {
-                UnifyIconPosition.START -> {
-                    if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize)
-                        )
-                        if (text != null) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                    }
-                    if (text != null) {
-                        Text(text)
-                    }
+    val actualContentPadding =
+        contentPadding ?: when (size) {
+            UnifyButtonSize.SMALL -> PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            UnifyButtonSize.MEDIUM -> PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+            UnifyButtonSize.LARGE -> PaddingValues(horizontal = 20.dp, vertical = 12.dp)
+        }
+
+    val iconSize =
+        when (size) {
+            UnifyButtonSize.SMALL -> 16.dp
+            UnifyButtonSize.MEDIUM -> 20.dp
+            UnifyButtonSize.LARGE -> 24.dp
+        }
+
+    val buttonContent: @Composable RowScope.() -> Unit =
+        content ?: {
+            if (loading) {
+                UnifyLoadingIndicator(size = iconSize)
+                if (text != null) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text)
                 }
-                UnifyIconPosition.END -> {
-                    if (text != null) {
-                        Text(text)
+            } else {
+                when (iconPosition) {
+                    UnifyIconPosition.START -> {
                         if (icon != null) {
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize),
+                            )
+                            if (text != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                        if (text != null) {
+                            Text(text)
                         }
                     }
-                    if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize)
-                        )
+                    UnifyIconPosition.END -> {
+                        if (text != null) {
+                            Text(text)
+                            if (icon != null) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                        if (icon != null) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize),
+                            )
+                        }
                     }
-                }
-                UnifyIconPosition.ONLY -> {
-                    if (icon != null) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize)
-                        )
+                    UnifyIconPosition.ONLY -> {
+                        if (icon != null) {
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = null,
+                                modifier = Modifier.size(iconSize),
+                            )
+                        }
                     }
                 }
             }
         }
-    }
-    
+
     when (type) {
         UnifyButtonType.FILLED -> {
             Button(
@@ -135,7 +138,7 @@ fun UnifyButton(
                 elevation = elevation,
                 border = border,
                 contentPadding = actualContentPadding,
-                content = buttonContent
+                content = buttonContent,
             )
         }
         UnifyButtonType.OUTLINED -> {
@@ -148,7 +151,7 @@ fun UnifyButton(
                 elevation = elevation,
                 border = border,
                 contentPadding = actualContentPadding,
-                content = buttonContent
+                content = buttonContent,
             )
         }
         UnifyButtonType.TEXT -> {
@@ -161,7 +164,7 @@ fun UnifyButton(
                 elevation = elevation,
                 border = border,
                 contentPadding = actualContentPadding,
-                content = buttonContent
+                content = buttonContent,
             )
         }
         UnifyButtonType.ELEVATED -> {
@@ -174,7 +177,7 @@ fun UnifyButton(
                 elevation = elevation ?: ButtonDefaults.elevatedButtonElevation(),
                 border = border,
                 contentPadding = actualContentPadding,
-                content = buttonContent
+                content = buttonContent,
             )
         }
         UnifyButtonType.TONAL -> {
@@ -187,7 +190,7 @@ fun UnifyButton(
                 elevation = elevation,
                 border = border,
                 contentPadding = actualContentPadding,
-                content = buttonContent
+                content = buttonContent,
             )
         }
     }
@@ -196,18 +199,18 @@ fun UnifyButton(
 enum class UnifyIconPosition {
     START,
     END,
-    ONLY
+    ONLY,
 }
 
 @Composable
 fun UnifyLoadingIndicator(
     modifier: Modifier = Modifier,
     size: Dp = 20.dp,
-    color: Color = MaterialTheme.colorScheme.onPrimary
+    color: Color = MaterialTheme.colorScheme.onPrimary,
 ) {
     androidx.compose.material3.CircularProgressIndicator(
         modifier = modifier.size(size),
         color = color,
-        strokeWidth = 2.dp
+        strokeWidth = 2.dp,
     )
 }

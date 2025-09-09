@@ -2,11 +2,12 @@ package com.unify.ui.components.platform
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -16,7 +17,6 @@ import androidx.compose.ui.window.DialogProperties
  * 提供桌面端特有的UI组件和交互方式
  */
 object DesktopUnifyPlatformAdapters {
-    
     /**
      * Desktop平台对话框
      */
@@ -27,44 +27,47 @@ object DesktopUnifyPlatformAdapters {
         content: @Composable () -> Unit,
         confirmButton: @Composable () -> Unit,
         dismissButton: @Composable (() -> Unit)? = null,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Dialog(
             onDismissRequest = onDismissRequest,
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
-                usePlatformDefaultWidth = false
-            )
+            properties =
+                DialogProperties(
+                    dismissOnBackPress = true,
+                    dismissOnClickOutside = true,
+                    usePlatformDefaultWidth = false,
+                ),
         ) {
             Card(
-                modifier = modifier
-                    .fillMaxWidth(0.8f)
-                    .wrapContentHeight(),
+                modifier =
+                    modifier
+                        .fillMaxWidth(0.8f)
+                        .wrapContentHeight(),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     // 标题
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
-                    
+
                     // 内容
                     content()
-                    
+
                     // 按钮区域
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         dismissButton?.let { dismiss ->
                             dismiss()
@@ -76,7 +79,7 @@ object DesktopUnifyPlatformAdapters {
             }
         }
     }
-    
+
     /**
      * Desktop平台工具提示
      */
@@ -84,7 +87,7 @@ object DesktopUnifyPlatformAdapters {
     fun DesktopTooltip(
         text: String,
         modifier: Modifier = Modifier,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         // Desktop平台可以使用鼠标悬停显示工具提示
         // 这里是简化实现
@@ -92,7 +95,7 @@ object DesktopUnifyPlatformAdapters {
             content()
         }
     }
-    
+
     /**
      * Desktop平台上下文菜单
      */
@@ -100,18 +103,19 @@ object DesktopUnifyPlatformAdapters {
     fun DesktopContextMenu(
         items: List<ContextMenuItem>,
         onDismiss: () -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         ) {
             Column(
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier.padding(4.dp),
             ) {
                 items.forEach { item ->
                     DropdownMenuItem(
@@ -121,15 +125,16 @@ object DesktopUnifyPlatformAdapters {
                             onDismiss()
                         },
                         enabled = item.enabled,
-                        leadingIcon = item.icon?.let { icon ->
-                            { Icon(imageVector = icon, contentDescription = null) }
-                        }
+                        leadingIcon =
+                            item.icon?.let { icon ->
+                                { Icon(imageVector = icon, contentDescription = null) }
+                            },
                     )
                 }
             }
         }
     }
-    
+
     /**
      * Desktop平台窗口控制栏
      */
@@ -138,80 +143,82 @@ object DesktopUnifyPlatformAdapters {
         onMinimize: () -> Unit,
         onMaximize: () -> Unit,
         onClose: () -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Row(
             modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // 最小化按钮
             IconButton(
                 onClick = onMinimize,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Remove,
+                    imageVector = Icons.Default.Remove,
                     contentDescription = "Minimize",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            
+
             // 最大化按钮
             IconButton(
                 onClick = onMaximize,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Fullscreen,
+                    imageVector = Icons.Default.Fullscreen,
                     contentDescription = "Maximize",
-                    tint = MaterialTheme.colorScheme.onSurface
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
-            
+
             // 关闭按钮
             IconButton(
                 onClick = onClose,
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             ) {
                 Icon(
-                    imageVector = androidx.compose.material.icons.Icons.Default.Clear,
+                    imageVector = Icons.Default.Close,
                     contentDescription = "Close",
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
                 )
             }
         }
     }
-    
+
     /**
      * Desktop平台菜单栏
      */
     @Composable
     fun DesktopMenuBar(
         menus: List<MenuBarItem>,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Row(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             menus.forEach { menu ->
                 TextButton(
                     onClick = { menu.onClick() },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurface
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
                 ) {
                     Text(
                         text = menu.text,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
             }
         }
     }
-    
+
     /**
      * Desktop平台状态栏
      */
@@ -220,48 +227,49 @@ object DesktopUnifyPlatformAdapters {
         leftContent: @Composable RowScope.() -> Unit = {},
         centerContent: @Composable RowScope.() -> Unit = {},
         rightContent: @Composable RowScope.() -> Unit = {},
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Surface(
             modifier = modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surfaceVariant,
-            tonalElevation = 1.dp
+            tonalElevation = 1.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 左侧内容
                 Row(
                     modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     leftContent()
                 }
-                
+
                 // 中间内容
                 Row(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     centerContent()
                 }
-                
+
                 // 右侧内容
                 Row(
                     modifier = Modifier.weight(1f),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     rightContent()
                 }
             }
         }
     }
-    
+
     /**
      * Desktop平台工具栏
      */
@@ -270,50 +278,52 @@ object DesktopUnifyPlatformAdapters {
         title: String,
         actions: List<ToolbarAction> = emptyList(),
         navigationIcon: (@Composable () -> Unit)? = null,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Surface(
             modifier = modifier.fillMaxWidth(),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 4.dp
+            tonalElevation = 4.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 导航图标
                 navigationIcon?.let { icon ->
                     icon()
                     Spacer(modifier = Modifier.width(16.dp))
                 }
-                
+
                 // 标题
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
-                
+
                 // 操作按钮
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     actions.forEach { action ->
                         IconButton(
                             onClick = action.onClick,
-                            enabled = action.enabled
+                            enabled = action.enabled,
                         ) {
                             Icon(
                                 imageVector = action.icon,
                                 contentDescription = action.contentDescription,
-                                tint = if (action.enabled) {
-                                    MaterialTheme.colorScheme.onSurface
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                }
+                                tint =
+                                    if (action.enabled) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    },
                             )
                         }
                     }
@@ -321,7 +331,7 @@ object DesktopUnifyPlatformAdapters {
             }
         }
     }
-    
+
     /**
      * Desktop平台分割面板
      */
@@ -330,33 +340,36 @@ object DesktopUnifyPlatformAdapters {
         leftContent: @Composable () -> Unit,
         rightContent: @Composable () -> Unit,
         splitRatio: Float = 0.5f,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Row(
-            modifier = modifier.fillMaxSize()
+            modifier = modifier.fillMaxSize(),
         ) {
             // 左侧面板
             Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(splitRatio)
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .weight(splitRatio),
             ) {
                 leftContent()
             }
-            
+
             // 分割线
             Divider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outline
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(1.dp),
+                color = MaterialTheme.colorScheme.outline,
             )
-            
+
             // 右侧面板
             Box(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .weight(1f - splitRatio)
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .weight(1f - splitRatio),
             ) {
                 rightContent()
             }
@@ -371,7 +384,7 @@ data class ContextMenuItem(
     val text: String,
     val onClick: () -> Unit,
     val enabled: Boolean = true,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null
+    val icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 )
 
 /**
@@ -379,7 +392,7 @@ data class ContextMenuItem(
  */
 data class MenuBarItem(
     val text: String,
-    val onClick: () -> Unit
+    val onClick: () -> Unit,
 )
 
 /**
@@ -389,5 +402,97 @@ data class ToolbarAction(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val contentDescription: String,
     val onClick: () -> Unit,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
+
+/**
+ * Desktop平台适配器工厂actual实现
+ */
+actual object UnifyPlatformAdapterFactory {
+    actual fun createAdapter(): UnifyPlatformAdapter {
+        return DesktopUnifyPlatformAdapter()
+    }
+}
+
+/**
+ * Desktop平台适配器实现
+ */
+class DesktopUnifyPlatformAdapter : UnifyPlatformAdapter {
+    override fun getPlatformName(): String = "Desktop"
+
+    override fun getPlatformVersion(): String = System.getProperty("os.version")
+
+    override fun isFeatureSupported(feature: PlatformFeature): Boolean {
+        return when (feature) {
+            PlatformFeature.CAMERA -> false
+            PlatformFeature.MICROPHONE -> true
+            PlatformFeature.GPS -> false
+            PlatformFeature.BLUETOOTH -> true
+            PlatformFeature.NFC -> false
+            PlatformFeature.BIOMETRIC -> false
+            PlatformFeature.PUSH_NOTIFICATIONS -> true
+            PlatformFeature.BACKGROUND_PROCESSING -> true
+            PlatformFeature.FILE_SYSTEM -> true
+            PlatformFeature.NETWORK -> true
+            PlatformFeature.SENSORS -> false
+            PlatformFeature.VIBRATION -> false
+            PlatformFeature.FLASHLIGHT -> false
+            PlatformFeature.CONTACTS -> false
+            PlatformFeature.CALENDAR -> false
+            PlatformFeature.PHONE -> false
+            PlatformFeature.SMS -> false
+            PlatformFeature.EMAIL -> true
+            PlatformFeature.MAPS -> false
+            PlatformFeature.PAYMENTS -> false
+        }
+    }
+
+    override fun getDeviceInfo(): DeviceInfo {
+        val toolkit = java.awt.Toolkit.getDefaultToolkit()
+        val screenSize = toolkit.screenSize
+        val runtime = Runtime.getRuntime()
+
+        return DeviceInfo(
+            deviceId = "desktop-${System.getProperty("user.name")}",
+            deviceName = "Desktop Computer",
+            manufacturer = "Unknown",
+            model = "Desktop",
+            brand = "Generic",
+            osVersion = System.getProperty("os.version"),
+            apiLevel = 0,
+            screenWidth = screenSize.width,
+            screenHeight = screenSize.height,
+            density = toolkit.screenResolution.toFloat(),
+            isTablet = false,
+            isEmulator = false,
+            totalMemory = runtime.totalMemory(),
+            availableMemory = runtime.freeMemory(),
+            totalStorage = 0L, // 简化实现
+            availableStorage = 0L, // 简化实现
+        )
+    }
+
+    override fun getSystemInfo(): SystemInfo {
+        return SystemInfo(
+            platformType = PlatformType.DESKTOP,
+            architecture = System.getProperty("os.arch"),
+            locale = java.util.Locale.getDefault().toString(),
+            timezone = java.util.TimeZone.getDefault().id,
+            batteryLevel = 1.0f, // Desktop通常不显示电池
+            isCharging = false,
+            networkType = NetworkType.WIFI, // 简化实现
+            isOnline = true, // 简化实现
+            isDarkMode = false, // 简化实现
+            systemFeatures =
+                listOf(
+                    PlatformFeature.MICROPHONE,
+                    PlatformFeature.BLUETOOTH,
+                    PlatformFeature.PUSH_NOTIFICATIONS,
+                    PlatformFeature.BACKGROUND_PROCESSING,
+                    PlatformFeature.FILE_SYSTEM,
+                    PlatformFeature.NETWORK,
+                    PlatformFeature.EMAIL,
+                ),
+        )
+    }
+}

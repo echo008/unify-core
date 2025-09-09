@@ -22,7 +22,7 @@ expect fun UnifyImage(
     contentScale: ContentScale = ContentScale.Fit,
     alpha: Float = DefaultAlpha,
     colorFilter: ColorFilter? = null,
-    filterQuality: FilterQuality = FilterQuality.Medium
+    filterQuality: FilterQuality = FilterQuality.Medium,
 )
 
 /**
@@ -36,7 +36,7 @@ expect fun UnifyResourceImage(
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Fit,
     alpha: Float = DefaultAlpha,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
 )
 
 /**
@@ -48,7 +48,7 @@ expect fun UnifyAvatar(
     name: String,
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 40.dp,
-    backgroundColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray
+    backgroundColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray,
 )
 
 /**
@@ -59,5 +59,5 @@ expect fun UnifyImagePlaceholder(
     modifier: Modifier = Modifier,
     backgroundColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.LightGray,
     cornerRadius: androidx.compose.ui.unit.Dp = 0.dp,
-    content: (@Composable () -> Unit)? = null
+    content: (@Composable () -> Unit)? = null,
 )

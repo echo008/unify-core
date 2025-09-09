@@ -12,16 +12,28 @@ import kotlinx.coroutines.flow.Flow
  */
 
 enum class SensorType {
-    ACCELEROMETER, GYROSCOPE, MAGNETOMETER, GRAVITY, LINEAR_ACCELERATION,
-    ROTATION_VECTOR, ORIENTATION, PROXIMITY, LIGHT, PRESSURE, TEMPERATURE,
-    HUMIDITY, HEART_RATE, STEP_COUNTER, STEP_DETECTOR
+    ACCELEROMETER,
+    GYROSCOPE,
+    MAGNETOMETER,
+    GRAVITY,
+    LINEAR_ACCELERATION,
+    ROTATION_VECTOR,
+    ORIENTATION,
+    PROXIMITY,
+    LIGHT,
+    PRESSURE,
+    TEMPERATURE,
+    HUMIDITY,
+    HEART_RATE,
+    STEP_COUNTER,
+    STEP_DETECTOR,
 }
 
 data class SensorData(
     val type: SensorType,
     val values: FloatArray,
     val accuracy: Int,
-    val timestamp: Long
+    val timestamp: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -50,11 +62,14 @@ expect fun UnifySensorMonitor(
     modifier: Modifier = Modifier,
     samplingRate: SensorSamplingRate = SensorSamplingRate.NORMAL,
     showRealTimeData: Boolean = true,
-    maxDataPoints: Int = 100
+    maxDataPoints: Int = 100,
 )
 
 enum class SensorSamplingRate {
-    FASTEST, GAME, UI, NORMAL
+    FASTEST,
+    GAME,
+    UI,
+    NORMAL,
 }
 
 @Composable
@@ -64,7 +79,7 @@ expect fun UnifyAccelerometerView(
     showGraph: Boolean = true,
     showValues: Boolean = true,
     graphColor: Color = Color.Blue,
-    maxDataPoints: Int = 50
+    maxDataPoints: Int = 50,
 )
 
 @Composable
@@ -74,7 +89,7 @@ expect fun UnifyGyroscopeView(
     showGraph: Boolean = true,
     showValues: Boolean = true,
     graphColor: Color = Color.Green,
-    maxDataPoints: Int = 50
+    maxDataPoints: Int = 50,
 )
 
 @Composable
@@ -85,7 +100,7 @@ expect fun UnifyMagnetometerView(
     showValues: Boolean = true,
     showCompass: Boolean = true,
     graphColor: Color = Color.Red,
-    maxDataPoints: Int = 50
+    maxDataPoints: Int = 50,
 )
 
 @Composable
@@ -95,14 +110,14 @@ expect fun UnifyMotionDetector(
     sensitivity: Float = 0.5f,
     enableShakeDetection: Boolean = true,
     enableTiltDetection: Boolean = true,
-    enableRotationDetection: Boolean = true
+    enableRotationDetection: Boolean = true,
 )
 
 data class MotionEvent(
     val type: MotionType,
     val intensity: Float,
     val direction: FloatArray,
-    val timestamp: Long
+    val timestamp: Long,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -125,7 +140,11 @@ data class MotionEvent(
 }
 
 enum class MotionType {
-    SHAKE, TILT, ROTATION, TAP, DOUBLE_TAP
+    SHAKE,
+    TILT,
+    ROTATION,
+    TAP,
+    DOUBLE_TAP,
 }
 
 @Composable
@@ -137,7 +156,7 @@ expect fun UnifyEnvironmentSensor(
     showHumidity: Boolean = true,
     showPressure: Boolean = true,
     showLight: Boolean = true,
-    updateInterval: Long = 1000L
+    updateInterval: Long = 1000L,
 )
 
 @Composable
@@ -147,7 +166,7 @@ expect fun UnifyHealthSensor(
     enableHeartRate: Boolean = true,
     enableStepCounter: Boolean = true,
     enableCalories: Boolean = true,
-    showRealTimeChart: Boolean = true
+    showRealTimeChart: Boolean = true,
 )
 
 data class HealthData(
@@ -155,7 +174,7 @@ data class HealthData(
     val stepCount: Int = 0,
     val calories: Float = 0f,
     val distance: Float = 0f,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 @Composable
@@ -164,7 +183,7 @@ expect fun UnifyProximitySensor(
     modifier: Modifier = Modifier,
     showIndicator: Boolean = true,
     indicatorColor: Color = Color(0xFFFFA500),
-    threshold: Float = 5.0f
+    threshold: Float = 5.0f,
 )
 
 @Composable
@@ -174,5 +193,5 @@ expect fun UnifyLightSensor(
     showLux: Boolean = true,
     showBrightness: Boolean = true,
     autoAdjustTheme: Boolean = false,
-    lightThreshold: Float = 100f
+    lightThreshold: Float = 100f,
 )

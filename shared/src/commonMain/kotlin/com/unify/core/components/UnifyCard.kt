@@ -1,10 +1,7 @@
 package com.unify.core.components
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,7 +24,7 @@ enum class UnifyCardType {
     FILLED,
     ELEVATED,
     OUTLINED,
-    TONAL
+    TONAL,
 }
 
 @Composable
@@ -40,7 +37,7 @@ fun UnifyCard(
     colors: androidx.compose.material3.CardColors? = null,
     elevation: androidx.compose.material3.CardElevation? = null,
     border: BorderStroke? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     when (type) {
         UnifyCardType.FILLED -> {
@@ -53,7 +50,7 @@ fun UnifyCard(
                     colors = colors ?: CardDefaults.cardColors(),
                     elevation = elevation ?: CardDefaults.cardElevation(),
                     border = border,
-                    content = content
+                    content = content,
                 )
             } else {
                 Card(
@@ -62,7 +59,7 @@ fun UnifyCard(
                     colors = colors ?: CardDefaults.cardColors(),
                     elevation = elevation ?: CardDefaults.cardElevation(),
                     border = border,
-                    content = content
+                    content = content,
                 )
             }
         }
@@ -75,7 +72,7 @@ fun UnifyCard(
                     shape = shape,
                     colors = colors ?: CardDefaults.elevatedCardColors(),
                     elevation = elevation ?: CardDefaults.elevatedCardElevation(),
-                    content = content
+                    content = content,
                 )
             } else {
                 ElevatedCard(
@@ -83,7 +80,7 @@ fun UnifyCard(
                     shape = shape,
                     colors = colors ?: CardDefaults.elevatedCardColors(),
                     elevation = elevation ?: CardDefaults.elevatedCardElevation(),
-                    content = content
+                    content = content,
                 )
             }
         }
@@ -97,7 +94,7 @@ fun UnifyCard(
                     colors = colors ?: CardDefaults.outlinedCardColors(),
                     elevation = elevation ?: CardDefaults.outlinedCardElevation(),
                     border = border ?: CardDefaults.outlinedCardBorder(),
-                    content = content
+                    content = content,
                 )
             } else {
                 OutlinedCard(
@@ -106,7 +103,7 @@ fun UnifyCard(
                     colors = colors ?: CardDefaults.outlinedCardColors(),
                     elevation = elevation ?: CardDefaults.outlinedCardElevation(),
                     border = border ?: CardDefaults.outlinedCardBorder(),
-                    content = content
+                    content = content,
                 )
             }
         }
@@ -117,23 +114,25 @@ fun UnifyCard(
                     modifier = modifier,
                     enabled = enabled,
                     shape = shape,
-                    colors = colors ?: CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    ),
+                    colors =
+                        colors ?: CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        ),
                     elevation = elevation ?: CardDefaults.cardElevation(),
                     border = border,
-                    content = content
+                    content = content,
                 )
             } else {
                 Card(
                     modifier = modifier,
                     shape = shape,
-                    colors = colors ?: CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    ),
+                    colors =
+                        colors ?: CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        ),
                     elevation = elevation ?: CardDefaults.cardElevation(),
                     border = border,
-                    content = content
+                    content = content,
                 )
             }
         }
@@ -152,7 +151,7 @@ fun UnifySurface(
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
     border: BorderStroke? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
@@ -162,7 +161,7 @@ fun UnifySurface(
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         border = border,
-        content = content
+        content = content,
     )
 }
 
@@ -181,7 +180,7 @@ fun UnifyClickableSurface(
     shadowElevation: Dp = 0.dp,
     border: BorderStroke? = null,
     interactionSource: androidx.compose.foundation.interaction.MutableInteractionSource? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         onClick = onClick,
@@ -194,6 +193,6 @@ fun UnifyClickableSurface(
         shadowElevation = shadowElevation,
         border = border,
         interactionSource = interactionSource ?: androidx.compose.foundation.interaction.MutableInteractionSource(),
-        content = content
+        content = content,
     )
 }

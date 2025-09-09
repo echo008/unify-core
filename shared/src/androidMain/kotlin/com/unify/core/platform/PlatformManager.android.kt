@@ -3,20 +3,19 @@ package com.unify.core.platform
 import android.content.Context
 import android.os.Build
 import android.provider.Settings
-import com.unify.core.types.PlatformType
 import com.unify.core.types.DeviceInfo
+import com.unify.core.types.PlatformType
 
 /**
  * Android平台管理器实现
  */
 class AndroidPlatformManager(private val context: Context) : BasePlatformManager() {
-    
     override fun getPlatformType(): PlatformType = PlatformType.ANDROID
-    
+
     override fun getPlatformName(): String = "Android"
-    
+
     override fun getPlatformVersion(): String = Build.VERSION.RELEASE
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = Build.MANUFACTURER,
@@ -24,10 +23,10 @@ class AndroidPlatformManager(private val context: Context) : BasePlatformManager
             systemName = "Android",
             systemVersion = Build.VERSION.RELEASE,
             deviceId = Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID),
-            isEmulator = isEmulator()
+            isEmulator = isEmulator(),
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean {
         return when (capability) {
             "camera" -> context.packageManager.hasSystemFeature("android.hardware.camera")
@@ -45,10 +44,10 @@ class AndroidPlatformManager(private val context: Context) : BasePlatformManager
             else -> false
         }
     }
-    
+
     override fun getSupportedCapabilities(): List<String> {
         val capabilities = mutableListOf<String>()
-        
+
         if (hasCapability("camera")) capabilities.add("camera")
         if (hasCapability("gps")) capabilities.add("gps")
         if (hasCapability("bluetooth")) capabilities.add("bluetooth")
@@ -61,10 +60,10 @@ class AndroidPlatformManager(private val context: Context) : BasePlatformManager
         if (hasCapability("microphone")) capabilities.add("microphone")
         if (hasCapability("telephony")) capabilities.add("telephony")
         if (hasCapability("vibration")) capabilities.add("vibration")
-        
+
         return capabilities
     }
-    
+
     override suspend fun performPlatformInitialization() {
         // Android特定初始化
         config["api_level"] = Build.VERSION.SDK_INT.toString()
@@ -83,21 +82,23 @@ class AndroidPlatformManager(private val context: Context) : BasePlatformManager
         config["type"] = Build.TYPE
         config["user"] = Build.USER
     }
-    
+
     override suspend fun performPlatformCleanup() {
         // Android特定清理
         config.clear()
     }
-    
+
     private fun isEmulator(): Boolean {
-        return (Build.FINGERPRINT.startsWith("generic")
-                || Build.FINGERPRINT.startsWith("unknown")
-                || Build.MODEL.contains("google_sdk")
-                || Build.MODEL.contains("Emulator")
-                || Build.MODEL.contains("Android SDK built for x86")
-                || Build.MANUFACTURER.contains("Genymotion")
-                || (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic"))
-                || "google_sdk" == Build.PRODUCT)
+        return (
+            Build.FINGERPRINT.startsWith("generic") ||
+                Build.FINGERPRINT.startsWith("unknown") ||
+                Build.MODEL.contains("google_sdk") ||
+                Build.MODEL.contains("Emulator") ||
+                Build.MODEL.contains("Android SDK built for x86") ||
+                Build.MANUFACTURER.contains("Genymotion") ||
+                (Build.BRAND.startsWith("generic") && Build.DEVICE.startsWith("generic")) ||
+                "google_sdk" == Build.PRODUCT
+        )
     }
 }
 

@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -18,13 +17,13 @@ actual fun UnifyVideoPlayer(
     showControls: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Video Player: ${mediaItem.title}")
             Row {
@@ -49,13 +48,13 @@ actual fun UnifyAudioPlayer(
     showWaveform: Boolean,
     onPlaybackStateChange: (PlaybackState) -> Unit,
     onProgressChange: (PlaybackProgress) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Audio Player: ${mediaItem.title}")
             Row {
@@ -80,13 +79,13 @@ actual fun UnifyImageViewer(
     enableZoom: Boolean,
     enableSwipe: Boolean,
     showIndicator: Boolean,
-    onImageClick: (Int) -> Unit
+    onImageClick: (Int) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Image Viewer: ${images.size} images")
             if (images.isNotEmpty()) {
@@ -115,19 +114,19 @@ actual fun UnifyMediaGallery(
     showPlayIcon: Boolean,
     enableSelection: Boolean,
     selectedItems: Set<String>,
-    onSelectionChange: (Set<String>) -> Unit
+    onSelectionChange: (Set<String>) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Media Gallery (${mediaItems.size} items)")
             mediaItems.take(3).forEach { item ->
                 Button(
                     onClick = { onItemSelected(item) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("${item.type}: ${item.title}")
                 }
@@ -144,13 +143,13 @@ actual fun UnifyLiveStream(
     enableChat: Boolean,
     onChatMessage: (String) -> Unit,
     onViewerCountChange: (Int) -> Unit,
-    onStreamStateChange: (PlaybackState) -> Unit
+    onStreamStateChange: (PlaybackState) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Live Stream: $streamUrl")
             Button(onClick = { onStreamStateChange(PlaybackState.PLAYING) }) {
@@ -173,13 +172,13 @@ actual fun UnifyMediaRecorder(
     maxDuration: Long,
     quality: RecordingQuality,
     showTimer: Boolean,
-    enablePause: Boolean
+    enablePause: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Media Recorder: $mediaType")
             Text("Quality: $quality, Max: ${maxDuration}ms")
@@ -210,13 +209,13 @@ actual fun UnifyMediaControls(
     onFullscreen: () -> Unit,
     showSpeed: Boolean,
     playbackSpeed: Float,
-    onSpeedChange: (Float) -> Unit
+    onSpeedChange: (Float) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Media Controls - State: $playbackState")
             Row {
@@ -233,7 +232,7 @@ actual fun UnifyMediaControls(
             Text("${progress.currentPosition}ms / ${progress.duration}ms")
             Slider(
                 value = if (progress.duration > 0) progress.currentPosition.toFloat() / progress.duration else 0f,
-                onValueChange = { onSeek((it * progress.duration).toLong()) }
+                onValueChange = { onSeek((it * progress.duration).toLong()) },
             )
         }
     }
@@ -246,13 +245,13 @@ actual fun UnifyMediaThumbnail(
     size: Dp,
     showDuration: Boolean,
     showPlayIcon: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
-        modifier = modifier.size(size)
+        modifier = modifier.size(size),
     ) {
         Column(
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
         ) {
             Text("Thumbnail")
             Text(mediaItem.title, maxLines = 1)
@@ -275,24 +274,25 @@ actual fun UnifyMediaUploader(
     allowedTypes: Set<MediaType>,
     maxFileSize: Long,
     maxFiles: Int,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Media Uploader")
             Text("Max size: ${maxFileSize / 1024 / 1024}MB, Max files: $maxFiles")
             Text("Allowed: ${allowedTypes.joinToString()}")
-            Button(onClick = { 
-                val sampleMedia = MediaItem(
-                    id = "1",
-                    title = "Sample Media",
-                    url = "sample.mp4",
-                    type = MediaType.VIDEO
-                )
+            Button(onClick = {
+                val sampleMedia =
+                    MediaItem(
+                        id = "1",
+                        title = "Sample Media",
+                        url = "sample.mp4",
+                        type = MediaType.VIDEO,
+                    )
                 onMediaSelected(listOf(sampleMedia))
             }) {
                 Text("Select Files")

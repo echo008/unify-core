@@ -23,57 +23,60 @@ actual fun UnifyCamera(
     modifier: Modifier,
     showControls: Boolean,
     enableGestures: Boolean,
-    onPermissionDenied: () -> Unit
+    onPermissionDenied: () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color.Black),
     ) {
         // Camera preview placeholder
         Card(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         ) {
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = "Camera",
                     modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     text = "Camera Preview",
                     style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = "Mode: ${config.mode}",
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = "Facing: ${config.facing}",
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
         }
-        
+
         if (showControls) {
             CameraControls(
                 config = config,
                 onCaptureResult = onCaptureResult,
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
@@ -84,34 +87,35 @@ actual fun UnifyCameraPreview(
     config: CameraConfig,
     modifier: Modifier,
     onCameraReady: () -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     LaunchedEffect(Unit) {
         onCameraReady()
     }
-    
+
     Card(
         modifier = modifier.fillMaxSize(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             Icon(
                 imageVector = Icons.Default.Videocam,
                 contentDescription = "Camera Preview",
                 modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = "Camera Preview",
                 style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -123,33 +127,34 @@ actual fun UnifyImageCapture(
     modifier: Modifier,
     facing: CameraFacing,
     flashMode: FlashMode,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     Column(modifier = modifier) {
         if (showPreview) {
             UnifyCameraPreview(
                 config = CameraConfig(facing = facing, flashMode = flashMode),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
-        
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            horizontalArrangement = Arrangement.Center,
         ) {
             FloatingActionButton(
                 onClick = {
                     // Simulate image capture
                     // onImageCaptured would be called with actual ImageBitmap
                 },
-                modifier = Modifier.size(64.dp)
+                modifier = Modifier.size(64.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.CameraAlt,
                     contentDescription = "Capture Photo",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
             }
         }
@@ -163,27 +168,29 @@ actual fun UnifyVideoCapture(
     facing: CameraFacing,
     quality: VideoQuality,
     maxDuration: Long,
-    showPreview: Boolean
+    showPreview: Boolean,
 ) {
     var isRecording by remember { mutableStateOf(false) }
-    
+
     Column(modifier = modifier) {
         if (showPreview) {
             UnifyCameraPreview(
-                config = CameraConfig(
-                    facing = facing,
-                    mode = CameraMode.VIDEO,
-                    videoQuality = quality
-                ),
-                modifier = Modifier.weight(1f)
+                config =
+                    CameraConfig(
+                        facing = facing,
+                        mode = CameraMode.VIDEO,
+                        videoQuality = quality,
+                    ),
+                modifier = Modifier.weight(1f),
             )
         }
-        
+
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            horizontalArrangement = Arrangement.Center,
         ) {
             FloatingActionButton(
                 onClick = {
@@ -194,23 +201,27 @@ actual fun UnifyVideoCapture(
                     }
                 },
                 modifier = Modifier.size(64.dp),
-                containerColor = if (isRecording) 
-                    MaterialTheme.colorScheme.error 
-                else MaterialTheme.colorScheme.primary
+                containerColor =
+                    if (isRecording) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    },
             ) {
                 Icon(
                     imageVector = if (isRecording) Icons.Default.Stop else Icons.Default.Videocam,
                     contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
-                    modifier = Modifier.size(32.dp)
+                    modifier = Modifier.size(32.dp),
                 )
             }
         }
-        
+
         if (isRecording) {
             LinearProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
             )
         }
     }
@@ -222,45 +233,47 @@ actual fun UnifyQRScanner(
     modifier: Modifier,
     showOverlay: Boolean,
     overlayColor: Color,
-    enableFlash: Boolean
+    enableFlash: Boolean,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         UnifyCameraPreview(
             config = CameraConfig(mode = CameraMode.SCAN),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
-        
+
         if (showOverlay) {
             QRScannerOverlay(
                 overlayColor = overlayColor,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
-        
+
         if (enableFlash) {
             FloatingActionButton(
                 onClick = { /* Toggle flash */ },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.FlashOn,
-                    contentDescription = "Toggle Flash"
+                    contentDescription = "Toggle Flash",
                 )
             }
         }
-        
+
         Card(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
         ) {
             Text(
                 text = "Point camera at QR code",
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -272,53 +285,55 @@ actual fun UnifyBarcodeScanner(
     modifier: Modifier,
     supportedFormats: List<String>,
     showOverlay: Boolean,
-    enableFlash: Boolean
+    enableFlash: Boolean,
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         UnifyCameraPreview(
             config = CameraConfig(mode = CameraMode.SCAN),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
-        
+
         if (showOverlay) {
             BarcodeScannerOverlay(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
-        
+
         if (enableFlash) {
             FloatingActionButton(
                 onClick = { /* Toggle flash */ },
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.FlashOn,
-                    contentDescription = "Toggle Flash"
+                    contentDescription = "Toggle Flash",
                 )
             }
         }
-        
+
         Card(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(16.dp)
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = "Point camera at barcode",
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
                 Text(
                     text = "Supported: ${supportedFormats.joinToString(", ")}",
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -329,61 +344,65 @@ actual fun UnifyBarcodeScanner(
 private fun CameraControls(
     config: CameraConfig,
     onCaptureResult: (CaptureResult) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // Flash toggle
         IconButton(
-            onClick = { /* Toggle flash */ }
+            onClick = { /* Toggle flash */ },
         ) {
             Icon(
-                imageVector = when (config.flashMode) {
-                    FlashMode.OFF -> Icons.Default.FlashOff
-                    FlashMode.ON -> Icons.Default.FlashOn
-                    FlashMode.AUTO -> Icons.Default.FlashAuto
-                    FlashMode.TORCH -> Icons.Default.FlashOn
-                },
+                imageVector =
+                    when (config.flashMode) {
+                        FlashMode.OFF -> Icons.Default.FlashOff
+                        FlashMode.ON -> Icons.Default.FlashOn
+                        FlashMode.AUTO -> Icons.Default.FlashAuto
+                        FlashMode.TORCH -> Icons.Default.FlashOn
+                    },
                 contentDescription = "Flash",
-                tint = Color.White
+                tint = Color.White,
             )
         }
-        
+
         // Capture button
         FloatingActionButton(
             onClick = {
-                val result = CaptureResult(
-                    success = true,
-                    filePath = "mock_capture_${System.currentTimeMillis()}.jpg"
-                )
+                val result =
+                    CaptureResult(
+                        success = true,
+                        filePath = "mock_capture_${System.currentTimeMillis()}.jpg",
+                    )
                 onCaptureResult(result)
             },
-            modifier = Modifier.size(64.dp)
+            modifier = Modifier.size(64.dp),
         ) {
             Icon(
-                imageVector = when (config.mode) {
-                    CameraMode.PHOTO -> Icons.Default.CameraAlt
-                    CameraMode.VIDEO -> Icons.Default.Videocam
-                    CameraMode.SCAN -> Icons.Default.QrCodeScanner
-                },
+                imageVector =
+                    when (config.mode) {
+                        CameraMode.PHOTO -> Icons.Default.CameraAlt
+                        CameraMode.VIDEO -> Icons.Default.Videocam
+                        CameraMode.SCAN -> Icons.Default.QrCodeScanner
+                    },
                 contentDescription = "Capture",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
         }
-        
+
         // Switch camera
         IconButton(
-            onClick = { /* Switch camera */ }
+            onClick = { /* Switch camera */ },
         ) {
             Icon(
                 imageVector = Icons.Default.FlipCameraAndroid,
                 contentDescription = "Switch Camera",
-                tint = Color.White
+                tint = Color.White,
             )
         }
     }
@@ -392,36 +411,39 @@ private fun CameraControls(
 @Composable
 private fun QRScannerOverlay(
     overlayColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .size(200.dp)
-                .background(
-                    color = overlayColor.copy(alpha = 0.3f),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                )
+            modifier =
+                Modifier
+                    .size(200.dp)
+                    .background(
+                        color = overlayColor.copy(alpha = 0.3f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    ),
         ) {
             // Corner indicators
             repeat(4) { index ->
-                val alignment = when (index) {
-                    0 -> Alignment.TopStart
-                    1 -> Alignment.TopEnd
-                    2 -> Alignment.BottomStart
-                    else -> Alignment.BottomEnd
-                }
+                val alignment =
+                    when (index) {
+                        0 -> Alignment.TopStart
+                        1 -> Alignment.TopEnd
+                        2 -> Alignment.BottomStart
+                        else -> Alignment.BottomEnd
+                    }
                 Box(
-                    modifier = Modifier
-                        .align(alignment)
-                        .size(20.dp)
-                        .background(
-                            color = overlayColor,
-                            shape = CircleShape
-                        )
+                    modifier =
+                        Modifier
+                            .align(alignment)
+                            .size(20.dp)
+                            .background(
+                                color = overlayColor,
+                                shape = CircleShape,
+                            ),
                 )
             }
         }
@@ -429,21 +451,20 @@ private fun QRScannerOverlay(
 }
 
 @Composable
-private fun BarcodeScannerOverlay(
-    modifier: Modifier = Modifier
-) {
+private fun BarcodeScannerOverlay(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(100.dp)
-                .background(
-                    color = Color.Red.copy(alpha = 0.3f),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
-                )
+            modifier =
+                Modifier
+                    .fillMaxWidth(0.8f)
+                    .height(100.dp)
+                    .background(
+                        color = Color.Red.copy(alpha = 0.3f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+                    ),
         )
     }
 }

@@ -1,7 +1,4 @@
 package com.unify.ui.screens
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unify.core.platform.getCurrentTimeMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -23,7 +21,7 @@ import kotlinx.coroutines.launch
 fun PerformanceScreen() {
     var performanceData by remember { mutableStateOf(PerformanceData()) }
     val scope = rememberCoroutineScope()
-    
+
     LaunchedEffect(Unit) {
         scope.launch {
             while (true) {
@@ -32,62 +30,77 @@ fun PerformanceScreen() {
             }
         }
     }
-    
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
     ) {
         Text(
             text = "性能监控",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
         )
-        
+
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item {
                 PerformanceMetricCard(
                     title = "CPU使用率",
                     value = "${performanceData.cpuUsage}%",
-                    color = getColorForPercentage(performanceData.cpuUsage)
+                    color = getColorForPercentage(performanceData.cpuUsage),
                 )
             }
-            
+
             item {
                 PerformanceMetricCard(
                     title = "内存使用",
                     value = "${performanceData.memoryUsage}MB / ${performanceData.totalMemory}MB",
-                    color = getColorForPercentage((performanceData.memoryUsage * 100 / performanceData.totalMemory).toInt())
+                    color = getColorForPercentage((performanceData.memoryUsage * 100 / performanceData.totalMemory).toInt()),
                 )
             }
-            
+
             item {
                 PerformanceMetricCard(
                     title = "帧率",
                     value = "${performanceData.fps} FPS",
-                    color = if (performanceData.fps >= 60) Color.Green else if (performanceData.fps >= 30) Color.Yellow else Color.Red
+                    color =
+                        if (performanceData.fps >= 60) {
+                            Color.Green
+                        } else if (performanceData.fps >= 30) {
+                            Color.Yellow
+                        } else {
+                            Color.Red
+                        },
                 )
             }
-            
+
             item {
                 PerformanceMetricCard(
                     title = "网络延迟",
                     value = "${performanceData.networkLatency}ms",
-                    color = if (performanceData.networkLatency < 100) Color.Green else if (performanceData.networkLatency < 300) Color.Yellow else Color.Red
+                    color =
+                        if (performanceData.networkLatency < 100) {
+                            Color.Green
+                        } else if (performanceData.networkLatency < 300) {
+                            Color.Yellow
+                        } else {
+                            Color.Red
+                        },
                 )
             }
-            
+
             item {
                 PerformanceMetricCard(
                     title = "电池使用",
                     value = "${performanceData.batteryLevel}%",
-                    color = getColorForBattery(performanceData.batteryLevel)
+                    color = getColorForBattery(performanceData.batteryLevel),
                 )
             }
-            
+
             items(performanceData.recentEvents) { event ->
                 PerformanceEventCard(event = event)
             }
@@ -99,29 +112,30 @@ fun PerformanceScreen() {
 private fun PerformanceMetricCard(
     title: String,
     value: String,
-    color: Color
+    color: Color,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
-                color = color
+                color = color,
             )
         }
     }
@@ -131,37 +145,39 @@ private fun PerformanceMetricCard(
 private fun PerformanceEventCard(event: PerformanceEvent) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when (event.severity) {
-                EventSeverity.HIGH -> MaterialTheme.colorScheme.errorContainer
-                EventSeverity.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer
-                EventSeverity.LOW -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    when (event.severity) {
+                        EventSeverity.HIGH -> MaterialTheme.colorScheme.errorContainer
+                        EventSeverity.MEDIUM -> MaterialTheme.colorScheme.secondaryContainer
+                        EventSeverity.LOW -> MaterialTheme.colorScheme.surfaceVariant
+                    },
+            ),
     ) {
         Column(
-            modifier = Modifier.padding(12.dp)
+            modifier = Modifier.padding(12.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = event.title,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = formatTimestamp(event.timestamp),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (event.description.isNotEmpty()) {
                 Text(
                     text = event.description,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
+                    modifier = Modifier.padding(top = 4.dp),
                 )
             }
         }
@@ -202,16 +218,17 @@ private fun generatePerformanceData(): PerformanceData {
         fps = (30..60).random(),
         networkLatency = (50..200).random(),
         batteryLevel = (20..100).random(),
-        recentEvents = generateRecentEvents()
+        recentEvents = generateRecentEvents(),
     )
 }
 
 private fun generateRecentEvents(): List<PerformanceEvent> {
-    val events = listOf(
-        PerformanceEvent("内存使用过高", "应用内存使用超过阈值", EventSeverity.HIGH, getCurrentTimeMillis() - 30000),
-        PerformanceEvent("网络请求缓慢", "API响应时间超过预期", EventSeverity.MEDIUM, getCurrentTimeMillis() - 120000),
-        PerformanceEvent("帧率下降", "UI渲染性能降低", EventSeverity.LOW, getCurrentTimeMillis() - 300000)
-    )
+    val events =
+        listOf(
+            PerformanceEvent("内存使用过高", "应用内存使用超过阈值", EventSeverity.HIGH, getCurrentTimeMillis() - 30000),
+            PerformanceEvent("网络请求缓慢", "API响应时间超过预期", EventSeverity.MEDIUM, getCurrentTimeMillis() - 120000),
+            PerformanceEvent("帧率下降", "UI渲染性能降低", EventSeverity.LOW, getCurrentTimeMillis() - 300000),
+        )
     return events.take((1..3).random())
 }
 
@@ -222,16 +239,18 @@ data class PerformanceData(
     val fps: Int = 60,
     val networkLatency: Int = 50,
     val batteryLevel: Int = 100,
-    val recentEvents: List<PerformanceEvent> = emptyList()
+    val recentEvents: List<PerformanceEvent> = emptyList(),
 )
 
 data class PerformanceEvent(
     val title: String,
     val description: String,
     val severity: EventSeverity,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 enum class EventSeverity {
-    LOW, MEDIUM, HIGH
+    LOW,
+    MEDIUM,
+    HIGH,
 }

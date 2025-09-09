@@ -8,9 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 
 @Composable
 actual fun UnifyTabBar(
@@ -24,16 +22,16 @@ actual fun UnifyTabBar(
     selectedContentColor: Color,
     unselectedContentColor: Color,
     indicatorColor: Color,
-    onTabClosed: ((String) -> Unit)?
+    onTabClosed: ((String) -> Unit)?,
 ) {
     val selectedIndex = tabs.indexOfFirst { it.id == selectedTabId }
-    
+
     if (mode == TabMode.SCROLLABLE) {
         ScrollableTabRow(
             selectedTabIndex = selectedIndex,
             modifier = modifier,
             containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
-            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface
+            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
         ) {
             tabs.forEach { tab ->
                 Tab(
@@ -41,7 +39,7 @@ actual fun UnifyTabBar(
                     onClick = { onTabSelected(tab.id) },
                     text = { Text(tab.title) },
                     icon = tab.icon,
-                    enabled = tab.enabled
+                    enabled = tab.enabled,
                 )
             }
         }
@@ -50,7 +48,7 @@ actual fun UnifyTabBar(
             selectedTabIndex = selectedIndex,
             modifier = modifier,
             containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
-            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface
+            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
         ) {
             tabs.forEach { tab ->
                 Tab(
@@ -58,7 +56,7 @@ actual fun UnifyTabBar(
                     onClick = { onTabSelected(tab.id) },
                     text = { Text(tab.title) },
                     icon = tab.icon,
-                    enabled = tab.enabled
+                    enabled = tab.enabled,
                 )
             }
         }
@@ -74,7 +72,7 @@ actual fun UnifyScrollableTabRow(
     edgePadding: Dp,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -82,7 +80,7 @@ actual fun UnifyScrollableTabRow(
         containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
         contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
         edgePadding = edgePadding,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -94,14 +92,14 @@ actual fun UnifyFixedTabRow(
     contentColor: Color,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit,
     divider: @Composable () -> Unit,
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRow(
         selectedTabIndex = selectedTabIndex,
         modifier = modifier,
         containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
         contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -114,7 +112,7 @@ actual fun UnifyTabBarItem(
     enabled: Boolean,
     selectedContentColor: Color,
     unselectedContentColor: Color,
-    onClose: (() -> Unit)?
+    onClose: (() -> Unit)?,
 ) {
     Tab(
         selected = selected,
@@ -122,7 +120,7 @@ actual fun UnifyTabBarItem(
         text = { Text(tab.title) },
         icon = tab.icon,
         modifier = modifier,
-        enabled = enabled
+        enabled = enabled,
     )
 }
 
@@ -130,12 +128,13 @@ actual fun UnifyTabBarItem(
 actual fun UnifyTabIndicator(
     modifier: Modifier,
     color: Color,
-    height: Dp
+    height: Dp,
 ) {
     Box(
-        modifier = modifier
-            .height(height)
-            .background(if (color != Color.Unspecified) color else MaterialTheme.colorScheme.primary)
+        modifier =
+            modifier
+                .height(height)
+                .background(if (color != Color.Unspecified) color else MaterialTheme.colorScheme.primary),
     )
 }
 
@@ -144,14 +143,13 @@ actual fun UnifyTabBadge(
     text: String,
     modifier: Modifier,
     backgroundColor: Color,
-    contentColor: Color
+    contentColor: Color,
 ) {
     Badge(
         modifier = modifier,
         containerColor = backgroundColor,
-        contentColor = contentColor
+        contentColor = contentColor,
     ) {
         Text(text)
     }
 }
-

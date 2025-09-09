@@ -26,7 +26,7 @@ fun UnifySurface(
     tonalElevation: Dp = 0.dp,
     shadowElevation: Dp = 0.dp,
     border: BorderStroke? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
@@ -36,7 +36,7 @@ fun UnifySurface(
         tonalElevation = tonalElevation,
         shadowElevation = shadowElevation,
         border = border,
-        content = content
+        content = content,
     )
 }
 
@@ -55,7 +55,7 @@ fun UnifyClickableSurface(
     shadowElevation: Dp = 0.dp,
     border: BorderStroke? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         onClick = onClick,
@@ -68,7 +68,7 @@ fun UnifyClickableSurface(
         shadowElevation = shadowElevation,
         border = border,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -87,7 +87,7 @@ fun UnifyClickableCard(
     elevation: CardElevation = CardDefaults.cardElevation(),
     border: BorderStroke? = null,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         onClick = onClick,
@@ -98,7 +98,7 @@ fun UnifyClickableCard(
         elevation = elevation,
         border = border,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -112,7 +112,7 @@ fun UnifyOutlinedCard(
     colors: CardColors = CardDefaults.outlinedCardColors(),
     elevation: CardElevation = CardDefaults.outlinedCardElevation(),
     border: BorderStroke = CardDefaults.outlinedCardBorder(),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     OutlinedCard(
         modifier = modifier,
@@ -120,7 +120,7 @@ fun UnifyOutlinedCard(
         colors = colors,
         elevation = elevation,
         border = border,
-        content = content
+        content = content,
     )
 }
 
@@ -137,7 +137,7 @@ fun UnifyClickableOutlinedCard(
     elevation: CardElevation = CardDefaults.outlinedCardElevation(),
     border: BorderStroke = CardDefaults.outlinedCardBorder(enabled),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     OutlinedCard(
         onClick = onClick,
@@ -148,7 +148,7 @@ fun UnifyClickableOutlinedCard(
         elevation = elevation,
         border = border,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -161,14 +161,14 @@ fun UnifyElevatedCard(
     shape: Shape = RoundedCornerShape(12.dp),
     colors: CardColors = CardDefaults.elevatedCardColors(),
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     ElevatedCard(
         modifier = modifier,
         shape = shape,
         colors = colors,
         elevation = elevation,
-        content = content
+        content = content,
     )
 }
 
@@ -184,7 +184,7 @@ fun UnifyClickableElevatedCard(
     colors: CardColors = CardDefaults.elevatedCardColors(),
     elevation: CardElevation = CardDefaults.elevatedCardElevation(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     ElevatedCard(
         onClick = onClick,
@@ -194,6 +194,6 @@ fun UnifyClickableElevatedCard(
         colors = colors,
         elevation = elevation,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }

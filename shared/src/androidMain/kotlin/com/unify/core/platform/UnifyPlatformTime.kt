@@ -10,7 +10,10 @@ actual fun getCurrentTimeMillis(): Long = System.currentTimeMillis()
 
 actual fun getNanoTime(): Long = System.nanoTime()
 
-actual fun formatTimestamp(timestamp: Long, pattern: String): String {
+actual fun formatTimestamp(
+    timestamp: Long,
+    pattern: String,
+): String {
     val formatter = SimpleDateFormat(pattern, Locale.getDefault())
     return formatter.format(Date(timestamp))
 }

@@ -28,11 +28,11 @@ fun UnifyImageFixed(
     alignment: Alignment = Alignment.Center,
     contentScale: ContentScale = ContentScale.Fit,
     alpha: Float = 1.0f,
-    shape: Shape = RoundedCornerShape(0.dp)
+    shape: Shape = RoundedCornerShape(0.dp),
 ) {
     Box(
         modifier = modifier.clip(shape),
-        contentAlignment = alignment
+        contentAlignment = alignment,
     ) {
         if (painter != null) {
             androidx.compose.foundation.Image(
@@ -41,12 +41,12 @@ fun UnifyImageFixed(
                 modifier = Modifier.fillMaxSize(),
                 alignment = alignment,
                 contentScale = contentScale,
-                alpha = alpha
+                alpha = alpha,
             )
         } else {
             Text(
                 text = "图片加载失败",
-                color = Color.Gray
+                color = Color.Gray,
             )
         }
     }
@@ -60,14 +60,14 @@ fun UnifyCircularImageFixed(
     painter: Painter?,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 40.dp
+    size: androidx.compose.ui.unit.Dp = 40.dp,
 ) {
     UnifyImageFixed(
         painter = painter,
         contentDescription = contentDescription,
         modifier = modifier.size(size),
         shape = androidx.compose.foundation.shape.CircleShape,
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Crop,
     )
 }
 
@@ -81,25 +81,28 @@ fun UnifyAvatarFixed(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 40.dp,
     isLoading: Boolean = false,
-    fallbackText: String = "?"
+    fallbackText: String = "?",
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(androidx.compose.foundation.shape.CircleShape),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(size)
+                .clip(androidx.compose.foundation.shape.CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
         when {
             isLoading -> CircularProgressIndicator()
-            painter != null -> UnifyCircularImageFixed(
-                painter = painter,
-                contentDescription = "头像: $name",
-                size = size
-            )
-            else -> Text(
-                text = fallbackText,
-                color = Color.White
-            )
+            painter != null ->
+                UnifyCircularImageFixed(
+                    painter = painter,
+                    contentDescription = "头像: $name",
+                    size = size,
+                )
+            else ->
+                Text(
+                    text = fallbackText,
+                    color = Color.White,
+                )
         }
     }
 }

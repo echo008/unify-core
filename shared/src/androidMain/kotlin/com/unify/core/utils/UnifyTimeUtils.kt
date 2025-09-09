@@ -7,7 +7,7 @@ actual object UnifyTimeUtils {
     actual fun currentTimeMillis(): Long {
         return System.currentTimeMillis()
     }
-    
+
     actual fun nanoTime(): Long {
         return System.nanoTime()
     }

@@ -1,19 +1,16 @@
 package com.unify.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,20 +28,21 @@ fun UnifyViewContainer(
     cornerRadius: Dp = 8.dp,
     padding: PaddingValues = PaddingValues(16.dp),
     elevation: Dp = 2.dp,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        shape = RoundedCornerShape(cornerRadius)
+        shape = RoundedCornerShape(cornerRadius),
     ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
-                .padding(padding),
-            content = content
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .border(borderWidth, borderColor, RoundedCornerShape(cornerRadius))
+                    .padding(padding),
+            content = content,
         )
     }
 }
@@ -57,13 +55,13 @@ fun UnifyVerticalContainer(
     modifier: Modifier = Modifier,
     spacing: Dp = 8.dp,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing),
         horizontalAlignment = horizontalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -75,13 +73,13 @@ fun UnifyHorizontalContainer(
     modifier: Modifier = Modifier,
     spacing: Dp = 8.dp,
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing),
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -93,7 +91,7 @@ fun UnifyGridContainer(
     modifier: Modifier = Modifier,
     columns: Int = 2,
     spacing: Dp = 8.dp,
-    content: LazyGridScope.() -> Unit
+    content: LazyGridScope.() -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
@@ -101,7 +99,7 @@ fun UnifyGridContainer(
         contentPadding = PaddingValues(spacing),
         verticalArrangement = Arrangement.spacedBy(spacing),
         horizontalArrangement = Arrangement.spacedBy(spacing),
-        content = content
+        content = content,
     )
 }
 
@@ -113,13 +111,13 @@ fun UnifyDividerContainer(
     modifier: Modifier = Modifier,
     dividerColor: Color = MaterialTheme.colorScheme.outline,
     dividerThickness: Dp = 1.dp,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier = modifier) {
         content()
         HorizontalDivider(
             thickness = dividerThickness,
-            color = dividerColor
+            color = dividerColor,
         )
     }
 }
@@ -130,12 +128,12 @@ fun UnifyDividerContainer(
 @Composable
 fun UnifyScrollableContainer(
     modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         item {
             Column(content = content)
@@ -151,7 +149,7 @@ fun UnifyResponsiveContainer(
     modifier: Modifier = Modifier,
     compactContent: @Composable () -> Unit,
     mediumContent: @Composable () -> Unit,
-    expandedContent: @Composable () -> Unit
+    expandedContent: @Composable () -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier) {
         when {
@@ -170,7 +168,7 @@ fun UnifyTitledContainer(
     title: String,
     modifier: Modifier = Modifier,
     titleColor: Color = MaterialTheme.colorScheme.onSurface,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     UnifyViewContainer(modifier = modifier) {
         Column {
@@ -178,7 +176,7 @@ fun UnifyTitledContainer(
                 text = title,
                 style = MaterialTheme.typography.headlineSmall,
                 color = titleColor,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
             content()
         }
@@ -193,28 +191,29 @@ fun UnifyCollapsibleContainer(
     title: String,
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = false,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     var isExpanded by remember { mutableStateOf(initiallyExpanded) }
-    
+
     UnifyViewContainer(modifier = modifier) {
         Column {
             UnifyHorizontalContainer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { isExpanded = !isExpanded }
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { isExpanded = !isExpanded },
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 Text(
                     text = if (isExpanded) "−" else "+",
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.headlineSmall,
                 )
             }
-            
+
             if (isExpanded) {
                 Spacer(modifier = Modifier.height(8.dp))
                 content()
@@ -230,18 +229,19 @@ fun UnifyCollapsibleContainer(
 fun UnifyShadowContainer(
     modifier: Modifier = Modifier,
     shadowElevation: Dp = 4.dp,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = shadowElevation),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+            ),
     ) {
         Box(
             modifier = Modifier.padding(16.dp),
-            content = content
+            content = content,
         )
     }
 }

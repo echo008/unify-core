@@ -9,9 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 
@@ -29,24 +27,25 @@ fun UnifyDialog(
     dismissButton: @Composable (() -> Unit)? = null,
     type: DialogType = DialogType.STANDARD,
     properties: DialogProperties = DialogProperties(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (visible) {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = properties
+            properties = properties,
         ) {
             Surface(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
+                modifier =
+                    modifier
+                        .fillMaxWidth()
+                        .wrapContentHeight(),
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+                tonalElevation = 6.dp,
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     // 标题
                     title?.let {
@@ -54,18 +53,18 @@ fun UnifyDialog(
                             text = it,
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = getDialogTitleColor(type)
+                            color = getDialogTitleColor(type),
                         )
                     }
-                    
+
                     // 内容
                     content?.invoke()
-                    
+
                     // 按钮区域
                     if (confirmButton != null || dismissButton != null) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                         ) {
                             dismissButton?.invoke()
                             confirmButton?.invoke()
@@ -89,7 +88,7 @@ fun UnifyConfirmDialog(
     message: String,
     confirmText: String = "确认",
     dismissText: String = "取消",
-    type: DialogType = DialogType.WARNING
+    type: DialogType = DialogType.WARNING,
 ) {
     UnifyDialog(
         visible = visible,
@@ -99,7 +98,7 @@ fun UnifyConfirmDialog(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         },
         confirmButton = {
@@ -108,9 +107,10 @@ fun UnifyConfirmDialog(
                     onConfirm()
                     onDismiss()
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = getDialogButtonColor(type)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = getDialogButtonColor(type),
+                    ),
             ) {
                 Text(confirmText)
             }
@@ -120,7 +120,7 @@ fun UnifyConfirmDialog(
                 Text(dismissText)
             }
         },
-        type = type
+        type = type,
     )
 }
 
@@ -134,7 +134,7 @@ fun UnifyInfoDialog(
     title: String,
     message: String,
     buttonText: String = "确定",
-    type: DialogType = DialogType.INFO
+    type: DialogType = DialogType.INFO,
 ) {
     UnifyDialog(
         visible = visible,
@@ -144,20 +144,21 @@ fun UnifyInfoDialog(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         },
         confirmButton = {
             Button(
                 onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = getDialogButtonColor(type)
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = getDialogButtonColor(type),
+                    ),
             ) {
                 Text(buttonText)
             }
         },
-        type = type
+        type = type,
     )
 }
 
@@ -173,10 +174,10 @@ fun UnifyInputDialog(
     hint: String = "",
     initialValue: String = "",
     confirmText: String = "确认",
-    dismissText: String = "取消"
+    dismissText: String = "取消",
 ) {
     var inputValue by remember(visible) { mutableStateOf(initialValue) }
-    
+
     UnifyDialog(
         visible = visible,
         onDismiss = onDismiss,
@@ -187,7 +188,7 @@ fun UnifyInputDialog(
                 onValueChange = { inputValue = it },
                 placeholder = { Text(hint) },
                 modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                singleLine = true,
             )
         },
         confirmButton = {
@@ -196,7 +197,7 @@ fun UnifyInputDialog(
                     onConfirm(inputValue)
                     onDismiss()
                 },
-                enabled = inputValue.isNotBlank()
+                enabled = inputValue.isNotBlank(),
             ) {
                 Text(confirmText)
             }
@@ -205,7 +206,7 @@ fun UnifyInputDialog(
             TextButton(onClick = onDismiss) {
                 Text(dismissText)
             }
-        }
+        },
     )
 }
 
@@ -219,7 +220,7 @@ fun UnifyListDialog(
     onDismiss: () -> Unit,
     title: String,
     items: List<String>,
-    selectedIndex: Int = -1
+    selectedIndex: Int = -1,
 ) {
     UnifyDialog(
         visible = visible,
@@ -227,27 +228,28 @@ fun UnifyListDialog(
         title = title,
         content = {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 items.forEachIndexed { index, item ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RadioButton(
                             selected = index == selectedIndex,
                             onClick = {
                                 onItemSelected(index, item)
                                 onDismiss()
-                            }
+                            },
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = item,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                 }
@@ -257,7 +259,7 @@ fun UnifyListDialog(
             TextButton(onClick = onDismiss) {
                 Text("取消")
             }
-        }
+        },
     )
 }
 
@@ -270,18 +272,18 @@ fun UnifyCustomDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (visible) {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = properties
+            properties = properties,
         ) {
             Surface(
                 modifier = modifier,
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 6.dp
+                tonalElevation = 6.dp,
             ) {
                 content()
             }
@@ -298,48 +300,50 @@ fun UnifyFullScreenDialog(
     onDismiss: () -> Unit,
     title: String? = null,
     actions: @Composable (RowScope.() -> Unit)? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     if (visible) {
         Dialog(
             onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            properties = DialogProperties(usePlatformDefaultWidth = false),
         ) {
             Surface(
                 modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background
+                color = MaterialTheme.colorScheme.background,
             ) {
                 Column {
                     // 顶部栏
                     if (title != null || actions != null) {
                         Surface(
                             color = MaterialTheme.colorScheme.surface,
-                            tonalElevation = 4.dp
+                            tonalElevation = 4.dp,
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 title?.let {
                                     Text(
                                         text = it,
                                         style = MaterialTheme.typography.headlineSmall,
-                                        modifier = Modifier.weight(1f)
+                                        modifier = Modifier.weight(1f),
                                     )
                                 }
-                                
+
                                 actions?.invoke(this)
                             }
                         }
                     }
-                    
+
                     // 内容区域
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
                     ) {
                         content()
                     }
@@ -356,7 +360,7 @@ enum class DialogType {
     INFO,
     SUCCESS,
     WARNING,
-    ERROR
+    ERROR,
 }
 
 @Composable

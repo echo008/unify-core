@@ -8,9 +8,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
-import androidx.compose.foundation.lazy.staggeredgrid.LazyHorizontalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -30,13 +28,14 @@ import androidx.compose.ui.unit.dp
 fun UnifyContainer(
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(16.dp),
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(padding),
-        content = content
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(padding),
+        content = content,
     )
 }
 
@@ -52,14 +51,14 @@ fun UnifyGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
         modifier = modifier,
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
-        horizontalArrangement = horizontalArrangement
+        horizontalArrangement = horizontalArrangement,
     ) {
         item {
             content()
@@ -77,14 +76,14 @@ fun UnifyAdaptiveGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minItemWidth),
         modifier = modifier,
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
-        horizontalArrangement = horizontalArrangement
+        horizontalArrangement = horizontalArrangement,
     ) {
         item {
             content()
@@ -102,14 +101,14 @@ fun UnifyStaggeredGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalItemSpacing: Dp = 8.dp,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(columns),
         modifier = modifier,
         contentPadding = contentPadding,
         verticalItemSpacing = verticalItemSpacing,
-        horizontalArrangement = horizontalArrangement
+        horizontalArrangement = horizontalArrangement,
     ) {
         item {
             content()
@@ -126,13 +125,13 @@ fun UnifyHorizontalScroll(
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp),
     horizontalArrangement: Arrangement.Horizontal = Arrangement.spacedBy(8.dp),
     verticalAlignment: Alignment.Vertical = Alignment.CenterVertically,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
         contentPadding = contentPadding,
         horizontalArrangement = horizontalArrangement,
-        verticalAlignment = verticalAlignment
+        verticalAlignment = verticalAlignment,
     ) {
         item {
             content()
@@ -149,13 +148,13 @@ fun UnifyVerticalScroll(
     contentPadding: PaddingValues = PaddingValues(vertical = 16.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.spacedBy(8.dp),
     horizontalAlignment: Alignment.Horizontal = Alignment.CenterHorizontally,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
-        horizontalAlignment = horizontalAlignment
+        horizontalAlignment = horizontalAlignment,
     ) {
         item {
             content()
@@ -169,10 +168,10 @@ fun UnifyVerticalScroll(
 @Composable
 fun UnifySpacer(
     width: Dp = 0.dp,
-    height: Dp = 0.dp
+    height: Dp = 0.dp,
 ) {
     Spacer(
-        modifier = Modifier.size(width = width, height = height)
+        modifier = Modifier.size(width = width, height = height),
     )
 }
 
@@ -183,12 +182,12 @@ fun UnifySpacer(
 fun UnifyDivider(
     modifier: Modifier = Modifier,
     thickness: Dp = 1.dp,
-    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.3f)
+    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.3f),
 ) {
     androidx.compose.material3.HorizontalDivider(
         modifier = modifier,
         thickness = thickness,
-        color = color
+        color = color,
     )
 }
 
@@ -199,12 +198,12 @@ fun UnifyDivider(
 fun UnifyVerticalDivider(
     modifier: Modifier = Modifier,
     thickness: Dp = 1.dp,
-    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.3f)
+    color: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Gray.copy(alpha = 0.3f),
 ) {
     androidx.compose.material3.VerticalDivider(
         modifier = modifier,
         thickness = thickness,
-        color = color
+        color = color,
     )
 }
 
@@ -216,13 +215,13 @@ fun UnifyFlowLayout(
     modifier: Modifier = Modifier,
     horizontalSpacing: Dp = 8.dp,
     verticalSpacing: Dp = 8.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     // 使用FlowRow实现流式布局
     androidx.compose.foundation.layout.FlowRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(horizontalSpacing),
-        verticalArrangement = Arrangement.spacedBy(verticalSpacing)
+        verticalArrangement = Arrangement.spacedBy(verticalSpacing),
     ) {
         content()
     }
@@ -233,17 +232,25 @@ fun UnifyFlowLayout(
  */
 object UnifyConstraints {
     fun createHorizontalChain(vararg ids: Any) = ids.toList()
+
     fun createVerticalChain(vararg ids: Any) = ids.toList()
-    fun createBarrier(vararg ids: Any, direction: BarrierDirection) = BarrierInfo(ids.toList(), direction)
+
+    fun createBarrier(
+        vararg ids: Any,
+        direction: BarrierDirection,
+    ) = BarrierInfo(ids.toList(), direction)
 }
 
 enum class BarrierDirection {
-    Start, End, Top, Bottom
+    Start,
+    End,
+    Top,
+    Bottom,
 }
 
 data class BarrierInfo(
     val referencedIds: List<Any>,
-    val direction: BarrierDirection
+    val direction: BarrierDirection,
 )
 
 /**
@@ -253,7 +260,7 @@ object UnifyBreakpoints {
     const val COMPACT_WIDTH = 600
     const val MEDIUM_WIDTH = 840
     const val EXPANDED_WIDTH = 1200
-    
+
     const val COMPACT_HEIGHT = 480
     const val MEDIUM_HEIGHT = 900
     const val EXPANDED_HEIGHT = 1200
@@ -269,7 +276,7 @@ data class UnifyLayoutConfig(
     val elevation: Dp = 4.dp,
     val isResponsive: Boolean = true,
     val maxWidth: Dp = Dp.Unspecified,
-    val minHeight: Dp = 48.dp
+    val minHeight: Dp = 48.dp,
 )
 
 /**

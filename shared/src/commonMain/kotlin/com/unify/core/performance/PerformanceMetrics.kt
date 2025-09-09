@@ -1,8 +1,7 @@
 package com.unify.core.performance
 
-import kotlinx.serialization.Serializable
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import kotlinx.serialization.Serializable
 
 /**
  * 内存指标数据类
@@ -13,7 +12,7 @@ data class MemoryMetrics(
     val totalMemory: Long = 0L,
     val maxMemory: Long = 0L,
     val gcCount: Int = 0,
-    val gcTime: Long = 0L
+    val gcTime: Long = 0L,
 ) {
     val usagePercent: Float
         get() = if (totalMemory > 0) (usedMemory.toFloat() / totalMemory) * 100f else 0f
@@ -29,7 +28,7 @@ data class NetworkMetrics(
     val errorCount: Int = 0,
     val bytesReceived: Long = 0L,
     val bytesSent: Long = 0L,
-    val connectionCount: Int = 0
+    val connectionCount: Int = 0,
 ) {
     val errorRate: Float
         get() = if (requestCount > 0) (errorCount.toFloat() / requestCount) * 100f else 0f
@@ -43,7 +42,7 @@ data class CPUMetrics(
     val usage: Double = 0.0,
     val coreCount: Int = 1,
     val frequency: Long = 0L,
-    val temperature: Float = 0f
+    val temperature: Float = 0f,
 )
 
 /**
@@ -57,7 +56,7 @@ data class PerformanceMetrics(
     val networkMetrics: NetworkMetrics = NetworkMetrics(),
     val customMetrics: Map<String, Double> = emptyMap(),
     val timers: Map<String, Long> = emptyMap(),
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -65,10 +64,19 @@ data class PerformanceMetrics(
  */
 interface PerformanceMonitor {
     suspend fun getMetrics(): kotlinx.coroutines.flow.Flow<PerformanceMetrics>
+
     suspend fun startMonitoring()
+
     suspend fun stopMonitoring()
+
     suspend fun clearMetrics()
-    suspend fun recordCustomMetric(name: String, value: Double)
+
+    suspend fun recordCustomMetric(
+        name: String,
+        value: Double,
+    )
+
     suspend fun startTimer(name: String)
+
     suspend fun stopTimer(name: String): Long?
 }

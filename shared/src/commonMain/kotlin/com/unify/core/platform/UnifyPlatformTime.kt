@@ -14,7 +14,10 @@ expect fun getNanoTime(): Long
 /**
  * 格式化时间戳
  */
-expect fun formatTimestamp(timestamp: Long, pattern: String = "yyyy-MM-dd HH:mm:ss"): String
+expect fun formatTimestamp(
+    timestamp: Long,
+    pattern: String = "yyyy-MM-dd HH:mm:ss",
+): String
 
 /**
  * 获取当前时区偏移量

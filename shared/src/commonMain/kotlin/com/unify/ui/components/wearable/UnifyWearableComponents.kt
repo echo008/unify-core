@@ -1,14 +1,12 @@
 package com.unify.ui.components.wearable
 
 import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.Composable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import com.unify.core.types.HealthMetric
+import com.unify.core.types.WorkoutType
+import com.unify.ui.components.system.NotificationAction
 
 /**
  * 可穿戴设备组件接口定义
@@ -16,37 +14,38 @@ import com.unify.core.platform.getNanoTime
  */
 
 // 数据类定义
-data class HealthMetric(
-    val type: String,
-    val value: String,
-    val unit: String,
-    val timestamp: Long = getCurrentTimeMillis()
-)
+// 使用统一的健康和运动相关类型定义，避免重复声明
 
 data class WatchNotification(
     val id: String,
     val title: String,
     val content: String,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
-enum class NotificationAction {
-    DISMISS, REPLY, VIEW
-}
-
-enum class WorkoutType {
-    RUNNING, WALKING, CYCLING, SWIMMING, YOGA, OTHER
-}
+data class WorkoutSession(
+    val id: String,
+    val type: String,
+    val startTime: Long,
+    val endTime: Long? = null,
+    val duration: Long = 0L,
+    val calories: Int = 0,
+    val distance: Float = 0f,
+    val heartRate: List<Int> = emptyList(),
+)
 
 enum class WorkoutAction {
-    START, PAUSE, STOP, RESUME
+    START,
+    PAUSE,
+    STOP,
+    RESUME,
 }
 
 data class QuickAction(
     val id: String,
     val title: String,
     val icon: String,
-    val action: () -> Unit
+    val action: () -> Unit,
 )
 
 @Composable
@@ -54,21 +53,21 @@ expect fun UnifyWatchFace(
     time: String,
     date: String,
     healthMetrics: List<HealthMetric>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 @Composable
 expect fun UnifyHealthMonitor(
     metrics: List<HealthMetric>,
     onMetricSelected: (HealthMetric) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 @Composable
 expect fun UnifyWatchNotifications(
     notifications: List<WatchNotification>,
     onNotificationAction: (WatchNotification, NotificationAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 @Composable
@@ -77,12 +76,12 @@ expect fun UnifyWatchWorkout(
     duration: Long,
     metrics: Map<String, String>,
     onWorkoutAction: (WorkoutAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 @Composable
 expect fun UnifyWatchQuickActions(
     actions: List<QuickAction>,
     onActionSelected: (QuickAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )

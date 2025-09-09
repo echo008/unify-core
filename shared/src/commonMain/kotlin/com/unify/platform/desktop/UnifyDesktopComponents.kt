@@ -1,7 +1,6 @@
 package com.unify.platform.desktop
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,56 +33,57 @@ fun UnifyDesktopTitleBar(
     onClose: (() -> Unit)? = null,
     showWindowControls: Boolean = true,
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
-    contentColor: Color = MaterialTheme.colorScheme.onSurface
+    contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = backgroundColor,
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             // 标题
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Medium,
-                color = contentColor
+                color = contentColor,
             )
-            
+
             // 窗口控制按钮
             if (showWindowControls) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     onMinimize?.let {
                         UnifyWindowControlButton(
                             icon = Icons.Default.Minimize,
                             onClick = it,
-                            contentDescription = "最小化"
+                            contentDescription = "最小化",
                         )
                     }
-                    
+
                     onMaximize?.let {
                         UnifyWindowControlButton(
                             icon = Icons.Default.CropSquare,
                             onClick = it,
-                            contentDescription = "最大化"
+                            contentDescription = "最大化",
                         )
                     }
-                    
+
                     onClose?.let {
                         UnifyWindowControlButton(
                             icon = Icons.Default.Close,
                             onClick = it,
                             contentDescription = "关闭",
-                            isCloseButton = true
+                            isCloseButton = true,
                         )
                     }
                 }
@@ -100,21 +100,22 @@ private fun UnifyWindowControlButton(
     icon: ImageVector,
     onClick: () -> Unit,
     contentDescription: String,
-    isCloseButton: Boolean = false
+    isCloseButton: Boolean = false,
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(32.dp)
+        modifier = Modifier.size(32.dp),
     ) {
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = if (isCloseButton) {
-                Color.Red
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            modifier = Modifier.size(16.dp)
+            tint =
+                if (isCloseButton) {
+                    Color.Red
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+            modifier = Modifier.size(16.dp),
         )
     }
 }
@@ -126,17 +127,18 @@ private fun UnifyWindowControlButton(
 fun UnifyDesktopMenuBar(
     menus: List<DesktopMenu>,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = backgroundColor
+        color = backgroundColor,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             menus.forEach { menu ->
                 UnifyDesktopMenuButton(menu = menu)
@@ -149,27 +151,26 @@ fun UnifyDesktopMenuBar(
  * 菜单按钮
  */
 @Composable
-private fun UnifyDesktopMenuButton(
-    menu: DesktopMenu
-) {
+private fun UnifyDesktopMenuButton(menu: DesktopMenu) {
     var expanded by remember { mutableStateOf(false) }
-    
+
     Box {
         TextButton(
             onClick = { expanded = true },
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            colors =
+                ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
         ) {
             Text(
                 text = menu.title,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
-        
+
         DropdownMenu(
             expanded = expanded,
-            onDismissRequest = { expanded = false }
+            onDismissRequest = { expanded = false },
         ) {
             menu.items.forEach { item ->
                 when (item) {
@@ -180,10 +181,11 @@ private fun UnifyDesktopMenuButton(
                                 item.onClick()
                                 expanded = false
                             },
-                            leadingIcon = item.icon?.let { icon ->
-                                { Icon(icon, contentDescription = null) }
-                            },
-                            enabled = item.enabled
+                            leadingIcon =
+                                item.icon?.let { icon ->
+                                    { Icon(icon, contentDescription = null) }
+                                },
+                            enabled = item.enabled,
                         )
                     }
                     is DesktopMenuItem.Separator -> {
@@ -196,7 +198,7 @@ private fun UnifyDesktopMenuButton(
                             onClick = { /* 展开子菜单 */ },
                             trailingIcon = {
                                 Icon(Icons.Default.ArrowRight, contentDescription = null)
-                            }
+                            },
                         )
                     }
                 }
@@ -212,52 +214,54 @@ private fun UnifyDesktopMenuButton(
 fun UnifyDesktopToolbar(
     actions: List<DesktopToolbarAction>,
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colorScheme.surface
+    backgroundColor: Color = MaterialTheme.colorScheme.surface,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = backgroundColor,
-        tonalElevation = 1.dp
+        tonalElevation = 1.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
             horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             actions.forEach { action ->
                 when (action) {
                     is DesktopToolbarAction.Button -> {
                         IconButton(
                             onClick = action.onClick,
-                            enabled = action.enabled
+                            enabled = action.enabled,
                         ) {
                             Icon(
                                 imageVector = action.icon,
-                                contentDescription = action.tooltip
+                                contentDescription = action.tooltip,
                             )
                         }
                     }
                     is DesktopToolbarAction.Separator -> {
                         Divider(
-                            modifier = Modifier
-                                .height(24.dp)
-                                .width(1.dp)
+                            modifier =
+                                Modifier
+                                    .height(24.dp)
+                                    .width(1.dp),
                         )
                     }
                     is DesktopToolbarAction.Group -> {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(2.dp)
+                            horizontalArrangement = Arrangement.spacedBy(2.dp),
                         ) {
                             action.actions.forEach { groupAction ->
                                 IconButton(
                                     onClick = groupAction.onClick,
-                                    enabled = groupAction.enabled
+                                    enabled = groupAction.enabled,
                                 ) {
                                     Icon(
                                         imageVector = groupAction.icon,
-                                        contentDescription = groupAction.tooltip
+                                        contentDescription = groupAction.tooltip,
                                     )
                                 }
                             }
@@ -277,30 +281,31 @@ fun UnifyDesktopStatusBar(
     leftContent: @Composable RowScope.() -> Unit = {},
     rightContent: @Composable RowScope.() -> Unit = {},
     modifier: Modifier = Modifier,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        color = backgroundColor
+        color = backgroundColor,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(32.dp)
+                    .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                content = leftContent
+                content = leftContent,
             )
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                content = rightContent
+                content = rightContent,
             )
         }
     }
@@ -316,59 +321,65 @@ fun UnifyDesktopSidebar(
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
     width: androidx.compose.ui.unit.Dp = 240.dp,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Surface(
-        modifier = modifier
-            .width(width)
-            .fillMaxHeight(),
-        color = backgroundColor
+        modifier =
+            modifier
+                .width(width)
+                .fillMaxHeight(),
+        color = backgroundColor,
     ) {
         Column(
             modifier = Modifier.padding(8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             items.forEach { item ->
                 when (item) {
                     is SidebarItem.Navigation -> {
                         val isSelected = selectedItem == item.id
-                        
+
                         Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { onItemSelected(item.id) },
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer
-                            } else {
-                                Color.Transparent
-                            }
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onItemSelected(item.id) },
+                            color =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    Color.Transparent
+                                },
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
                                 Icon(
                                     imageVector = item.icon,
                                     contentDescription = null,
-                                    tint = if (isSelected) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
+                                    tint =
+                                        if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
                                 )
-                                
+
                                 Text(
                                     text = item.title,
                                     style = MaterialTheme.typography.bodyMedium,
-                                    color = if (isSelected) {
-                                        MaterialTheme.colorScheme.onPrimaryContainer
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                    }
+                                    color =
+                                        if (isSelected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
                                 )
                             }
                         }
@@ -378,12 +389,12 @@ fun UnifyDesktopSidebar(
                             text = item.title,
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                         )
                     }
                     is SidebarItem.Separator -> {
                         Divider(
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            modifier = Modifier.padding(vertical = 4.dp),
                         )
                     }
                 }
@@ -403,37 +414,40 @@ fun UnifyDesktopSplitPane(
     splitRatio: Float = 0.5f,
     minLeftWidth: androidx.compose.ui.unit.Dp = 200.dp,
     minRightWidth: androidx.compose.ui.unit.Dp = 200.dp,
-    resizable: Boolean = true
+    resizable: Boolean = true,
 ) {
     var currentSplitRatio by remember { mutableStateOf(splitRatio) }
-    
+
     Row(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
     ) {
         // 左侧面板
         Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(currentSplitRatio)
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .weight(currentSplitRatio),
         ) {
             leftContent()
         }
-        
+
         // 分割线
         if (resizable) {
             Divider(
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(4.dp)
-                    .background(MaterialTheme.colorScheme.outline)
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(4.dp)
+                        .background(MaterialTheme.colorScheme.outline),
             )
         }
-        
+
         // 右侧面板
         Box(
-            modifier = Modifier
-                .fillMaxHeight()
-                .weight(1f - currentSplitRatio)
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .weight(1f - currentSplitRatio),
         ) {
             rightContent()
         }
@@ -449,12 +463,12 @@ fun UnifyDesktopTabBar(
     selectedTabId: String,
     onTabSelected: (String) -> Unit,
     onTabClosed: ((String) -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     ScrollableTabRow(
         selectedTabIndex = tabs.indexOfFirst { it.id == selectedTabId },
         modifier = modifier,
-        edgePadding = 0.dp
+        edgePadding = 0.dp,
     ) {
         tabs.forEach { tab ->
             Tab(
@@ -463,35 +477,35 @@ fun UnifyDesktopTabBar(
                 text = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         tab.icon?.let {
                             Icon(
                                 imageVector = it,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(16.dp),
                             )
                         }
-                        
+
                         Text(
                             text = tab.title,
-                            maxLines = 1
+                            maxLines = 1,
                         )
-                        
+
                         if (tab.closeable && onTabClosed != null) {
                             IconButton(
                                 onClick = { onTabClosed(tab.id) },
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(16.dp),
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Close,
                                     contentDescription = "关闭",
-                                    modifier = Modifier.size(12.dp)
+                                    modifier = Modifier.size(12.dp),
                                 )
                             }
                         }
                     }
-                }
+                },
             )
         }
     }
@@ -501,7 +515,7 @@ fun UnifyDesktopTabBar(
 
 data class DesktopMenu(
     val title: String,
-    val items: List<DesktopMenuItem>
+    val items: List<DesktopMenuItem>,
 )
 
 sealed class DesktopMenuItem {
@@ -510,14 +524,14 @@ sealed class DesktopMenuItem {
         val onClick: () -> Unit,
         val icon: ImageVector? = null,
         val enabled: Boolean = true,
-        val shortcut: String? = null
+        val shortcut: String? = null,
     ) : DesktopMenuItem()
-    
+
     object Separator : DesktopMenuItem()
-    
+
     data class Submenu(
         val title: String,
-        val items: List<DesktopMenuItem>
+        val items: List<DesktopMenuItem>,
     ) : DesktopMenuItem()
 }
 
@@ -526,13 +540,13 @@ sealed class DesktopToolbarAction {
         val icon: ImageVector,
         val onClick: () -> Unit,
         val tooltip: String,
-        val enabled: Boolean = true
+        val enabled: Boolean = true,
     ) : DesktopToolbarAction()
-    
+
     object Separator : DesktopToolbarAction()
-    
+
     data class Group(
-        val actions: List<Button>
+        val actions: List<Button>,
     ) : DesktopToolbarAction()
 }
 
@@ -540,13 +554,13 @@ sealed class SidebarItem {
     data class Navigation(
         val id: String,
         val title: String,
-        val icon: ImageVector
+        val icon: ImageVector,
     ) : SidebarItem()
-    
+
     data class Header(
-        val title: String
+        val title: String,
     ) : SidebarItem()
-    
+
     object Separator : SidebarItem()
 }
 
@@ -554,5 +568,5 @@ data class DesktopTab(
     val id: String,
     val title: String,
     val icon: ImageVector? = null,
-    val closeable: Boolean = true
+    val closeable: Boolean = true,
 )

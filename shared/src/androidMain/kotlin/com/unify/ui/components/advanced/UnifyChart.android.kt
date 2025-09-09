@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlin.math.*
 
@@ -31,42 +30,46 @@ actual fun UnifyChart(
     modifier: Modifier,
     title: String,
     showLegend: Boolean,
-    animationEnabled: Boolean
+    animationEnabled: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             if (title.isNotEmpty()) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
             }
-            
+
             when (chartType) {
-                ChartType.LINE -> UnifyLineChart(
-                    data = data,
-                    modifier = Modifier.height(200.dp)
-                )
-                ChartType.BAR -> UnifyBarChart(
-                    data = data,
-                    modifier = Modifier.height(200.dp)
-                )
-                ChartType.PIE -> UnifyPieChart(
-                    data = data,
-                    modifier = Modifier.size(200.dp)
-                )
-                ChartType.AREA -> UnifyAreaChart(
-                    data = data,
-                    modifier = Modifier.height(200.dp)
-                )
+                ChartType.LINE ->
+                    UnifyLineChart(
+                        data = data,
+                        modifier = Modifier.height(200.dp),
+                    )
+                ChartType.BAR ->
+                    UnifyBarChart(
+                        data = data,
+                        modifier = Modifier.height(200.dp),
+                    )
+                ChartType.PIE ->
+                    UnifyPieChart(
+                        data = data,
+                        modifier = Modifier.size(200.dp),
+                    )
+                ChartType.AREA ->
+                    UnifyAreaChart(
+                        data = data,
+                        modifier = Modifier.height(200.dp),
+                    )
             }
-            
+
             if (showLegend) {
                 Spacer(modifier = Modifier.height(16.dp))
                 ChartLegend(data = data)
@@ -82,58 +85,58 @@ actual fun UnifyLineChart(
     lineColor: Color,
     strokeWidth: Float,
     showPoints: Boolean,
-    showGrid: Boolean
+    showGrid: Boolean,
 ) {
     if (data.isEmpty()) return
-    
+
     val maxValue = data.maxOfOrNull { it.value } ?: 1f
     val minValue = data.minOfOrNull { it.value } ?: 0f
     val valueRange = maxValue - minValue
-    
+
     Canvas(modifier = modifier.fillMaxWidth()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
         val padding = 40f
-        
+
         val chartWidth = canvasWidth - padding * 2
         val chartHeight = canvasHeight - padding * 2
-        
+
         // Draw grid
         if (showGrid) {
             drawGrid(canvasWidth, canvasHeight, padding)
         }
-        
+
         // Draw line
         if (data.size > 1) {
             val path = Path()
             data.forEachIndexed { index, point ->
                 val x = padding + (index.toFloat() / (data.size - 1)) * chartWidth
                 val y = padding + chartHeight - ((point.value - minValue) / valueRange) * chartHeight
-                
+
                 if (index == 0) {
                     path.moveTo(x, y)
                 } else {
                     path.lineTo(x, y)
                 }
             }
-            
+
             drawPath(
                 path = path,
                 color = lineColor,
-                style = Stroke(width = strokeWidth)
+                style = Stroke(width = strokeWidth),
             )
         }
-        
+
         // Draw points
         if (showPoints) {
             data.forEachIndexed { index, point ->
                 val x = padding + (index.toFloat() / (data.size - 1)) * chartWidth
                 val y = padding + chartHeight - ((point.value - minValue) / valueRange) * chartHeight
-                
+
                 drawCircle(
                     color = lineColor,
                     radius = strokeWidth * 2,
-                    center = Offset(x, y)
+                    center = Offset(x, y),
                 )
             }
         }
@@ -146,31 +149,31 @@ actual fun UnifyBarChart(
     modifier: Modifier,
     barColor: Color,
     showValues: Boolean,
-    horizontal: Boolean
+    horizontal: Boolean,
 ) {
     if (data.isEmpty()) return
-    
+
     val maxValue = data.maxOfOrNull { it.value } ?: 1f
-    
+
     Canvas(modifier = modifier.fillMaxWidth()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
         val padding = 40f
-        
+
         val chartWidth = canvasWidth - padding * 2
         val chartHeight = canvasHeight - padding * 2
-        
+
         if (horizontal) {
             // Horizontal bars
             val barHeight = chartHeight / data.size
             data.forEachIndexed { index, point ->
                 val barWidth = (point.value / maxValue) * chartWidth
                 val y = padding + index * barHeight
-                
+
                 drawRect(
                     color = point.color,
                     topLeft = Offset(padding, y),
-                    size = Size(barWidth, barHeight * 0.8f)
+                    size = Size(barWidth, barHeight * 0.8f),
                 )
             }
         } else {
@@ -180,11 +183,11 @@ actual fun UnifyBarChart(
                 val barHeight = (point.value / maxValue) * chartHeight
                 val x = padding + index * barWidth
                 val y = padding + chartHeight - barHeight
-                
+
                 drawRect(
                     color = point.color,
                     topLeft = Offset(x, y),
-                    size = Size(barWidth * 0.8f, barHeight)
+                    size = Size(barWidth * 0.8f, barHeight),
                 )
             }
         }
@@ -197,43 +200,44 @@ actual fun UnifyPieChart(
     modifier: Modifier,
     showLabels: Boolean,
     showPercentages: Boolean,
-    centerHoleRadius: Float
+    centerHoleRadius: Float,
 ) {
     if (data.isEmpty()) return
-    
+
     val total = data.sumOf { it.value.toDouble() }.toFloat()
-    
+
     Canvas(modifier = modifier.size(200.dp)) {
         val canvasSize = size.minDimension
         val radius = canvasSize / 2 - 20f
         val center = Offset(size.width / 2, size.height / 2)
-        
+
         var startAngle = -90f
-        
+
         data.forEach { point ->
             val sweepAngle = (point.value / total) * 360f
-            
+
             drawArc(
                 color = point.color,
                 startAngle = startAngle,
                 sweepAngle = sweepAngle,
                 useCenter = centerHoleRadius == 0f,
-                topLeft = Offset(
-                    center.x - radius,
-                    center.y - radius
-                ),
-                size = Size(radius * 2, radius * 2)
+                topLeft =
+                    Offset(
+                        center.x - radius,
+                        center.y - radius,
+                    ),
+                size = Size(radius * 2, radius * 2),
             )
-            
+
             startAngle += sweepAngle
         }
-        
+
         // Draw center hole if specified
         if (centerHoleRadius > 0f) {
             drawCircle(
                 color = androidx.compose.ui.graphics.Color.White,
                 radius = centerHoleRadius,
-                center = center
+                center = center,
             )
         }
     }
@@ -245,31 +249,31 @@ actual fun UnifyAreaChart(
     modifier: Modifier,
     fillColor: Color,
     strokeColor: Color,
-    strokeWidth: Float
+    strokeWidth: Float,
 ) {
     if (data.isEmpty()) return
-    
+
     val maxValue = data.maxOfOrNull { it.value } ?: 1f
     val minValue = data.minOfOrNull { it.value } ?: 0f
     val valueRange = maxValue - minValue
-    
+
     Canvas(modifier = modifier.fillMaxWidth()) {
         val canvasWidth = size.width
         val canvasHeight = size.height
         val padding = 40f
-        
+
         val chartWidth = canvasWidth - padding * 2
         val chartHeight = canvasHeight - padding * 2
-        
+
         if (data.size > 1) {
             // Create area path
             val areaPath = Path()
             val linePath = Path()
-            
+
             data.forEachIndexed { index, point ->
                 val x = padding + (index.toFloat() / (data.size - 1)) * chartWidth
                 val y = padding + chartHeight - ((point.value - minValue) / valueRange) * chartHeight
-                
+
                 if (index == 0) {
                     areaPath.moveTo(x, padding + chartHeight) // Start from bottom
                     areaPath.lineTo(x, y)
@@ -278,24 +282,24 @@ actual fun UnifyAreaChart(
                     areaPath.lineTo(x, y)
                     linePath.lineTo(x, y)
                 }
-                
+
                 if (index == data.size - 1) {
                     areaPath.lineTo(x, padding + chartHeight) // Close to bottom
                     areaPath.close()
                 }
             }
-            
+
             // Draw filled area
             drawPath(
                 path = areaPath,
-                color = fillColor
+                color = fillColor,
             )
-            
+
             // Draw stroke line
             drawPath(
                 path = linePath,
                 color = strokeColor,
-                style = Stroke(width = strokeWidth)
+                style = Stroke(width = strokeWidth),
             )
         }
     }
@@ -304,22 +308,23 @@ actual fun UnifyAreaChart(
 @Composable
 private fun ChartLegend(data: List<ChartData>) {
     LazyRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         items(data) { item ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Box(
-                    modifier = Modifier
-                        .size(12.dp)
-                        .clip(CircleShape)
-                        .background(item.color)
+                    modifier =
+                        Modifier
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(item.color),
                 )
                 Text(
                     text = item.label,
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
         }
@@ -330,11 +335,11 @@ private fun DrawScope.drawGrid(
     canvasWidth: Float,
     canvasHeight: Float,
     padding: Float,
-    gridColor: Color = Color.Gray.copy(alpha = 0.3f)
+    gridColor: Color = Color.Gray.copy(alpha = 0.3f),
 ) {
     val chartWidth = canvasWidth - padding * 2
     val chartHeight = canvasHeight - padding * 2
-    
+
     // Vertical grid lines
     for (i in 0..4) {
         val x = padding + (i / 4f) * chartWidth
@@ -342,10 +347,10 @@ private fun DrawScope.drawGrid(
             color = gridColor,
             start = Offset(x, padding),
             end = Offset(x, padding + chartHeight),
-            strokeWidth = 1f
+            strokeWidth = 1f,
         )
     }
-    
+
     // Horizontal grid lines
     for (i in 0..4) {
         val y = padding + (i / 4f) * chartHeight
@@ -353,7 +358,7 @@ private fun DrawScope.drawGrid(
             color = gridColor,
             start = Offset(padding, y),
             end = Offset(padding + chartWidth, y),
-            strokeWidth = 1f
+            strokeWidth = 1f,
         )
     }
 }

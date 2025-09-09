@@ -21,10 +21,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 
@@ -35,14 +33,14 @@ import androidx.compose.ui.window.DialogProperties
 enum class UnifyDialogType {
     ALERT,
     CONFIRMATION,
-    CUSTOM
+    CUSTOM,
 }
 
 data class UnifyDialogAction(
     val text: String,
     val onClick: () -> Unit,
     val isPrimary: Boolean = false,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 @Composable
@@ -56,69 +54,83 @@ fun UnifyDialog(
     type: UnifyDialogType = UnifyDialogType.ALERT,
     dismissible: Boolean = true,
     properties: DialogProperties = DialogProperties(),
-    content: (@Composable () -> Unit)? = null
+    content: (@Composable () -> Unit)? = null,
 ) {
     when (type) {
         UnifyDialogType.ALERT, UnifyDialogType.CONFIRMATION -> {
             AlertDialog(
-                onDismissRequest = if (dismissible) onDismissRequest else { {} },
-                title = title?.let {
-                    {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            if (icon != null) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(24.dp),
-                                    tint = iconTint ?: MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(12.dp))
-                            }
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.headlineSmall,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                    }
-                },
-                text = if (message != null || content != null) {
-                    {
-                        Column {
-                            if (message != null) {
-                                Text(
-                                    text = message,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            if (content != null) {
-                                if (message != null) {
-                                    Spacer(modifier = Modifier.height(16.dp))
+                onDismissRequest =
+                    if (dismissible) {
+                        onDismissRequest
+                    } else {
+                        {}
+                    },
+                title =
+                    title?.let {
+                        {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                if (icon != null) {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = iconTint ?: MaterialTheme.colorScheme.primary,
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
                                 }
-                                content()
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                )
                             }
                         }
-                    }
-                } else null,
+                    },
+                text =
+                    if (message != null || content != null) {
+                        {
+                            Column {
+                                if (message != null) {
+                                    Text(
+                                        text = message,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                                if (content != null) {
+                                    if (message != null) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                    }
+                                    content()
+                                }
+                            }
+                        }
+                    } else {
+                        null
+                    },
                 confirmButton = {
                     DialogActions(actions = actions)
                 },
-                properties = properties
+                properties = properties,
             )
         }
         UnifyDialogType.CUSTOM -> {
             CustomDialog(
-                onDismissRequest = if (dismissible) onDismissRequest else { {} },
+                onDismissRequest =
+                    if (dismissible) {
+                        onDismissRequest
+                    } else {
+                        {}
+                    },
                 title = title,
                 message = message,
                 icon = icon,
                 iconTint = iconTint,
                 actions = actions,
                 properties = properties,
-                content = content
+                content = content,
             )
         }
     }
@@ -134,31 +146,31 @@ private fun CustomDialog(
     iconTint: Color?,
     actions: List<UnifyDialogAction>,
     properties: DialogProperties,
-    content: (@Composable () -> Unit)?
+    content: (@Composable () -> Unit)?,
 ) {
     BasicAlertDialog(
         onDismissRequest = onDismissRequest,
-        properties = properties
+        properties = properties,
     ) {
         UnifyCard(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+            shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(24.dp),
             ) {
                 // Header with icon and title
                 if (title != null || icon != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         if (icon != null) {
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = iconTint ?: MaterialTheme.colorScheme.primary
+                                tint = iconTint ?: MaterialTheme.colorScheme.primary,
                             )
                             if (title != null) {
                                 Spacer(modifier = Modifier.width(12.dp))
@@ -169,34 +181,34 @@ private fun CustomDialog(
                                 text = title,
                                 style = MaterialTheme.typography.headlineSmall,
                                 fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                
+
                 // Message content
                 if (message != null) {
                     Text(
                         text = message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     if (content != null) {
                         Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
-                
+
                 // Custom content
                 content?.invoke()
-                
+
                 // Actions
                 if (actions.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(24.dp))
                     DialogActions(
                         actions = actions,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
@@ -207,32 +219,32 @@ private fun CustomDialog(
 @Composable
 private fun DialogActions(
     actions: List<UnifyDialogAction>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (actions.isEmpty()) return
-    
+
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.End,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         actions.forEachIndexed { index, action ->
             if (index > 0) {
                 Spacer(modifier = Modifier.width(8.dp))
             }
-            
+
             if (action.isPrimary) {
                 UnifyButton(
                     onClick = action.onClick,
                     text = action.text,
                     enabled = action.enabled,
                     type = UnifyButtonType.FILLED,
-                    size = UnifyButtonSize.MEDIUM
+                    size = UnifyButtonSize.MEDIUM,
                 )
             } else {
                 TextButton(
                     onClick = action.onClick,
-                    enabled = action.enabled
+                    enabled = action.enabled,
                 ) {
                     Text(action.text)
                 }
@@ -249,7 +261,7 @@ fun UnifyAlertDialog(
     message: String,
     confirmText: String = "确定",
     onConfirm: () -> Unit = onDismissRequest,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
 ) {
     UnifyDialog(
         onDismissRequest = onDismissRequest,
@@ -257,13 +269,14 @@ fun UnifyAlertDialog(
         message = message,
         icon = icon,
         type = UnifyDialogType.ALERT,
-        actions = listOf(
-            UnifyDialogAction(
-                text = confirmText,
-                onClick = onConfirm,
-                isPrimary = true
-            )
-        )
+        actions =
+            listOf(
+                UnifyDialogAction(
+                    text = confirmText,
+                    onClick = onConfirm,
+                    isPrimary = true,
+                ),
+            ),
     )
 }
 
@@ -276,7 +289,7 @@ fun UnifyConfirmationDialog(
     cancelText: String = "取消",
     onConfirm: () -> Unit,
     onCancel: () -> Unit = onDismissRequest,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
 ) {
     UnifyDialog(
         onDismissRequest = onDismissRequest,
@@ -284,16 +297,17 @@ fun UnifyConfirmationDialog(
         message = message,
         icon = icon,
         type = UnifyDialogType.CONFIRMATION,
-        actions = listOf(
-            UnifyDialogAction(
-                text = cancelText,
-                onClick = onCancel
+        actions =
+            listOf(
+                UnifyDialogAction(
+                    text = cancelText,
+                    onClick = onCancel,
+                ),
+                UnifyDialogAction(
+                    text = confirmText,
+                    onClick = onConfirm,
+                    isPrimary = true,
+                ),
             ),
-            UnifyDialogAction(
-                text = confirmText,
-                onClick = onConfirm,
-                isPrimary = true
-            )
-        )
     )
 }

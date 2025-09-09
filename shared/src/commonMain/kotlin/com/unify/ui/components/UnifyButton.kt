@@ -18,7 +18,7 @@ expect fun UnifyButton(
     text: String,
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
-    contentPadding: PaddingValues = PaddingValues(16.dp, 12.dp)
+    contentPadding: PaddingValues = PaddingValues(16.dp, 12.dp),
 )
 
 /**
@@ -29,7 +29,7 @@ expect fun UnifyIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -41,5 +41,5 @@ expect fun UnifyFloatingActionButton(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )

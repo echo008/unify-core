@@ -1,13 +1,11 @@
 package com.unify.core.memory
 
+import com.unify.core.platform.getCurrentTimeMillis
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * Unify跨平台内存管理器
@@ -15,12 +13,19 @@ import com.unify.core.platform.getNanoTime
  */
 interface UnifyMemoryManager {
     suspend fun getMemoryInfo(): MemoryInfo
+
     suspend fun getMemoryUsage(): MemoryUsage
+
     suspend fun clearCache()
+
     suspend fun optimizeMemory()
+
     suspend fun setMemoryThreshold(threshold: Long)
+
     fun getMemoryStatus(): Flow<MemoryStatus>
+
     suspend fun enableMemoryMonitoring(enabled: Boolean)
+
     suspend fun getGarbageCollectionInfo(): GCInfo
 }
 
@@ -38,7 +43,7 @@ data class MemoryInfo(
     val largeMemoryClass: Int,
     val isLowMemory: Boolean,
     val threshold: Long,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -56,7 +61,7 @@ data class MemoryUsage(
     val gcCount: Long,
     val gcTime: Long,
     val usagePercentage: Float,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -70,7 +75,7 @@ enum class MemoryStatus {
     LOW_MEMORY,
     OUT_OF_MEMORY,
     OPTIMIZING,
-    MONITORING_DISABLED
+    MONITORING_DISABLED,
 }
 
 /**
@@ -85,7 +90,7 @@ data class GCInfo(
     val totalCollections: Long,
     val totalTime: Long,
     val lastGCTime: Long,
-    val averageGCTime: Double
+    val averageGCTime: Double,
 )
 
 /**
@@ -99,7 +104,7 @@ data class MemoryConfig(
     val monitoringInterval: Long = 5000L,
     val enableGCLogging: Boolean = false,
     val maxCacheSize: Long = 50 * 1024 * 1024L, // 50MB
-    val enableMemoryProfiling: Boolean = false
+    val enableMemoryProfiling: Boolean = false,
 )
 
 /**
@@ -107,50 +112,55 @@ data class MemoryConfig(
  */
 // 平台特定的内存管理器函数声明
 internal expect suspend fun getPlatformMemoryInfo(): MemoryInfo
+
 internal expect suspend fun getPlatformMemoryUsage(): MemoryUsage
+
 internal expect suspend fun getPlatformGCInfo(): GCInfo
+
 internal expect suspend fun performCacheClear()
+
 internal expect suspend fun performMemoryOptimization()
+
 internal expect fun startMemoryMonitoring(): StateFlow<MemoryUsage?>
+
 internal expect suspend fun stopMemoryMonitoring()
 
 class UnifyMemoryManagerImpl(
-    private val config: MemoryConfig = MemoryConfig()
+    private val config: MemoryConfig = MemoryConfig(),
 ) : UnifyMemoryManager {
-    
     private val _memoryStatus = MutableStateFlow(MemoryStatus.NORMAL)
     private val memoryStatus: StateFlow<MemoryStatus> = _memoryStatus.asStateFlow()
-    
+
     private var isMonitoringEnabled = false
     private var memoryThreshold = config.maxCacheSize
-    
+
     override suspend fun getMemoryInfo(): MemoryInfo {
         return getPlatformMemoryInfo()
     }
-    
+
     override suspend fun getMemoryUsage(): MemoryUsage {
         return getPlatformMemoryUsage()
     }
-    
+
     override suspend fun clearCache() {
         performCacheClear()
         updateMemoryStatus()
     }
-    
+
     override suspend fun optimizeMemory() {
         performMemoryOptimization()
         updateMemoryStatus()
     }
-    
+
     override suspend fun setMemoryThreshold(threshold: Long) {
         memoryThreshold = threshold
         updateMemoryStatus()
     }
-    
+
     override fun getMemoryStatus(): Flow<MemoryStatus> {
         return memoryStatus
     }
-    
+
     override suspend fun enableMemoryMonitoring(enabled: Boolean) {
         isMonitoringEnabled = enabled
         if (enabled) {
@@ -160,23 +170,24 @@ class UnifyMemoryManagerImpl(
             _memoryStatus.value = MemoryStatus.MONITORING_DISABLED
         }
     }
-    
+
     override suspend fun getGarbageCollectionInfo(): GCInfo {
         return getPlatformGCInfo()
     }
-    
+
     private suspend fun updateMemoryStatus() {
         if (!isMonitoringEnabled) return
-        
+
         val usage = getMemoryUsage()
-        val newStatus = when {
-            usage.usagePercentage >= config.criticalThreshold -> MemoryStatus.CRITICAL
-            usage.usagePercentage >= config.warningThreshold -> MemoryStatus.WARNING
-            else -> MemoryStatus.NORMAL
-        }
-        
+        val newStatus =
+            when {
+                usage.usagePercentage >= config.criticalThreshold -> MemoryStatus.CRITICAL
+                usage.usagePercentage >= config.warningThreshold -> MemoryStatus.WARNING
+                else -> MemoryStatus.NORMAL
+            }
+
         _memoryStatus.value = newStatus
-        
+
         if (config.autoOptimize && newStatus == MemoryStatus.CRITICAL) {
             optimizeMemory()
         }
@@ -187,13 +198,24 @@ class UnifyMemoryManagerImpl(
  * 内存缓存管理器
  */
 interface UnifyMemoryCache {
-    suspend fun put(key: String, value: Any, size: Long)
+    suspend fun put(
+        key: String,
+        value: Any,
+        size: Long,
+    )
+
     suspend fun get(key: String): Any?
+
     suspend fun remove(key: String)
+
     suspend fun clear()
+
     suspend fun size(): Long
+
     suspend fun maxSize(): Long
+
     suspend fun hitRate(): Float
+
     suspend fun evictAll()
 }
 
@@ -201,41 +223,44 @@ interface UnifyMemoryCache {
  * LRU内存缓存实现
  */
 class UnifyLRUMemoryCache(
-    private val maxSize: Long
+    private val maxSize: Long,
 ) : UnifyMemoryCache {
-    
     private val cache = mutableMapOf<String, CacheEntry>()
     private val accessOrder = mutableListOf<String>()
     private var currentSize = 0L
     private var hits = 0L
     private var misses = 0L
-    
+
     @Serializable
     private data class CacheEntry(
         val value: String, // 序列化后的值
         val size: Long,
-        val timestamp: Long
+        val timestamp: Long,
     )
-    
-    override suspend fun put(key: String, value: Any, size: Long) {
+
+    override suspend fun put(
+        key: String,
+        value: Any,
+        size: Long,
+    ) {
         val serializedValue = value.toString() // 简化序列化处理
         val entry = CacheEntry(serializedValue, size, getCurrentTimeMillis())
-        
+
         // 如果key已存在，先移除旧值
         remove(key)
-        
+
         // 确保有足够空间
         while (currentSize + size > maxSize && cache.isNotEmpty()) {
             evictLRU()
         }
-        
+
         if (size <= maxSize) {
             cache[key] = entry
             accessOrder.add(key)
             currentSize += size
         }
     }
-    
+
     override suspend fun get(key: String): Any? {
         val entry = cache[key]
         return if (entry != null) {
@@ -249,7 +274,7 @@ class UnifyLRUMemoryCache(
             null
         }
     }
-    
+
     override suspend fun remove(key: String) {
         cache[key]?.let { entry ->
             cache.remove(key)
@@ -257,7 +282,7 @@ class UnifyLRUMemoryCache(
             currentSize -= entry.size
         }
     }
-    
+
     override suspend fun clear() {
         cache.clear()
         accessOrder.clear()
@@ -265,20 +290,20 @@ class UnifyLRUMemoryCache(
         hits = 0L
         misses = 0L
     }
-    
+
     override suspend fun size(): Long = currentSize
-    
+
     override suspend fun maxSize(): Long = maxSize
-    
+
     override suspend fun hitRate(): Float {
         val total = hits + misses
         return if (total > 0) hits.toFloat() / total else 0f
     }
-    
+
     override suspend fun evictAll() {
         clear()
     }
-    
+
     private fun evictLRU() {
         if (accessOrder.isNotEmpty()) {
             val oldestKey = accessOrder.removeFirst()
@@ -295,8 +320,11 @@ class UnifyLRUMemoryCache(
  */
 interface UnifyMemoryMonitor {
     fun onMemoryStatusChanged(status: MemoryStatus)
+
     fun onMemoryWarning(usage: MemoryUsage)
+
     fun onOutOfMemory()
+
     fun onGarbageCollection(gcInfo: GCInfo)
 }
 
@@ -311,26 +339,33 @@ object UnifyMemoryUtils {
         val units = arrayOf("B", "KB", "MB", "GB", "TB")
         var size = bytes.toDouble()
         var unitIndex = 0
-        
+
         while (size >= 1024 && unitIndex < units.size - 1) {
             size /= 1024
             unitIndex++
         }
-        
-        return "${size} ${units[unitIndex]}"
+
+        return "$size ${units[unitIndex]}"
     }
-    
+
     /**
      * 计算内存使用百分比
      */
-    fun calculateUsagePercentage(used: Long, total: Long): Float {
+    fun calculateUsagePercentage(
+        used: Long,
+        total: Long,
+    ): Float {
         return if (total > 0) (used.toFloat() / total) * 100f else 0f
     }
-    
+
     /**
      * 检查是否为低内存状态
      */
-    fun isLowMemory(available: Long, total: Long, threshold: Float = 0.1f): Boolean {
+    fun isLowMemory(
+        available: Long,
+        total: Long,
+        threshold: Float = 0.1f,
+    ): Boolean {
         return (available.toFloat() / total) < threshold
     }
 }

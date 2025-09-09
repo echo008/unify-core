@@ -1,24 +1,19 @@
 package com.unify.core.platform
 
-import com.unify.core.types.PlatformType
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import com.unify.core.types.DeviceInfo
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import com.unify.core.types.PlatformType
 
 /**
  * HarmonyOS平台管理器实现
  * 支持HarmonyOS NEXT和传统HarmonyOS
  */
 class HarmonyOSPlatformManager : BasePlatformManager() {
-    
     override fun getPlatformType(): PlatformType = PlatformType.HARMONY_OS
-    
+
     override fun getPlatformName(): String = "HarmonyOS"
-    
+
     override fun getPlatformVersion(): String = getHarmonyOSVersion()
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = getDeviceManufacturer(),
@@ -26,10 +21,10 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             systemName = "HarmonyOS",
             systemVersion = getHarmonyOSVersion(),
             deviceId = getDeviceId(),
-            isEmulator = isEmulator()
+            isEmulator = isEmulator(),
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean {
         return when (capability) {
             "camera" -> hasCamera()
@@ -68,10 +63,10 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             else -> false
         }
     }
-    
+
     override fun getSupportedCapabilities(): List<String> {
         val capabilities = mutableListOf<String>()
-        
+
         // 基础硬件能力
         if (hasCapability("camera")) capabilities.add("camera")
         if (hasCapability("gps")) capabilities.add("gps")
@@ -85,7 +80,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
         if (hasCapability("microphone")) capabilities.add("microphone")
         if (hasCapability("telephony")) capabilities.add("telephony")
         if (hasCapability("vibration")) capabilities.add("vibration")
-        
+
         // HarmonyOS特有能力
         if (hasCapability("distributed")) capabilities.add("distributed")
         if (hasCapability("arkui")) capabilities.add("arkui")
@@ -108,10 +103,10 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
         if (hasCapability("multimedia")) capabilities.add("multimedia")
         if (hasCapability("security")) capabilities.add("security")
         if (hasCapability("ai")) capabilities.add("ai")
-        
+
         return capabilities
     }
-    
+
     override suspend fun performPlatformInitialization() {
         // HarmonyOS特定初始化
         config["harmony_version"] = getHarmonyOSVersion()
@@ -136,39 +131,39 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
         config["security_patch_tag"] = getSecurityPatchTag()
         config["arkui_version"] = getArkUIVersion()
         config["arkts_version"] = getArkTSVersion()
-        
+
         // 分布式能力信息
         config["distributed_hardware"] = getDistributedHardwareInfo()
         config["distributed_data"] = getDistributedDataInfo()
         config["distributed_scheduler"] = getDistributedSchedulerInfo()
-        
+
         // 系统服务信息
         config["system_services"] = getSystemServicesInfo()
         config["subsystem_info"] = getSubsystemInfo()
-        
+
         // 安全信息
         config["security_level"] = getSecurityLevel()
         config["encryption_status"] = getEncryptionStatus()
         config["root_status"] = getRootStatus()
-        
+
         // 性能信息
         config["cpu_info"] = getCPUInfo()
         config["memory_info"] = getMemoryInfo()
         config["storage_info"] = getStorageInfo()
         config["gpu_info"] = getGPUInfo()
-        
+
         // 网络信息
         config["network_capabilities"] = getNetworkCapabilities()
         config["cellular_info"] = getCellularInfo()
         config["wifi_info"] = getWiFiInfo()
         config["bluetooth_info"] = getBluetoothInfo()
     }
-    
+
     override suspend fun performPlatformCleanup() {
         // HarmonyOS特定清理
         config.clear()
     }
-    
+
     // HarmonyOS特定方法实现
     private fun getHarmonyOSVersion(): String {
         return try {
@@ -178,7 +173,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getAPILevel(): Int {
         return try {
             getSystemProperty("const.ohos.apiversion")?.toIntOrNull() ?: 0
@@ -186,7 +181,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             0
         }
     }
-    
+
     private fun getDeviceType(): String {
         return try {
             getSystemProperty("const.product.devicetype") ?: "Unknown"
@@ -194,7 +189,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getDeviceManufacturer(): String {
         return try {
             getSystemProperty("const.product.manufacturer") ?: "Unknown"
@@ -202,7 +197,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getDeviceModel(): String {
         return try {
             getSystemProperty("const.product.model") ?: "Unknown"
@@ -210,7 +205,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getDeviceBrand(): String {
         return try {
             getSystemProperty("const.product.brand") ?: "Unknown"
@@ -218,7 +213,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getProductSeries(): String {
         return try {
             getSystemProperty("const.product.series") ?: "Unknown"
@@ -226,7 +221,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getOSFullName(): String {
         return try {
             getSystemProperty("const.ohos.fullname") ?: "Unknown"
@@ -234,7 +229,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getDisplayVersion(): String {
         return try {
             getSystemProperty("const.ohos.version.display") ?: "Unknown"
@@ -242,7 +237,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getIncrementalVersion(): String {
         return try {
             getSystemProperty("const.ohos.version.incremental") ?: "Unknown"
@@ -250,7 +245,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBuildType(): String {
         return try {
             getSystemProperty("const.ohos.buildtype") ?: "Unknown"
@@ -258,7 +253,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBuildUser(): String {
         return try {
             getSystemProperty("const.ohos.builduser") ?: "Unknown"
@@ -266,7 +261,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBuildHost(): String {
         return try {
             getSystemProperty("const.ohos.buildhost") ?: "Unknown"
@@ -274,7 +269,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBuildTime(): String {
         return try {
             getSystemProperty("const.ohos.buildtime") ?: "Unknown"
@@ -282,7 +277,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBuildRootHash(): String {
         return try {
             getSystemProperty("const.ohos.buildroothash") ?: "Unknown"
@@ -290,7 +285,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getUDID(): String {
         return try {
             getSystemProperty("const.ohos.udid") ?: generateFallbackDeviceId()
@@ -298,7 +293,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             generateFallbackDeviceId()
         }
     }
-    
+
     private fun getSerialNumber(): String {
         return try {
             getSystemProperty("const.product.serial") ?: "Unknown"
@@ -306,7 +301,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getBootloaderVersion(): String {
         return try {
             getSystemProperty("const.ohos.bootloader.version") ?: "Unknown"
@@ -314,7 +309,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getAbiList(): String {
         return try {
             getSystemProperty("const.product.cpu.abilist") ?: "Unknown"
@@ -322,7 +317,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getSecurityPatchTag(): String {
         return try {
             getSystemProperty("const.ohos.version.security_patch") ?: "Unknown"
@@ -330,7 +325,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getArkUIVersion(): String {
         return try {
             getSystemProperty("const.arkui.version") ?: "Unknown"
@@ -338,7 +333,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getArkTSVersion(): String {
         return try {
             getSystemProperty("const.arkts.version") ?: "Unknown"
@@ -346,82 +341,128 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getDeviceId(): String {
         return getUDID()
     }
-    
+
     private fun isEmulator(): Boolean {
         return try {
             val deviceType = getDeviceType()
             val model = getDeviceModel()
             deviceType.contains("emulator", ignoreCase = true) ||
-            model.contains("emulator", ignoreCase = true) ||
-            model.contains("simulator", ignoreCase = true)
+                model.contains("emulator", ignoreCase = true) ||
+                model.contains("simulator", ignoreCase = true)
         } catch (e: Exception) {
             false
         }
     }
-    
+
     private fun generateFallbackDeviceId(): String {
         return "harmony-${getCurrentTimeMillis()}"
     }
-    
+
     // 硬件能力检测方法
     private fun hasCamera(): Boolean = checkSystemCapability("SystemCapability.Multimedia.Camera.Core")
+
     private fun hasGPS(): Boolean = checkSystemCapability("SystemCapability.Location.Location.Core")
+
     private fun hasBluetooth(): Boolean = checkSystemCapability("SystemCapability.Communication.Bluetooth.Core")
+
     private fun hasWiFi(): Boolean = checkSystemCapability("SystemCapability.Communication.WiFi.STA")
+
     private fun hasNFC(): Boolean = checkSystemCapability("SystemCapability.Communication.NFC.Core")
+
     private fun hasFingerprint(): Boolean = checkSystemCapability("SystemCapability.UserIAM.UserAuth.Core")
+
     private fun hasAccelerometer(): Boolean = checkSystemCapability("SystemCapability.Sensors.Sensor")
+
     private fun hasGyroscope(): Boolean = checkSystemCapability("SystemCapability.Sensors.Sensor")
+
     private fun hasMagnetometer(): Boolean = checkSystemCapability("SystemCapability.Sensors.Sensor")
+
     private fun hasMicrophone(): Boolean = checkSystemCapability("SystemCapability.Multimedia.Audio.Core")
+
     private fun hasTelephony(): Boolean = checkSystemCapability("SystemCapability.Telephony.CoreService")
+
     private fun hasVibration(): Boolean = checkSystemCapability("SystemCapability.Sensors.MiscDevice")
-    
+
     // HarmonyOS特有能力检测
     private fun hasDistributedCapability(): Boolean = checkSystemCapability("SystemCapability.DistributedHardware.DeviceManager")
+
     private fun hasArkUI(): Boolean = checkSystemCapability("SystemCapability.ArkUI.ArkUI.Full")
+
     private fun hasArkTS(): Boolean = checkSystemCapability("SystemCapability.Utils.Lang")
+
     private fun hasHiLog(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiLog")
+
     private fun hasHiAppEvent(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiAppEvent")
+
     private fun hasHiTrace(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiTrace")
+
     private fun hasHiDebug(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiProfiler.HiDebug")
+
     private fun hasHiChecker(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiChecker")
+
     private fun hasHiCollie(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiCollie")
+
     private fun hasHiSysEvent(): Boolean = checkSystemCapability("SystemCapability.HiviewDFX.HiSysEvent")
+
     private fun hasBundleManager(): Boolean = checkSystemCapability("SystemCapability.BundleManager.BundleFramework.Core")
+
     private fun hasAbilityManager(): Boolean = checkSystemCapability("SystemCapability.Ability.AbilityRuntime.Core")
+
     private fun hasWindowManager(): Boolean = checkSystemCapability("SystemCapability.WindowManager.WindowManager.Core")
+
     private fun hasDisplayManager(): Boolean = checkSystemCapability("SystemCapability.WindowManager.WindowManager.Core")
+
     private fun hasInputManager(): Boolean = checkSystemCapability("SystemCapability.MultimodalInput.Input.Core")
+
     private fun hasSensorManager(): Boolean = checkSystemCapability("SystemCapability.Sensors.Sensor")
+
     private fun hasLocationManager(): Boolean = checkSystemCapability("SystemCapability.Location.Location.Core")
+
     private fun hasNotificationManager(): Boolean = checkSystemCapability("SystemCapability.Notification.Notification")
+
     private fun hasMultimediaCapability(): Boolean = checkSystemCapability("SystemCapability.Multimedia.Media.Core")
+
     private fun hasSecurityCapability(): Boolean = checkSystemCapability("SystemCapability.Security.Huks.Core")
+
     private fun hasAICapability(): Boolean = checkSystemCapability("SystemCapability.AI.MindSpore")
-    
+
     // 系统信息获取方法
     private fun getDistributedHardwareInfo(): String = "Distributed Hardware Support"
+
     private fun getDistributedDataInfo(): String = "Distributed Data Support"
+
     private fun getDistributedSchedulerInfo(): String = "Distributed Scheduler Support"
+
     private fun getSystemServicesInfo(): String = "System Services Available"
+
     private fun getSubsystemInfo(): String = "Subsystem Information"
+
     private fun getSecurityLevel(): String = "Security Level 3"
+
     private fun getEncryptionStatus(): String = "Encrypted"
+
     private fun getRootStatus(): String = "Not Rooted"
+
     private fun getCPUInfo(): String = "CPU Information"
+
     private fun getMemoryInfo(): String = "Memory Information"
+
     private fun getStorageInfo(): String = "Storage Information"
+
     private fun getGPUInfo(): String = "GPU Information"
+
     private fun getNetworkCapabilities(): String = "Network Capabilities"
+
     private fun getCellularInfo(): String = "Cellular Information"
+
     private fun getWiFiInfo(): String = "WiFi Information"
+
     private fun getBluetoothInfo(): String = "Bluetooth Information"
-    
+
     // 辅助方法
     private fun getSystemProperty(key: String): String? {
         return try {
@@ -440,7 +481,7 @@ class HarmonyOSPlatformManager : BasePlatformManager() {
             null
         }
     }
-    
+
     private fun checkSystemCapability(capability: String): Boolean {
         return try {
             // 这里应该调用HarmonyOS的系统能力检查API

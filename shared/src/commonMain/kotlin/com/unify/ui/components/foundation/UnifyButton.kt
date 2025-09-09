@@ -27,7 +27,7 @@ fun UnifyButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Button(
         onClick = onClick,
@@ -39,7 +39,7 @@ fun UnifyButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -57,7 +57,7 @@ fun UnifyOutlinedButton(
     border: BorderStroke? = ButtonDefaults.outlinedButtonBorder,
     contentPadding: PaddingValues = ButtonDefaults.ContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     OutlinedButton(
         onClick = onClick,
@@ -69,7 +69,7 @@ fun UnifyOutlinedButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -87,7 +87,7 @@ fun UnifyTextButton(
     border: BorderStroke? = null,
     contentPadding: PaddingValues = ButtonDefaults.TextButtonContentPadding,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     TextButton(
         onClick = onClick,
@@ -99,7 +99,7 @@ fun UnifyTextButton(
         border = border,
         contentPadding = contentPadding,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -113,7 +113,7 @@ fun UnifyIconButton(
     enabled: Boolean = true,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     IconButton(
         onClick = onClick,
@@ -121,7 +121,7 @@ fun UnifyIconButton(
         enabled = enabled,
         colors = colors,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -147,7 +147,7 @@ fun UnifyFloatingActionButton(
         contentColor = contentColor,
         elevation = elevation,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }
 
@@ -173,6 +173,6 @@ fun UnifyExtendedFloatingActionButton(
         contentColor = contentColor,
         elevation = elevation,
         interactionSource = interactionSource,
-        content = content
+        content = content,
     )
 }

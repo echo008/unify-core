@@ -10,8 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.feedback.UnifyProgress
 import com.unify.core.components.UnifySection
+import com.unify.ui.components.feedback.UnifyProgress
 import kotlinx.coroutines.delay
 
 /**
@@ -24,41 +24,43 @@ data class PerformanceMetric(
     val value: Float,
     val unit: String,
     val status: PerformanceStatus,
-    val description: String
+    val description: String,
 )
 
 enum class PerformanceStatus {
-    EXCELLENT, GOOD, FAIR, POOR
+    EXCELLENT,
+    GOOD,
+    FAIR,
+    POOR,
 }
 
 @Composable
-fun PerformanceScreen(
-    modifier: Modifier = Modifier
-) {
+fun PerformanceScreen(modifier: Modifier = Modifier) {
     var metrics by remember { mutableStateOf(emptyList<PerformanceMetric>()) }
     var isLoading by remember { mutableStateOf(true) }
-    
+
     LaunchedEffect(Unit) {
         delay(1000) // 模拟加载时间
         metrics = generatePerformanceMetrics()
         isLoading = false
     }
-    
+
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             UnifySection(
-                title = "性能监控"
+                title = "性能监控",
             ) {
                 if (isLoading) {
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                        contentAlignment = Alignment.Center,
                     ) {
                         CircularProgressIndicator()
                     }
@@ -67,12 +69,12 @@ fun PerformanceScreen(
                 }
             }
         }
-        
+
         if (!isLoading) {
             items(metrics) { metric ->
                 PerformanceMetricCard(metric = metric)
             }
-            
+
             item {
                 PerformanceActions()
             }
@@ -83,35 +85,36 @@ fun PerformanceScreen(
 @Composable
 private fun PerformanceOverview(
     metrics: List<PerformanceMetric>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            ),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = "系统概览",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onPrimaryContainer
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 val excellentCount = metrics.count { it.status == PerformanceStatus.EXCELLENT }
                 val goodCount = metrics.count { it.status == PerformanceStatus.GOOD }
                 val fairCount = metrics.count { it.status == PerformanceStatus.FAIR }
                 val poorCount = metrics.count { it.status == PerformanceStatus.POOR }
-                
+
                 PerformanceStatusItem("优秀", excellentCount, Color(0xFF4CAF50))
                 PerformanceStatusItem("良好", goodCount, Color(0xFF8BC34A))
                 PerformanceStatusItem("一般", fairCount, Color(0xFFFF9800))
@@ -126,22 +129,22 @@ private fun PerformanceStatusItem(
     label: String,
     count: Int,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = count.toString(),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
-            color = color
+            color = color,
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
         )
     }
 }
@@ -149,65 +152,66 @@ private fun PerformanceStatusItem(
 @Composable
 private fun PerformanceMetricCard(
     metric: PerformanceMetric,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = metric.name,
                         style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                     Text(
                         text = metric.description,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                
+
                 Surface(
                     shape = MaterialTheme.shapes.small,
-                    color = getStatusColor(metric.status)
+                    color = getStatusColor(metric.status),
                 ) {
                     Text(
                         text = getStatusText(metric.status),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "${metric.value} ${metric.unit}",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
-                    color = getStatusColor(metric.status)
+                    color = getStatusColor(metric.status),
                 )
-                
+
                 UnifyProgress(
                     progress = metric.value / 100f,
                     color = getStatusColor(metric.status),
-                    modifier = Modifier
-                        .width(100.dp)
-                        .height(8.dp)
+                    modifier =
+                        Modifier
+                            .width(100.dp)
+                            .height(8.dp),
                 )
             }
         }
@@ -215,47 +219,45 @@ private fun PerformanceMetricCard(
 }
 
 @Composable
-private fun PerformanceActions(
-    modifier: Modifier = Modifier
-) {
+private fun PerformanceActions(modifier: Modifier = Modifier) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = "性能优化",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     onClick = { /* 刷新性能数据 */ },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text("刷新数据")
                 }
-                
+
                 OutlinedButton(
                     onClick = { /* 导出报告 */ },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     Text("导出报告")
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             OutlinedButton(
                 onClick = { /* 性能优化建议 */ },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("获取优化建议")
             }
@@ -288,42 +290,42 @@ private fun generatePerformanceMetrics(): List<PerformanceMetric> {
             value = 45f,
             unit = "%",
             status = PerformanceStatus.GOOD,
-            description = "当前CPU使用情况"
+            description = "当前CPU使用情况",
         ),
         PerformanceMetric(
             name = "内存使用率",
             value = 68f,
             unit = "%",
             status = PerformanceStatus.FAIR,
-            description = "系统内存占用情况"
+            description = "系统内存占用情况",
         ),
         PerformanceMetric(
             name = "帧率",
             value = 58f,
             unit = "FPS",
             status = PerformanceStatus.GOOD,
-            description = "UI渲染帧率"
+            description = "UI渲染帧率",
         ),
         PerformanceMetric(
             name = "网络延迟",
             value = 25f,
             unit = "ms",
             status = PerformanceStatus.EXCELLENT,
-            description = "网络请求延迟"
+            description = "网络请求延迟",
         ),
         PerformanceMetric(
             name = "存储I/O",
             value = 78f,
             unit = "MB/s",
             status = PerformanceStatus.GOOD,
-            description = "磁盘读写速度"
+            description = "磁盘读写速度",
         ),
         PerformanceMetric(
             name = "电池使用",
             value = 85f,
             unit = "%",
             status = PerformanceStatus.FAIR,
-            description = "剩余电量"
-        )
+            description = "剩余电量",
+        ),
     )
 }

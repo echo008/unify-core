@@ -21,17 +21,17 @@ actual fun UnifyIcon(
     contentDescription: String?,
     modifier: Modifier,
     tint: Color,
-    size: Dp
+    size: Dp,
 ) {
     val iconVector = getDesktopIconVector(iconName)
     val iconSize = if (size == Dp.Unspecified) 24.dp else size
     val iconTint = if (tint == Color.Unspecified) Color(0xFF757575) else tint
-    
+
     Icon(
         imageVector = iconVector,
         contentDescription = contentDescription,
         modifier = modifier.size(iconSize),
-        tint = iconTint
+        tint = iconTint,
     )
 }
 
@@ -44,18 +44,18 @@ actual fun UnifyVectorIcon(
     contentDescription: String?,
     modifier: Modifier,
     tint: Color,
-    size: Dp
+    size: Dp,
 ) {
     // Desktop平台使用Material Icons作为矢量图标
     val iconVector = getDesktopIconVector(vectorPath)
     val iconSize = if (size == Dp.Unspecified) 24.dp else size
     val iconTint = if (tint == Color.Unspecified) Color(0xFF757575) else tint
-    
+
     Icon(
         imageVector = iconVector,
         contentDescription = contentDescription,
         modifier = modifier.size(iconSize),
-        tint = iconTint
+        tint = iconTint,
     )
 }
 
@@ -68,17 +68,17 @@ actual fun UnifySystemIcon(
     contentDescription: String?,
     modifier: Modifier,
     tint: Color,
-    size: Dp
+    size: Dp,
 ) {
     val iconVector = getSystemIconVector(systemIconType)
     val iconSize = if (size == Dp.Unspecified) 24.dp else size
     val iconTint = if (tint == Color.Unspecified) Color(0xFF757575) else tint
-    
+
     Icon(
         imageVector = iconVector,
         contentDescription = contentDescription,
         modifier = modifier.size(iconSize),
-        tint = iconTint
+        tint = iconTint,
     )
 }
 

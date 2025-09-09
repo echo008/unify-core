@@ -6,6 +6,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import com.unify.core.types.HealthMetric
+import com.unify.core.types.WorkoutType
+import com.unify.ui.components.system.NotificationAction
 
 @Composable
 actual fun UnifyWatchFace(
@@ -32,7 +36,7 @@ actual fun UnifyHealthMonitor(
         Text("JS Health Monitor")
         metrics.take(3).forEach { metric ->
             Button(onClick = { onMetricSelected(metric) }) {
-                Text("${metric.type}: ${metric.value} ${metric.unit}")
+                Text("${metric.details}: Score ${metric.score}")
             }
         }
     }
@@ -52,7 +56,7 @@ actual fun UnifyWatchNotifications(
                     Text(notification.title)
                     Text(notification.content)
                     Row {
-                        Button(onClick = { onNotificationAction(notification, NotificationAction.VIEW) }) {
+                        Button(onClick = { onNotificationAction(notification, NotificationAction.OPEN) }) {
                             Text("View")
                         }
                         Button(onClick = { onNotificationAction(notification, NotificationAction.DISMISS) }) {

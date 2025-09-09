@@ -22,13 +22,13 @@ fun UnifyIcon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     Icon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -40,13 +40,13 @@ fun UnifyIcon(
     painter: Painter,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     Icon(
         painter = painter,
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -58,13 +58,13 @@ fun UnifySmallIcon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     UnifyIcon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier.size(16.dp),
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -76,13 +76,13 @@ fun UnifyMediumIcon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     UnifyIcon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier.size(24.dp),
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -94,13 +94,13 @@ fun UnifyLargeIcon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     UnifyIcon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier.size(32.dp),
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -113,13 +113,13 @@ fun UnifyIconWithSize(
     contentDescription: String?,
     size: Dp,
     modifier: Modifier = Modifier,
-    tint: Color = LocalContentColor.current
+    tint: Color = LocalContentColor.current,
 ) {
     UnifyIcon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier.size(size),
-        tint = tint
+        tint = tint,
     )
 }
 

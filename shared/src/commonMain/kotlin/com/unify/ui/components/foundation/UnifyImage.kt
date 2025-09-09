@@ -31,7 +31,7 @@ fun UnifyImage(
     contentScale: ContentScale = ContentScale.Fit,
     alpha: Float = DefaultAlpha,
     colorFilter: ColorFilter? = null,
-    filterQuality: FilterQuality = FilterQuality.Medium
+    filterQuality: FilterQuality = FilterQuality.Medium,
 ) {
     Image(
         painter = painter,
@@ -40,7 +40,7 @@ fun UnifyImage(
         alignment = alignment,
         contentScale = contentScale,
         alpha = alpha,
-        colorFilter = colorFilter
+        colorFilter = colorFilter,
     )
 }
 
@@ -54,7 +54,7 @@ fun UnifyCircularImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Crop,
     alpha: Float = DefaultAlpha,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
 ) {
     Image(
         painter = painter,
@@ -62,7 +62,7 @@ fun UnifyCircularImage(
         modifier = modifier.clip(androidx.compose.foundation.shape.CircleShape),
         contentScale = contentScale,
         alpha = alpha,
-        colorFilter = colorFilter
+        colorFilter = colorFilter,
     )
 }
 
@@ -77,7 +77,7 @@ fun UnifyRoundedImage(
     cornerRadius: androidx.compose.ui.unit.Dp = 8.dp,
     contentScale: ContentScale = ContentScale.Crop,
     alpha: Float = DefaultAlpha,
-    colorFilter: ColorFilter? = null
+    colorFilter: ColorFilter? = null,
 ) {
     Image(
         painter = painter,
@@ -85,7 +85,7 @@ fun UnifyRoundedImage(
         modifier = modifier.clip(RoundedCornerShape(cornerRadius)),
         contentScale = contentScale,
         alpha = alpha,
-        colorFilter = colorFilter
+        colorFilter = colorFilter,
     )
 }
 
@@ -105,7 +105,7 @@ fun UnifyAsyncImage(
     loadingContent: @Composable () -> Unit = {
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             CircularProgressIndicator()
         }
@@ -113,27 +113,28 @@ fun UnifyAsyncImage(
     errorContent: @Composable () -> Unit = {
         Box(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.Center,
         ) {
             UnifyText("加载失败")
         }
-    }
+    },
 ) {
     when {
         isLoading -> loadingContent()
         painter != null -> {
-            val imageModifier = if (shape != null) {
-                modifier.clip(shape)
-            } else {
-                modifier
-            }
+            val imageModifier =
+                if (shape != null) {
+                    modifier.clip(shape)
+                } else {
+                    modifier
+                }
             Image(
                 painter = painter,
                 contentDescription = contentDescription,
                 modifier = imageModifier,
                 contentScale = contentScale,
                 alpha = alpha,
-                colorFilter = colorFilter
+                colorFilter = colorFilter,
             )
         }
         else -> errorContent()
@@ -150,25 +151,28 @@ fun UnifyAvatar(
     modifier: Modifier = Modifier,
     size: androidx.compose.ui.unit.Dp = 40.dp,
     isLoading: Boolean = false,
-    fallbackText: String = "?"
+    fallbackText: String = "?",
 ) {
     Box(
-        modifier = modifier
-            .size(size)
-            .clip(androidx.compose.foundation.shape.CircleShape),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(size)
+                .clip(androidx.compose.foundation.shape.CircleShape),
+        contentAlignment = Alignment.Center,
     ) {
         when {
             isLoading -> CircularProgressIndicator()
-            painter != null -> UnifyCircularImage(
-                painter = painter,
-                contentDescription = contentDescription,
-                modifier = Modifier.fillMaxSize()
-            )
-            else -> UnifyText(
-                text = fallbackText,
-                style = androidx.compose.material3.MaterialTheme.typography.bodyLarge
-            )
+            painter != null ->
+                UnifyCircularImage(
+                    painter = painter,
+                    contentDescription = contentDescription,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            else ->
+                UnifyText(
+                    text = fallbackText,
+                    style = androidx.compose.material3.MaterialTheme.typography.bodyLarge,
+                )
         }
     }
 }

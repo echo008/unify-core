@@ -2,13 +2,11 @@
 
 package com.unify.ui.components.platform
 
-import android.content.Context
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -22,17 +20,17 @@ actual fun UnifyWebView(
     url: String,
     modifier: Modifier,
     onPageLoaded: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("WebView: $url")
             Button(
-                onClick = { onPageLoaded(url) }
+                onClick = { onPageLoaded(url) },
             ) {
                 Text("Load Page")
             }
@@ -46,19 +44,19 @@ actual fun UnifyVideoPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Video Player: $url")
             Text("Auto Play: $autoPlay")
             Text("Show Controls: $showControls")
             Button(
-                onClick = { onPlaybackStateChanged(true) }
+                onClick = { onPlaybackStateChanged(true) },
             ) {
                 Text("Play")
             }
@@ -72,18 +70,18 @@ actual fun UnifyAudioPlayer(
     modifier: Modifier,
     autoPlay: Boolean,
     showControls: Boolean,
-    onPlaybackStateChanged: (Boolean) -> Unit
+    onPlaybackStateChanged: (Boolean) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Audio Player: $url")
             Text("Auto Play: $autoPlay")
             Button(
-                onClick = { onPlaybackStateChanged(true) }
+                onClick = { onPlaybackStateChanged(true) },
             ) {
                 Text("Play Audio")
             }
@@ -95,17 +93,17 @@ actual fun UnifyAudioPlayer(
 actual fun UnifyQRCodeScanner(
     modifier: Modifier,
     onQRCodeScanned: (String) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("QR Code Scanner")
             Button(
-                onClick = { onQRCodeScanned("sample_qr_code") }
+                onClick = { onQRCodeScanned("sample_qr_code") },
             ) {
                 Text("Scan QR Code")
             }
@@ -119,19 +117,19 @@ actual fun UnifyBiometricAuth(
     subtitle: String,
     onAuthSuccess: () -> Unit,
     onAuthError: (String) -> Unit,
-    onAuthCancel: () -> Unit
+    onAuthCancel: () -> Unit,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Biometric Auth")
             Text("Title: $title")
             Text("Subtitle: $subtitle")
             Button(
-                onClick = onAuthSuccess
+                onClick = onAuthSuccess,
             ) {
                 Text("Authenticate")
             }
@@ -144,12 +142,12 @@ actual fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier,
     text: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
-        enabled = enabled
+        enabled = enabled,
     ) {
         Text(text)
     }
@@ -161,14 +159,14 @@ actual fun UnifyPlatformTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier,
     placeholder: String,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
         placeholder = { Text(placeholder) },
-        enabled = enabled
+        enabled = enabled,
     )
 }
 
@@ -177,13 +175,13 @@ actual fun UnifyPlatformSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
-        enabled = enabled
+        enabled = enabled,
     )
 }
 
@@ -193,14 +191,14 @@ actual fun UnifyPlatformSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier,
     valueRange: ClosedFloatingPointRange<Float>,
-    enabled: Boolean
+    enabled: Boolean,
 ) {
     Slider(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
         valueRange = valueRange,
-        enabled = enabled
+        enabled = enabled,
     )
 }
 
@@ -208,12 +206,12 @@ actual fun UnifyPlatformSlider(
 actual fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     Column(modifier = modifier) {
         LinearProgressIndicator(
             progress = progress,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
         if (showPercentage) {
             Text("${(progress * 100).toInt()}%")
@@ -227,7 +225,7 @@ actual fun UnifyPlatformAlert(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     AlertDialog(
         onDismissRequest = onCancel,
@@ -243,7 +241,7 @@ actual fun UnifyPlatformAlert(
                 Text("Cancel")
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -253,21 +251,21 @@ actual fun UnifyPlatformActionSheet(
     actions: List<String>,
     onActionSelected: (Int) -> Unit,
     onCancel: () -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(title)
             actions.forEachIndexed { index, action ->
                 Button(
-                    onClick = { 
+                    onClick = {
                         onActionSelected(index)
                         onCancel()
-                    }
+                    },
                 ) {
                     Text(action)
                 }
@@ -281,19 +279,20 @@ actual fun UnifyPlatformSegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onSelectionChanged: (Int) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Row(
-        modifier = modifier
+        modifier = modifier,
     ) {
         items.forEachIndexed { index, item ->
             Button(
                 onClick = { onSelectionChanged(index) },
-                colors = if (index == selectedIndex) {
-                    ButtonDefaults.buttonColors()
-                } else {
-                    ButtonDefaults.outlinedButtonColors()
-                }
+                colors =
+                    if (index == selectedIndex) {
+                        ButtonDefaults.buttonColors()
+                    } else {
+                        ButtonDefaults.outlinedButtonColors()
+                    },
             ) {
                 Text(item)
             }
@@ -307,20 +306,20 @@ actual fun UnifyPlatformDatePicker(
     onDateSelected: (Long) -> Unit,
     modifier: Modifier,
     minDate: Long?,
-    maxDate: Long?
+    maxDate: Long?,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Date Picker")
             Text("Selected: ${java.text.SimpleDateFormat("yyyy-MM-dd").format(selectedDate)}")
             Button(
-                onClick = { 
+                onClick = {
                     onDateSelected(System.currentTimeMillis())
-                }
+                },
             ) {
                 Text("Select Date")
             }
@@ -331,7 +330,7 @@ actual fun UnifyPlatformDatePicker(
 actual fun shareContent(
     content: String,
     title: String,
-    mimeType: String
+    mimeType: String,
 ) {
     // Android share implementation
 }
@@ -340,14 +339,14 @@ actual fun showNotification(
     title: String,
     content: String,
     channelId: String,
-    importance: Int
+    importance: Int,
 ) {
     // Android notification implementation
 }
 
 actual fun vibrate(
     duration: Long,
-    amplitude: Int
+    amplitude: Int,
 ) {
     // Android vibration implementation
 }
@@ -360,7 +359,10 @@ actual fun setScreenBrightness(brightness: Float) {
     // Android screen brightness implementation
 }
 
-actual fun setVolume(volume: Float, streamType: Int) {
+actual fun setVolume(
+    volume: Float,
+    streamType: Int,
+) {
     // Android volume control implementation
 }
 
@@ -376,8 +378,8 @@ actual fun observeBatteryStatus(): kotlinx.coroutines.flow.Flow<BatteryStatus> {
             chargingType = ChargingType.NONE,
             temperature = 25.0f,
             voltage = 4000,
-            health = BatteryHealth.GOOD
-        )
+            health = BatteryHealth.GOOD,
+        ),
     )
 }
 
@@ -391,7 +393,7 @@ actual fun Modifier.platformSpecific(): Modifier {
 @Composable
 actual fun UnifyStatusBarController(
     statusBarColor: androidx.compose.ui.graphics.Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // Android status bar control implementation
 }
@@ -399,7 +401,7 @@ actual fun UnifyStatusBarController(
 @Composable
 actual fun UnifyNavigationBarController(
     navigationBarColor: androidx.compose.ui.graphics.Color,
-    darkIcons: Boolean
+    darkIcons: Boolean,
 ) {
     // Android navigation bar control implementation
 }
@@ -409,22 +411,20 @@ actual fun UnifySystemUIController(
     statusBarColor: androidx.compose.ui.graphics.Color,
     navigationBarColor: androidx.compose.ui.graphics.Color,
     statusBarDarkIcons: Boolean,
-    navigationBarDarkIcons: Boolean
+    navigationBarDarkIcons: Boolean,
 ) {
     // Android system UI control implementation
 }
 
 @Composable
-actual fun UnifySafeAreaHandler(
-    content: @Composable () -> Unit
-) {
+actual fun UnifySafeAreaHandler(content: @Composable () -> Unit) {
     content()
 }
 
 @Composable
 actual fun UnifyKeyboardHandler(
     onKeyboardVisibilityChanged: (Boolean) -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     content()
 }
@@ -432,7 +432,7 @@ actual fun UnifyKeyboardHandler(
 @Composable
 actual fun UnifyBackHandler(
     enabled: Boolean,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 ) {
     // Android back handler implementation
 }
@@ -441,7 +441,7 @@ actual fun UnifyBackHandler(
 actual fun UnifyLifecycleHandler(
     onResume: () -> Unit,
     onPause: () -> Unit,
-    onDestroy: () -> Unit
+    onDestroy: () -> Unit,
 ) {
     // Android lifecycle handler implementation
 }
@@ -449,7 +449,7 @@ actual fun UnifyLifecycleHandler(
 @Composable
 actual fun UnifyPermissionHandler(
     permissions: List<String>,
-    onPermissionResult: (Map<String, Boolean>) -> Unit
+    onPermissionResult: (Map<String, Boolean>) -> Unit,
 ) {
     val resultMap = permissions.associateWith { true }
     androidx.compose.runtime.LaunchedEffect(permissions) {
@@ -461,17 +461,18 @@ actual fun UnifyPermissionHandler(
 actual fun UnifyFilePicker(
     fileTypes: List<String>,
     multipleSelection: Boolean,
-    onFileSelected: (List<String>) -> Unit
+    onFileSelected: (List<String>) -> Unit,
 ) {
     Button(
-        onClick = { 
-            val files = if (multipleSelection) {
-                listOf("file1.txt", "file2.txt")
-            } else {
-                listOf("sample_file.txt")
-            }
+        onClick = {
+            val files =
+                if (multipleSelection) {
+                    listOf("file1.txt", "file2.txt")
+                } else {
+                    listOf("sample_file.txt")
+                }
             onFileSelected(files)
-        }
+        },
     ) {
         Text("Pick File")
     }
@@ -481,17 +482,17 @@ actual fun UnifyFilePicker(
 actual fun UnifyCameraComponent(
     modifier: Modifier,
     onImageCaptured: (ByteArray) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Camera Component")
             Button(
-                onClick = { onImageCaptured(byteArrayOf(1, 2, 3)) }
+                onClick = { onImageCaptured(byteArrayOf(1, 2, 3)) },
             ) {
                 Text("Capture Image")
             }
@@ -505,19 +506,19 @@ actual fun UnifyMapComponent(
     latitude: Double,
     longitude: Double,
     zoom: Float,
-    onLocationSelected: (Double, Double) -> Unit
+    onLocationSelected: (Double, Double) -> Unit,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Map Component")
             Text("Lat: $latitude, Lng: $longitude")
             Text("Zoom: $zoom")
             Button(
-                onClick = { onLocationSelected(latitude + 0.1, longitude + 0.1) }
+                onClick = { onLocationSelected(latitude + 0.1, longitude + 0.1) },
             ) {
                 Text("Select Location")
             }
@@ -529,7 +530,6 @@ actual fun UnifyMapComponent(
  * Android平台特定的UI适配器组件
  */
 object AndroidPlatformAdapters {
-    
     /**
      * Android Material Design 按钮适配器
      */
@@ -539,22 +539,22 @@ object AndroidPlatformAdapters {
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
-        colors: ButtonColors = ButtonDefaults.buttonColors()
+        colors: ButtonColors = ButtonDefaults.buttonColors(),
     ) {
         Button(
             onClick = onClick,
             modifier = modifier,
             enabled = enabled,
             colors = colors,
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         ) {
             Text(
                 text = text,
-                fontSize = 16.sp
+                fontSize = 16.sp,
             )
         }
     }
-    
+
     /**
      * Android Material Design 卡片适配器
      */
@@ -563,21 +563,21 @@ object AndroidPlatformAdapters {
         modifier: Modifier = Modifier,
         colors: CardColors = CardDefaults.cardColors(),
         elevation: CardElevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        content: @Composable ColumnScope.() -> Unit
+        content: @Composable ColumnScope.() -> Unit,
     ) {
         Card(
             modifier = modifier,
             colors = colors,
             elevation = elevation,
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(12.dp),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                content = content
+                content = content,
             )
         }
     }
-    
+
     /**
      * Android Material Design 输入框适配器
      */
@@ -589,7 +589,7 @@ object AndroidPlatformAdapters {
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
         isError: Boolean = false,
-        supportingText: String? = null
+        supportingText: String? = null,
     ) {
         OutlinedTextField(
             value = value,
@@ -599,10 +599,10 @@ object AndroidPlatformAdapters {
             enabled = enabled,
             isError = isError,
             supportingText = supportingText?.let { { Text(it) } },
-            shape = RoundedCornerShape(8.dp)
+            shape = RoundedCornerShape(8.dp),
         )
     }
-    
+
     /**
      * Android Material Design 开关适配器
      */
@@ -612,17 +612,17 @@ object AndroidPlatformAdapters {
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
-        colors: SwitchColors = SwitchDefaults.colors()
+        colors: SwitchColors = SwitchDefaults.colors(),
     ) {
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,
             enabled = enabled,
-            colors = colors
+            colors = colors,
         )
     }
-    
+
     /**
      * Android Material Design 进度条适配器
      */
@@ -631,16 +631,16 @@ object AndroidPlatformAdapters {
         progress: Float,
         modifier: Modifier = Modifier,
         color: Color = MaterialTheme.colorScheme.primary,
-        trackColor: Color = MaterialTheme.colorScheme.surfaceVariant
+        trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         LinearProgressIndicator(
             progress = progress,
             modifier = modifier,
             color = color,
-            trackColor = trackColor
+            trackColor = trackColor,
         )
     }
-    
+
     /**
      * Android Material Design 圆形进度条适配器
      */
@@ -648,15 +648,15 @@ object AndroidPlatformAdapters {
     fun MaterialCircularProgressIndicator(
         modifier: Modifier = Modifier,
         color: Color = MaterialTheme.colorScheme.primary,
-        strokeWidth: androidx.compose.ui.unit.Dp = 4.dp
+        strokeWidth: androidx.compose.ui.unit.Dp = 4.dp,
     ) {
         CircularProgressIndicator(
             modifier = modifier,
             color = color,
-            strokeWidth = strokeWidth
+            strokeWidth = strokeWidth,
         )
     }
-    
+
     /**
      * Android Material Design 芯片适配器
      */
@@ -666,17 +666,17 @@ object AndroidPlatformAdapters {
         onClick: () -> Unit,
         modifier: Modifier = Modifier,
         selected: Boolean = false,
-        enabled: Boolean = true
+        enabled: Boolean = true,
     ) {
         FilterChip(
             onClick = onClick,
             label = { Text(text) },
             selected = selected,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         )
     }
-    
+
     /**
      * Android Material Design 浮动操作按钮适配器
      */
@@ -686,17 +686,17 @@ object AndroidPlatformAdapters {
         modifier: Modifier = Modifier,
         containerColor: Color = MaterialTheme.colorScheme.primaryContainer,
         contentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
         FloatingActionButton(
             onClick = onClick,
             modifier = modifier,
             containerColor = containerColor,
             contentColor = contentColor,
-            content = content
+            content = content,
         )
     }
-    
+
     /**
      * Android Material Design 底部导航栏适配器
      */
@@ -705,22 +705,22 @@ object AndroidPlatformAdapters {
         selectedIndex: Int,
         onItemSelected: (Int) -> Unit,
         items: List<BottomNavItem>,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         NavigationBar(
-            modifier = modifier
+            modifier = modifier,
         ) {
             items.forEachIndexed { index, item ->
                 NavigationBarItem(
                     icon = { Icon(item.icon, contentDescription = item.label) },
                     label = { Text(item.label) },
                     selected = selectedIndex == index,
-                    onClick = { onItemSelected(index) }
+                    onClick = { onItemSelected(index) },
                 )
             }
         }
     }
-    
+
     /**
      * Android Material Design 顶部应用栏适配器
      */
@@ -730,17 +730,17 @@ object AndroidPlatformAdapters {
         modifier: Modifier = Modifier,
         navigationIcon: (@Composable () -> Unit)? = null,
         actions: @Composable RowScope.() -> Unit = {},
-        colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors()
+        colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     ) {
         TopAppBar(
             title = { Text(title) },
             modifier = modifier,
             navigationIcon = navigationIcon ?: {},
             actions = actions,
-            colors = colors
+            colors = colors,
         )
     }
-    
+
     /**
      * Android Material Design 对话框适配器
      */
@@ -751,7 +751,7 @@ object AndroidPlatformAdapters {
         content: @Composable () -> Unit,
         confirmButton: @Composable () -> Unit,
         dismissButton: @Composable (() -> Unit)? = null,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         AlertDialog(
             onDismissRequest = onDismissRequest,
@@ -759,10 +759,10 @@ object AndroidPlatformAdapters {
             text = content,
             confirmButton = confirmButton,
             dismissButton = dismissButton,
-            modifier = modifier
+            modifier = modifier,
         )
     }
-    
+
     /**
      * Android Material Design 底部表单适配器
      */
@@ -771,16 +771,16 @@ object AndroidPlatformAdapters {
         onDismissRequest: () -> Unit,
         modifier: Modifier = Modifier,
         dragHandle: @Composable (() -> Unit)? = { BottomSheetDefaults.DragHandle() },
-        content: @Composable ColumnScope.() -> Unit
+        content: @Composable ColumnScope.() -> Unit,
     ) {
         ModalBottomSheet(
             onDismissRequest = onDismissRequest,
             modifier = modifier,
             dragHandle = dragHandle,
-            content = content
+            content = content,
         )
     }
-    
+
     /**
      * Android 系统状态栏颜色适配器
      */
@@ -788,16 +788,16 @@ object AndroidPlatformAdapters {
     fun SystemBarsColorAdapter(
         statusBarColor: Color = MaterialTheme.colorScheme.surface,
         navigationBarColor: Color = MaterialTheme.colorScheme.surface,
-        darkIcons: Boolean = !isSystemInDarkTheme()
+        darkIcons: Boolean = !isSystemInDarkTheme(),
     ) {
         val context = LocalContext.current
-        
+
         LaunchedEffect(statusBarColor, navigationBarColor, darkIcons) {
             // 在实际应用中，这里会设置系统状态栏颜色
             // 需要使用 WindowCompat.setDecorFitsSystemWindows() 等API
         }
     }
-    
+
     /**
      * Android 权限请求适配器
      */
@@ -805,11 +805,11 @@ object AndroidPlatformAdapters {
     fun PermissionRequestAdapter(
         permission: String,
         onPermissionResult: (Boolean) -> Unit,
-        content: @Composable (requestPermission: () -> Unit) -> Unit
+        content: @Composable (requestPermission: () -> Unit) -> Unit,
     ) {
         val context = LocalContext.current
-        
-        content { 
+
+        content {
             // 在实际应用中，这里会使用 ActivityResultContracts.RequestPermission()
             // 进行权限请求
             onPermissionResult(true) // 简化实现
@@ -822,14 +822,13 @@ object AndroidPlatformAdapters {
  */
 data class BottomNavItem(
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val label: String
+    val label: String,
 )
 
 /**
  * Android平台特定的主题适配器
  */
 object AndroidThemeAdapter {
-    
     /**
      * Material Design 3 主题适配器
      */
@@ -837,21 +836,22 @@ object AndroidThemeAdapter {
     fun MaterialTheme(
         darkTheme: Boolean = isSystemInDarkTheme(),
         dynamicColor: Boolean = true,
-        content: @Composable () -> Unit
+        content: @Composable () -> Unit,
     ) {
-        val colorScheme = when {
-            dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S -> {
-                val context = LocalContext.current
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+        val colorScheme =
+            when {
+                dynamicColor && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S -> {
+                    val context = LocalContext.current
+                    if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                }
+                darkTheme -> darkColorScheme()
+                else -> lightColorScheme()
             }
-            darkTheme -> darkColorScheme()
-            else -> lightColorScheme()
-        }
-        
+
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography(),
-            content = content
+            content = content,
         )
     }
 }
@@ -860,7 +860,6 @@ object AndroidThemeAdapter {
  * Android平台特定的工具函数
  */
 object AndroidPlatformUtils {
-    
     /**
      * 获取屏幕密度
      */
@@ -869,7 +868,7 @@ object AndroidPlatformUtils {
         val context = LocalContext.current
         return context.resources.displayMetrics.density
     }
-    
+
     /**
      * 获取屏幕尺寸
      */
@@ -879,7 +878,7 @@ object AndroidPlatformUtils {
         val displayMetrics = context.resources.displayMetrics
         return Pair(displayMetrics.widthPixels, displayMetrics.heightPixels)
     }
-    
+
     /**
      * 检查是否为平板设备
      */
@@ -890,7 +889,7 @@ object AndroidPlatformUtils {
         val screenLayout = configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK
         return screenLayout >= android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
-    
+
     /**
      * 获取系统语言
      */

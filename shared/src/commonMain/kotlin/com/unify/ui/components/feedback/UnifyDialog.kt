@@ -3,9 +3,9 @@
 package com.unify.ui.components.feedback
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,18 +26,19 @@ fun UnifyDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Dialog(
         onDismissRequest = onDismissRequest,
-        properties = properties
+        properties = properties,
     ) {
         Card(
             modifier = modifier,
             shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
         ) {
             content()
         }
@@ -57,7 +58,7 @@ fun UnifyAlertDialog(
     textContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     containerColor: Color = MaterialTheme.colorScheme.surface,
     iconContentColor: Color = MaterialTheme.colorScheme.secondary,
-    tonalElevation: androidx.compose.ui.unit.Dp = 6.dp
+    tonalElevation: androidx.compose.ui.unit.Dp = 6.dp,
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -71,7 +72,7 @@ fun UnifyAlertDialog(
         textContentColor = textContentColor,
         containerColor = containerColor,
         iconContentColor = iconContentColor,
-        tonalElevation = tonalElevation
+        tonalElevation = tonalElevation,
     )
 }
 
@@ -84,7 +85,7 @@ fun UnifyConfirmDialog(
     confirmText: String = "确认",
     dismissText: String = "取消",
     modifier: Modifier = Modifier,
-    icon: (@Composable () -> Unit)? = null
+    icon: (@Composable () -> Unit)? = null,
 ) {
     UnifyAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -104,7 +105,7 @@ fun UnifyConfirmDialog(
                 Text(dismissText)
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -114,7 +115,7 @@ fun UnifyInfoDialog(
     title: String,
     message: String,
     buttonText: String = "确定",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     UnifyAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -126,7 +127,7 @@ fun UnifyInfoDialog(
                 Text(buttonText)
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -136,7 +137,7 @@ fun UnifyWarningDialog(
     title: String,
     message: String,
     buttonText: String = "知道了",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     UnifyAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -148,7 +149,7 @@ fun UnifyWarningDialog(
                 Text(buttonText)
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -158,7 +159,7 @@ fun UnifyErrorDialog(
     title: String = "错误",
     message: String,
     buttonText: String = "确定",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     UnifyAlertDialog(
         onDismissRequest = onDismissRequest,
@@ -170,7 +171,7 @@ fun UnifyErrorDialog(
                 Text(buttonText)
             }
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -179,16 +180,16 @@ fun UnifyCustomDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     properties: DialogProperties = DialogProperties(),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     UnifyDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        properties = properties
+        properties = properties,
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
-            content = content
+            content = content,
         )
     }
 }
@@ -197,26 +198,27 @@ fun UnifyCustomDialog(
 fun UnifyLoadingDialog(
     onDismissRequest: () -> Unit = {},
     message: String = "加载中...",
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     UnifyDialog(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        properties = DialogProperties(
-            dismissOnBackPress = false,
-            dismissOnClickOutside = false
-        )
+        properties =
+            DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false,
+            ),
     ) {
         Column(
             modifier = Modifier.padding(32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             CircularProgressIndicator()
             Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -227,12 +229,12 @@ fun UnifyBottomSheetDialog(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     dragHandle: (@Composable () -> Unit)? = { BottomSheetDefaults.DragHandle() },
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         dragHandle = dragHandle,
-        content = content
+        content = content,
     )
 }

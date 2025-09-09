@@ -1,56 +1,21 @@
 package com.unify.ui.screens
 
-import androidx.compose.foundation.Image
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.shape.CircleShape
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.Icons
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material.icons.filled.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.draw.clip
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import androidx.compose.ui.layout.ContentScale
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 用户档案界面
@@ -59,46 +24,47 @@ import com.unify.core.platform.getNanoTime
 @Composable
 fun ProfileScreen() {
     var userProfile by remember { mutableStateOf(generateUserProfile()) }
-    
+
     LazyColumn(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             ProfileHeader(userProfile = userProfile)
         }
-        
+
         item {
             ProfileStats(stats = userProfile.stats)
         }
-        
+
         item {
             Text(
                 text = "账户设置",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp),
             )
         }
-        
+
         items(getProfileMenuItems()) { menuItem ->
             ProfileMenuItem(
                 item = menuItem,
-                onClick = { /* 处理点击事件 */ }
+                onClick = { /* 处理点击事件 */ },
             )
         }
-        
+
         item {
             Text(
                 text = "最近活动",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(vertical = 8.dp)
+                modifier = Modifier.padding(vertical = 8.dp),
             )
         }
-        
+
         items(userProfile.recentActivities) { activity ->
             ActivityItem(activity = activity)
         }
@@ -109,60 +75,62 @@ fun ProfileScreen() {
 private fun ProfileHeader(userProfile: UserProfile) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // 头像占位符
             Surface(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape),
-                color = MaterialTheme.colorScheme.primary
+                modifier =
+                    Modifier
+                        .size(80.dp)
+                        .clip(CircleShape),
+                color = MaterialTheme.colorScheme.primary,
             ) {
                 Box(
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "用户头像",
                         modifier = Modifier.size(40.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
+                        tint = MaterialTheme.colorScheme.onPrimary,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Text(
                 text = userProfile.name,
                 style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
-            
+
             Text(
                 text = userProfile.email,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Surface(
-                color = when (userProfile.membershipLevel) {
-                    MembershipLevel.PREMIUM -> Color(0xFFFFD700)
-                    MembershipLevel.STANDARD -> Color(0xFFC0C0C0)
-                    MembershipLevel.BASIC -> Color(0xFFCD7F32)
-                },
-                shape = MaterialTheme.shapes.small
+                color =
+                    when (userProfile.membershipLevel) {
+                        MembershipLevel.PREMIUM -> Color(0xFFFFD700)
+                        MembershipLevel.STANDARD -> Color(0xFFC0C0C0)
+                        MembershipLevel.BASIC -> Color(0xFFCD7F32)
+                    },
+                shape = MaterialTheme.shapes.small,
             ) {
                 Text(
                     text = userProfile.membershipLevel.displayName,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.Black
+                    color = Color.Black,
                 )
             }
         }
@@ -173,53 +141,53 @@ private fun ProfileHeader(userProfile: UserProfile) {
 private fun ProfileStats(stats: UserStats) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = "统计信息",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp),
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 StatItem(
                     label = "总使用时长",
-                    value = "${stats.totalUsageHours}小时"
+                    value = "${stats.totalUsageHours}小时",
                 )
                 StatItem(
                     label = "完成任务",
-                    value = "${stats.completedTasks}"
+                    value = "${stats.completedTasks}",
                 )
                 StatItem(
                     label = "获得积分",
-                    value = "${stats.earnedPoints}"
+                    value = "${stats.earnedPoints}",
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 StatItem(
                     label = "连续签到",
-                    value = "${stats.streakDays}天"
+                    value = "${stats.streakDays}天",
                 )
                 StatItem(
                     label = "好友数量",
-                    value = "${stats.friendsCount}"
+                    value = "${stats.friendsCount}",
                 )
                 StatItem(
                     label = "成就数量",
-                    value = "${stats.achievementsCount}"
+                    value = "${stats.achievementsCount}",
                 )
             }
         }
@@ -229,21 +197,21 @@ private fun ProfileStats(stats: UserStats) {
 @Composable
 private fun StatItem(
     label: String,
-    value: String
+    value: String,
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = value,
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -251,47 +219,48 @@ private fun StatItem(
 @Composable
 private fun ProfileMenuItem(
     item: ProfileMenuItemData,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = onClick
+        onClick = onClick,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = item.title,
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
             )
-            
+
             Spacer(modifier = Modifier.width(16.dp))
-            
+
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = item.title,
                     style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
                 if (item.subtitle.isNotEmpty()) {
                     Text(
                         text = item.subtitle,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
-            
+
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "前往",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -300,52 +269,53 @@ private fun ProfileMenuItem(
 @Composable
 private fun ActivityItem(activity: UserActivity) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Surface(
                 modifier = Modifier.size(40.dp),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primaryContainer
+                color = MaterialTheme.colorScheme.primaryContainer,
             ) {
                 Box(
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         imageVector = activity.icon,
                         contentDescription = activity.title,
                         modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = activity.title,
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = activity.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            
+
             Text(
                 text = formatActivityTime(activity.timestamp),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -356,33 +326,33 @@ private fun getProfileMenuItems(): List<ProfileMenuItemData> {
         ProfileMenuItemData(
             icon = Icons.Default.Settings,
             title = "账户设置",
-            subtitle = "个人信息、密码、隐私设置"
+            subtitle = "个人信息、密码、隐私设置",
         ),
         ProfileMenuItemData(
             icon = Icons.Default.Notifications,
             title = "通知设置",
-            subtitle = "推送通知、邮件提醒"
+            subtitle = "推送通知、邮件提醒",
         ),
         ProfileMenuItemData(
             icon = Icons.Default.Security,
             title = "安全中心",
-            subtitle = "登录记录、设备管理"
+            subtitle = "登录记录、设备管理",
         ),
         ProfileMenuItemData(
             icon = Icons.Default.Payment,
             title = "支付管理",
-            subtitle = "支付方式、账单记录"
+            subtitle = "支付方式、账单记录",
         ),
         ProfileMenuItemData(
             icon = Icons.Default.Help,
             title = "帮助中心",
-            subtitle = "常见问题、联系客服"
+            subtitle = "常见问题、联系客服",
         ),
         ProfileMenuItemData(
             icon = Icons.Default.Info,
             title = "关于应用",
-            subtitle = "版本信息、用户协议"
-        )
+            subtitle = "版本信息、用户协议",
+        ),
     )
 }
 
@@ -391,34 +361,36 @@ private fun generateUserProfile(): UserProfile {
         name = "张三",
         email = "zhangsan@example.com",
         membershipLevel = MembershipLevel.PREMIUM,
-        stats = UserStats(
-            totalUsageHours = 156,
-            completedTasks = 89,
-            earnedPoints = 2340,
-            streakDays = 15,
-            friendsCount = 42,
-            achievementsCount = 18
-        ),
-        recentActivities = listOf(
-            UserActivity(
-                icon = Icons.Default.CheckCircle,
-                title = "完成任务",
-                description = "完成了数据同步任务",
-                timestamp = getCurrentTimeMillis() - 3600000
+        stats =
+            UserStats(
+                totalUsageHours = 156,
+                completedTasks = 89,
+                earnedPoints = 2340,
+                streakDays = 15,
+                friendsCount = 42,
+                achievementsCount = 18,
             ),
-            UserActivity(
-                icon = Icons.Default.Star,
-                title = "获得成就",
-                description = "解锁了连续使用7天成就",
-                timestamp = getCurrentTimeMillis() - 7200000
+        recentActivities =
+            listOf(
+                UserActivity(
+                    icon = Icons.Default.CheckCircle,
+                    title = "完成任务",
+                    description = "完成了数据同步任务",
+                    timestamp = getCurrentTimeMillis() - 3600000,
+                ),
+                UserActivity(
+                    icon = Icons.Default.Star,
+                    title = "获得成就",
+                    description = "解锁了连续使用7天成就",
+                    timestamp = getCurrentTimeMillis() - 7200000,
+                ),
+                UserActivity(
+                    icon = Icons.Default.Person,
+                    title = "更新资料",
+                    description = "更新了个人头像",
+                    timestamp = getCurrentTimeMillis() - 86400000,
+                ),
             ),
-            UserActivity(
-                icon = Icons.Default.Person,
-                title = "更新资料",
-                description = "更新了个人头像",
-                timestamp = getCurrentTimeMillis() - 86400000
-            )
-        )
     )
 }
 
@@ -437,7 +409,7 @@ data class UserProfile(
     val email: String,
     val membershipLevel: MembershipLevel,
     val stats: UserStats,
-    val recentActivities: List<UserActivity>
+    val recentActivities: List<UserActivity>,
 )
 
 data class UserStats(
@@ -446,24 +418,24 @@ data class UserStats(
     val earnedPoints: Int,
     val streakDays: Int,
     val friendsCount: Int,
-    val achievementsCount: Int
+    val achievementsCount: Int,
 )
 
 data class UserActivity(
     val icon: ImageVector,
     val title: String,
     val description: String,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 data class ProfileMenuItemData(
     val icon: ImageVector,
     val title: String,
-    val subtitle: String
+    val subtitle: String,
 )
 
 enum class MembershipLevel(val displayName: String) {
     BASIC("基础会员"),
     STANDARD("标准会员"),
-    PREMIUM("高级会员")
+    PREMIUM("高级会员"),
 }

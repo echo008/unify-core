@@ -20,7 +20,7 @@ actual fun UnifyDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     scrimColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ModalNavigationDrawer(
         drawerContent = {
@@ -31,7 +31,7 @@ actual fun UnifyDrawer(
         modifier = modifier,
         drawerState = rememberDrawerState(androidx.compose.material3.DrawerValue.Closed),
         gesturesEnabled = gesturesEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -44,18 +44,18 @@ actual fun UnifyModalDrawer(
     gesturesEnabled: Boolean,
     scrimColor: Color,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     ModalNavigationDrawer(
         drawerContent = {
             ModalDrawerSheet(
-                modifier = Modifier.width(drawerWidth)
+                modifier = Modifier.width(drawerWidth),
             ) {
                 drawerContent()
             }
         },
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -64,18 +64,18 @@ actual fun UnifyPermanentDrawer(
     drawerContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     PermanentNavigationDrawer(
         drawerContent = {
             PermanentDrawerSheet(
-                modifier = Modifier.width(drawerWidth)
+                modifier = Modifier.width(drawerWidth),
             ) {
                 drawerContent()
             }
         },
         modifier = modifier,
-        content = content
+        content = content,
     )
 }
 
@@ -87,12 +87,12 @@ actual fun UnifyDismissibleDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit,
     gesturesEnabled: Boolean,
     drawerWidth: Dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     DismissibleNavigationDrawer(
         drawerContent = {
             DismissibleDrawerSheet(
-                modifier = Modifier.width(drawerWidth)
+                modifier = Modifier.width(drawerWidth),
             ) {
                 drawerContent()
             }
@@ -100,7 +100,7 @@ actual fun UnifyDismissibleDrawer(
         modifier = modifier,
         drawerState = rememberDrawerState(androidx.compose.material3.DrawerValue.Closed),
         gesturesEnabled = gesturesEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -110,7 +110,7 @@ actual fun UnifyDrawerItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier,
-    colors: DrawerItemColors
+    colors: DrawerItemColors,
 ) {
     NavigationDrawerItem(
         label = { Text(item.title) },
@@ -118,9 +118,12 @@ actual fun UnifyDrawerItem(
         onClick = onClick,
         modifier = modifier,
         icon = item.icon,
-        badge = if (item.badge != null) {
-            { Text(item.badge) }
-        } else null
+        badge =
+            if (item.badge != null) {
+                { Text(item.badge) }
+            } else {
+                null
+            },
     )
 }
 
@@ -131,19 +134,20 @@ actual fun UnifyDrawerHeader(
     avatar: (@Composable () -> Unit)?,
     background: (@Composable () -> Unit)?,
     modifier: Modifier,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .clickable { onClick() },
-        color = MaterialTheme.colorScheme.primaryContainer
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable { onClick() },
+        color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Box {
             background?.invoke()
             Row(
                 modifier = Modifier.padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 avatar?.let {
                     it()
@@ -153,13 +157,13 @@ actual fun UnifyDrawerHeader(
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
                     if (subtitle != null) {
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f),
                         )
                     }
                 }

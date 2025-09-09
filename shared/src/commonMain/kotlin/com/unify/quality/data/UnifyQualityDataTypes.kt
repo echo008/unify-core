@@ -1,8 +1,7 @@
 package com.unify.quality.data
 
-import kotlinx.serialization.Serializable
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import kotlinx.serialization.Serializable
 
 /**
  * Unify质量管理数据类型定义
@@ -15,7 +14,7 @@ data class UnifyQualityMetrics(
     val performanceQuality: PerformanceQualityMetrics,
     val testQuality: TestQualityMetrics,
     val securityQuality: SecurityQualityMetrics,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 @Serializable
@@ -26,7 +25,7 @@ data class CodeQualityMetrics(
     val codeSmellCount: Int, // 代码异味数量
     val duplicatedLinesRate: Double, // 重复代码率
     val maintainabilityIndex: Double, // 可维护性指数
-    val technicalDebtRatio: Double // 技术债务比率
+    val technicalDebtRatio: Double, // 技术债务比率
 )
 
 @Serializable
@@ -37,7 +36,7 @@ data class PerformanceQualityMetrics(
     val renderingTime: Long, // 渲染时间(ms)
     val networkLatency: Long, // 网络延迟(ms)
     val batteryConsumption: Double, // 电池消耗率
-    val frameRate: Double // 帧率
+    val frameRate: Double, // 帧率
 )
 
 @Serializable
@@ -48,7 +47,7 @@ data class TestQualityMetrics(
     val uiTestCount: Int, // UI测试数量
     val performanceTestCount: Int, // 性能测试数量
     val passRate: Double, // 测试通过率
-    val testExecutionTime: Long // 测试执行时间(ms)
+    val testExecutionTime: Long, // 测试执行时间(ms)
 )
 
 @Serializable
@@ -58,7 +57,7 @@ data class SecurityQualityMetrics(
     val encryptionCompliance: Boolean, // 加密合规性
     val permissionCompliance: Boolean, // 权限合规性
     val dataProtectionCompliance: Boolean, // 数据保护合规性
-    val auditTrailCompliance: Boolean // 审计跟踪合规性
+    val auditTrailCompliance: Boolean, // 审计跟踪合规性
 )
 
 @Serializable
@@ -67,7 +66,7 @@ data class QualityThreshold(
     val minValue: Double,
     val maxValue: Double,
     val targetValue: Double,
-    val criticalValue: Double
+    val criticalValue: Double,
 )
 
 @Serializable
@@ -80,7 +79,7 @@ data class QualityReport(
     val violations: List<QualityViolation>,
     val recommendations: List<QualityRecommendation>,
     val overallScore: Double,
-    val generatedAt: Long = getCurrentTimeMillis()
+    val generatedAt: Long = getCurrentTimeMillis(),
 )
 
 @Serializable
@@ -91,7 +90,7 @@ data class QualityViolation(
     val severity: ViolationSeverity,
     val description: String,
     val filePath: String? = null,
-    val lineNumber: Int? = null
+    val lineNumber: Int? = null,
 )
 
 @Serializable
@@ -101,19 +100,29 @@ data class QualityRecommendation(
     val title: String,
     val description: String,
     val actionItems: List<String>,
-    val estimatedImpact: Double
+    val estimatedImpact: Double,
 )
 
 enum class ViolationSeverity {
-    LOW, MEDIUM, HIGH, CRITICAL
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL,
 }
 
 enum class RecommendationCategory {
-    CODE_QUALITY, PERFORMANCE, TESTING, SECURITY, ARCHITECTURE
+    CODE_QUALITY,
+    PERFORMANCE,
+    TESTING,
+    SECURITY,
+    ARCHITECTURE,
 }
 
 enum class RecommendationPriority {
-    LOW, MEDIUM, HIGH, URGENT
+    LOW,
+    MEDIUM,
+    HIGH,
+    URGENT,
 }
 
 @Serializable
@@ -121,18 +130,20 @@ data class QualityTrend(
     val metricName: String,
     val dataPoints: List<QualityDataPoint>,
     val trend: TrendDirection,
-    val changeRate: Double
+    val changeRate: Double,
 )
 
 @Serializable
 data class QualityDataPoint(
     val timestamp: Long,
     val value: Double,
-    val version: String
+    val version: String,
 )
 
 enum class TrendDirection {
-    IMPROVING, STABLE, DECLINING
+    IMPROVING,
+    STABLE,
+    DECLINING,
 }
 
 // 质量目标常量

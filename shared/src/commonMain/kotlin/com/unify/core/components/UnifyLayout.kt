@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -21,7 +19,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.VerticalDivider
@@ -31,7 +28,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unify.core.components.UnifySpacing
 
 /**
  * Unify统一布局组件
@@ -44,13 +40,13 @@ fun UnifyColumn(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     spacing: UnifySpacing = UnifySpacing.SMALL,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing.value),
         horizontalAlignment = horizontalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -60,13 +56,13 @@ fun UnifyRow(
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     spacing: UnifySpacing = UnifySpacing.SMALL,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing.value),
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -75,13 +71,13 @@ fun UnifyBox(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier,
         contentAlignment = contentAlignment,
         propagateMinConstraints = propagateMinConstraints,
-        content = content
+        content = content,
     )
 }
 
@@ -93,7 +89,7 @@ fun UnifyGrid(
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     userScrollEnabled: Boolean = true,
-    content: LazyGridScope.() -> Unit
+    content: LazyGridScope.() -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(columns),
@@ -102,7 +98,7 @@ fun UnifyGrid(
         verticalArrangement = verticalArrangement,
         horizontalArrangement = horizontalArrangement,
         userScrollEnabled = userScrollEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -114,7 +110,7 @@ fun UnifyStaggeredGrid(
     verticalItemSpacing: Dp = 0.dp,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     userScrollEnabled: Boolean = true,
-    content: LazyStaggeredGridScope.() -> Unit
+    content: LazyStaggeredGridScope.() -> Unit,
 ) {
     LazyVerticalStaggeredGrid(
         columns = StaggeredGridCells.Fixed(columns),
@@ -123,7 +119,7 @@ fun UnifyStaggeredGrid(
         verticalItemSpacing = verticalItemSpacing,
         horizontalArrangement = horizontalArrangement,
         userScrollEnabled = userScrollEnabled,
-        content = content
+        content = content,
     )
 }
 
@@ -132,16 +128,17 @@ fun UnifyContainer(
     modifier: Modifier = Modifier,
     padding: UnifySpacing = UnifySpacing.MEDIUM,
     fillMaxSize: Boolean = false,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val containerModifier = if (fillMaxSize) {
-        modifier.fillMaxSize()
-    } else {
-        modifier
-    }
-    
+    val containerModifier =
+        if (fillMaxSize) {
+            modifier.fillMaxSize()
+        } else {
+            modifier
+        }
+
     Box(
-        modifier = containerModifier.padding(padding.value)
+        modifier = containerModifier.padding(padding.value),
     ) {
         content()
     }
@@ -153,11 +150,11 @@ fun UnifySection(
     modifier: Modifier = Modifier,
     titleContent: @Composable (() -> Unit)? = null,
     spacing: UnifySpacing = UnifySpacing.MEDIUM,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(spacing.value)
+        verticalArrangement = Arrangement.spacedBy(spacing.value),
     ) {
         if (title != null || titleContent != null) {
             if (titleContent != null) {
@@ -166,11 +163,11 @@ fun UnifySection(
                 androidx.compose.material3.Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
-        
+
         content()
     }
 }
@@ -180,19 +177,19 @@ fun UnifyDivider(
     modifier: Modifier = Modifier,
     thickness: Dp = 1.dp,
     color: Color = MaterialTheme.colorScheme.outline,
-    isVertical: Boolean = false
+    isVertical: Boolean = false,
 ) {
     if (isVertical) {
         VerticalDivider(
             modifier = modifier,
             thickness = thickness,
-            color = color
+            color = color,
         )
     } else {
         HorizontalDivider(
             modifier = modifier,
             thickness = thickness,
-            color = color
+            color = color,
         )
     }
 }
@@ -201,7 +198,7 @@ fun UnifyDivider(
 fun UnifySpacer(
     size: UnifySpacing = UnifySpacing.MEDIUM,
     modifier: Modifier = Modifier,
-    isVertical: Boolean = true
+    isVertical: Boolean = true,
 ) {
     if (isVertical) {
         Spacer(modifier = modifier.height(size.value))
@@ -216,7 +213,7 @@ fun UnifyResponsiveLayout(
     modifier: Modifier = Modifier,
     compactContent: @Composable () -> Unit,
     mediumContent: @Composable (() -> Unit)? = null,
-    expandedContent: @Composable (() -> Unit)? = null
+    expandedContent: @Composable (() -> Unit)? = null,
 ) {
     // 这里可以根据屏幕尺寸选择不同的布局
     // 目前简化实现，后续可以扩展
@@ -233,7 +230,7 @@ fun UnifyAdaptiveGrid(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
-    content: LazyGridScope.() -> Unit
+    content: LazyGridScope.() -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minItemWidth),
@@ -241,6 +238,6 @@ fun UnifyAdaptiveGrid(
         contentPadding = contentPadding,
         verticalArrangement = verticalArrangement,
         horizontalArrangement = horizontalArrangement,
-        content = content
+        content = content,
     )
 }

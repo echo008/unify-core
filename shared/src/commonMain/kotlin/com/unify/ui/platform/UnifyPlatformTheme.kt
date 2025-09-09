@@ -26,7 +26,7 @@ data class UnifyThemeConfig(
     val darkColorScheme: UnifyColorScheme,
     val typography: UnifyTypography,
     val shapes: UnifyShapes,
-    val spacing: UnifySpacing
+    val spacing: UnifySpacing,
 )
 
 /**
@@ -61,7 +61,7 @@ data class UnifyColorScheme(
     val scrim: Long,
     val inverseSurface: Long,
     val inverseOnSurface: Long,
-    val inversePrimary: Long
+    val inversePrimary: Long,
 )
 
 /**
@@ -83,7 +83,7 @@ data class UnifyTypography(
     val bodySmall: UnifyTextStyle,
     val labelLarge: UnifyTextStyle,
     val labelMedium: UnifyTextStyle,
-    val labelSmall: UnifyTextStyle
+    val labelSmall: UnifyTextStyle,
 )
 
 /**
@@ -94,7 +94,7 @@ data class UnifyTextStyle(
     val fontSize: Float,
     val lineHeight: Float,
     val fontWeight: Int,
-    val letterSpacing: Float
+    val letterSpacing: Float,
 )
 
 /**
@@ -106,7 +106,7 @@ data class UnifyShapes(
     val small: Float,
     val medium: Float,
     val large: Float,
-    val extraLarge: Float
+    val extraLarge: Float,
 )
 
 /**
@@ -118,7 +118,7 @@ data class UnifySpacing(
     val small: Float,
     val medium: Float,
     val large: Float,
-    val extraLarge: Float
+    val extraLarge: Float,
 )
 
 /**
@@ -126,8 +126,11 @@ data class UnifySpacing(
  */
 expect class UnifyPlatformThemeAdapter() {
     fun getSystemColorScheme(isDark: Boolean): UnifyColorScheme
+
     fun getSystemTypography(): UnifyTypography
+
     fun getSystemShapes(): UnifyShapes
+
     fun applyPlatformSpecificTheme(theme: UnifyThemeConfig): UnifyThemeConfig
 }
 
@@ -135,36 +138,35 @@ expect class UnifyPlatformThemeAdapter() {
  * 主题管理器
  */
 class UnifyThemeManager {
-    
     private val _currentTheme = mutableStateOf(getDefaultTheme())
     val currentTheme: State<UnifyThemeConfig> = _currentTheme
-    
+
     private val _isDarkMode = mutableStateOf(false)
     val isDarkMode: State<Boolean> = _isDarkMode
-    
+
     private val platformAdapter = UnifyPlatformThemeAdapter()
-    
+
     /**
      * 设置主题
      */
     fun setTheme(theme: UnifyThemeConfig) {
         _currentTheme.value = platformAdapter.applyPlatformSpecificTheme(theme)
     }
-    
+
     /**
      * 切换深色模式
      */
     fun toggleDarkMode() {
         _isDarkMode.value = !_isDarkMode.value
     }
-    
+
     /**
      * 设置深色模式
      */
     fun setDarkMode(isDark: Boolean) {
         _isDarkMode.value = isDark
     }
-    
+
     /**
      * 获取当前颜色方案
      */
@@ -175,7 +177,7 @@ class UnifyThemeManager {
             _currentTheme.value.lightColorScheme
         }
     }
-    
+
     /**
      * 创建自定义主题
      */
@@ -183,20 +185,23 @@ class UnifyThemeManager {
         name: String,
         primaryColor: Color,
         secondaryColor: Color? = null,
-        backgroundColor: Color? = null
+        backgroundColor: Color? = null,
     ): UnifyThemeConfig {
         val baseTheme = getDefaultTheme()
         val lightScheme = createColorSchemeFromPrimary(primaryColor, false)
         val darkScheme = createColorSchemeFromPrimary(primaryColor, true)
-        
+
         return baseTheme.copy(
             name = name,
             lightColorScheme = lightScheme,
-            darkColorScheme = darkScheme
+            darkColorScheme = darkScheme,
         )
     }
-    
-    private fun createColorSchemeFromPrimary(primary: Color, isDark: Boolean): UnifyColorScheme {
+
+    private fun createColorSchemeFromPrimary(
+        primary: Color,
+        isDark: Boolean,
+    ): UnifyColorScheme {
         // 基于主色生成完整的颜色方案
         return if (isDark) {
             getDarkColorScheme().copy(primary = primary.value.toLong())
@@ -213,22 +218,23 @@ class UnifyThemeManager {
 fun UnifyTheme(
     themeConfig: UnifyThemeConfig = getDefaultTheme(),
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) {
-        themeConfig.darkColorScheme.toMaterial3ColorScheme()
-    } else {
-        themeConfig.lightColorScheme.toMaterial3ColorScheme()
-    }
-    
+    val colorScheme =
+        if (darkTheme) {
+            themeConfig.darkColorScheme.toMaterial3ColorScheme()
+        } else {
+            themeConfig.lightColorScheme.toMaterial3ColorScheme()
+        }
+
     val typography = themeConfig.typography.toMaterial3Typography()
     val shapes = themeConfig.shapes.toMaterial3Shapes()
-    
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = typography,
         shapes = shapes,
-        content = content
+        content = content,
     )
 }
 
@@ -238,11 +244,11 @@ fun UnifyTheme(
 @Composable
 fun UnifyThemePreview(
     theme: UnifyThemeConfig,
-    isDark: Boolean = false
+    isDark: Boolean = false,
 ) {
     UnifyTheme(
         themeConfig = theme,
-        darkTheme = isDark
+        darkTheme = isDark,
     ) {
         Surface {
             // 主题预览内容
@@ -281,7 +287,7 @@ private fun UnifyColorScheme.toMaterial3ColorScheme(): ColorScheme {
             scrim = Color(scrim.toULong()),
             inverseSurface = Color(inverseSurface.toULong()),
             inverseOnSurface = Color(inverseOnSurface.toULong()),
-            inversePrimary = Color(inversePrimary.toULong())
+            inversePrimary = Color(inversePrimary.toULong()),
         )
     } else {
         lightColorScheme(
@@ -312,7 +318,7 @@ private fun UnifyColorScheme.toMaterial3ColorScheme(): ColorScheme {
             scrim = Color(scrim.toULong()),
             inverseSurface = Color(inverseSurface.toULong()),
             inverseOnSurface = Color(inverseOnSurface.toULong()),
-            inversePrimary = Color(inversePrimary.toULong())
+            inversePrimary = Color(inversePrimary.toULong()),
         )
     }
 }
@@ -333,7 +339,7 @@ private fun UnifyTypography.toMaterial3Typography(): Typography {
         bodySmall = bodySmall.toTextStyle(),
         labelLarge = labelLarge.toTextStyle(),
         labelMedium = labelMedium.toTextStyle(),
-        labelSmall = labelSmall.toTextStyle()
+        labelSmall = labelSmall.toTextStyle(),
     )
 }
 
@@ -343,7 +349,7 @@ private fun UnifyTextStyle.toTextStyle(): TextStyle {
         lineHeight = lineHeight.sp,
         fontWeight = FontWeight(fontWeight),
         letterSpacing = letterSpacing.sp,
-        fontFamily = FontFamily.Default
+        fontFamily = FontFamily.Default,
     )
 }
 
@@ -353,7 +359,7 @@ private fun UnifyShapes.toMaterial3Shapes(): Shapes {
         small = androidx.compose.foundation.shape.RoundedCornerShape(small.dp),
         medium = androidx.compose.foundation.shape.RoundedCornerShape(medium.dp),
         large = androidx.compose.foundation.shape.RoundedCornerShape(large.dp),
-        extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(extraLarge.dp)
+        extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(extraLarge.dp),
     )
 }
 
@@ -365,7 +371,7 @@ fun getDefaultTheme(): UnifyThemeConfig {
         darkColorScheme = getDarkColorScheme(),
         typography = getDefaultTypography(),
         shapes = getDefaultShapes(),
-        spacing = getDefaultSpacing()
+        spacing = getDefaultSpacing(),
     )
 }
 
@@ -398,7 +404,7 @@ private fun getLightColorScheme(): UnifyColorScheme {
         scrim = 0xFF000000,
         inverseSurface = 0xFF313033,
         inverseOnSurface = 0xFFF4EFF4,
-        inversePrimary = 0xFFD0BCFF
+        inversePrimary = 0xFFD0BCFF,
     )
 }
 
@@ -431,7 +437,7 @@ private fun getDarkColorScheme(): UnifyColorScheme {
         scrim = 0xFF000000,
         inverseSurface = 0xFFE6E1E5,
         inverseOnSurface = 0xFF313033,
-        inversePrimary = 0xFF6750A4
+        inversePrimary = 0xFF6750A4,
     )
 }
 
@@ -451,7 +457,7 @@ private fun getDefaultTypography(): UnifyTypography {
         bodySmall = UnifyTextStyle(12f, 16f, 400, 0.4f),
         labelLarge = UnifyTextStyle(14f, 20f, 500, 0.1f),
         labelMedium = UnifyTextStyle(12f, 16f, 500, 0.5f),
-        labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f)
+        labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f),
     )
 }
 
@@ -461,7 +467,7 @@ private fun getDefaultShapes(): UnifyShapes {
         small = 8f,
         medium = 12f,
         large = 16f,
-        extraLarge = 28f
+        extraLarge = 28f,
     )
 }
 
@@ -471,6 +477,6 @@ private fun getDefaultSpacing(): UnifySpacing {
         small = 8f,
         medium = 16f,
         large = 24f,
-        extraLarge = 32f
+        extraLarge = 32f,
     )
 }

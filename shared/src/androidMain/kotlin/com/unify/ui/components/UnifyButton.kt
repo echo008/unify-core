@@ -20,17 +20,18 @@ actual fun UnifyButton(
     text: String,
     backgroundColor: Color,
     contentColor: Color,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primary,
-            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary
-        ),
-        contentPadding = contentPadding
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primary,
+                contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary,
+            ),
+        contentPadding = contentPadding,
     ) {
         Text(text = text)
     }
@@ -41,13 +42,13 @@ actual fun UnifyIconButton(
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     IconButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -57,13 +58,13 @@ actual fun UnifyFloatingActionButton(
     modifier: Modifier,
     backgroundColor: Color,
     contentColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else FloatingActionButtonDefaults.containerColor,
         contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimaryContainer,
-        content = content
+        content = content,
     )
 }

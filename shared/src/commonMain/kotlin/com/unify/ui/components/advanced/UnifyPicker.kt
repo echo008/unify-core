@@ -15,11 +15,15 @@ data class PickerItem(
     val label: String,
     val value: Any,
     val children: List<PickerItem> = emptyList(),
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 enum class PickerType {
-    SINGLE, MULTI, CASCADE, WHEEL, DROPDOWN
+    SINGLE,
+    MULTI,
+    CASCADE,
+    WHEEL,
+    DROPDOWN,
 }
 
 @Composable
@@ -33,7 +37,7 @@ expect fun UnifyPicker(
     placeholder: String = "请选择选项",
     maxSelections: Int = Int.MAX_VALUE,
     searchEnabled: Boolean = false,
-    showClearButton: Boolean = true
+    showClearButton: Boolean = true,
 )
 
 @Composable
@@ -44,7 +48,7 @@ expect fun UnifyWheelPicker(
     modifier: Modifier = Modifier,
     visibleItemCount: Int = 5,
     infiniteLoop: Boolean = false,
-    textColor: Color = Color.Unspecified
+    textColor: Color = Color.Unspecified,
 )
 
 @Composable
@@ -54,7 +58,7 @@ expect fun UnifyMultiWheelPicker(
     onSelectionChanged: (List<Int>, List<String>) -> Unit,
     modifier: Modifier = Modifier,
     visibleItemCount: Int = 5,
-    wheelSpacing: Int = 16
+    wheelSpacing: Int = 16,
 )
 
 @Composable
@@ -64,7 +68,7 @@ expect fun UnifyCascadePicker(
     onSelectionChanged: (List<String>) -> Unit,
     modifier: Modifier = Modifier,
     maxLevels: Int = 3,
-    showFullPath: Boolean = true
+    showFullPath: Boolean = true,
 )
 
 @Composable
@@ -76,7 +80,7 @@ expect fun UnifyDropdownPicker(
     placeholder: String = "请选择",
     expanded: Boolean = false,
     onExpandedChange: (Boolean) -> Unit = {},
-    searchEnabled: Boolean = false
+    searchEnabled: Boolean = false,
 )
 
 @Composable
@@ -86,5 +90,5 @@ expect fun UnifyColorPicker(
     modifier: Modifier = Modifier,
     showAlphaSlider: Boolean = true,
     showHexInput: Boolean = true,
-    presetColors: List<Color> = emptyList()
+    presetColors: List<Color> = emptyList(),
 )

@@ -18,11 +18,12 @@ data class TabItem(
     val icon: (@Composable () -> Unit)? = null,
     val badge: String? = null,
     val enabled: Boolean = true,
-    val closeable: Boolean = false
+    val closeable: Boolean = false,
 )
 
 enum class TabMode {
-    FIXED, SCROLLABLE
+    FIXED,
+    SCROLLABLE,
 }
 
 @Composable
@@ -37,7 +38,7 @@ expect fun UnifyTabBar(
     selectedContentColor: Color = Color.Unspecified,
     unselectedContentColor: Color = Color.Unspecified,
     indicatorColor: Color = Color.Unspecified,
-    onTabClosed: ((String) -> Unit)? = null
+    onTabClosed: ((String) -> Unit)? = null,
 )
 
 @Composable
@@ -49,7 +50,7 @@ expect fun UnifyScrollableTabRow(
     edgePadding: Dp = 52.dp,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = {},
     divider: @Composable () -> Unit = {},
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 )
 
 @Composable
@@ -60,7 +61,7 @@ expect fun UnifyFixedTabRow(
     contentColor: Color = Color.Unspecified,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = {},
     divider: @Composable () -> Unit = {},
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 )
 
 @Composable
@@ -72,14 +73,14 @@ expect fun UnifyTabBarItem(
     enabled: Boolean = true,
     selectedContentColor: Color = Color.Unspecified,
     unselectedContentColor: Color = Color.Unspecified,
-    onClose: (() -> Unit)? = null
+    onClose: (() -> Unit)? = null,
 )
 
 @Composable
 expect fun UnifyTabIndicator(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    height: Dp = 2.dp
+    height: Dp = 2.dp,
 )
 
 @Composable
@@ -87,5 +88,5 @@ expect fun UnifyTabBadge(
     text: String,
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Red,
-    contentColor: Color = Color.White
+    contentColor: Color = Color.White,
 )

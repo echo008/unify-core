@@ -13,11 +13,14 @@ import androidx.compose.ui.unit.dp
  */
 
 enum class DrawerValue {
-    Closed, Open
+    Closed,
+    Open,
 }
 
 enum class DrawerType {
-    MODAL, PERMANENT, DISMISSIBLE
+    MODAL,
+    PERMANENT,
+    DISMISSIBLE,
 }
 
 data class DrawerItem(
@@ -26,7 +29,7 @@ data class DrawerItem(
     val icon: (@Composable () -> Unit)? = null,
     val badge: String? = null,
     val enabled: Boolean = true,
-    val children: List<DrawerItem> = emptyList()
+    val children: List<DrawerItem> = emptyList(),
 )
 
 @Composable
@@ -37,7 +40,7 @@ expect fun UnifyDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit = {},
     gesturesEnabled: Boolean = true,
     scrimColor: Color = Color.Black.copy(alpha = 0.32f),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 @Composable
@@ -49,7 +52,7 @@ expect fun UnifyModalDrawer(
     gesturesEnabled: Boolean = true,
     scrimColor: Color = Color.Black.copy(alpha = 0.32f),
     drawerWidth: Dp = 280.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 @Composable
@@ -57,7 +60,7 @@ expect fun UnifyPermanentDrawer(
     drawerContent: @Composable ColumnScope.() -> Unit,
     modifier: Modifier = Modifier,
     drawerWidth: Dp = 280.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 @Composable
@@ -68,7 +71,7 @@ expect fun UnifyDismissibleDrawer(
     onDrawerStateChange: (DrawerValue) -> Unit = {},
     gesturesEnabled: Boolean = true,
     drawerWidth: Dp = 280.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 @Composable
@@ -77,7 +80,7 @@ expect fun UnifyDrawerItem(
     selected: Boolean = false,
     onClick: () -> Unit = {},
     modifier: Modifier = Modifier,
-    colors: DrawerItemColors = DrawerItemDefaults.colors()
+    colors: DrawerItemColors = DrawerItemDefaults.colors(),
 )
 
 @Composable
@@ -87,7 +90,7 @@ expect fun UnifyDrawerHeader(
     avatar: (@Composable () -> Unit)? = null,
     background: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 )
 
 object DrawerItemDefaults {
@@ -98,15 +101,16 @@ object DrawerItemDefaults {
         selectedContentColor: Color = Color.Unspecified,
         unselectedContentColor: Color = Color.Unspecified,
         selectedIconColor: Color = Color.Unspecified,
-        unselectedIconColor: Color = Color.Unspecified
-    ): DrawerItemColors = DrawerItemColors(
-        selectedContainerColor = selectedContainerColor,
-        unselectedContainerColor = unselectedContainerColor,
-        selectedContentColor = selectedContentColor,
-        unselectedContentColor = unselectedContentColor,
-        selectedIconColor = selectedIconColor,
-        unselectedIconColor = unselectedIconColor
-    )
+        unselectedIconColor: Color = Color.Unspecified,
+    ): DrawerItemColors =
+        DrawerItemColors(
+            selectedContainerColor = selectedContainerColor,
+            unselectedContainerColor = unselectedContainerColor,
+            selectedContentColor = selectedContentColor,
+            unselectedContentColor = unselectedContentColor,
+            selectedIconColor = selectedIconColor,
+            unselectedIconColor = unselectedIconColor,
+        )
 }
 
 data class DrawerItemColors(
@@ -115,5 +119,5 @@ data class DrawerItemColors(
     val selectedContentColor: Color,
     val unselectedContentColor: Color,
     val selectedIconColor: Color,
-    val unselectedIconColor: Color
+    val unselectedIconColor: Color,
 )

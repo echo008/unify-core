@@ -5,11 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,17 +19,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.ui.unit.sp
-// import platform.WatchKit.* // WatchKit not available in iOS simulator
-import platform.HealthKit.*
+import com.unify.core.types.HealthMetric
+import com.unify.core.types.WorkoutType
+import com.unify.ui.components.system.NotificationAction
 import platform.Foundation.*
-import platform.CoreMotion.*
+import platform.HealthKit.*
 import kotlin.math.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * iOS平台可穿戴设备组件实现 (适用于Apple Watch)
@@ -84,12 +85,12 @@ actual fun UnifyWatchFace(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Text(
-                                text = metric.value.toString(),
+                                text = metric.score.toString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = metric.unit,
+                                text = metric.details,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
@@ -123,19 +124,19 @@ actual fun UnifyHealthMonitor(
                     modifier = Modifier.padding(12.dp)
                 ) {
                     Text(
-                        text = metric.type,
+                        text = metric.details,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-        text = "${metric.value} ${metric.unit}",
+                        text = "Score: ${metric.score}",
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Updated: ${formatTimestamp(metric.timestamp)}",
+                        text = "Status: ${metric.status}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -160,7 +161,7 @@ actual fun UnifyWatchNotifications(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        onNotificationAction(notification, NotificationAction.VIEW)
+                        onNotificationAction(notification, NotificationAction.OPEN)
                     },
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -297,32 +298,25 @@ actual fun UnifyWatchQuickActions(
     onActionSelected: (QuickAction) -> Unit,
     modifier: Modifier
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = modifier.padding(16.dp),
-        contentPadding = PaddingValues(8.dp)
+    LazyColumn(
+        modifier = modifier.padding(8.dp),
+        contentPadding = PaddingValues(4.dp)
     ) {
         items(actions) { action ->
             Card(
                 modifier = Modifier
-                    .aspectRatio(1f)
+                    .padding(4.dp)
+                    .fillMaxWidth()
                     .clickable { onActionSelected(action) },
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Icon(
-                        imageVector = getIconForAction(action.id),
-                        contentDescription = action.title,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(action.title)
                     Text(
                         text = action.title,
                         style = MaterialTheme.typography.bodyMedium,
@@ -355,7 +349,7 @@ fun CircularWatchFace(
             modifier = Modifier.fillMaxSize()
         ) {
             // 绘制表盘刻度
-            drawWatchFaceMarks(this, batteryLevel)
+            drawWatchFaceMarks(batteryLevel)
         }
         
         Column(
@@ -426,27 +420,28 @@ fun CircularWatchFace(
     }
 }
 
-private fun drawWatchFaceMarks(drawScope: DrawScope, progress: Float) {
-    val center = drawScope.center
-    val radius = drawScope.size.minDimension / 2 * 0.8f
+private fun DrawScope.drawWatchFaceMarks(
+    batteryLevel: Float
+) {
+    val center = this.center
+    val radius = this.size.minDimension / 2f - 20.dp.toPx()
     
     // 绘制12个小时刻度
     for (i in 0..11) {
-        val angle = (progress * 2 * kotlin.math.PI).toFloat()- 90f // 从12点开始
-        val startRadius = radius * 0.9f
+        val angle = i * 30f - 90f // 从12点开始
+        val startRadius = radius - 10.dp.toPx()
         val endRadius = radius
         
-        val angleRad = kotlin.math.PI * angle / 180.0
-        val startX = center.x + startRadius * kotlin.math.cos(angleRad).toFloat()
-        val startY = center.y + startRadius * kotlin.math.sin(angleRad).toFloat()
-        val endX = center.x + endRadius * kotlin.math.cos(angleRad).toFloat()
-        val endY = center.y + endRadius * kotlin.math.sin(angleRad).toFloat()
+        val startX = center.x + cos(angle * PI / 180f).toFloat() * startRadius
+        val startY = center.y + sin(angle * PI / 180f).toFloat() * startRadius
+        val endX = center.x + cos(angle * PI / 180f).toFloat() * endRadius
+        val endY = center.y + sin(angle * PI / 180f).toFloat() * endRadius
         
-        drawScope.drawLine(
+        this.drawLine(
             color = Color.White,
             start = androidx.compose.ui.geometry.Offset(startX, startY),
             end = androidx.compose.ui.geometry.Offset(endX, endY),
-            strokeWidth = if (i % 3 == 0) 4f else 2f
+            strokeWidth = 2.dp.toPx()
         )
     }
 }

@@ -23,13 +23,14 @@ fun UnifyContainer(
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(16.dp),
     backgroundColor: Color = Color.Transparent,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(padding),
-        content = content
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(padding),
+        content = content,
     )
 }
 
@@ -37,14 +38,15 @@ fun UnifyContainer(
 fun UnifyScrollableContainer(
     modifier: Modifier = Modifier,
     padding: PaddingValues = PaddingValues(16.dp),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(padding),
-        content = content
+        modifier =
+            modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(padding),
+        content = content,
     )
 }
 
@@ -56,16 +58,16 @@ fun UnifyGrid(
     columns: Int = 2,
     modifier: Modifier = Modifier,
     spacing: androidx.compose.ui.unit.Dp = 8.dp,
-    itemContent: @Composable (Any) -> Unit
+    itemContent: @Composable (Any) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(spacing)
+        verticalArrangement = Arrangement.spacedBy(spacing),
     ) {
         items(items.chunked(columns)) { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(spacing)
+                horizontalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 rowItems.forEach { item ->
                     Box(modifier = Modifier.weight(1f)) {
@@ -86,12 +88,12 @@ fun UnifyHorizontalList(
     items: List<Any>,
     modifier: Modifier = Modifier,
     spacing: androidx.compose.ui.unit.Dp = 8.dp,
-    itemContent: @Composable (Any) -> Unit
+    itemContent: @Composable (Any) -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing),
-        contentPadding = PaddingValues(horizontal = 16.dp)
+        contentPadding = PaddingValues(horizontal = 16.dp),
     ) {
         items(items) { item ->
             itemContent(item)
@@ -104,12 +106,12 @@ fun UnifyVerticalList(
     items: List<Any>,
     modifier: Modifier = Modifier,
     spacing: androidx.compose.ui.unit.Dp = 8.dp,
-    itemContent: @Composable (Any) -> Unit
+    itemContent: @Composable (Any) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing),
-        contentPadding = PaddingValues(16.dp)
+        contentPadding = PaddingValues(16.dp),
     ) {
         items(items) { item ->
             itemContent(item)
@@ -123,39 +125,40 @@ fun UnifyExpandableContainer(
     modifier: Modifier = Modifier,
     initialExpanded: Boolean = false,
     icon: String = "▼",
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     var expanded by remember { mutableStateOf(initialExpanded) }
-    
+
     Column(modifier = modifier.fillMaxWidth()) {
         Surface(
             onClick = { expanded = !expanded },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
-                
+
                 Text(
                     text = if (expanded) "▲" else icon,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-        
+
         if (expanded) {
             Column(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                content = content
+                content = content,
             )
         }
     }
@@ -167,7 +170,7 @@ fun UnifyTabContainer(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable (Int) -> Unit
+    content: @Composable (Int) -> Unit,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         TabRow(selectedTabIndex = selectedTab) {
@@ -175,15 +178,16 @@ fun UnifyTabContainer(
                 Tab(
                     selected = selectedTab == index,
                     onClick = { onTabSelected(index) },
-                    text = { Text(title) }
+                    text = { Text(title) },
                 )
             }
         }
-        
+
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
         ) {
             content(selectedTab)
         }
@@ -197,20 +201,21 @@ fun UnifyCardContainer(
     backgroundColor: Color = MaterialTheme.colorScheme.surface,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     onClick: (() -> Unit)? = null,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = CardDefaults.cardColors(
-            containerColor = backgroundColor,
-            contentColor = contentColor
-        ),
-        onClick = onClick ?: {}
+        colors =
+            CardDefaults.cardColors(
+                containerColor = backgroundColor,
+                contentColor = contentColor,
+            ),
+        onClick = onClick ?: {},
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            content = content
+            content = content,
         )
     }
 }
@@ -223,25 +228,27 @@ fun UnifyFlexContainer(
     justifyContent: UnifyJustifyContent = UnifyJustifyContent.START,
     alignItems: UnifyAlignItems = UnifyAlignItems.START,
     spacing: androidx.compose.ui.unit.Dp = 0.dp,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     when (direction) {
         UnifyFlexDirection.ROW -> {
             Row(
                 modifier = modifier,
-                horizontalArrangement = when (justifyContent) {
-                    UnifyJustifyContent.START -> Arrangement.Start
-                    UnifyJustifyContent.CENTER -> Arrangement.Center
-                    UnifyJustifyContent.END -> Arrangement.End
-                    UnifyJustifyContent.SPACE_BETWEEN -> Arrangement.SpaceBetween
-                    UnifyJustifyContent.SPACE_AROUND -> Arrangement.SpaceAround
-                    UnifyJustifyContent.SPACE_EVENLY -> Arrangement.SpaceEvenly
-                },
-                verticalAlignment = when (alignItems) {
-                    UnifyAlignItems.START -> Alignment.Top
-                    UnifyAlignItems.CENTER -> Alignment.CenterVertically
-                    UnifyAlignItems.END -> Alignment.Bottom
-                }
+                horizontalArrangement =
+                    when (justifyContent) {
+                        UnifyJustifyContent.START -> Arrangement.Start
+                        UnifyJustifyContent.CENTER -> Arrangement.Center
+                        UnifyJustifyContent.END -> Arrangement.End
+                        UnifyJustifyContent.SPACE_BETWEEN -> Arrangement.SpaceBetween
+                        UnifyJustifyContent.SPACE_AROUND -> Arrangement.SpaceAround
+                        UnifyJustifyContent.SPACE_EVENLY -> Arrangement.SpaceEvenly
+                    },
+                verticalAlignment =
+                    when (alignItems) {
+                        UnifyAlignItems.START -> Alignment.Top
+                        UnifyAlignItems.CENTER -> Alignment.CenterVertically
+                        UnifyAlignItems.END -> Alignment.Bottom
+                    },
             ) {
                 content()
             }
@@ -249,19 +256,21 @@ fun UnifyFlexContainer(
         UnifyFlexDirection.COLUMN -> {
             Column(
                 modifier = modifier,
-                verticalArrangement = when (justifyContent) {
-                    UnifyJustifyContent.START -> Arrangement.Top
-                    UnifyJustifyContent.CENTER -> Arrangement.Center
-                    UnifyJustifyContent.END -> Arrangement.Bottom
-                    UnifyJustifyContent.SPACE_BETWEEN -> Arrangement.SpaceBetween
-                    UnifyJustifyContent.SPACE_AROUND -> Arrangement.SpaceAround
-                    UnifyJustifyContent.SPACE_EVENLY -> Arrangement.SpaceEvenly
-                },
-                horizontalAlignment = when (alignItems) {
-                    UnifyAlignItems.START -> Alignment.Start
-                    UnifyAlignItems.CENTER -> Alignment.CenterHorizontally
-                    UnifyAlignItems.END -> Alignment.End
-                }
+                verticalArrangement =
+                    when (justifyContent) {
+                        UnifyJustifyContent.START -> Arrangement.Top
+                        UnifyJustifyContent.CENTER -> Arrangement.Center
+                        UnifyJustifyContent.END -> Arrangement.Bottom
+                        UnifyJustifyContent.SPACE_BETWEEN -> Arrangement.SpaceBetween
+                        UnifyJustifyContent.SPACE_AROUND -> Arrangement.SpaceAround
+                        UnifyJustifyContent.SPACE_EVENLY -> Arrangement.SpaceEvenly
+                    },
+                horizontalAlignment =
+                    when (alignItems) {
+                        UnifyAlignItems.START -> Alignment.Start
+                        UnifyAlignItems.CENTER -> Alignment.CenterHorizontally
+                        UnifyAlignItems.END -> Alignment.End
+                    },
             ) {
                 content()
             }
@@ -270,7 +279,9 @@ fun UnifyFlexContainer(
 }
 
 enum class UnifyFlexDirection { ROW, COLUMN }
+
 enum class UnifyJustifyContent { START, CENTER, END, SPACE_BETWEEN, SPACE_AROUND, SPACE_EVENLY }
+
 enum class UnifyAlignItems { START, CENTER, END }
 
 @Composable
@@ -278,7 +289,7 @@ fun UnifyResponsiveContainer(
     modifier: Modifier = Modifier,
     smallContent: @Composable () -> Unit,
     mediumContent: (@Composable () -> Unit)? = null,
-    largeContent: (@Composable () -> Unit)? = null
+    largeContent: (@Composable () -> Unit)? = null,
 ) {
     BoxWithConstraints(modifier = modifier) {
         when {

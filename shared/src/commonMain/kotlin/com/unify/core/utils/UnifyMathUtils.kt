@@ -7,7 +7,10 @@ import kotlin.math.*
  */
 object UnifyMathUtils {
     fun sin(x: Double): Double = sin(x)
+
     fun cos(x: Double): Double = cos(x)
+
     fun PI(): Double = PI
+
     fun toRadians(degrees: Double): Double = degrees * PI / 180.0
 }

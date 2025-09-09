@@ -3,56 +3,61 @@ package com.unify.core.storage
 import android.content.Context
 import android.content.SharedPreferences
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
 
 actual class PlatformStorageFactory : StorageFactory {
     override fun createStorage(config: StorageConfig): UnifyStorage {
         return AndroidUnifyStorage(config)
     }
-    
-    override fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage {
+
+    override fun createEncryptedStorage(
+        config: StorageConfig,
+        encryptionKey: String,
+    ): UnifyStorage {
         return AndroidUnifyStorage(config, encryptionKey)
     }
-    
+
     override fun createMemoryStorage(): UnifyStorage {
         return com.unify.core.storage.AndroidMemoryStorage()
     }
-    
+
     override fun createFileStorage(path: String): UnifyStorage {
         return com.unify.core.storage.AndroidFileStorage(getContext(), path)
     }
-    
+
     private fun getContext(): Context {
         return com.unify.core.storage.AndroidStorageFactory.context ?: throw IllegalStateException("StorageFactory not initialized")
     }
 }
 
-
-
 class AndroidUnifyStorage(
     private val config: StorageConfig,
-    private val encryptionKey: String? = null
+    private val encryptionKey: String? = null,
 ) : UnifyStorage {
-    
     private val context = com.unify.core.storage.AndroidStorageFactory.context ?: throw IllegalStateException("StorageFactory not initialized")
     private val sharedPreferences = context.getSharedPreferences(config.name, Context.MODE_PRIVATE)
-    
-    override suspend fun <T> save(key: String, value: T, serializer: KSerializer<T>) {
+
+    override suspend fun <T> save(
+        key: String,
+        value: T,
+        serializer: KSerializer<T>,
+    ) {
         val jsonString = Json.encodeToString(serializer, value)
         sharedPreferences.edit().putString(key, jsonString).apply()
     }
-    
-    override suspend fun <T> load(key: String, serializer: KSerializer<T>): T? {
+
+    override suspend fun <T> load(
+        key: String,
+        serializer: KSerializer<T>,
+    ): T? {
         return try {
             val jsonString = sharedPreferences.getString(key, null) ?: return null
             Json.decodeFromString(serializer, jsonString)
@@ -60,7 +65,7 @@ class AndroidUnifyStorage(
             null
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return if (sharedPreferences.contains(key)) {
             sharedPreferences.edit().remove(key).apply()
@@ -69,30 +74,30 @@ class AndroidUnifyStorage(
             false
         }
     }
-    
+
     override suspend fun clear(): Boolean {
         sharedPreferences.edit().clear().apply()
         return true
     }
-    
+
     override suspend fun exists(key: String): Boolean {
         return sharedPreferences.contains(key)
     }
-    
+
     override suspend fun getAllKeys(): List<String> {
         return sharedPreferences.all.keys.toList()
     }
-    
+
     override suspend fun getSize(): Long {
-        return sharedPreferences.all.values.sumOf { 
-            it.toString().toByteArray().size.toLong() 
+        return sharedPreferences.all.values.sumOf {
+            it.toString().toByteArray().size.toLong()
         }
     }
-    
+
     override fun observeChanges(): Flow<StorageEvent> {
         return emptyFlow()
     }
-    
+
     override suspend fun batch(operations: List<StorageOperation>) {
         val editor = sharedPreferences.edit()
         operations.forEach { operation ->
@@ -111,11 +116,11 @@ class AndroidUnifyStorage(
         }
         editor.apply()
     }
-    
+
     override suspend fun backup(): String {
         return Json.encodeToString(sharedPreferences.all)
     }
-    
+
     override suspend fun restore(backupData: String) {
         try {
             val data = Json.decodeFromString<Map<String, Any>>(backupData)
@@ -128,41 +133,45 @@ class AndroidUnifyStorage(
             // 处理恢复错误
         }
     }
-    
+
     override suspend fun compact() {
         // SharedPreferences不需要压缩
     }
 }
-
 
 actual fun createPlatformStorage(): PlatformStorage {
     return AndroidStorage()
 }
 
 class AndroidStorage : PlatformStorage {
-    private val storageStateFlow = MutableStateFlow(
-        StorageState(
-            isConnected = true,
-            syncStatus = "Connected",
-            lastSync = System.currentTimeMillis()
+    private val storageStateFlow =
+        MutableStateFlow(
+            StorageState(
+                isConnected = true,
+                syncStatus = "Connected",
+                lastSync = System.currentTimeMillis(),
+            ),
         )
-    )
     private var sharedPreferences: SharedPreferences? = null
     private var cacheDir: File? = null
     private var filesDir: File? = null
-    
+
     fun initialize(context: Context) {
         sharedPreferences = context.getSharedPreferences("unify_storage", Context.MODE_PRIVATE)
         cacheDir = context.cacheDir
         filesDir = context.filesDir
-        storageStateFlow.value = StorageState(
-            isConnected = true,
-            syncStatus = "Available",
-            lastSync = System.currentTimeMillis()
-        )
+        storageStateFlow.value =
+            StorageState(
+                isConnected = true,
+                syncStatus = "Available",
+                lastSync = System.currentTimeMillis(),
+            )
     }
-    
-    override suspend fun store(key: String, value: String): StorageResult<Unit> {
+
+    override suspend fun store(
+        key: String,
+        value: String,
+    ): StorageResult<Unit> {
         return withContext(Dispatchers.IO) {
             try {
                 sharedPreferences?.edit()?.putString(key, value)?.apply()
@@ -173,7 +182,7 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun retrieve(key: String): RetrievalResult<String> {
         return withContext(Dispatchers.IO) {
             try {
@@ -188,7 +197,7 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun delete(key: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -199,7 +208,7 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun exists(key: String): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -209,7 +218,7 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun clear(): Boolean {
         return withContext(Dispatchers.IO) {
             try {
@@ -220,7 +229,7 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun getAllKeys(): List<String> {
         return withContext(Dispatchers.IO) {
             try {
@@ -230,35 +239,38 @@ class AndroidStorage : PlatformStorage {
             }
         }
     }
-    
+
     override suspend fun getStorageInfo(): StorageInfo {
         return withContext(Dispatchers.IO) {
             try {
                 val totalSpace = filesDir?.totalSpace ?: 0L
                 val freeSpace = filesDir?.freeSpace ?: 0L
                 val usedSpace = totalSpace - freeSpace
-                
+
                 StorageInfo(
                     type = StorageType.LOCAL,
                     size = totalSpace,
-                    lastModified = System.currentTimeMillis()
+                    lastModified = System.currentTimeMillis(),
                 )
             } catch (e: Exception) {
                 StorageInfo(
                     type = StorageType.LOCAL,
                     size = 0L,
-                    lastModified = System.currentTimeMillis()
+                    lastModified = System.currentTimeMillis(),
                 )
             }
         }
     }
-    
+
     override fun getStorageStateFlow(): StateFlow<StorageState> {
         return storageStateFlow
     }
 }
 
-actual suspend fun storeSecurely(key: String, value: String): SecureStorageResult {
+actual suspend fun storeSecurely(
+    key: String,
+    value: String,
+): SecureStorageResult {
     return try {
         // In a real implementation, this would use Android Keystore encryption
         SecureStorageResult.Success("Data stored securely")
@@ -318,8 +330,7 @@ actual fun getStorageStateFlow(): kotlinx.coroutines.flow.StateFlow<StorageState
         StorageState(
             isConnected = true,
             syncStatus = "Connected",
-            lastSync = System.currentTimeMillis()
-        )
+            lastSync = System.currentTimeMillis(),
+        ),
     )
 }
-

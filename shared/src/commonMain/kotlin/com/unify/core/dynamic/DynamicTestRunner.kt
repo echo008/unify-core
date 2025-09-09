@@ -1,23 +1,20 @@
 package com.unify.core.dynamic
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 
 /**
  * 动态测试运行器 - 负责执行和管理动态组件测试
  */
 class DynamicTestRunner(
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
 ) {
-    
     companion object {
         const val MAX_PARALLEL_TESTS = 5
         const val TEST_QUEUE_SIZE = 100
@@ -28,37 +25,37 @@ class DynamicTestRunner(
         const val RETRY_DELAY_MS = 1000L
         const val MAX_RETRY_ATTEMPTS = 3
     }
-    
+
     private val _runnerState = MutableStateFlow(TestRunnerState.IDLE)
     val runnerState: StateFlow<TestRunnerState> = _runnerState.asStateFlow()
-    
+
     private val _testQueue = MutableStateFlow<List<QueuedTest>>(emptyList())
     val testQueue: StateFlow<List<QueuedTest>> = _testQueue.asStateFlow()
-    
+
     private val _runningTests = MutableStateFlow<Map<String, RunningTest>>(emptyMap())
     val runningTests: StateFlow<Map<String, RunningTest>> = _runningTests.asStateFlow()
-    
+
     private val _completedTests = MutableStateFlow<List<CompletedTest>>(emptyList())
     val completedTests: StateFlow<List<CompletedTest>> = _completedTests.asStateFlow()
-    
+
     private val _runnerMetrics = MutableStateFlow(TestRunnerMetrics())
     val runnerMetrics: StateFlow<TestRunnerMetrics> = _runnerMetrics.asStateFlow()
-    
+
     private val testFramework = DynamicTestFramework()
-    
+
     /**
      * 初始化测试运行器
      */
     suspend fun initialize(): Boolean {
         return try {
             _runnerState.value = TestRunnerState.INITIALIZING
-            
+
             // 初始化测试框架
             testFramework.initialize()
-            
+
             // 启动后台任务
             startBackgroundTasks()
-            
+
             _runnerState.value = TestRunnerState.READY
             true
         } catch (e: Exception) {
@@ -66,7 +63,7 @@ class DynamicTestRunner(
             false
         }
     }
-    
+
     /**
      * 启动后台任务
      */
@@ -78,7 +75,7 @@ class DynamicTestRunner(
                 delay(1000)
             }
         }
-        
+
         // 清理任务
         scope.launch {
             while (_runnerState.value != TestRunnerState.STOPPED) {
@@ -86,7 +83,7 @@ class DynamicTestRunner(
                 delay(CLEANUP_INTERVAL_MS)
             }
         }
-        
+
         // 心跳监控
         scope.launch {
             while (_runnerState.value != TestRunnerState.STOPPED) {
@@ -95,37 +92,38 @@ class DynamicTestRunner(
             }
         }
     }
-    
+
     /**
      * 提交测试任务
      */
     fun submitTest(testRequest: TestRequest): String {
         val testId = kotlin.random.Random.nextInt().toString()
-        
-        val queuedTest = QueuedTest(
-            id = testId,
-            request = testRequest,
-            priority = testRequest.priority,
-            submittedAt = getCurrentTimeMillis(),
-            retryCount = 0
-        )
-        
+
+        val queuedTest =
+            QueuedTest(
+                id = testId,
+                request = testRequest,
+                priority = testRequest.priority,
+                submittedAt = getCurrentTimeMillis(),
+                retryCount = 0,
+            )
+
         val currentQueue = _testQueue.value.toMutableList()
-        
+
         if (currentQueue.size >= TEST_QUEUE_SIZE) {
             throw IllegalStateException("测试队列已满")
         }
-        
+
         currentQueue.add(queuedTest)
         // 按优先级排序
         currentQueue.sortByDescending { it.priority.ordinal }
         _testQueue.value = currentQueue
-        
+
         updateMetrics { it.copy(totalSubmitted = it.totalSubmitted + 1) }
-        
+
         return testId
     }
-    
+
     /**
      * 批量提交测试任务
      */
@@ -134,318 +132,333 @@ class DynamicTestRunner(
             submitTest(request)
         }
     }
-    
+
     /**
      * 处理测试队列
      */
     private suspend fun processTestQueue() {
         val queue = _testQueue.value
         val running = _runningTests.value
-        
+
         if (queue.isEmpty() || running.size >= MAX_PARALLEL_TESTS) {
             return
         }
-        
+
         val availableSlots = MAX_PARALLEL_TESTS - running.size
         val testsToRun = queue.take(availableSlots)
-        
+
         testsToRun.forEach { queuedTest ->
             executeTest(queuedTest)
         }
-        
+
         // 从队列中移除已开始执行的测试
         val remainingQueue = queue.drop(testsToRun.size)
         _testQueue.value = remainingQueue
     }
-    
+
     /**
      * 执行测试
      */
     private fun executeTest(queuedTest: QueuedTest) {
         scope.launch {
-            val runningTest = RunningTest(
-                id = queuedTest.id,
-                request = queuedTest.request,
-                startTime = getCurrentTimeMillis(),
-                status = TestExecutionStatus.RUNNING,
-                progress = 0.0
-            )
-            
+            val runningTest =
+                RunningTest(
+                    id = queuedTest.id,
+                    request = queuedTest.request,
+                    startTime = getCurrentTimeMillis(),
+                    status = TestExecutionStatus.RUNNING,
+                    progress = 0.0,
+                )
+
             val currentRunning = _runningTests.value.toMutableMap()
             currentRunning[queuedTest.id] = runningTest
             _runningTests.value = currentRunning
-            
+
             updateMetrics { it.copy(totalStarted = it.totalStarted + 1) }
-            
+
             try {
-                val result = when (queuedTest.request.type) {
-                    TestRequestType.COMPONENT_LOAD -> executeComponentLoadTest(queuedTest.request)
-                    TestRequestType.PERFORMANCE -> executePerformanceTest(queuedTest.request)
-                    TestRequestType.SECURITY -> executeSecurityTest(queuedTest.request)
-                    TestRequestType.INTEGRATION -> executeIntegrationTest(queuedTest.request)
-                    TestRequestType.STRESS -> executeStressTest(queuedTest.request)
-                    TestRequestType.COMPATIBILITY -> executeCompatibilityTest(queuedTest.request)
-                }
-                
+                val result =
+                    when (queuedTest.request.type) {
+                        TestRequestType.COMPONENT_LOAD -> executeComponentLoadTest(queuedTest.request)
+                        TestRequestType.PERFORMANCE -> executePerformanceTest(queuedTest.request)
+                        TestRequestType.SECURITY -> executeSecurityTest(queuedTest.request)
+                        TestRequestType.INTEGRATION -> executeIntegrationTest(queuedTest.request)
+                        TestRequestType.STRESS -> executeStressTest(queuedTest.request)
+                        TestRequestType.COMPATIBILITY -> executeCompatibilityTest(queuedTest.request)
+                    }
+
                 completeTest(queuedTest.id, result)
-                
             } catch (e: Exception) {
-                val errorResult = TestExecutionResult(
-                    success = false,
-                    message = "测试执行异常: ${e.message}",
-                    executionTime = getCurrentTimeMillis() - runningTest.startTime,
-                    details = mapOf("error" to e.toString())
-                )
-                
+                val errorResult =
+                    TestExecutionResult(
+                        success = false,
+                        message = "测试执行异常: ${e.message}",
+                        executionTime = getCurrentTimeMillis() - runningTest.startTime,
+                        details = mapOf("error" to e.toString()),
+                    )
+
                 handleTestFailure(queuedTest, errorResult)
             }
         }
     }
-    
+
     /**
      * 执行组件加载测试
      */
     private suspend fun executeComponentLoadTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.1)
-        
+
         // 模拟组件加载
         delay(kotlin.random.Random.nextLong(1000, 3000))
         updateTestProgress(request.id, 0.5)
-        
+
         val componentId = request.parameters["componentId"] ?: "unknown"
         val loadSuccess = kotlin.random.Random.nextDouble() > 0.1 // 90%成功率
-        
+
         updateTestProgress(request.id, 0.8)
         delay(500)
         updateTestProgress(request.id, 1.0)
-        
+
         return TestExecutionResult(
             success = loadSuccess,
             message = if (loadSuccess) "组件加载成功" else "组件加载失败",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "componentId" to componentId,
-                "loadTime" to (getCurrentTimeMillis() - startTime).toString()
-            )
+            details =
+                mapOf(
+                    "componentId" to componentId,
+                    "loadTime" to (getCurrentTimeMillis() - startTime).toString(),
+                ),
         )
     }
-    
+
     /**
      * 执行性能测试
      */
     private suspend fun executePerformanceTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.1)
-        
+
         // 模拟性能测试
         delay(kotlin.random.Random.nextLong(2000, 5000))
         updateTestProgress(request.id, 0.4)
-        
+
         val cpuUsage = kotlin.random.Random.nextDouble(10.0, 80.0)
         val memoryUsage = kotlin.random.Random.nextLong(50, 200)
         val responseTime = kotlin.random.Random.nextLong(100, 1000)
-        
+
         updateTestProgress(request.id, 0.7)
         delay(1000)
         updateTestProgress(request.id, 1.0)
-        
+
         val performanceGood = cpuUsage < 70.0 && memoryUsage < 150 && responseTime < 800
-        
+
         return TestExecutionResult(
             success = performanceGood,
             message = if (performanceGood) "性能测试通过" else "性能测试未达标",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "cpuUsage" to cpuUsage.toString(),
-                "memoryUsage" to memoryUsage.toString(),
-                "responseTime" to responseTime.toString()
-            )
+            details =
+                mapOf(
+                    "cpuUsage" to cpuUsage.toString(),
+                    "memoryUsage" to memoryUsage.toString(),
+                    "responseTime" to responseTime.toString(),
+                ),
         )
     }
-    
+
     /**
      * 执行安全测试
      */
     private suspend fun executeSecurityTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.2)
-        
+
         // 模拟安全测试
         delay(kotlin.random.Random.nextLong(1500, 4000))
         updateTestProgress(request.id, 0.6)
-        
+
         val vulnerabilities = kotlin.random.Random.nextInt(0, 3)
         val signatureValid = kotlin.random.Random.nextDouble() > 0.05
         val permissionsCorrect = kotlin.random.Random.nextDouble() > 0.1
-        
+
         updateTestProgress(request.id, 0.9)
         delay(500)
         updateTestProgress(request.id, 1.0)
-        
+
         val securityPassed = vulnerabilities == 0 && signatureValid && permissionsCorrect
-        
+
         return TestExecutionResult(
             success = securityPassed,
             message = if (securityPassed) "安全测试通过" else "发现安全问题",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "vulnerabilities" to vulnerabilities.toString(),
-                "signatureValid" to signatureValid.toString(),
-                "permissionsCorrect" to permissionsCorrect.toString()
-            )
+            details =
+                mapOf(
+                    "vulnerabilities" to vulnerabilities.toString(),
+                    "signatureValid" to signatureValid.toString(),
+                    "permissionsCorrect" to permissionsCorrect.toString(),
+                ),
         )
     }
-    
+
     /**
      * 执行集成测试
      */
     private suspend fun executeIntegrationTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.1)
-        
+
         // 模拟集成测试
         delay(kotlin.random.Random.nextLong(3000, 6000))
         updateTestProgress(request.id, 0.5)
-        
+
         val componentsIntegrated = kotlin.random.Random.nextInt(2, 6)
         val dataFlowCorrect = kotlin.random.Random.nextDouble() > 0.15
         val eventsHandled = kotlin.random.Random.nextDouble() > 0.1
-        
+
         updateTestProgress(request.id, 0.8)
         delay(1000)
         updateTestProgress(request.id, 1.0)
-        
+
         val integrationSuccess = dataFlowCorrect && eventsHandled
-        
+
         return TestExecutionResult(
             success = integrationSuccess,
             message = if (integrationSuccess) "集成测试通过" else "集成测试失败",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "componentsIntegrated" to componentsIntegrated.toString(),
-                "dataFlowCorrect" to dataFlowCorrect.toString(),
-                "eventsHandled" to eventsHandled.toString()
-            )
+            details =
+                mapOf(
+                    "componentsIntegrated" to componentsIntegrated.toString(),
+                    "dataFlowCorrect" to dataFlowCorrect.toString(),
+                    "eventsHandled" to eventsHandled.toString(),
+                ),
         )
     }
-    
+
     /**
      * 执行压力测试
      */
     private suspend fun executeStressTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.1)
-        
+
         // 模拟压力测试
         val testDuration = kotlin.random.Random.nextLong(5000, 10000)
         val progressSteps = 10
         val stepDuration = testDuration / progressSteps
-        
+
         for (i in 1..progressSteps) {
             delay(stepDuration)
             updateTestProgress(request.id, i.toDouble() / progressSteps)
         }
-        
+
         val maxConcurrentUsers = kotlin.random.Random.nextInt(100, 1000)
         val errorRate = kotlin.random.Random.nextDouble(0.0, 10.0)
         val avgResponseTime = kotlin.random.Random.nextLong(200, 2000)
-        
+
         val stressPassed = errorRate < 5.0 && avgResponseTime < 1500
-        
+
         return TestExecutionResult(
             success = stressPassed,
             message = if (stressPassed) "压力测试通过" else "压力测试未通过",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "maxConcurrentUsers" to maxConcurrentUsers.toString(),
-                "responseTime" to avgResponseTime.toString(),
-                "avgResponseTime" to avgResponseTime.toString()
-            )
+            details =
+                mapOf(
+                    "maxConcurrentUsers" to maxConcurrentUsers.toString(),
+                    "responseTime" to avgResponseTime.toString(),
+                    "avgResponseTime" to avgResponseTime.toString(),
+                ),
         )
     }
-    
+
     /**
      * 执行兼容性测试
      */
     private suspend fun executeCompatibilityTest(request: TestRequest): TestExecutionResult {
         val startTime = getCurrentTimeMillis()
-        
+
         updateTestProgress(request.id, 0.1)
-        
+
         // 模拟兼容性测试
         delay(kotlin.random.Random.nextLong(2000, 4000))
         updateTestProgress(request.id, 0.5)
-        
+
         val platforms = listOf("Android", "iOS", "Web", "Desktop")
         val compatiblePlatforms = platforms.filter { kotlin.random.Random.nextDouble() > 0.1 }
-        
+
         updateTestProgress(request.id, 0.8)
         delay(1000)
         updateTestProgress(request.id, 1.0)
-        
+
         val compatibilityGood = compatiblePlatforms.size >= platforms.size * 0.8
-        
+
         return TestExecutionResult(
             success = compatibilityGood,
             message = if (compatibilityGood) "兼容性测试通过" else "兼容性问题",
             executionTime = getCurrentTimeMillis() - startTime,
-            details = mapOf(
-                "totalPlatforms" to platforms.size.toString(),
-                "compatiblePlatforms" to compatiblePlatforms.size.toString(),
-                "compatibilityRate" to (compatiblePlatforms.size.toDouble() / platforms.size * 100).toString()
-            )
+            details =
+                mapOf(
+                    "totalPlatforms" to platforms.size.toString(),
+                    "compatiblePlatforms" to compatiblePlatforms.size.toString(),
+                    "compatibilityRate" to (compatiblePlatforms.size.toDouble() / platforms.size * 100).toString(),
+                ),
         )
     }
-    
+
     /**
      * 更新测试进度
      */
-    private fun updateTestProgress(testId: String, progress: Double) {
+    private fun updateTestProgress(
+        testId: String,
+        progress: Double,
+    ) {
         val currentRunning = _runningTests.value.toMutableMap()
         val runningTest = currentRunning[testId]
-        
+
         if (runningTest != null) {
             currentRunning[testId] = runningTest.copy(progress = progress)
             _runningTests.value = currentRunning
         }
     }
-    
+
     /**
      * 完成测试
      */
-    private fun completeTest(testId: String, result: TestExecutionResult) {
+    private fun completeTest(
+        testId: String,
+        result: TestExecutionResult,
+    ) {
         val runningTest = _runningTests.value[testId] ?: return
-        
-        val completedTest = CompletedTest(
-            id = testId,
-            request = runningTest.request,
-            result = result,
-            startTime = runningTest.startTime,
-            endTime = getCurrentTimeMillis()
-        )
-        
+
+        val completedTest =
+            CompletedTest(
+                id = testId,
+                request = runningTest.request,
+                result = result,
+                startTime = runningTest.startTime,
+                endTime = getCurrentTimeMillis(),
+            )
+
         // 移除运行中的测试
         val currentRunning = _runningTests.value.toMutableMap()
         currentRunning.remove(testId)
         _runningTests.value = currentRunning
-        
+
         // 添加到完成列表
         val currentCompleted = _completedTests.value.toMutableList()
         currentCompleted.add(0, completedTest) // 添加到开头
-        
+
         // 保持缓存大小限制
         if (currentCompleted.size > RESULT_CACHE_SIZE) {
             currentCompleted.removeAt(currentCompleted.size - 1)
         }
-        
+
         _completedTests.value = currentCompleted
-        
+
         // 更新指标
         updateMetrics { metrics ->
             if (result.success) {
@@ -453,36 +466,38 @@ class DynamicTestRunner(
             } else {
                 metrics.copy(
                     totalCompleted = metrics.totalCompleted + 1,
-                    totalFailed = metrics.totalFailed + 1
+                    totalFailed = metrics.totalFailed + 1,
                 )
             }
         }
     }
-    
+
     /**
      * 处理测试失败
      */
-    private suspend fun handleTestFailure(queuedTest: QueuedTest, result: TestExecutionResult) {
+    private suspend fun handleTestFailure(
+        queuedTest: QueuedTest,
+        result: TestExecutionResult,
+    ) {
         if (queuedTest.retryCount < MAX_RETRY_ATTEMPTS) {
             // 重试测试
             delay(RETRY_DELAY_MS * (queuedTest.retryCount + 1))
-            
+
             val retryTest = queuedTest.copy(retryCount = queuedTest.retryCount + 1)
             val currentQueue = _testQueue.value.toMutableList()
             currentQueue.add(0, retryTest) // 添加到队列开头
             _testQueue.value = currentQueue
-            
+
             // 移除运行中的测试
             val currentRunning = _runningTests.value.toMutableMap()
             currentRunning.remove(queuedTest.id)
             _runningTests.value = currentRunning
-            
         } else {
             // 达到最大重试次数，标记为失败
             completeTest(queuedTest.id, result)
         }
     }
-    
+
     /**
      * 取消测试
      */
@@ -495,29 +510,30 @@ class DynamicTestRunner(
             _testQueue.value = currentQueue
             return true
         }
-        
+
         // 从运行中移除
         val currentRunning = _runningTests.value.toMutableMap()
         val runningTest = currentRunning[testId]
         if (runningTest != null) {
             currentRunning.remove(testId)
             _runningTests.value = currentRunning
-            
+
             // 添加到完成列表，标记为取消
-            val cancelledResult = TestExecutionResult(
-                success = false,
-                message = "测试已取消",
-                executionTime = getCurrentTimeMillis() - runningTest.startTime,
-                details = mapOf("cancelled" to "true")
-            )
-            
+            val cancelledResult =
+                TestExecutionResult(
+                    success = false,
+                    message = "测试已取消",
+                    executionTime = getCurrentTimeMillis() - runningTest.startTime,
+                    details = mapOf("cancelled" to "true"),
+                )
+
             completeTest(testId, cancelledResult)
             return true
         }
-        
+
         return false
     }
-    
+
     /**
      * 获取测试状态
      */
@@ -526,64 +542,66 @@ class DynamicTestRunner(
         _testQueue.value.find { it.id == testId }?.let {
             return TestStatus.PENDING
         }
-        
+
         // 检查运行中
         _runningTests.value[testId]?.let {
             return TestStatus.RUNNING
         }
-        
+
         // 检查完成
         _completedTests.value.find { it.id == testId }?.let {
             return if (it.result.success) TestStatus.PASSED else TestStatus.FAILED
         }
-        
+
         return null
     }
-    
+
     /**
      * 执行清理任务
      */
     private fun performCleanup() {
         val currentTime = getCurrentTimeMillis()
-        
+
         // 清理超时的运行测试
         val currentRunning = _runningTests.value.toMutableMap()
-        val timedOutTests = currentRunning.values.filter { 
-            currentTime - it.startTime > MAX_EXECUTION_TIME_MS 
-        }
-        
+        val timedOutTests =
+            currentRunning.values.filter {
+                currentTime - it.startTime > MAX_EXECUTION_TIME_MS
+            }
+
         timedOutTests.forEach { test ->
             currentRunning.remove(test.id)
-            
-            val timeoutResult = TestExecutionResult(
-                success = false,
-                message = "测试超时",
-                executionTime = currentTime - test.startTime,
-                details = mapOf("timeout" to "true")
-            )
-            
+
+            val timeoutResult =
+                TestExecutionResult(
+                    success = false,
+                    message = "测试超时",
+                    executionTime = currentTime - test.startTime,
+                    details = mapOf("timeout" to "true"),
+                )
+
             completeTest(test.id, timeoutResult)
         }
-        
+
         if (timedOutTests.isNotEmpty()) {
             _runningTests.value = currentRunning
         }
     }
-    
+
     /**
      * 更新心跳
      */
     private fun updateHeartbeat() {
         updateMetrics { it.copy(lastHeartbeat = getCurrentTimeMillis()) }
     }
-    
+
     /**
      * 更新指标
      */
     private fun updateMetrics(updater: (TestRunnerMetrics) -> TestRunnerMetrics) {
         _runnerMetrics.value = updater(_runnerMetrics.value)
     }
-    
+
     /**
      * 获取运行器统计信息
      */
@@ -592,7 +610,7 @@ class DynamicTestRunner(
         val queue = _testQueue.value
         val running = _runningTests.value
         val completed = _completedTests.value
-        
+
         return TestRunnerStats(
             queuedTests = queue.size,
             runningTests = running.size,
@@ -601,37 +619,42 @@ class DynamicTestRunner(
             totalStarted = metrics.totalStarted,
             totalCompleted = metrics.totalCompleted,
             totalFailed = metrics.totalFailed,
-            successRate = if (metrics.totalCompleted > 0) {
-                ((metrics.totalCompleted - metrics.totalFailed).toDouble() / metrics.totalCompleted) * 100
-            } else 0.0,
-            averageExecutionTime = completed.takeIf { it.isNotEmpty() }?.map { 
-                it.endTime - it.startTime 
-            }?.average()?.toLong() ?: 0L,
-            lastHeartbeat = metrics.lastHeartbeat
+            successRate =
+                if (metrics.totalCompleted > 0) {
+                    ((metrics.totalCompleted - metrics.totalFailed).toDouble() / metrics.totalCompleted) * 100
+                } else {
+                    0.0
+                },
+            averageExecutionTime =
+                completed.takeIf { it.isNotEmpty() }?.map {
+                    it.endTime - it.startTime
+                }?.average()?.toLong() ?: 0L,
+            lastHeartbeat = metrics.lastHeartbeat,
         )
     }
-    
+
     /**
      * 停止运行器
      */
     suspend fun stop() {
         _runnerState.value = TestRunnerState.STOPPING
-        
+
         // 取消所有排队的测试
         _testQueue.value = emptyList()
-        
+
         // 等待运行中的测试完成或超时
         val maxWaitTime = 30000L // 30秒
         val startTime = getCurrentTimeMillis()
-        
-        while (_runningTests.value.isNotEmpty() && 
-               getCurrentTimeMillis() - startTime < maxWaitTime) {
+
+        while (_runningTests.value.isNotEmpty() &&
+            getCurrentTimeMillis() - startTime < maxWaitTime
+        ) {
             delay(1000)
         }
-        
+
         // 强制停止剩余的测试
         _runningTests.value = emptyMap()
-        
+
         _runnerState.value = TestRunnerState.STOPPED
     }
 }
@@ -646,7 +669,7 @@ enum class TestRunnerState {
     RUNNING,
     STOPPING,
     STOPPED,
-    ERROR
+    ERROR,
 }
 
 /**
@@ -658,7 +681,7 @@ enum class TestRequestType {
     SECURITY,
     INTEGRATION,
     STRESS,
-    COMPATIBILITY
+    COMPATIBILITY,
 }
 
 /**
@@ -668,7 +691,7 @@ enum class TestPriority {
     LOW,
     NORMAL,
     HIGH,
-    CRITICAL
+    CRITICAL,
 }
 
 /**
@@ -679,7 +702,7 @@ enum class TestExecutionStatus {
     RUNNING,
     COMPLETED,
     FAILED,
-    CANCELLED
+    CANCELLED,
 }
 
 // TestStatus已在UnifyTypes.kt中定义，此处移除重复声明
@@ -695,7 +718,7 @@ data class TestRequest(
     val description: String = "",
     val priority: TestPriority = TestPriority.NORMAL,
     val timeout: Long = 30000L,
-    val parameters: Map<String, String> = emptyMap()
+    val parameters: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -707,7 +730,7 @@ data class QueuedTest(
     val request: TestRequest,
     val priority: TestPriority,
     val submittedAt: Long,
-    val retryCount: Int
+    val retryCount: Int,
 )
 
 /**
@@ -719,7 +742,7 @@ data class RunningTest(
     val request: TestRequest,
     val startTime: Long,
     val status: TestExecutionStatus,
-    val progress: Double
+    val progress: Double,
 )
 
 /**
@@ -731,7 +754,7 @@ data class CompletedTest(
     val request: TestRequest,
     val result: TestExecutionResult,
     val startTime: Long,
-    val endTime: Long
+    val endTime: Long,
 )
 
 /**
@@ -742,7 +765,7 @@ data class TestExecutionResult(
     val success: Boolean,
     val message: String,
     val executionTime: Long,
-    val details: Map<String, String> = emptyMap()
+    val details: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -754,7 +777,7 @@ data class TestRunnerMetrics(
     val totalStarted: Int = 0,
     val totalCompleted: Int = 0,
     val totalFailed: Int = 0,
-    val lastHeartbeat: Long = getCurrentTimeMillis()
+    val lastHeartbeat: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -771,5 +794,5 @@ data class TestRunnerStats(
     val totalFailed: Int,
     val successRate: Double,
     val averageExecutionTime: Long,
-    val lastHeartbeat: Long
+    val lastHeartbeat: Long,
 )

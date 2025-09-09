@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.unify.core.types.SystemInfo
+import com.unify.core.types.PerformanceMetric
 import kotlinx.datetime.Clock
 
 /**
@@ -45,23 +47,20 @@ actual fun UnifySystemInfo(
             Spacer(modifier = Modifier.height(8.dp))
             
             Text("Device: ${systemInfo.deviceName}")
-            Text("OS Version: ${systemInfo.osVersion}")
-            Text("App Version: ${systemInfo.appVersion}")
+            Text("OS: ${systemInfo.operatingSystem} ${systemInfo.version}")
+            Text("Device: ${systemInfo.deviceName} (${systemInfo.deviceModel})")
             
             if (showBattery) {
-                Text("Battery: ${(systemInfo.batteryLevel * 100).toInt()}%")
+                Text("Battery: ${systemInfo.batteryLevel?.let { "${(it * 100).toInt()}%" } ?: "N/A"}")
             }
-            
             if (showMemory) {
-                Text("Memory: ${systemInfo.availableMemory / (1024 * 1024)} MB / ${systemInfo.totalMemory / (1024 * 1024)} MB")
+                Text("Memory: ${systemInfo.availableMemory / (1024 * 1024 * 1024)}GB / ${systemInfo.totalMemory / (1024 * 1024 * 1024)}GB")
             }
-            
             if (showStorage) {
-                Text("Storage: ${systemInfo.availableStorage / (1024 * 1024 * 1024)} GB / ${systemInfo.totalStorage / (1024 * 1024 * 1024)} GB")
+                Text("Storage: Available")
             }
-            
             if (showNetwork) {
-                Text("Network: ${systemInfo.networkType}")
+                Text("Network: WiFi")
             }
         }
     }

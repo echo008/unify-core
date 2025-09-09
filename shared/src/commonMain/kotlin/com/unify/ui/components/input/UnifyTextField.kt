@@ -39,10 +39,10 @@ fun UnifyTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     isPassword: Boolean = false,
     textStyle: TextStyle = LocalTextStyle.current,
-    colors: TextFieldColors = OutlinedTextFieldDefaults.colors()
+    colors: TextFieldColors = OutlinedTextFieldDefaults.colors(),
 ) {
     var passwordVisible by remember { mutableStateOf(false) }
-    
+
     Column(modifier = modifier) {
         OutlinedTextField(
             value = value,
@@ -51,39 +51,44 @@ fun UnifyTextField(
             label = label?.let { { Text(it) } },
             placeholder = placeholder?.let { { Text(it, color = Color.Gray) } },
             leadingIcon = leadingIcon,
-            trailingIcon = if (isPassword) {
-                {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Text(if (passwordVisible) "👁️" else "🙈")
+            trailingIcon =
+                if (isPassword) {
+                    {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Text(if (passwordVisible) "👁️" else "🙈")
+                        }
                     }
-                }
-            } else trailingIcon,
+                } else {
+                    trailingIcon
+                },
             isError = isError,
             enabled = enabled,
             readOnly = readOnly,
             singleLine = singleLine,
             maxLines = maxLines,
             minLines = minLines,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = keyboardType,
-                imeAction = imeAction
-            ),
+            keyboardOptions =
+                KeyboardOptions(
+                    keyboardType = keyboardType,
+                    imeAction = imeAction,
+                ),
             keyboardActions = keyboardActions,
-            visualTransformation = if (isPassword && !passwordVisible) {
-                PasswordVisualTransformation()
-            } else {
-                VisualTransformation.None
-            },
+            visualTransformation =
+                if (isPassword && !passwordVisible) {
+                    PasswordVisualTransformation()
+                } else {
+                    VisualTransformation.None
+                },
             textStyle = textStyle,
-            colors = colors
+            colors = colors,
         )
-        
+
         if (isError && errorMessage != null) {
             Text(
                 text = errorMessage,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
     }
@@ -103,7 +108,7 @@ fun UnifyMultilineTextField(
     maxLines: Int = 10,
     enabled: Boolean = true,
     isError: Boolean = false,
-    errorMessage: String? = null
+    errorMessage: String? = null,
 ) {
     UnifyTextField(
         value = value,
@@ -116,7 +121,7 @@ fun UnifyMultilineTextField(
         maxLines = maxLines,
         enabled = enabled,
         isError = isError,
-        errorMessage = errorMessage
+        errorMessage = errorMessage,
     )
 }
 
@@ -129,7 +134,7 @@ fun UnifySearchField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "搜索...",
-    onSearch: (String) -> Unit = {}
+    onSearch: (String) -> Unit = {},
 ) {
     UnifyTextField(
         value = value,
@@ -137,18 +142,22 @@ fun UnifySearchField(
         modifier = modifier,
         placeholder = placeholder,
         leadingIcon = { Text("🔍") },
-        trailingIcon = if (value.isNotEmpty()) {
-            {
-                IconButton(onClick = { onValueChange("") }) {
-                    Text("❌")
+        trailingIcon =
+            if (value.isNotEmpty()) {
+                {
+                    IconButton(onClick = { onValueChange("") }) {
+                        Text("❌")
+                    }
                 }
-            }
-        } else null,
+            } else {
+                null
+            },
         keyboardType = KeyboardType.Text,
         imeAction = ImeAction.Search,
-        keyboardActions = KeyboardActions(
-            onSearch = { onSearch(value) }
-        ),
-        singleLine = true
+        keyboardActions =
+            KeyboardActions(
+                onSearch = { onSearch(value) },
+            ),
+        singleLine = true,
     )
 }

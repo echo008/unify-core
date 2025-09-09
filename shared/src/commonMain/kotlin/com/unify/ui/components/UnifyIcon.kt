@@ -16,7 +16,7 @@ expect fun UnifyIcon(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    size: Dp = 24.dp,
 )
 
 /**
@@ -28,7 +28,7 @@ expect fun UnifyVectorIcon(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    size: Dp = 24.dp,
 )
 
 /**
@@ -40,7 +40,7 @@ expect fun UnifySystemIcon(
     contentDescription: String?,
     modifier: Modifier = Modifier,
     tint: Color = Color.Unspecified,
-    size: Dp = 24.dp
+    size: Dp = 24.dp,
 )
 
 /**
@@ -77,5 +77,5 @@ enum class SystemIconType {
     NOTIFICATION,
     VOLUME_UP,
     VOLUME_DOWN,
-    VOLUME_OFF
+    VOLUME_OFF,
 }

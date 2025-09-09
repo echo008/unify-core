@@ -26,7 +26,6 @@ import java.io.File
  * Android平台实时媒体组件
  */
 actual object UnifyLiveComponents {
-    
     /**
      * 实时相机预览组件
      */
@@ -34,11 +33,11 @@ actual object UnifyLiveComponents {
     actual fun LiveCameraPreview(
         modifier: Modifier,
         onCameraReady: () -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         var isInitialized by remember { mutableStateOf(false) }
         var errorMessage by remember { mutableStateOf<String?>(null) }
-        
+
         LaunchedEffect(Unit) {
             try {
                 // 模拟相机初始化
@@ -50,45 +49,46 @@ actual object UnifyLiveComponents {
                 onError(errorMessage!!)
             }
         }
-        
+
         Box(
-            modifier = modifier
-                .fillMaxSize()
-                .aspectRatio(16f / 9f),
-            contentAlignment = Alignment.Center
+            modifier =
+                modifier
+                    .fillMaxSize()
+                    .aspectRatio(16f / 9f),
+            contentAlignment = Alignment.Center,
         ) {
             Card(
                 modifier = Modifier.fillMaxSize(),
-                colors = CardDefaults.cardColors(containerColor = Color.Black)
+                colors = CardDefaults.cardColors(containerColor = Color.Black),
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+                    contentAlignment = Alignment.Center,
                 ) {
                     if (errorMessage != null) {
                         Text(
                             text = "📷 $errorMessage",
                             color = Color.White,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     } else if (isInitialized) {
                         Text(
                             text = "📹 Android相机预览已就绪",
                             color = Color.White,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     } else {
                         Text(
                             text = "📷 相机初始化中...",
                             color = Color.Gray,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
             }
         }
     }
-    
+
     /**
      * 实时音频波形显示组件
      */
@@ -96,11 +96,11 @@ actual object UnifyLiveComponents {
     actual fun LiveAudioWaveform(
         modifier: Modifier,
         isRecording: Boolean,
-        onRecordingToggle: (Boolean) -> Unit
+        onRecordingToggle: (Boolean) -> Unit,
     ) {
         var amplitude by remember { mutableStateOf(0f) }
         var recordingTime by remember { mutableStateOf(0) }
-        
+
         LaunchedEffect(isRecording) {
             if (isRecording) {
                 recordingTime = 0
@@ -115,67 +115,71 @@ actual object UnifyLiveComponents {
                 recordingTime = 0
             }
         }
-        
+
         Column(
             modifier = modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // 音频波形可视化区域
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(120.dp)
-                    .background(Color.Black, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(120.dp)
+                        .background(Color.Black, androidx.compose.foundation.shape.RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
             ) {
                 if (isRecording) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
                             text = "🎵 Android录音中...",
                             style = MaterialTheme.typography.bodyLarge,
-                            color = Color.White
+                            color = Color.White,
                         )
                         Text(
                             text = "音量: ${(amplitude * 100).toInt()}%",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray
+                            color = Color.Gray,
                         )
                         Text(
                             text = "时间: ${recordingTime / 10}s",
                             style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
+                            color = Color.Gray,
                         )
                     }
                 } else {
                     Text(
                         text = "🎤 点击开始录音",
                         style = MaterialTheme.typography.bodyLarge,
-                        color = Color.White
+                        color = Color.White,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // 录音控制按钮
             Button(
                 onClick = {
                     onRecordingToggle(!isRecording)
                 },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isRecording) 
-                        MaterialTheme.colorScheme.error 
-                    else 
-                        MaterialTheme.colorScheme.primary
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor =
+                            if (isRecording) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.primary
+                            },
+                    ),
             ) {
                 Text(if (isRecording) "停止录制" else "开始录制")
             }
         }
     }
-    
+
     /**
      * 音频播放器组件
      */
@@ -183,39 +187,40 @@ actual object UnifyLiveComponents {
     fun AudioPlayer(
         audioUrl: String,
         modifier: Modifier = Modifier,
-        onPlaybackStateChanged: (Boolean) -> Unit = {}
+        onPlaybackStateChanged: (Boolean) -> Unit = {},
     ) {
         val context = LocalContext.current
         var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
         var isPlaying by remember { mutableStateOf(false) }
         var currentPosition by remember { mutableStateOf(0) }
         var duration by remember { mutableStateOf(0) }
-        
+
         LaunchedEffect(audioUrl) {
             mediaPlayer?.release()
-            mediaPlayer = MediaPlayer().apply {
-                try {
-                    setDataSource(context, Uri.parse(audioUrl))
-                    prepareAsync()
-                    setOnPreparedListener { mp ->
-                        duration = mp.duration
+            mediaPlayer =
+                MediaPlayer().apply {
+                    try {
+                        setDataSource(context, Uri.parse(audioUrl))
+                        prepareAsync()
+                        setOnPreparedListener { mp ->
+                            duration = mp.duration
+                        }
+                        setOnCompletionListener {
+                            isPlaying = false
+                            onPlaybackStateChanged(false)
+                        }
+                    } catch (e: Exception) {
+                        // 处理错误
                     }
-                    setOnCompletionListener {
-                        isPlaying = false
-                        onPlaybackStateChanged(false)
-                    }
-                } catch (e: Exception) {
-                    // 处理错误
                 }
-            }
         }
-        
+
         DisposableEffect(Unit) {
             onDispose {
                 mediaPlayer?.release()
             }
         }
-        
+
         LaunchedEffect(isPlaying) {
             if (isPlaying) {
                 while (isPlaying && mediaPlayer?.isPlaying == true) {
@@ -224,28 +229,28 @@ actual object UnifyLiveComponents {
                 }
             }
         }
-        
+
         Card(
             modifier = modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
             ) {
                 LinearProgressIndicator(
                     progress = if (duration > 0) currentPosition.toFloat() / duration else 0f,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(formatTime(currentPosition))
-                    
+
                     IconButton(
                         onClick = {
                             mediaPlayer?.let { mp ->
@@ -258,23 +263,25 @@ actual object UnifyLiveComponents {
                                 }
                                 onPlaybackStateChanged(isPlaying)
                             }
-                        }
+                        },
                     ) {
                         Icon(
-                            imageVector = if (isPlaying) 
-                                androidx.compose.material.icons.Icons.Default.Pause 
-                            else 
-                                androidx.compose.material.icons.Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) "暂停" else "播放"
+                            imageVector =
+                                if (isPlaying) {
+                                    androidx.compose.material.icons.Icons.Default.Pause
+                                } else {
+                                    androidx.compose.material.icons.Icons.Default.PlayArrow
+                                },
+                            contentDescription = if (isPlaying) "暂停" else "播放",
                         )
                     }
-                    
+
                     Text(formatTime(duration))
                 }
             }
         }
     }
-    
+
     /**
      * 视频播放器组件
      */
@@ -282,12 +289,12 @@ actual object UnifyLiveComponents {
     fun VideoPlayer(
         videoUrl: String,
         modifier: Modifier = Modifier,
-        onPlaybackStateChanged: (Boolean) -> Unit = {}
+        onPlaybackStateChanged: (Boolean) -> Unit = {},
     ) {
         val context = LocalContext.current
         var mediaPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
         var isPlaying by remember { mutableStateOf(false) }
-        
+
         AndroidView(
             factory = { ctx ->
                 android.widget.VideoView(ctx).apply {
@@ -301,12 +308,12 @@ actual object UnifyLiveComponents {
                     }
                 }
             },
-            modifier = modifier
+            modifier = modifier,
         ) { videoView ->
             // 更新视频视图
         }
     }
-    
+
     /**
      * 音频录制组件
      */
@@ -314,14 +321,14 @@ actual object UnifyLiveComponents {
     fun AudioRecorder(
         modifier: Modifier = Modifier,
         onRecordingComplete: (String) -> Unit = {},
-        onError: (String) -> Unit = {}
+        onError: (String) -> Unit = {},
     ) {
         var isRecording by remember { mutableStateOf(false) }
         var recordingTime by remember { mutableStateOf(0) }
         var mediaRecorder by remember { mutableStateOf<android.media.MediaRecorder?>(null) }
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
-        
+
         LaunchedEffect(isRecording) {
             if (isRecording) {
                 while (isRecording) {
@@ -332,22 +339,22 @@ actual object UnifyLiveComponents {
                 recordingTime = 0
             }
         }
-        
+
         Card(
             modifier = modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
                     text = if (isRecording) "录制中: ${formatTime(recordingTime * 1000)}" else "准备录制",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(
                     onClick = {
                         coroutineScope.launch {
@@ -363,57 +370,63 @@ actual object UnifyLiveComponents {
                             }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isRecording) 
-                            MaterialTheme.colorScheme.error 
-                        else 
-                            MaterialTheme.colorScheme.primary
-                    )
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                if (isRecording) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                        ),
                 ) {
                     Text(if (isRecording) "停止录制" else "开始录制")
                 }
             }
         }
     }
-    
+
     /**
      * 实时音频可视化组件
      */
     @Composable
     fun AudioVisualizer(
         audioLevels: List<Float>,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
     ) {
         Canvas(
-            modifier = modifier
-                .fillMaxWidth()
-                .height(100.dp)
+            modifier =
+                modifier
+                    .fillMaxWidth()
+                    .height(100.dp),
         ) {
             val barWidth = size.width / audioLevels.size
             audioLevels.forEachIndexed { index, level ->
                 val barHeight = size.height * level
                 drawRect(
                     color = androidx.compose.ui.graphics.Color.Blue,
-                    topLeft = androidx.compose.ui.geometry.Offset(
-                        x = index * barWidth,
-                        y = size.height - barHeight
-                    ),
-                    size = androidx.compose.ui.geometry.Size(
-                        width = barWidth * 0.8f,
-                        height = barHeight
-                    )
+                    topLeft =
+                        androidx.compose.ui.geometry.Offset(
+                            x = index * barWidth,
+                            y = size.height - barHeight,
+                        ),
+                    size =
+                        androidx.compose.ui.geometry.Size(
+                            width = barWidth * 0.8f,
+                            height = barHeight,
+                        ),
                 )
             }
         }
     }
-    
+
     private fun startRecording(
         context: Context,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ): android.media.MediaRecorder? {
         return try {
             val outputFile = File(context.cacheDir, "recording_${System.currentTimeMillis()}.3gp")
-            
+
             android.media.MediaRecorder().apply {
                 setAudioSource(android.media.MediaRecorder.AudioSource.MIC)
                 setOutputFormat(android.media.MediaRecorder.OutputFormat.THREE_GPP)
@@ -427,11 +440,11 @@ actual object UnifyLiveComponents {
             null
         }
     }
-    
+
     private fun stopRecording(
         mediaRecorder: android.media.MediaRecorder?,
         onRecordingComplete: (String) -> Unit,
-        onError: (String) -> Unit
+        onError: (String) -> Unit,
     ) {
         try {
             mediaRecorder?.apply {
@@ -443,7 +456,7 @@ actual object UnifyLiveComponents {
             onError("录制停止失败: ${e.message}")
         }
     }
-    
+
     private fun formatTime(milliseconds: Int): String {
         val seconds = milliseconds / 1000
         val minutes = seconds / 60
@@ -456,34 +469,33 @@ actual object UnifyLiveComponents {
  * Android平台特定的媒体工具
  */
 object AndroidMediaUtils {
-    
     /**
      * 检查相机权限
      */
     fun hasCameraPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            android.Manifest.permission.CAMERA
+            android.Manifest.permission.CAMERA,
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
-    
+
     /**
      * 检查录音权限
      */
     fun hasAudioPermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            android.Manifest.permission.RECORD_AUDIO
+            android.Manifest.permission.RECORD_AUDIO,
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
-    
+
     /**
      * 检查存储权限
      */
     fun hasStoragePermission(context: Context): Boolean {
         return ContextCompat.checkSelfPermission(
             context,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE
+            android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
         ) == android.content.pm.PackageManager.PERMISSION_GRANTED
     }
 }

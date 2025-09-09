@@ -1,13 +1,26 @@
 package com.unify.ui.components.tv
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -17,13 +30,13 @@ import androidx.compose.ui.unit.dp
 @Composable
 actual fun UnifyTVRemoteControl(
     onKeyPressed: (TVKey) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("TV Remote Control")
             Row {
@@ -48,25 +61,25 @@ actual fun UnifyTVMediaPlayer(
     onPlaybackStateChange: (TVPlaybackState) -> Unit,
     modifier: Modifier,
     showControls: Boolean,
-    autoPlay: Boolean
+    autoPlay: Boolean,
 ) {
     var isPlaying by remember { mutableStateOf(false) }
-    
+
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Media URL: $mediaUrl")
             if (showControls) {
                 Row {
                     Button(
-                        onClick = { 
+                        onClick = {
                             isPlaying = !isPlaying
                             val state = if (isPlaying) TVPlaybackState.PLAYING else TVPlaybackState.PAUSED
                             onPlaybackStateChange(state)
-                        }
+                        },
                     ) {
                         Text(if (isPlaying) "Pause" else "Play")
                     }
@@ -87,22 +100,22 @@ actual fun UnifyTVGridMenu(
     items: List<String>,
     onItemSelected: (String) -> Unit,
     modifier: Modifier,
-    columns: Int
+    columns: Int,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("TV Grid Menu")
             LazyVerticalGrid(
-                columns = GridCells.Fixed(columns)
+                columns = GridCells.Fixed(columns),
             ) {
                 items(items) { item ->
                     Button(
                         onClick = { onItemSelected(item) },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
                     ) {
                         Text(item)
                     }
@@ -117,23 +130,23 @@ actual fun UnifyTVVolumeControl(
     volume: Float,
     onVolumeChange: (Float) -> Unit,
     modifier: Modifier,
-    showMute: Boolean
+    showMute: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("TV Volume Control")
             Slider(
                 value = volume,
                 onValueChange = onVolumeChange,
-                valueRange = 0f..1f
+                valueRange = 0f..1f,
             )
             if (showMute) {
                 Button(
-                    onClick = { onVolumeChange(0f) }
+                    onClick = { onVolumeChange(0f) },
                 ) {
                     Text("Mute")
                 }
@@ -147,13 +160,13 @@ actual fun UnifyTVChannelList(
     channels: List<TVChannel>,
     currentChannel: String,
     onChannelSelected: (TVChannel) -> Unit,
-    modifier: Modifier
+    modifier: Modifier,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("TV Channel List")
             LazyColumn {
@@ -161,7 +174,7 @@ actual fun UnifyTVChannelList(
                     val isSelected = channel.id == currentChannel
                     Button(
                         onClick = { onChannelSelected(channel) },
-                        colors = if (isSelected) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors()
+                        colors = if (isSelected) ButtonDefaults.buttonColors() else ButtonDefaults.outlinedButtonColors(),
                     ) {
                         Text("${channel.number} - ${channel.name}")
                     }

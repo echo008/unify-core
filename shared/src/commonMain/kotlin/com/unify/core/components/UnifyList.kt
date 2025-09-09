@@ -4,21 +4,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Divider
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -46,7 +42,7 @@ data class UnifyListItem(
     val leadingIcon: ImageVector? = null,
     val trailingIcon: ImageVector? = null,
     val onClick: (() -> Unit)? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 @Composable
@@ -62,7 +58,7 @@ fun <T> UnifyLazyList(
     showDividers: Boolean = false,
     dividerColor: Color = MaterialTheme.colorScheme.outline,
     dividerThickness: Dp = 1.dp,
-    itemContent: @Composable (item: T, index: Int) -> Unit
+    itemContent: @Composable (item: T, index: Int) -> Unit,
 ) {
     LazyColumn(
         modifier = modifier,
@@ -71,17 +67,17 @@ fun <T> UnifyLazyList(
         reverseLayout = reverseLayout,
         verticalArrangement = verticalArrangement,
         horizontalAlignment = horizontalAlignment,
-        userScrollEnabled = userScrollEnabled
+        userScrollEnabled = userScrollEnabled,
     ) {
         items(items) { item ->
             val index = items.indexOf(item)
             itemContent(item, index)
-            
+
             if (showDividers && index < items.size - 1) {
                 HorizontalDivider(
                     color = dividerColor,
                     thickness = dividerThickness,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
         }
@@ -98,7 +94,7 @@ fun <T> UnifyLazyRow(
     horizontalArrangement: Arrangement.Horizontal = if (!reverseLayout) Arrangement.Start else Arrangement.End,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
     userScrollEnabled: Boolean = true,
-    itemContent: @Composable (item: T, index: Int) -> Unit
+    itemContent: @Composable (item: T, index: Int) -> Unit,
 ) {
     LazyRow(
         modifier = modifier,
@@ -107,7 +103,7 @@ fun <T> UnifyLazyRow(
         reverseLayout = reverseLayout,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
-        userScrollEnabled = userScrollEnabled
+        userScrollEnabled = userScrollEnabled,
     ) {
         items(items) { item ->
             val index = items.indexOf(item)
@@ -122,12 +118,15 @@ fun UnifyListItemComponent(
     modifier: Modifier = Modifier,
     colors: androidx.compose.material3.ListItemColors = ListItemDefaults.colors(),
     tonalElevation: Dp = 0.dp,
-    shadowElevation: Dp = 0.dp
+    shadowElevation: Dp = 0.dp,
 ) {
-    val onClick = if (item.enabled && item.onClick != null) {
-        item.onClick
-    } else null
-    
+    val onClick =
+        if (item.enabled && item.onClick != null) {
+            item.onClick
+        } else {
+            null
+        }
+
     if (onClick != null) {
         UnifyClickableSurface(
             onClick = onClick,
@@ -135,7 +134,7 @@ fun UnifyListItemComponent(
             enabled = item.enabled,
             shape = RoundedCornerShape(8.dp),
             tonalElevation = tonalElevation,
-            shadowElevation = shadowElevation
+            shadowElevation = shadowElevation,
         ) {
             ListItemContent(item = item, colors = colors)
         }
@@ -144,7 +143,7 @@ fun UnifyListItemComponent(
             modifier = modifier,
             shape = RoundedCornerShape(8.dp),
             tonalElevation = tonalElevation,
-            shadowElevation = shadowElevation
+            shadowElevation = shadowElevation,
         ) {
             ListItemContent(item = item, colors = colors)
         }
@@ -154,51 +153,55 @@ fun UnifyListItemComponent(
 @Composable
 private fun ListItemContent(
     item: UnifyListItem,
-    colors: androidx.compose.material3.ListItemColors
+    colors: androidx.compose.material3.ListItemColors,
 ) {
     ListItem(
         headlineContent = {
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
         },
-        supportingContent = item.subtitle?.let {
-            {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        },
-        overlineContent = item.description?.let {
-            {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        },
-        leadingContent = item.leadingIcon?.let {
-            {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        },
-        trailingContent = item.trailingIcon?.let {
-            {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        },
-        colors = colors
+        supportingContent =
+            item.subtitle?.let {
+                {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+            },
+        overlineContent =
+            item.description?.let {
+                {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
+            },
+        leadingContent =
+            item.leadingIcon?.let {
+                {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            },
+        trailingContent =
+            item.trailingIcon?.let {
+                {
+                    Icon(
+                        imageVector = it,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            },
+        colors = colors,
     )
 }
 
@@ -207,32 +210,32 @@ fun UnifyEmptyState(
     message: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    actionButton: @Composable (() -> Unit)? = null
+    actionButton: @Composable (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            
+
             if (actionButton != null) {
                 Spacer(modifier = Modifier.height(16.dp))
                 actionButton()

@@ -1,6 +1,5 @@
 package com.unify.core.ui
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.flow.StateFlow
 
@@ -11,38 +10,56 @@ import kotlinx.coroutines.flow.StateFlow
 interface UnifyUIManager {
     // 主题管理
     fun setTheme(theme: UnifyTheme)
+
     fun getTheme(): UnifyTheme
+
     fun observeTheme(): StateFlow<UnifyTheme>
+
     fun toggleDarkMode()
+
     fun isDarkMode(): Boolean
-    
+
     // 颜色管理
     fun getPrimaryColor(): Color
+
     fun getSecondaryColor(): Color
+
     fun getBackgroundColor(): Color
+
     fun getSurfaceColor(): Color
+
     fun getErrorColor(): Color
-    
+
     // 字体管理
     fun setFontScale(scale: Float)
+
     fun getFontScale(): Float
+
     fun observeFontScale(): StateFlow<Float>
-    
+
     // 布局管理
     fun getScreenWidth(): Int
+
     fun getScreenHeight(): Int
+
     fun getScreenDensity(): Float
+
     fun isTablet(): Boolean
+
     fun isLandscape(): Boolean
-    
+
     // 动画管理
     fun setAnimationsEnabled(enabled: Boolean)
+
     fun areAnimationsEnabled(): Boolean
+
     fun getAnimationDuration(): Long
-    
+
     // 无障碍支持
     fun setAccessibilityEnabled(enabled: Boolean)
+
     fun isAccessibilityEnabled(): Boolean
+
     fun announceForAccessibility(message: String)
 }
 
@@ -61,7 +78,7 @@ data class UnifyTheme(
     val onSecondaryColor: Color,
     val onBackgroundColor: Color,
     val onSurfaceColor: Color,
-    val onErrorColor: Color
+    val onErrorColor: Color,
 )
 
 /**

@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.unify.core.providers.*
-import com.unify.core.ui.UnifyUIManager
 import com.unify.ui.components.*
 
 /**
@@ -29,18 +28,18 @@ import com.unify.ui.components.*
 fun UnifyApp(
     theme: UnifyTheme = UnifyTheme.Default,
     configuration: UnifyConfiguration = UnifyConfiguration.Default,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val uiManager = currentUIManager()
-    
+
     MaterialTheme(
         colorScheme = theme.colorScheme.toMaterialColorScheme(),
         typography = theme.typography.toMaterialTypography(),
-        shapes = theme.shapes.toMaterialShapes()
+        shapes = theme.shapes.toMaterialShapes(),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
         ) {
             content()
         }
@@ -53,10 +52,10 @@ fun UnifyApp(
 @Composable
 fun UnifyThemeProvider(
     theme: UnifyTheme = UnifyTheme.Default,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
-        LocalUnifyTheme provides theme
+        LocalUnifyTheme provides theme,
     ) {
         content()
     }
@@ -75,27 +74,29 @@ fun UnifyScreen(
     topBar: @Composable (() -> Unit)? = null,
     bottomBar: @Composable (() -> Unit)? = null,
     floatingActionButton: @Composable (() -> Unit)? = null,
-    content: @Composable (PaddingValues) -> Unit
+    content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
         modifier = modifier,
-        topBar = topBar ?: {
-            if (title != null) {
-                UnifyTopAppBar(
-                    title = title,
-                    subtitle = subtitle
-                )
-            }
-        },
+        topBar =
+            topBar ?: {
+                if (title != null) {
+                    UnifyTopAppBar(
+                        title = title,
+                        subtitle = subtitle,
+                    )
+                }
+            },
         bottomBar = bottomBar ?: {},
         floatingActionButton = floatingActionButton ?: {},
-        containerColor = backgroundColor
+        containerColor = backgroundColor,
     ) { paddingValues ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(padding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(padding),
         ) {
             content(paddingValues)
         }
@@ -114,7 +115,7 @@ fun UnifyTopAppBar(
     navigationIcon: @Composable (() -> Unit)? = null,
     actions: @Composable (RowScope.() -> Unit) = {},
     backgroundColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
-    contentColor: Color = currentUnifyTheme().colorScheme.onPrimary.toColor()
+    contentColor: Color = currentUnifyTheme().colorScheme.onPrimary.toColor(),
 ) {
     TopAppBar(
         title = {
@@ -123,13 +124,13 @@ fun UnifyTopAppBar(
                     text = title,
                     color = contentColor,
                     fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
                 subtitle?.let {
                     Text(
                         text = it,
                         color = contentColor.copy(alpha = 0.7f),
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
                     )
                 }
             }
@@ -137,12 +138,13 @@ fun UnifyTopAppBar(
         modifier = modifier,
         navigationIcon = navigationIcon ?: {},
         actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = backgroundColor,
-            titleContentColor = contentColor,
-            navigationIconContentColor = contentColor,
-            actionIconContentColor = contentColor
-        )
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = backgroundColor,
+                titleContentColor = contentColor,
+                navigationIconContentColor = contentColor,
+                actionIconContentColor = contentColor,
+            ),
     )
 }
 
@@ -154,13 +156,13 @@ fun UnifyBottomNavigation(
     modifier: Modifier = Modifier,
     backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
     contentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     NavigationBar(
         modifier = modifier,
         containerColor = backgroundColor,
         contentColor = contentColor,
-        content = content
+        content = content,
     )
 }
 
@@ -175,7 +177,7 @@ fun RowScope.UnifyBottomNavigationItem(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     label: @Composable (() -> Unit)? = null,
-    alwaysShowLabel: Boolean = true
+    alwaysShowLabel: Boolean = true,
 ) {
     NavigationBarItem(
         selected = selected,
@@ -184,7 +186,7 @@ fun RowScope.UnifyBottomNavigationItem(
         modifier = modifier,
         enabled = enabled,
         label = label,
-        alwaysShowLabel = alwaysShowLabel
+        alwaysShowLabel = alwaysShowLabel,
     )
 }
 
@@ -196,13 +198,13 @@ fun UnifyDrawer(
     modifier: Modifier = Modifier,
     backgroundColor: Color = currentUnifyTheme().colorScheme.surface.toColor(),
     contentColor: Color = currentUnifyTheme().colorScheme.onSurface.toColor(),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     ModalDrawerSheet(
         modifier = modifier,
         drawerContainerColor = backgroundColor,
         drawerContentColor = contentColor,
-        content = content
+        content = content,
     )
 }
 
@@ -216,7 +218,7 @@ fun UnifyDrawerItem(
     modifier: Modifier = Modifier,
     icon: @Composable (() -> Unit)? = null,
     selected: Boolean = false,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     NavigationDrawerItem(
         label = { Text(label) },
@@ -224,11 +226,12 @@ fun UnifyDrawerItem(
         onClick = onClick,
         modifier = modifier,
         icon = icon,
-        colors = NavigationDrawerItemDefaults.colors(
-            selectedContainerColor = currentUnifyTheme().colorScheme.primary.toColor().copy(alpha = 0.12f),
-            selectedTextColor = currentUnifyTheme().colorScheme.primary.toColor(),
-            selectedIconColor = currentUnifyTheme().colorScheme.primary.toColor()
-        )
+        colors =
+            NavigationDrawerItemDefaults.colors(
+                selectedContainerColor = currentUnifyTheme().colorScheme.primary.toColor().copy(alpha = 0.12f),
+                selectedTextColor = currentUnifyTheme().colorScheme.primary.toColor(),
+                selectedIconColor = currentUnifyTheme().colorScheme.primary.toColor(),
+            ),
     )
 }
 
@@ -245,14 +248,14 @@ fun UnifyTabRow(
         if (selectedTabIndex < tabPositions.size) {
             TabRowDefaults.SecondaryIndicator(
                 Modifier,
-                color = contentColor
+                color = contentColor,
             )
         }
     },
     divider: @Composable () -> Unit = {
         HorizontalDivider(color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.12f))
     },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     TabRow(
         selectedTabIndex = selectedTabIndex,
@@ -261,7 +264,7 @@ fun UnifyTabRow(
         contentColor = contentColor,
         indicator = indicator,
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -277,7 +280,7 @@ fun UnifyTab(
     text: @Composable (() -> Unit)? = null,
     icon: @Composable (() -> Unit)? = null,
     selectedContentColor: Color = currentUnifyTheme().colorScheme.primary.toColor(),
-    unselectedContentColor: Color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.6f)
+    unselectedContentColor: Color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.6f),
 ) {
     Tab(
         selected = selected,
@@ -287,7 +290,7 @@ fun UnifyTab(
         text = text,
         icon = icon,
         selectedContentColor = selectedContentColor,
-        unselectedContentColor = unselectedContentColor
+        unselectedContentColor = unselectedContentColor,
     )
 }
 
@@ -305,14 +308,14 @@ fun UnifyScrollableTabRow(
         if (selectedTabIndex < tabPositions.size) {
             TabRowDefaults.SecondaryIndicator(
                 Modifier,
-                color = contentColor
+                color = contentColor,
             )
         }
     },
     divider: @Composable () -> Unit = {
         HorizontalDivider(color = currentUnifyTheme().colorScheme.onSurface.toColor().copy(alpha = 0.12f))
     },
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 ) {
     ScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -322,7 +325,7 @@ fun UnifyScrollableTabRow(
         edgePadding = edgePadding,
         indicator = indicator,
         divider = divider,
-        tabs = tabs
+        tabs = tabs,
     )
 }
 
@@ -335,11 +338,11 @@ fun UnifyPager(
     modifier: Modifier = Modifier,
     currentPage: Int = 0,
     onPageChanged: (Int) -> Unit = {},
-    pageContent: @Composable (page: Int) -> Unit
+    pageContent: @Composable (page: Int) -> Unit,
 ) {
     // 使用简单的Box来显示当前页面
     Box(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         pageContent(currentPage.coerceIn(0, pageCount - 1))
     }
@@ -354,11 +357,11 @@ fun UnifyVerticalPager(
     modifier: Modifier = Modifier,
     currentPage: Int = 0,
     onPageChanged: (Int) -> Unit = {},
-    pageContent: @Composable (page: Int) -> Unit
+    pageContent: @Composable (page: Int) -> Unit,
 ) {
     // 使用简单的Column来显示当前页面
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier.fillMaxSize(),
     ) {
         pageContent(currentPage.coerceIn(0, pageCount - 1))
     }
@@ -375,29 +378,27 @@ fun UnifyPagerIndicator(
     activeColor: Color = MaterialTheme.colorScheme.primary,
     inactiveColor: Color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
     indicatorSize: Dp = 8.dp,
-    spacing: Dp = 8.dp
+    spacing: Dp = 8.dp,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(spacing),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         repeat(pageCount) { index ->
             val isSelected = index == currentPage
             Box(
-                modifier = Modifier
-                    .size(indicatorSize)
-                    .background(
-                        color = if (isSelected) activeColor else inactiveColor,
-                        shape = CircleShape
-                    )
+                modifier =
+                    Modifier
+                        .size(indicatorSize)
+                        .background(
+                            color = if (isSelected) activeColor else inactiveColor,
+                            shape = CircleShape,
+                        ),
             )
         }
     }
 }
-
-
-
 
 // 扩展函数：将Unify颜色转换为Material颜色
 private fun Long.toColor(): Color = Color(this)
@@ -438,90 +439,103 @@ private fun UnifyColorScheme.toMaterialColorScheme(): ColorScheme {
         surfaceContainerLow = Color(surface),
         surfaceContainer = Color(surface),
         surfaceContainerHigh = Color(surface),
-        surfaceContainerHighest = Color(surface)
+        surfaceContainerHighest = Color(surface),
     )
 }
 
 private fun UnifyTypography.toMaterialTypography(): Typography {
     return Typography(
-        displayLarge = androidx.compose.ui.text.TextStyle(
-            fontSize = h1.fontSize.sp,
-            lineHeight = h1.lineHeight.sp,
-            fontWeight = FontWeight(h1.fontWeight),
-            letterSpacing = h1.letterSpacing.sp
-        ),
-        displayMedium = androidx.compose.ui.text.TextStyle(
-            fontSize = h2.fontSize.sp,
-            lineHeight = h2.lineHeight.sp,
-            fontWeight = FontWeight(h2.fontWeight),
-            letterSpacing = h2.letterSpacing.sp
-        ),
-        displaySmall = androidx.compose.ui.text.TextStyle(
-            fontSize = h3.fontSize.sp,
-            lineHeight = h3.lineHeight.sp,
-            fontWeight = FontWeight(h3.fontWeight),
-            letterSpacing = h3.letterSpacing.sp
-        ),
-        headlineLarge = androidx.compose.ui.text.TextStyle(
-            fontSize = h4.fontSize.sp,
-            lineHeight = h4.lineHeight.sp,
-            fontWeight = FontWeight(h4.fontWeight),
-            letterSpacing = h4.letterSpacing.sp
-        ),
-        headlineMedium = androidx.compose.ui.text.TextStyle(
-            fontSize = h5.fontSize.sp,
-            lineHeight = h5.lineHeight.sp,
-            fontWeight = FontWeight(h5.fontWeight),
-            letterSpacing = h5.letterSpacing.sp
-        ),
-        headlineSmall = androidx.compose.ui.text.TextStyle(
-            fontSize = h6.fontSize.sp,
-            lineHeight = h6.lineHeight.sp,
-            fontWeight = FontWeight(h6.fontWeight),
-            letterSpacing = h6.letterSpacing.sp
-        ),
-        titleLarge = androidx.compose.ui.text.TextStyle(
-            fontSize = subtitle1.fontSize.sp,
-            lineHeight = subtitle1.lineHeight.sp,
-            fontWeight = FontWeight(subtitle1.fontWeight),
-            letterSpacing = subtitle1.letterSpacing.sp
-        ),
-        titleMedium = androidx.compose.ui.text.TextStyle(
-            fontSize = subtitle2.fontSize.sp,
-            lineHeight = subtitle2.lineHeight.sp,
-            fontWeight = FontWeight(subtitle2.fontWeight),
-            letterSpacing = subtitle2.letterSpacing.sp
-        ),
-        bodyLarge = androidx.compose.ui.text.TextStyle(
-            fontSize = body1.fontSize.sp,
-            lineHeight = body1.lineHeight.sp,
-            fontWeight = FontWeight(body1.fontWeight),
-            letterSpacing = body1.letterSpacing.sp
-        ),
-        bodyMedium = androidx.compose.ui.text.TextStyle(
-            fontSize = body2.fontSize.sp,
-            lineHeight = body2.lineHeight.sp,
-            fontWeight = FontWeight(body2.fontWeight),
-            letterSpacing = body2.letterSpacing.sp
-        ),
-        labelLarge = androidx.compose.ui.text.TextStyle(
-            fontSize = button.fontSize.sp,
-            lineHeight = button.lineHeight.sp,
-            fontWeight = FontWeight(button.fontWeight),
-            letterSpacing = button.letterSpacing.sp
-        ),
-        labelMedium = androidx.compose.ui.text.TextStyle(
-            fontSize = caption.fontSize.sp,
-            lineHeight = caption.lineHeight.sp,
-            fontWeight = FontWeight(caption.fontWeight),
-            letterSpacing = caption.letterSpacing.sp
-        ),
-        labelSmall = androidx.compose.ui.text.TextStyle(
-            fontSize = overline.fontSize.sp,
-            lineHeight = overline.lineHeight.sp,
-            fontWeight = FontWeight(overline.fontWeight),
-            letterSpacing = overline.letterSpacing.sp
-        )
+        displayLarge =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h1.fontSize.sp,
+                lineHeight = h1.lineHeight.sp,
+                fontWeight = FontWeight(h1.fontWeight),
+                letterSpacing = h1.letterSpacing.sp,
+            ),
+        displayMedium =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h2.fontSize.sp,
+                lineHeight = h2.lineHeight.sp,
+                fontWeight = FontWeight(h2.fontWeight),
+                letterSpacing = h2.letterSpacing.sp,
+            ),
+        displaySmall =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h3.fontSize.sp,
+                lineHeight = h3.lineHeight.sp,
+                fontWeight = FontWeight(h3.fontWeight),
+                letterSpacing = h3.letterSpacing.sp,
+            ),
+        headlineLarge =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h4.fontSize.sp,
+                lineHeight = h4.lineHeight.sp,
+                fontWeight = FontWeight(h4.fontWeight),
+                letterSpacing = h4.letterSpacing.sp,
+            ),
+        headlineMedium =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h5.fontSize.sp,
+                lineHeight = h5.lineHeight.sp,
+                fontWeight = FontWeight(h5.fontWeight),
+                letterSpacing = h5.letterSpacing.sp,
+            ),
+        headlineSmall =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = h6.fontSize.sp,
+                lineHeight = h6.lineHeight.sp,
+                fontWeight = FontWeight(h6.fontWeight),
+                letterSpacing = h6.letterSpacing.sp,
+            ),
+        titleLarge =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = subtitle1.fontSize.sp,
+                lineHeight = subtitle1.lineHeight.sp,
+                fontWeight = FontWeight(subtitle1.fontWeight),
+                letterSpacing = subtitle1.letterSpacing.sp,
+            ),
+        titleMedium =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = subtitle2.fontSize.sp,
+                lineHeight = subtitle2.lineHeight.sp,
+                fontWeight = FontWeight(subtitle2.fontWeight),
+                letterSpacing = subtitle2.letterSpacing.sp,
+            ),
+        bodyLarge =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = body1.fontSize.sp,
+                lineHeight = body1.lineHeight.sp,
+                fontWeight = FontWeight(body1.fontWeight),
+                letterSpacing = body1.letterSpacing.sp,
+            ),
+        bodyMedium =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = body2.fontSize.sp,
+                lineHeight = body2.lineHeight.sp,
+                fontWeight = FontWeight(body2.fontWeight),
+                letterSpacing = body2.letterSpacing.sp,
+            ),
+        labelLarge =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = button.fontSize.sp,
+                lineHeight = button.lineHeight.sp,
+                fontWeight = FontWeight(button.fontWeight),
+                letterSpacing = button.letterSpacing.sp,
+            ),
+        labelMedium =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = caption.fontSize.sp,
+                lineHeight = caption.lineHeight.sp,
+                fontWeight = FontWeight(caption.fontWeight),
+                letterSpacing = caption.letterSpacing.sp,
+            ),
+        labelSmall =
+            androidx.compose.ui.text.TextStyle(
+                fontSize = overline.fontSize.sp,
+                lineHeight = overline.lineHeight.sp,
+                fontWeight = FontWeight(overline.fontWeight),
+                letterSpacing = overline.letterSpacing.sp,
+            ),
     )
 }
 
@@ -531,6 +545,6 @@ private fun UnifyShapes.toMaterialShapes(): Shapes {
         small = RoundedCornerShape(small.dp),
         medium = RoundedCornerShape(medium.dp),
         large = RoundedCornerShape(large.dp),
-        extraLarge = RoundedCornerShape(large.dp)
+        extraLarge = RoundedCornerShape(large.dp),
     )
 }

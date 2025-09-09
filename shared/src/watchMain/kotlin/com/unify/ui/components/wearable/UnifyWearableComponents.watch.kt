@@ -42,9 +42,7 @@ data class WatchNotification(
     val priority: NotificationPriority = NotificationPriority.NORMAL
 )
 
-enum class NotificationPriority {
-    LOW, NORMAL, HIGH, URGENT
-}
+// NotificationPriority 已在 commonMain 中定义
 
 @Composable
 actual fun UnifyWatchFace(
@@ -423,8 +421,10 @@ enum class WorkoutAction {
     START, PAUSE, STOP, RESUME
 }
 
-enum class NotificationAction {
-    DISMISS, VIEW, REPLY
+enum class NotificationAction(val title: String) {
+    DISMISS("关闭"),
+    VIEW("查看"),
+    REPLY("回复")
 }
 
 data class QuickAction(

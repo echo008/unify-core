@@ -1,9 +1,5 @@
 package com.unify.ui.components.platform
 
-import android.content.Context
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
-
 actual object UnifyPlatformAdapterFactory {
     actual fun createAdapter(): UnifyPlatformAdapter {
         return AndroidPlatformAdapter()
@@ -12,9 +8,9 @@ actual object UnifyPlatformAdapterFactory {
 
 class AndroidPlatformAdapter : UnifyPlatformAdapter {
     override fun getPlatformName(): String = "Android"
-    
+
     override fun getPlatformVersion(): String = android.os.Build.VERSION.RELEASE
-    
+
     override fun isFeatureSupported(feature: PlatformFeature): Boolean {
         return when (feature) {
             PlatformFeature.CAMERA -> true
@@ -26,7 +22,7 @@ class AndroidPlatformAdapter : UnifyPlatformAdapter {
             else -> false
         }
     }
-    
+
     override fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             deviceId = "android_${System.currentTimeMillis()}",
@@ -44,10 +40,10 @@ class AndroidPlatformAdapter : UnifyPlatformAdapter {
             totalMemory = Runtime.getRuntime().totalMemory(),
             availableMemory = Runtime.getRuntime().freeMemory(),
             totalStorage = 8L * 1024L * 1024L * 1024L,
-            availableStorage = 1024L * 1024L * 1024L
+            availableStorage = 1024L * 1024L * 1024L,
         )
     }
-    
+
     override fun getSystemInfo(): SystemInfo {
         return SystemInfo(
             platformType = PlatformType.ANDROID,
@@ -59,12 +55,13 @@ class AndroidPlatformAdapter : UnifyPlatformAdapter {
             networkType = NetworkType.WIFI,
             isOnline = true,
             isDarkMode = false,
-            systemFeatures = listOf(
-                PlatformFeature.CAMERA,
-                PlatformFeature.MICROPHONE,
-                PlatformFeature.GPS,
-                PlatformFeature.BLUETOOTH
-            )
+            systemFeatures =
+                listOf(
+                    PlatformFeature.CAMERA,
+                    PlatformFeature.MICROPHONE,
+                    PlatformFeature.GPS,
+                    PlatformFeature.BLUETOOTH,
+                ),
         )
     }
 }

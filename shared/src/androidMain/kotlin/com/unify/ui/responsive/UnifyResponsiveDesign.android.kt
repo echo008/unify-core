@@ -1,9 +1,6 @@
 package com.unify.ui.responsive
 
-import android.content.Context
 import android.content.res.Configuration
-import android.util.DisplayMetrics
-import android.view.WindowManager
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 

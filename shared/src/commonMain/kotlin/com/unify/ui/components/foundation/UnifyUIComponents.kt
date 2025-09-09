@@ -23,13 +23,13 @@ fun UnifyText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    style: TextStyle = MaterialTheme.typography.bodyMedium
+    style: TextStyle = MaterialTheme.typography.bodyMedium,
 ) {
     Text(
         text = text,
         modifier = modifier,
         color = color,
-        style = style
+        style = style,
     )
 }
 
@@ -41,13 +41,13 @@ fun UnifyBasicIcon(
     imageVector: ImageVector,
     contentDescription: String?,
     modifier: Modifier = Modifier,
-    tint: Color = Color.Unspecified
+    tint: Color = Color.Unspecified,
 ) {
     Icon(
         imageVector = imageVector,
         contentDescription = contentDescription,
         modifier = modifier,
-        tint = tint
+        tint = tint,
     )
 }
 
@@ -60,7 +60,7 @@ fun UnifyButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: ButtonColors = ButtonDefaults.buttonColors(),
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Button(
         onClick = onClick,
@@ -68,7 +68,7 @@ fun UnifyButton(
         enabled = enabled,
         colors = colors,
         shape = RoundedCornerShape(8.dp),
-        content = content
+        content = content,
     )
 }
 
@@ -80,14 +80,14 @@ fun UnifyOutlinedButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     OutlinedButton(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         shape = RoundedCornerShape(8.dp),
-        content = content
+        content = content,
     )
 }
 
@@ -98,13 +98,13 @@ fun UnifyOutlinedButton(
 fun UnifySurface(
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.surface,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
         color = color,
         shape = RoundedCornerShape(8.dp),
-        content = content
+        content = content,
     )
 }
 
@@ -114,19 +114,20 @@ fun UnifySurface(
 @Composable
 fun UnifyImage(
     modifier: Modifier = Modifier,
-    contentDescription: String? = null
+    contentDescription: String? = null,
 ) {
     // 这是一个占位符实现
     Box(
-        modifier = modifier
-            .size(48.dp)
-            .padding(8.dp),
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(48.dp)
+                .padding(8.dp),
+        contentAlignment = Alignment.Center,
     ) {
         UnifyBasicIcon(
             imageVector = Icons.Default.Check,
             contentDescription = contentDescription,
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }

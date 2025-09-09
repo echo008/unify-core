@@ -2,24 +2,15 @@
 
 package com.unify.ui.components.platform
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /**
  * 平台特定组件 - 跨平台统一接口
@@ -35,7 +26,7 @@ data class PlatformInfo(
     val architecture: String,
     val deviceModel: String,
     val screenSize: String,
-    val capabilities: List<String>
+    val capabilities: List<String>,
 )
 
 /**
@@ -61,7 +52,7 @@ enum class PlatformCapability {
     CALENDAR,
     PHOTOS,
     STORAGE,
-    TELEPHONY
+    TELEPHONY,
 }
 
 /**
@@ -88,42 +79,42 @@ interface PlatformSpecificUI {
         text: String,
         onClick: () -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     )
-    
+
     @Composable
     fun NativeTextField(
         value: String,
         onValueChange: (String) -> Unit,
         modifier: Modifier,
         placeholder: String,
-        enabled: Boolean
+        enabled: Boolean,
     )
-    
+
     @Composable
     fun NativeSwitch(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     )
-    
+
     @Composable
     fun NativeSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
         modifier: Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
-        enabled: Boolean
+        enabled: Boolean,
     )
-    
+
     @Composable
     fun NativeProgressBar(
         progress: Float,
         modifier: Modifier,
-        color: Color
+        color: Color,
     )
-    
+
     @Composable
     fun NativeDialog(
         title: String,
@@ -131,35 +122,35 @@ interface PlatformSpecificUI {
         onConfirm: () -> Unit,
         onDismiss: () -> Unit,
         confirmText: String,
-        dismissText: String
+        dismissText: String,
     )
-    
+
     @Composable
     fun NativeToast(
         message: String,
         duration: Long,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     )
-    
+
     @Composable
     fun NativeActionSheet(
         title: String,
         actions: List<ActionSheetItem>,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     )
-    
+
     @Composable
     fun NativeDatePicker(
         selectedDate: Long?,
         onDateSelected: (Long) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     )
-    
+
     @Composable
     fun NativeTimePicker(
         selectedTime: Pair<Int, Int>?,
         onTimeSelected: (Int, Int) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     )
 }
 
@@ -170,7 +161,7 @@ data class ActionSheetItem(
     val title: String,
     val icon: ImageVector? = null,
     val isDestructive: Boolean = false,
-    val action: () -> Unit
+    val action: () -> Unit,
 )
 
 /**
@@ -187,7 +178,7 @@ fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
@@ -195,13 +186,13 @@ fun UnifyPlatformButton(
             text = text,
             onClick = onClick,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         )
     } else {
         Button(
             onClick = onClick,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         ) {
             Text(text)
         }
@@ -218,7 +209,7 @@ fun UnifyPlatformTextField(
     modifier: Modifier = Modifier,
     placeholder: String = "",
     enabled: Boolean = true,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
@@ -227,7 +218,7 @@ fun UnifyPlatformTextField(
             onValueChange = onValueChange,
             modifier = modifier,
             placeholder = placeholder,
-            enabled = enabled
+            enabled = enabled,
         )
     } else {
         OutlinedTextField(
@@ -235,7 +226,7 @@ fun UnifyPlatformTextField(
             onValueChange = onValueChange,
             modifier = modifier,
             placeholder = { Text(placeholder) },
-            enabled = enabled
+            enabled = enabled,
         )
     }
 }
@@ -249,7 +240,7 @@ fun UnifyPlatformSwitch(
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
@@ -257,14 +248,14 @@ fun UnifyPlatformSwitch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         )
     } else {
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,
-            enabled = enabled
+            enabled = enabled,
         )
     }
 }
@@ -279,7 +270,7 @@ fun UnifyPlatformSlider(
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     enabled: Boolean = true,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
@@ -288,7 +279,7 @@ fun UnifyPlatformSlider(
             onValueChange = onValueChange,
             modifier = modifier,
             valueRange = valueRange,
-            enabled = enabled
+            enabled = enabled,
         )
     } else {
         Slider(
@@ -296,7 +287,7 @@ fun UnifyPlatformSlider(
             onValueChange = onValueChange,
             modifier = modifier,
             valueRange = valueRange,
-            enabled = enabled
+            enabled = enabled,
         )
     }
 }
@@ -309,20 +300,20 @@ fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
     color: Color = MaterialTheme.colorScheme.primary,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
         platformUI.NativeProgressBar(
             progress = progress,
             modifier = modifier,
-            color = color
+            color = color,
         )
     } else {
         LinearProgressIndicator(
             progress = { progress },
             modifier = modifier,
-            color = color
+            color = color,
         )
     }
 }
@@ -338,7 +329,7 @@ fun UnifyPlatformDialog(
     onDismiss: () -> Unit,
     confirmText: String = "确定",
     dismissText: String = "取消",
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
@@ -348,7 +339,7 @@ fun UnifyPlatformDialog(
             onConfirm = onConfirm,
             onDismiss = onDismiss,
             confirmText = confirmText,
-            dismissText = dismissText
+            dismissText = dismissText,
         )
     } else {
         AlertDialog(
@@ -364,7 +355,7 @@ fun UnifyPlatformDialog(
                 TextButton(onClick = onDismiss) {
                     Text(dismissText)
                 }
-            }
+            },
         )
     }
 }
@@ -377,14 +368,14 @@ fun UnifyPlatformToast(
     message: String,
     duration: Long = 3000L,
     onDismiss: () -> Unit = {},
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
         platformUI.NativeToast(
             message = message,
             duration = duration,
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
         )
     } else {
         // 使用Compose实现的Toast
@@ -392,20 +383,22 @@ fun UnifyPlatformToast(
             kotlinx.coroutines.delay(duration)
             onDismiss()
         }
-        
+
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.inverseSurface
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.inverseSurface,
+                ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         ) {
             Text(
                 text = message,
                 modifier = Modifier.padding(16.dp),
-                color = MaterialTheme.colorScheme.inverseOnSurface
+                color = MaterialTheme.colorScheme.inverseOnSurface,
             )
         }
     }
@@ -419,58 +412,64 @@ fun UnifyPlatformActionSheet(
     title: String,
     actions: List<ActionSheetItem>,
     onDismiss: () -> Unit,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
         platformUI.NativeActionSheet(
             title = title,
             actions = actions,
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
         )
     } else {
         // 使用Compose实现的ActionSheet
         ModalBottomSheet(
-            onDismissRequest = onDismiss
+            onDismissRequest = onDismiss,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
-                
+
                 actions.forEach { action ->
                     ListItem(
                         headlineContent = { Text(action.title) },
-                        leadingContent = action.icon?.let { icon ->
-                            {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = action.title,
-                                    tint = if (action.isDestructive) {
+                        leadingContent =
+                            action.icon?.let { icon ->
+                                {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = action.title,
+                                        tint =
+                                            if (action.isDestructive) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                    )
+                                }
+                            },
+                        modifier =
+                            Modifier.clickable {
+                                action.action()
+                                onDismiss()
+                            },
+                        colors =
+                            ListItemDefaults.colors(
+                                headlineColor =
+                                    if (action.isDestructive) {
                                         MaterialTheme.colorScheme.error
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
-                            }
-                        },
-                        modifier = Modifier.clickable {
-                            action.action()
-                            onDismiss()
-                        },
-                        colors = ListItemDefaults.colors(
-                            headlineColor = if (action.isDestructive) {
-                                MaterialTheme.colorScheme.error
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
-                        )
+                                    },
+                            ),
                     )
                 }
             }
@@ -486,20 +485,21 @@ fun UnifyPlatformDatePicker(
     selectedDate: Long?,
     onDateSelected: (Long) -> Unit,
     onDismiss: () -> Unit,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
         platformUI.NativeDatePicker(
             selectedDate = selectedDate,
             onDateSelected = onDateSelected,
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
         )
     } else {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate
-        )
-        
+        val datePickerState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = selectedDate,
+            )
+
         DatePickerDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -507,7 +507,7 @@ fun UnifyPlatformDatePicker(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { onDateSelected(it) }
                         onDismiss()
-                    }
+                    },
                 ) {
                     Text("确定")
                 }
@@ -516,7 +516,7 @@ fun UnifyPlatformDatePicker(
                 TextButton(onClick = onDismiss) {
                     Text("取消")
                 }
-            }
+            },
         ) {
             DatePicker(state = datePickerState)
         }
@@ -531,21 +531,22 @@ fun UnifyPlatformTimePicker(
     selectedTime: Pair<Int, Int>?,
     onTimeSelected: (Int, Int) -> Unit,
     onDismiss: () -> Unit,
-    useNative: Boolean = false
+    useNative: Boolean = false,
 ) {
     if (useNative) {
         val platformUI = remember { getPlatformSpecificUI() }
         platformUI.NativeTimePicker(
             selectedTime = selectedTime,
             onTimeSelected = onTimeSelected,
-            onDismiss = onDismiss
+            onDismiss = onDismiss,
         )
     } else {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedTime?.first ?: 12,
-            initialMinute = selectedTime?.second ?: 0
-        )
-        
+        val timePickerState =
+            rememberTimePickerState(
+                initialHour = selectedTime?.first ?: 12,
+                initialMinute = selectedTime?.second ?: 0,
+            )
+
         AlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -553,7 +554,7 @@ fun UnifyPlatformTimePicker(
                     onClick = {
                         onTimeSelected(timePickerState.hour, timePickerState.minute)
                         onDismiss()
-                    }
+                    },
                 ) {
                     Text("确定")
                 }
@@ -565,7 +566,7 @@ fun UnifyPlatformTimePicker(
             },
             text = {
                 TimePicker(state = timePickerState)
-            }
+            },
         )
     }
 }
@@ -580,28 +581,28 @@ object PlatformSpecificManager {
     fun getCurrentPlatformInfo(): PlatformInfo {
         return getPlatformInfo()
     }
-    
+
     /**
      * 检查平台能力支持
      */
     fun isCapabilitySupported(capability: PlatformCapability): Boolean {
         return checkPlatformCapability(capability)
     }
-    
+
     /**
      * 请求权限
      */
     suspend fun requestPermission(capability: PlatformCapability): Boolean {
         return requestPlatformPermission(capability)
     }
-    
+
     /**
      * 批量检查能力支持
      */
     fun checkMultipleCapabilities(capabilities: List<PlatformCapability>): Map<PlatformCapability, Boolean> {
         return capabilities.associateWith { checkPlatformCapability(it) }
     }
-    
+
     /**
      * 批量请求权限
      */
@@ -623,5 +624,5 @@ data class PlatformAdaptationConfig(
     val respectPlatformGuidelines: Boolean = true,
     val enableAccessibility: Boolean = true,
     val enableRTL: Boolean = true,
-    val enableDarkMode: Boolean = true
+    val enableDarkMode: Boolean = true,
 )

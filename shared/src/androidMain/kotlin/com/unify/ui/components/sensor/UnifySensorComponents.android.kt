@@ -22,36 +22,38 @@ actual fun UnifySensorMonitor(
     modifier: Modifier,
     samplingRate: SensorSamplingRate,
     showRealTimeData: Boolean,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Sensor Monitor")
-            Text("Sampling Rate: ${samplingRate}")
-            Text("Max Data Points: ${maxDataPoints}")
-            
+            Text("Sampling Rate: $samplingRate")
+            Text("Max Data Points: $maxDataPoints")
+
             LazyColumn {
                 items(sensorTypes.toList()) { sensorType ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
                     ) {
                         Column(
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(8.dp),
                         ) {
-                            Text("Type: ${sensorType}")
+                            Text("Type: $sensorType")
                             if (showRealTimeData) {
-                                val sensorData = SensorData(
-                                    type = sensorType,
-                                    values = floatArrayOf(0.5f, 0.0f, 0.0f),
-                                    accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
-                                    timestamp = System.currentTimeMillis()
-                                )
+                                val sensorData =
+                                    SensorData(
+                                        type = sensorType,
+                                        values = floatArrayOf(0.5f, 0.0f, 0.0f),
+                                        accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
+                                        timestamp = System.currentTimeMillis(),
+                                    )
                                 LaunchedEffect(sensorType) {
                                     onSensorData(sensorData)
                                 }
@@ -72,37 +74,39 @@ actual fun UnifyAccelerometerView(
     showGraph: Boolean,
     showValues: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Accelerometer")
-            Text("Max Data Points: ${maxDataPoints}")
-            
+            Text("Max Data Points: $maxDataPoints")
+
             val sensorData by accelerometerData.collectAsState(
-                initial = SensorData(
-                    type = SensorType.ACCELEROMETER,
-                    values = floatArrayOf(0f, 0f, 0f),
-                    accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
-                    timestamp = System.currentTimeMillis()
-                )
+                initial =
+                    SensorData(
+                        type = SensorType.ACCELEROMETER,
+                        values = floatArrayOf(0f, 0f, 0f),
+                        accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
+                        timestamp = System.currentTimeMillis(),
+                    ),
             )
-            
+
             if (showValues) {
                 Text("Value: ${sensorData.values.joinToString(", ")}")
                 Text("Timestamp: ${sensorData.timestamp}")
             }
-            
+
             if (showGraph) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(graphColor.copy(alpha = 0.1f))
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(graphColor.copy(alpha = 0.1f)),
                 ) {
                     Text("Graph Placeholder", color = graphColor)
                 }
@@ -118,37 +122,39 @@ actual fun UnifyGyroscopeView(
     showGraph: Boolean,
     showValues: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Gyroscope")
-            Text("Max Data Points: ${maxDataPoints}")
-            
+            Text("Max Data Points: $maxDataPoints")
+
             val sensorData by gyroscopeData.collectAsState(
-                initial = SensorData(
-                    type = SensorType.GYROSCOPE,
-                    values = floatArrayOf(0f, 0f, 0f),
-                    accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
-                    timestamp = System.currentTimeMillis()
-                )
+                initial =
+                    SensorData(
+                        type = SensorType.GYROSCOPE,
+                        values = floatArrayOf(0f, 0f, 0f),
+                        accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
+                        timestamp = System.currentTimeMillis(),
+                    ),
             )
-            
+
             if (showValues) {
                 Text("Value: ${sensorData.values.joinToString(", ")}")
                 Text("Timestamp: ${sensorData.timestamp}")
             }
-            
+
             if (showGraph) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(graphColor.copy(alpha = 0.1f))
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(graphColor.copy(alpha = 0.1f)),
                 ) {
                     Text("Graph Placeholder", color = graphColor)
                 }
@@ -165,41 +171,43 @@ actual fun UnifyMagnetometerView(
     showValues: Boolean,
     showCompass: Boolean,
     graphColor: Color,
-    maxDataPoints: Int
+    maxDataPoints: Int,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Magnetometer")
-            Text("Max Data Points: ${maxDataPoints}")
-            
+            Text("Max Data Points: $maxDataPoints")
+
             val sensorData by magnetometerData.collectAsState(
-                initial = SensorData(
-                    type = SensorType.MAGNETOMETER,
-                    values = floatArrayOf(0f, 0f, 0f),
-                    accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
-                    timestamp = System.currentTimeMillis()
-                )
+                initial =
+                    SensorData(
+                        type = SensorType.MAGNETOMETER,
+                        values = floatArrayOf(0f, 0f, 0f),
+                        accuracy = android.hardware.SensorManager.SENSOR_STATUS_ACCURACY_HIGH,
+                        timestamp = System.currentTimeMillis(),
+                    ),
             )
-            
+
             if (showValues) {
                 Text("Value: ${sensorData.values.joinToString(", ")}")
                 Text("Timestamp: ${sensorData.timestamp}")
             }
-            
+
             if (showCompass) {
                 Text("Compass Direction: N")
             }
-            
+
             if (showGraph) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(graphColor.copy(alpha = 0.1f))
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(graphColor.copy(alpha = 0.1f)),
                 ) {
                     Text("Graph Placeholder", color = graphColor)
                 }
@@ -215,41 +223,42 @@ actual fun UnifyMotionDetector(
     sensitivity: Float,
     enableShakeDetection: Boolean,
     enableTiltDetection: Boolean,
-    enableRotationDetection: Boolean
+    enableRotationDetection: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Motion Detector")
             Text("Sensitivity: $sensitivity")
-            
-            val motionEvent = MotionEvent(
-                type = MotionType.SHAKE,
-                intensity = 0.8f,
-                direction = floatArrayOf(0f, 0f, 1f),
-                timestamp = System.currentTimeMillis()
-            )
-            
+
+            val motionEvent =
+                MotionEvent(
+                    type = MotionType.SHAKE,
+                    intensity = 0.8f,
+                    direction = floatArrayOf(0f, 0f, 1f),
+                    timestamp = System.currentTimeMillis(),
+                )
+
             if (enableShakeDetection) {
                 Button(
-                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.SHAKE)) }
+                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.SHAKE)) },
                 ) {
                     Text("Shake Detection")
                 }
             }
             if (enableTiltDetection) {
                 Button(
-                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.TILT)) }
+                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.TILT)) },
                 ) {
                     Text("Tilt Detection")
                 }
             }
             if (enableRotationDetection) {
                 Button(
-                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.ROTATION)) }
+                    onClick = { onMotionDetected(motionEvent.copy(type = MotionType.ROTATION)) },
                 ) {
                     Text("Rotation Detection")
                 }
@@ -267,28 +276,29 @@ actual fun UnifyEnvironmentSensor(
     showHumidity: Boolean,
     showPressure: Boolean,
     showLight: Boolean,
-    updateInterval: Long
+    updateInterval: Long,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Environment Sensors")
             Text("Update Interval: ${updateInterval}ms")
-            
-            val sensorData = mapOf(
-                SensorType.TEMPERATURE to 23.5f,
-                SensorType.HUMIDITY to 65.0f,
-                SensorType.PRESSURE to 1013.25f,
-                SensorType.LIGHT to 350.0f
-            )
-            
+
+            val sensorData =
+                mapOf(
+                    SensorType.TEMPERATURE to 23.5f,
+                    SensorType.HUMIDITY to 65.0f,
+                    SensorType.PRESSURE to 1013.25f,
+                    SensorType.LIGHT to 350.0f,
+                )
+
             LaunchedEffect(updateInterval) {
                 onEnvironmentData(sensorData.filterKeys { it in sensorTypes })
             }
-            
+
             if (showTemperature && SensorType.TEMPERATURE in sensorTypes) {
                 Text("Temperature: ${sensorData[SensorType.TEMPERATURE]}°C")
             }
@@ -312,28 +322,29 @@ actual fun UnifyHealthSensor(
     enableHeartRate: Boolean,
     enableStepCounter: Boolean,
     enableCalories: Boolean,
-    showRealTimeChart: Boolean
+    showRealTimeChart: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Health Sensors")
-            
-            val healthData = HealthData(
-                heartRate = 75,
-                stepCount = 8542,
-                calories = 245.5f,
-                distance = 6.2f,
-                timestamp = System.currentTimeMillis()
-            )
-            
+
+            val healthData =
+                HealthData(
+                    heartRate = 75,
+                    stepCount = 8542,
+                    calories = 245.5f,
+                    distance = 6.2f,
+                    timestamp = System.currentTimeMillis(),
+                )
+
             LaunchedEffect(Unit) {
                 onHealthData(healthData)
             }
-            
+
             if (enableHeartRate) {
                 Text("Heart Rate: ${healthData.heartRate} bpm")
             }
@@ -346,7 +357,7 @@ actual fun UnifyHealthSensor(
             if (showRealTimeChart) {
                 LinearProgressIndicator(
                     progress = healthData.heartRate / 120f,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -359,35 +370,36 @@ actual fun UnifyProximitySensor(
     modifier: Modifier,
     showIndicator: Boolean,
     indicatorColor: Color,
-    threshold: Float
+    threshold: Float,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Proximity Sensor")
             Text("Threshold: ${threshold}cm")
-            
+
             val distance = 3.2f
             val isNear = distance < threshold
-            
+
             LaunchedEffect(distance) {
                 onProximityChange(isNear, distance)
             }
-            
+
             Text("Distance: ${distance}cm")
             Text("Status: ${if (isNear) "Near" else "Far"}")
-            
+
             if (showIndicator) {
                 Box(
-                    modifier = Modifier
-                        .size(20.dp)
-                        .background(
-                            color = if (isNear) indicatorColor else Color.Gray,
-                            shape = CircleShape
-                        )
+                    modifier =
+                        Modifier
+                            .size(20.dp)
+                            .background(
+                                color = if (isNear) indicatorColor else Color.Gray,
+                                shape = CircleShape,
+                            ),
                 )
             }
         }
@@ -401,37 +413,37 @@ actual fun UnifyLightSensor(
     showLux: Boolean,
     showBrightness: Boolean,
     autoAdjustTheme: Boolean,
-    lightThreshold: Float
+    lightThreshold: Float,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Light Sensor")
-            Text("Threshold: ${lightThreshold} lux")
-            
+            Text("Threshold: $lightThreshold lux")
+
             val lightLevel = 250.0f
             LaunchedEffect(lightLevel) {
                 onLightChange(lightLevel)
             }
-            
+
             if (showLux) {
-                Text("Light Level: ${lightLevel} lux")
+                Text("Light Level: $lightLevel lux")
             }
             if (showBrightness) {
                 val brightness = (lightLevel / 1000f * 100).toInt()
-                Text("Brightness: ${brightness}%")
+                Text("Brightness: $brightness%")
             }
             if (autoAdjustTheme) {
                 Text("Auto-adjust theme: ${if (lightLevel < lightThreshold) "Dark" else "Light"}")
             }
-            
+
             Slider(
                 value = lightLevel,
                 onValueChange = onLightChange,
-                valueRange = 0f..1000f
+                valueRange = 0f..1000f,
             )
         }
     }

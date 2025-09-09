@@ -7,5 +7,8 @@ expect object UnifyStringUtils {
     /**
      * 格式化字符串
      */
-    fun format(format: String, vararg args: Any?): String
+    fun format(
+        format: String,
+        vararg args: Any?,
+    ): String
 }

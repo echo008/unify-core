@@ -23,7 +23,7 @@ expect fun UnifyText(
     textAlign: TextAlign? = null,
     overflow: TextOverflow = TextOverflow.Clip,
     maxLines: Int = Int.MAX_VALUE,
-    style: TextStyle? = null
+    style: TextStyle? = null,
 )
 
 /**
@@ -34,7 +34,7 @@ expect fun UnifyHeadlineText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    textAlign: TextAlign? = null
+    textAlign: TextAlign? = null,
 )
 
 /**
@@ -46,7 +46,7 @@ expect fun UnifyBodyText(
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
     textAlign: TextAlign? = null,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 )
 
 /**
@@ -57,5 +57,5 @@ expect fun UnifyLabelText(
     text: String,
     modifier: Modifier = Modifier,
     color: Color = Color.Unspecified,
-    textAlign: TextAlign? = null
+    textAlign: TextAlign? = null,
 )

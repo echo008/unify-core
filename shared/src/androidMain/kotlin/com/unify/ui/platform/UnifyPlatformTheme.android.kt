@@ -1,13 +1,9 @@
 package com.unify.ui.platform
 
-import androidx.compose.material3.ColorScheme
-import androidx.compose.runtime.Composable
-
 /**
  * Android平台主题适配器实现
  */
 actual class UnifyPlatformThemeAdapter {
-
     actual fun getSystemColorScheme(isDark: Boolean): UnifyColorScheme {
         return if (isDark) {
             UnifyColorScheme(
@@ -38,7 +34,7 @@ actual class UnifyPlatformThemeAdapter {
                 scrim = 0xFF000000,
                 inverseSurface = 0xFFE6E1E5,
                 inverseOnSurface = 0xFF313033,
-                inversePrimary = 0xFF6750A4
+                inversePrimary = 0xFF6750A4,
             )
         } else {
             UnifyColorScheme(
@@ -69,7 +65,7 @@ actual class UnifyPlatformThemeAdapter {
                 scrim = 0xFF000000,
                 inverseSurface = 0xFF313033,
                 inverseOnSurface = 0xFFF4EFF4,
-                inversePrimary = 0xFFD0BCFF
+                inversePrimary = 0xFFD0BCFF,
             )
         }
     }
@@ -90,7 +86,7 @@ actual class UnifyPlatformThemeAdapter {
             bodySmall = UnifyTextStyle(12f, 16f, 400, 0.4f),
             labelLarge = UnifyTextStyle(14f, 20f, 500, 0.1f),
             labelMedium = UnifyTextStyle(12f, 16f, 500, 0.5f),
-            labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f)
+            labelSmall = UnifyTextStyle(11f, 16f, 500, 0.5f),
         )
     }
 
@@ -100,7 +96,7 @@ actual class UnifyPlatformThemeAdapter {
             small = 8f,
             medium = 12f,
             large = 16f,
-            extraLarge = 28f
+            extraLarge = 28f,
         )
     }
 

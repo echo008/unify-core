@@ -10,6 +10,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.unify.core.types.AuthenticationResult
+import com.unify.core.types.BiometricType
 
 @Composable
 actual fun UnifyBiometricAuth(
@@ -233,20 +235,28 @@ actual fun UnifySecuritySettings(
     config: SecurityConfig,
     onConfigChange: (SecurityConfig) -> Unit,
     modifier: Modifier,
-    availableBiometrics: Set<BiometricType>,
-    onTestBiometric: (BiometricType) -> Unit
+    availableBiometrics: Set<String>,
+    onTestBiometric: (String) -> Unit
 ) {
+    var showBiometrics by remember { mutableStateOf(false) }
+    
     Column(modifier = modifier) {
         Text("JS Security Settings")
-        Switch(
-            checked = config.enableBiometric,
-            onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) }
-        )
-        Text("Biometric Authentication")
         
         availableBiometrics.forEach { biometric ->
             Row {
-                Text(biometric.toString())
+                Switch(
+                    checked = config.enabledBiometrics.contains(biometric),
+                    onCheckedChange = { enabled ->
+                        val newBiometrics = if (enabled) {
+                            config.enabledBiometrics + biometric
+                        } else {
+                            config.enabledBiometrics - biometric
+                        }
+                        onConfigChange(config.copy(enabledBiometrics = newBiometrics))
+                    }
+                )
+                Text(biometric)
                 Button(onClick = { onTestBiometric(biometric) }) {
                     Text("Test")
                 }
@@ -309,50 +319,88 @@ actual fun UnifySecureStorage(
 
 @Composable
 actual fun UnifyPrivacyConsent(
-    privacyItems: List<PrivacyItem>,
-    onConsentChange: (Map<String, Boolean>) -> Unit,
+    consentItems: List<String>,
+    onConsentChange: (List<String>) -> Unit,
     modifier: Modifier,
     title: String,
-    showSelectAll: Boolean
+    description: String,
+    allowPartialConsent: Boolean
 ) {
-    var consentStates by remember { 
-        mutableStateOf(privacyItems.associate { it.id to it.defaultValue })
+    var selectedItems by remember { 
+        mutableStateOf(emptyList<String>())
     }
     
     Column(modifier = modifier) {
         Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(description, style = MaterialTheme.typography.bodyMedium)
         
-        if (showSelectAll) {
-            val allSelected = consentStates.values.all { it }
+        consentItems.forEach { item ->
             Row {
-                Switch(
-                    checked = allSelected,
-                    onCheckedChange = { selectAll ->
-                        val newStates = privacyItems.associate { 
-                            it.id to (if (it.required) true else selectAll)
+                Checkbox(
+                    checked = selectedItems.contains(item),
+                    onCheckedChange = { checked ->
+                        selectedItems = if (checked) {
+                            selectedItems + item
+                        } else {
+                            selectedItems - item
                         }
-                        consentStates = newStates
-                        onConsentChange(newStates)
+                        onConsentChange(selectedItems)
                     }
                 )
-                Text("Select All")
+                Text(item, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifySecurityDashboard(
+    config: SecurityConfig,
+    onConfigChange: (SecurityConfig) -> Unit,
+    modifier: Modifier,
+    availableBiometrics: Set<String>,
+    onTestBiometric: (String) -> Unit
+) {
+    Column(modifier = modifier) {
+        Text("JS Security Dashboard", style = MaterialTheme.typography.titleLarge)
+        
+        Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Security Settings", style = MaterialTheme.typography.titleMedium)
+                
+                Row {
+                    Switch(
+                        checked = config.enableBiometric,
+                        onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) }
+                    )
+                    Text("Enable Biometric Authentication")
+                }
+                
+                Row {
+                    Switch(
+                        checked = config.enablePinCode,
+                        onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) }
+                    )
+                    Text("Enable PIN Code")
+                }
+                
+                Text("Max Attempts: ${config.maxAttempts}")
+                Text("Lockout Duration: ${config.lockoutDuration / 1000}s")
             }
         }
         
-        privacyItems.forEach { item ->
-            Row {
-                Switch(
-                    checked = consentStates[item.id] ?: item.defaultValue,
-                    onCheckedChange = { granted ->
-                        val newStates = consentStates + (item.id to granted)
-                        consentStates = newStates
-                        onConsentChange(newStates)
-                    },
-                    enabled = !item.required
-                )
-                Column {
-                    Text(item.title + if (item.required) " (Required)" else "")
-                    Text(item.description, style = MaterialTheme.typography.bodySmall)
+        if (availableBiometrics.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Available Biometrics", style = MaterialTheme.typography.titleMedium)
+                    availableBiometrics.forEach { biometric ->
+                        Row {
+                            Text(biometric, modifier = Modifier.weight(1f))
+                            Button(onClick = { onTestBiometric(biometric) }) {
+                                Text("Test")
+                            }
+                        }
+                    }
                 }
             }
         }

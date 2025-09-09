@@ -1,22 +1,22 @@
 package com.unify.ui.components.accessibility
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import com.unify.core.utils.UnifyStringUtils
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.invisibleToUser
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.role
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.invisibleToUser
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import com.unify.core.utils.UnifyStringUtils
 
 /**
  * Unify无障碍访问组件
@@ -30,21 +30,22 @@ fun UnifyAccessibleButton(
     enabled: Boolean = true,
     contentDescription: String? = null,
     role: Role = Role.Button,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Button(
         onClick = onClick,
-        modifier = modifier.semantics {
-            if (contentDescription != null) {
-                this.contentDescription = contentDescription
-            }
-            this.role = role
-            if (!enabled) {
-                disabled()
-            }
-        },
+        modifier =
+            modifier.semantics {
+                if (contentDescription != null) {
+                    this.contentDescription = contentDescription
+                }
+                this.role = role
+                if (!enabled) {
+                    disabled()
+                }
+            },
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -55,20 +56,21 @@ fun UnifyAccessibleText(
     isHeading: Boolean = false,
     headingLevel: Int = 1,
     isLiveRegion: Boolean = false,
-    liveRegionMode: androidx.compose.ui.semantics.LiveRegionMode = androidx.compose.ui.semantics.LiveRegionMode.Polite
+    liveRegionMode: androidx.compose.ui.semantics.LiveRegionMode = androidx.compose.ui.semantics.LiveRegionMode.Polite,
 ) {
     Text(
         text = text,
-        modifier = modifier.semantics {
-            if (isHeading) {
-                heading()
-                // 设置标题级别
-                set(SemanticsProperties.Role, Role.Button) // 使用可用的语义属性
-            }
-            if (isLiveRegion) {
-                liveRegion = liveRegionMode
-            }
-        }
+        modifier =
+            modifier.semantics {
+                if (isHeading) {
+                    heading()
+                    // 设置标题级别
+                    set(SemanticsProperties.Role, Role.Button) // 使用可用的语义属性
+                }
+                if (isLiveRegion) {
+                    liveRegion = liveRegionMode
+                }
+            },
     )
 }
 
@@ -78,23 +80,24 @@ fun UnifyAccessibleImage(
     painter: androidx.compose.ui.graphics.painter.Painter,
     contentDescription: String,
     modifier: Modifier = Modifier,
-    isDecorative: Boolean = false
+    isDecorative: Boolean = false,
 ) {
     Box(
-        modifier = modifier.semantics {
-            if (isDecorative) {
-                // 装饰性图片，屏幕阅读器应忽略
-                invisibleToUser()
-            } else {
-                this.contentDescription = contentDescription
-                role = Role.Image
-            }
-        }
+        modifier =
+            modifier.semantics {
+                if (isDecorative) {
+                    // 装饰性图片，屏幕阅读器应忽略
+                    invisibleToUser()
+                } else {
+                    this.contentDescription = contentDescription
+                    role = Role.Image
+                }
+            },
     ) {
         androidx.compose.foundation.Image(
             painter = painter,
             contentDescription = if (isDecorative) null else contentDescription,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }
@@ -107,7 +110,7 @@ fun UnifyAccessibleTextField(
     modifier: Modifier = Modifier,
     isRequired: Boolean = false,
     errorMessage: String? = null,
-    helpText: String? = null
+    helpText: String? = null,
 ) {
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -115,42 +118,44 @@ fun UnifyAccessibleTextField(
             onValueChange = onValueChange,
             label = { Text(label) },
             isError = errorMessage != null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics {
-                    if (isRequired) {
-                        // 标记为必填字段
-                        stateDescription = "必填"
-                    }
-                    if (errorMessage != null) {
-                        error(errorMessage)
-                    }
-                    if (helpText != null) {
-                        // 添加帮助文本
-                        contentDescription = "$label. $helpText"
-                    }
-                }
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .semantics {
+                        if (isRequired) {
+                            // 标记为必填字段
+                            stateDescription = "必填"
+                        }
+                        if (errorMessage != null) {
+                            error(errorMessage)
+                        }
+                        if (helpText != null) {
+                            // 添加帮助文本
+                            contentDescription = "$label. $helpText"
+                        }
+                    },
         )
-        
+
         if (helpText != null && errorMessage == null) {
             Text(
                 text = helpText,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+                modifier = Modifier.padding(start = 16.dp, top = 4.dp),
             )
         }
-        
+
         if (errorMessage != null) {
             Text(
                 text = errorMessage,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
-                modifier = Modifier
-                    .padding(start = 16.dp, top = 4.dp)
-                    .semantics {
-                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
-                    }
+                modifier =
+                    Modifier
+                        .padding(start = 16.dp, top = 4.dp)
+                        .semantics {
+                            liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
+                        },
             )
         }
     }
@@ -163,40 +168,41 @@ fun UnifyAccessibleCheckbox(
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    description: String? = null
+    description: String? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {
-                role = Role.Checkbox
-                stateDescription = if (checked) "已选中" else "未选中"
-                if (description != null) {
-                    contentDescription = "$label. $description"
-                }
-                if (!enabled) {
-                    disabled()
-                }
-            }
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .semantics(mergeDescendants = true) {
+                    role = Role.Checkbox
+                    stateDescription = if (checked) "已选中" else "未选中"
+                    if (description != null) {
+                        contentDescription = "$label. $description"
+                    }
+                    if (!enabled) {
+                        disabled()
+                    }
+                },
     ) {
         Checkbox(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            enabled = enabled
+            enabled = enabled,
         )
-        
+
         Spacer(modifier = Modifier.width(8.dp))
-        
+
         Column {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (description != null) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -212,45 +218,47 @@ fun UnifyAccessibleSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     enabled: Boolean = true,
-    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it * 100) }
+    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it * 100) },
 ) {
     Column(
-        modifier = modifier.semantics {
-            contentDescription = "$label: ${valueFormatter(value)}"
-            if (!enabled) {
-                disabled()
-            }
-        }
+        modifier =
+            modifier.semantics {
+                contentDescription = "$label: ${valueFormatter(value)}"
+                if (!enabled) {
+                    disabled()
+                }
+            },
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodyMedium,
         )
-        
+
         Slider(
             value = value,
             onValueChange = onValueChange,
             valueRange = valueRange,
             steps = steps,
             enabled = enabled,
-            modifier = Modifier.semantics {
-                stateDescription = "当前值: ${valueFormatter(value)}"
-            }
+            modifier =
+                Modifier.semantics {
+                    stateDescription = "当前值: ${valueFormatter(value)}"
+                },
         )
-        
+
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = valueFormatter(valueRange.start),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
                 text = valueFormatter(valueRange.endInclusive),
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -262,22 +270,23 @@ fun UnifyAccessibleCard(
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
     role: Role = Role.Button,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         onClick = onClick ?: {},
-        modifier = modifier.semantics {
-            if (contentDescription != null) {
-                this.contentDescription = contentDescription
-            }
-            if (onClick != null) {
-                this.role = role
-            }
-        }
+        modifier =
+            modifier.semantics {
+                if (contentDescription != null) {
+                    this.contentDescription = contentDescription
+                }
+                if (onClick != null) {
+                    this.role = role
+                }
+            },
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            content = content
+            content = content,
         )
     }
 }
@@ -290,7 +299,7 @@ fun UnifyAccessibleNavigationItem(
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    badge: String? = null
+    badge: String? = null,
 ) {
     NavigationRailItem(
         selected = selected,
@@ -298,18 +307,20 @@ fun UnifyAccessibleNavigationItem(
         icon = icon,
         label = { Text(label) },
         enabled = enabled,
-        modifier = modifier.semantics {
-            role = Role.Tab
-            stateDescription = if (selected) "已选中" else "未选中"
-            contentDescription = if (badge != null) {
-                "$label, 有 $badge 个通知"
-            } else {
-                label
-            }
-            if (!enabled) {
-                disabled()
-            }
-        }
+        modifier =
+            modifier.semantics {
+                role = Role.Tab
+                stateDescription = if (selected) "已选中" else "未选中"
+                contentDescription =
+                    if (badge != null) {
+                        "$label, 有 $badge 个通知"
+                    } else {
+                        label
+                    }
+                if (!enabled) {
+                    disabled()
+                }
+            },
     )
 }
 
@@ -318,40 +329,42 @@ fun UnifyAccessibleProgress(
     progress: Float,
     label: String,
     modifier: Modifier = Modifier,
-    showPercentage: Boolean = true
+    showPercentage: Boolean = true,
 ) {
     val progressPercentage = (progress * 100).toInt()
-    
+
     Column(
-        modifier = modifier.semantics {
-            contentDescription = "$label: $progressPercentage%"
-            stateDescription = "进度条"
-        }
+        modifier =
+            modifier.semantics {
+                contentDescription = "$label: $progressPercentage%"
+                stateDescription = "进度条"
+            },
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
             if (showPercentage) {
                 Text(
                     text = "$progressPercentage%",
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.semantics {
-                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
-                    }
+                    modifier =
+                        Modifier.semantics {
+                            liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                        },
                 )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         LinearProgressIndicator(
             progress = { progress },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -363,32 +376,34 @@ fun UnifyAccessibleAlert(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     confirmButton: @Composable () -> Unit,
-    dismissButton: (@Composable () -> Unit)? = null
+    dismissButton: (@Composable () -> Unit)? = null,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
                 text = title,
-                modifier = Modifier.semantics {
-                    heading()
-                    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
-                }
+                modifier =
+                    Modifier.semantics {
+                        heading()
+                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Assertive
+                    },
             )
         },
         text = {
             Text(
                 text = message,
-                modifier = Modifier.semantics {
-                    liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
-                }
+                modifier =
+                    Modifier.semantics {
+                        liveRegion = androidx.compose.ui.semantics.LiveRegionMode.Polite
+                    },
             )
         },
         confirmButton = confirmButton,
         dismissButton = dismissButton,
-        modifier = modifier.semantics {
-            role = Role.Button
-        }
+        modifier =
+            modifier.semantics {
+                role = Role.Button
+            },
     )
 }
-

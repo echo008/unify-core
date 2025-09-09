@@ -3,20 +3,17 @@ package com.unify.platform.container
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -34,16 +31,17 @@ import androidx.compose.ui.unit.dp
 fun UnifyResponsiveContainer(
     modifier: Modifier = Modifier,
     breakpoints: ContainerBreakpoints = ContainerBreakpoints.default(),
-    content: @Composable BoxScope.(ContainerSize) -> Unit
+    content: @Composable BoxScope.(ContainerSize) -> Unit,
 ) {
     BoxWithConstraints(modifier = modifier) {
-        val containerSize = when {
-            maxWidth < breakpoints.small -> ContainerSize.SMALL
-            maxWidth < breakpoints.medium -> ContainerSize.MEDIUM
-            maxWidth < breakpoints.large -> ContainerSize.LARGE
-            else -> ContainerSize.EXTRA_LARGE
-        }
-        
+        val containerSize =
+            when {
+                maxWidth < breakpoints.small -> ContainerSize.SMALL
+                maxWidth < breakpoints.medium -> ContainerSize.MEDIUM
+                maxWidth < breakpoints.large -> ContainerSize.LARGE
+                else -> ContainerSize.EXTRA_LARGE
+            }
+
         content(containerSize)
     }
 }
@@ -57,25 +55,25 @@ fun UnifyGridContainer(
     columns: Int = 2,
     modifier: Modifier = Modifier,
     spacing: androidx.compose.ui.unit.Dp = 16.dp,
-    onItemClick: ((String) -> Unit)? = null
+    onItemClick: ((String) -> Unit)? = null,
 ) {
     LazyColumn(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(spacing),
-        contentPadding = PaddingValues(spacing)
+        contentPadding = PaddingValues(spacing),
     ) {
         items(items.chunked(columns)) { rowItems ->
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(spacing)
+                horizontalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 items(rowItems) { item ->
                     UnifyGridItemCard(
                         item = item,
                         onClick = { onItemClick?.invoke(item.id) },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                
+
                 // 填充空白项
                 repeat(columns - rowItems.size) {
                     item {
@@ -91,35 +89,35 @@ fun UnifyGridContainer(
 private fun UnifyGridItemCard(
     item: GridItem,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = item.icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(48.dp),
             )
-            
+
             Text(
                 text = item.title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
-            
+
             item.description?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -137,18 +135,18 @@ fun UnifyFlexContainer(
     justifyContent: JustifyContent = JustifyContent.START,
     alignItems: AlignItems = AlignItems.START,
     modifier: Modifier = Modifier,
-    spacing: androidx.compose.ui.unit.Dp = 8.dp
+    spacing: androidx.compose.ui.unit.Dp = 8.dp,
 ) {
     when (direction) {
         FlexDirection.ROW -> {
             Row(
                 modifier = modifier,
                 horizontalArrangement = getRowArrangement(justifyContent, spacing),
-                verticalAlignment = getRowAlignment(alignItems)
+                verticalAlignment = getRowAlignment(alignItems),
             ) {
                 items.forEach { item ->
                     Box(
-                        modifier = Modifier.weight(item.flex)
+                        modifier = Modifier.weight(item.flex),
                     ) {
                         item.content()
                     }
@@ -159,11 +157,11 @@ fun UnifyFlexContainer(
             Column(
                 modifier = modifier,
                 verticalArrangement = getColumnArrangement(justifyContent, spacing),
-                horizontalAlignment = getColumnAlignment(alignItems)
+                horizontalAlignment = getColumnAlignment(alignItems),
             ) {
                 items.forEach { item ->
                     Box(
-                        modifier = Modifier.weight(item.flex)
+                        modifier = Modifier.weight(item.flex),
                     ) {
                         item.content()
                     }
@@ -184,50 +182,51 @@ fun UnifyCardContainer(
     modifier: Modifier = Modifier,
     elevation: androidx.compose.ui.unit.Dp = 4.dp,
     colors: CardColors = CardDefaults.cardColors(),
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = colors
+        colors = colors,
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             // 标题区域
             if (title != null || subtitle != null || actions.isNotEmpty()) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         title?.let {
                             Text(
                                 text = it,
                                 style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
                             )
                         }
-                        
+
                         subtitle?.let {
                             Text(
                                 text = it,
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
-                    
+
                     // 操作按钮
                     if (actions.isNotEmpty()) {
                         Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             actions.forEach { action ->
                                 when (action) {
@@ -235,7 +234,7 @@ fun UnifyCardContainer(
                                         IconButton(onClick = action.onClick) {
                                             Icon(
                                                 imageVector = action.icon,
-                                                contentDescription = action.contentDescription
+                                                contentDescription = action.contentDescription,
                                             )
                                         }
                                     }
@@ -249,14 +248,14 @@ fun UnifyCardContainer(
                         }
                     }
                 }
-                
+
                 Divider()
             }
-            
+
             // 内容区域
             Column(
                 modifier = Modifier.padding(16.dp),
-                content = content
+                content = content,
             )
         }
     }
@@ -271,11 +270,11 @@ fun UnifyAccordionContainer(
     expandedSections: Set<String>,
     onSectionToggle: (String) -> Unit,
     modifier: Modifier = Modifier,
-    allowMultiple: Boolean = true
+    allowMultiple: Boolean = true,
 ) {
     LazyColumn(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(sections) { section ->
             UnifyAccordionItem(
@@ -293,7 +292,7 @@ fun UnifyAccordionContainer(
                             onSectionToggle(section.id)
                         }
                     }
-                }
+                },
             )
         }
     }
@@ -303,78 +302,84 @@ fun UnifyAccordionContainer(
 private fun UnifyAccordionItem(
     section: AccordionSection,
     isExpanded: Boolean,
-    onToggle: () -> Unit
+    onToggle: () -> Unit,
 ) {
     Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column {
             // 标题栏
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onToggle() },
-                color = if (isExpanded) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    MaterialTheme.colorScheme.surface
-                }
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onToggle() },
+                color =
+                    if (isExpanded) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.surface
+                    },
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         Text(
                             text = section.title,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Medium,
-                            color = if (isExpanded) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurface
-                            }
+                            color =
+                                if (isExpanded) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
                         )
-                        
+
                         section.subtitle?.let {
                             Text(
                                 text = it,
                                 style = MaterialTheme.typography.bodySmall,
-                                color = if (isExpanded) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
+                                color =
+                                    if (isExpanded) {
+                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
                             )
                         }
                     }
-                    
+
                     Icon(
                         imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
                         contentDescription = if (isExpanded) "收起" else "展开",
-                        tint = if (isExpanded) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        tint =
+                            if (isExpanded) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                     )
                 }
             }
-            
+
             // 内容区域
             AnimatedVisibility(
                 visible = isExpanded,
                 enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+                exit = shrinkVertically() + fadeOut(),
             ) {
                 Box(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     section.content()
                 }
@@ -392,7 +397,7 @@ fun UnifyTabContainer(
     selectedTabId: String,
     onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    tabPosition: TabPosition = TabPosition.TOP
+    tabPosition: TabPosition = TabPosition.TOP,
 ) {
     when (tabPosition) {
         TabPosition.TOP -> {
@@ -426,17 +431,17 @@ fun UnifyTabContainer(
 private fun UnifyTabRow(
     tabs: List<TabItem>,
     selectedTabId: String,
-    onTabSelected: (String) -> Unit
+    onTabSelected: (String) -> Unit,
 ) {
     TabRow(
-        selectedTabIndex = tabs.indexOfFirst { it.id == selectedTabId }
+        selectedTabIndex = tabs.indexOfFirst { it.id == selectedTabId },
     ) {
         tabs.forEach { tab ->
             Tab(
                 selected = tab.id == selectedTabId,
                 onClick = { onTabSelected(tab.id) },
                 text = { Text(tab.title) },
-                icon = tab.icon?.let { { Icon(it, contentDescription = null) } }
+                icon = tab.icon?.let { { Icon(it, contentDescription = null) } },
             )
         }
     }
@@ -446,53 +451,59 @@ private fun UnifyTabRow(
 private fun UnifyVerticalTabRow(
     tabs: List<TabItem>,
     selectedTabId: String,
-    onTabSelected: (String) -> Unit
+    onTabSelected: (String) -> Unit,
 ) {
     Column(
-        modifier = Modifier
-            .width(200.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+        modifier =
+            Modifier
+                .width(200.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
     ) {
         tabs.forEach { tab ->
             val isSelected = tab.id == selectedTabId
-            
+
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onTabSelected(tab.id) },
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.primaryContainer
-                } else {
-                    Color.Transparent
-                }
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onTabSelected(tab.id) },
+                color =
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        Color.Transparent
+                    },
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     tab.icon?.let {
                         Icon(
                             imageVector = it,
                             contentDescription = null,
-                            tint = if (isSelected) {
-                                MaterialTheme.colorScheme.onPrimaryContainer
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
+                            tint =
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                     }
-                    
+
                     Text(
                         text = tab.title,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimaryContainer
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
                     )
                 }
             }
@@ -504,7 +515,7 @@ private fun UnifyVerticalTabRow(
 private fun UnifyTabContent(
     tabs: List<TabItem>,
     selectedTabId: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier) {
         tabs.find { it.id == selectedTabId }?.content?.invoke()
@@ -519,7 +530,7 @@ fun UnifyScrollContainer(
     modifier: Modifier = Modifier,
     scrollDirection: ScrollDirection = ScrollDirection.VERTICAL,
     showScrollbar: Boolean = true,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     when (scrollDirection) {
         ScrollDirection.VERTICAL -> {
@@ -527,7 +538,7 @@ fun UnifyScrollContainer(
                 modifier = modifier,
                 content = {
                     item { content() }
-                }
+                },
             )
         }
         ScrollDirection.HORIZONTAL -> {
@@ -535,7 +546,7 @@ fun UnifyScrollContainer(
                 modifier = modifier,
                 content = {
                     item { content() }
-                }
+                },
             )
         }
         ScrollDirection.BOTH -> {
@@ -549,7 +560,10 @@ fun UnifyScrollContainer(
 
 // 辅助函数
 
-private fun getRowArrangement(justifyContent: JustifyContent, spacing: androidx.compose.ui.unit.Dp): Arrangement.Horizontal {
+private fun getRowArrangement(
+    justifyContent: JustifyContent,
+    spacing: androidx.compose.ui.unit.Dp,
+): Arrangement.Horizontal {
     return when (justifyContent) {
         JustifyContent.START -> Arrangement.spacedBy(spacing)
         JustifyContent.END -> Arrangement.spacedBy(spacing, Alignment.End)
@@ -560,7 +574,10 @@ private fun getRowArrangement(justifyContent: JustifyContent, spacing: androidx.
     }
 }
 
-private fun getColumnArrangement(justifyContent: JustifyContent, spacing: androidx.compose.ui.unit.Dp): Arrangement.Vertical {
+private fun getColumnArrangement(
+    justifyContent: JustifyContent,
+    spacing: androidx.compose.ui.unit.Dp,
+): Arrangement.Vertical {
     return when (justifyContent) {
         JustifyContent.START -> Arrangement.spacedBy(spacing)
         JustifyContent.END -> Arrangement.spacedBy(spacing, Alignment.Bottom)
@@ -594,59 +611,73 @@ private fun getColumnAlignment(alignItems: AlignItems): Alignment.Horizontal {
 data class ContainerBreakpoints(
     val small: androidx.compose.ui.unit.Dp,
     val medium: androidx.compose.ui.unit.Dp,
-    val large: androidx.compose.ui.unit.Dp
+    val large: androidx.compose.ui.unit.Dp,
 ) {
     companion object {
-        fun default() = ContainerBreakpoints(
-            small = 600.dp,
-            medium = 960.dp,
-            large = 1280.dp
-        )
+        fun default() =
+            ContainerBreakpoints(
+                small = 600.dp,
+                medium = 960.dp,
+                large = 1280.dp,
+            )
     }
 }
 
 enum class ContainerSize {
-    SMALL, MEDIUM, LARGE, EXTRA_LARGE
+    SMALL,
+    MEDIUM,
+    LARGE,
+    EXTRA_LARGE,
 }
 
 data class GridItem(
     val id: String,
     val title: String,
     val description: String? = null,
-    val icon: ImageVector
+    val icon: ImageVector,
 )
 
 data class FlexItem(
     val flex: Float = 1f,
-    val content: @Composable () -> Unit
+    val content: @Composable () -> Unit,
 )
 
 enum class FlexDirection {
-    ROW, COLUMN
+    ROW,
+    COLUMN,
 }
 
 enum class FlexWrap {
-    NO_WRAP, WRAP
+    NO_WRAP,
+    WRAP,
 }
 
 enum class JustifyContent {
-    START, END, CENTER, SPACE_BETWEEN, SPACE_AROUND, SPACE_EVENLY
+    START,
+    END,
+    CENTER,
+    SPACE_BETWEEN,
+    SPACE_AROUND,
+    SPACE_EVENLY,
 }
 
 enum class AlignItems {
-    START, END, CENTER, STRETCH
+    START,
+    END,
+    CENTER,
+    STRETCH,
 }
 
 sealed class CardAction {
     data class Icon(
         val icon: ImageVector,
         val onClick: () -> Unit,
-        val contentDescription: String? = null
+        val contentDescription: String? = null,
     ) : CardAction()
-    
+
     data class Text(
         val text: String,
-        val onClick: () -> Unit
+        val onClick: () -> Unit,
     ) : CardAction()
 }
 
@@ -654,20 +685,25 @@ data class AccordionSection(
     val id: String,
     val title: String,
     val subtitle: String? = null,
-    val content: @Composable () -> Unit
+    val content: @Composable () -> Unit,
 )
 
 data class TabItem(
     val id: String,
     val title: String,
     val icon: ImageVector? = null,
-    val content: @Composable () -> Unit
+    val content: @Composable () -> Unit,
 )
 
 enum class TabPosition {
-    TOP, BOTTOM, LEFT, RIGHT
+    TOP,
+    BOTTOM,
+    LEFT,
+    RIGHT,
 }
 
 enum class ScrollDirection {
-    VERTICAL, HORIZONTAL, BOTH
+    VERTICAL,
+    HORIZONTAL,
+    BOTH,
 }

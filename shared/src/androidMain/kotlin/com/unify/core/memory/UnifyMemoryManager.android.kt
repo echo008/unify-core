@@ -1,8 +1,5 @@
 package com.unify.core.memory
 
-import android.app.ActivityManager
-import android.content.Context
-import android.os.Debug
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -18,7 +15,7 @@ actual suspend fun getPlatformMemoryInfo(): MemoryInfo {
         largeMemoryClass = 0,
         isLowMemory = false,
         threshold = runtime.maxMemory() / 4,
-        timestamp = System.currentTimeMillis()
+        timestamp = System.currentTimeMillis(),
     )
 }
 
@@ -29,7 +26,7 @@ actual suspend fun getPlatformMemoryUsage(): MemoryUsage {
     val usedMemory = totalMemory - freeMemory
     val maxMemory = runtime.maxMemory()
     val usagePercentage = if (maxMemory > 0) (usedMemory.toFloat() / maxMemory) * 100f else 0f
-    
+
     return MemoryUsage(
         heapUsed = usedMemory,
         heapTotal = totalMemory,
@@ -41,7 +38,7 @@ actual suspend fun getPlatformMemoryUsage(): MemoryUsage {
         gcCount = 0L, // Not directly available
         gcTime = 0L,
         usagePercentage = usagePercentage,
-        timestamp = System.currentTimeMillis()
+        timestamp = System.currentTimeMillis(),
     )
 }
 
@@ -55,14 +52,14 @@ actual suspend fun getPlatformGCInfo(): GCInfo {
         totalCollections = 0L,
         totalTime = 0L,
         lastGCTime = 0L,
-        averageGCTime = 0.0
+        averageGCTime = 0.0,
     )
 }
 
 actual suspend fun performCacheClear() {
     // Suggest garbage collection
     System.gc()
-    
+
     // Clear any internal caches if available
     try {
         Runtime.getRuntime().gc()
@@ -76,10 +73,10 @@ actual suspend fun performMemoryOptimization() {
     try {
         // Suggest garbage collection
         System.gc()
-        
+
         // Trim memory if possible
         Runtime.getRuntime().runFinalization()
-        
+
         // Additional Android-specific optimizations could be added here
     } catch (e: Exception) {
         // Ignore optimization errors

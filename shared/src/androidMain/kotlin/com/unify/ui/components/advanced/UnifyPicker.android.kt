@@ -33,11 +33,11 @@ actual fun UnifyPicker(
     placeholder: String,
     maxSelections: Int,
     searchEnabled: Boolean,
-    showClearButton: Boolean
+    showClearButton: Boolean,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    
+
     // Display selected items
     OutlinedTextField(
         value = if (selectedItems.isEmpty()) placeholder else selectedItems.joinToString(", "),
@@ -54,25 +54,26 @@ actual fun UnifyPicker(
                 }
                 Icon(Icons.Default.ArrowDropDown, contentDescription = "Open")
             }
-        }
+        },
     )
-    
+
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
-                    
+
                     if (searchEnabled) {
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
@@ -80,56 +81,61 @@ actual fun UnifyPicker(
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("搜索...") },
                             leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
-                    val filteredItems = if (searchQuery.isEmpty()) {
-                        items
-                    } else {
-                        items.filter { it.label.contains(searchQuery, ignoreCase = true) }
-                    }
-                    
+
+                    val filteredItems =
+                        if (searchQuery.isEmpty()) {
+                            items
+                        } else {
+                            items.filter { it.label.contains(searchQuery, ignoreCase = true) }
+                        }
+
                     LazyColumn {
                         items(filteredItems) { item ->
                             val isSelected = selectedItems.contains(item.id)
-                            
+
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(enabled = item.enabled) {
-                                        when (pickerType) {
-                                            PickerType.SINGLE -> {
-                                                onSelectionChanged(listOf(item.id))
-                                                showDialog = false
-                                            }
-                                            PickerType.MULTI -> {
-                                                val newSelection = if (isSelected) {
-                                                    selectedItems - item.id
-                                                } else {
-                                                    if (selectedItems.size < maxSelections) {
-                                                        selectedItems + item.id
-                                                    } else selectedItems
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable(enabled = item.enabled) {
+                                            when (pickerType) {
+                                                PickerType.SINGLE -> {
+                                                    onSelectionChanged(listOf(item.id))
+                                                    showDialog = false
                                                 }
-                                                onSelectionChanged(newSelection)
-                                            }
-                                            else -> {
-                                                onSelectionChanged(listOf(item.id))
-                                                showDialog = false
+                                                PickerType.MULTI -> {
+                                                    val newSelection =
+                                                        if (isSelected) {
+                                                            selectedItems - item.id
+                                                        } else {
+                                                            if (selectedItems.size < maxSelections) {
+                                                                selectedItems + item.id
+                                                            } else {
+                                                                selectedItems
+                                                            }
+                                                        }
+                                                    onSelectionChanged(newSelection)
+                                                }
+                                                else -> {
+                                                    onSelectionChanged(listOf(item.id))
+                                                    showDialog = false
+                                                }
                                             }
                                         }
-                                    }
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                        .padding(vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 when (pickerType) {
                                     PickerType.MULTI -> {
                                         Checkbox(
                                             checked = isSelected,
                                             onCheckedChange = null,
-                                            enabled = item.enabled
+                                            enabled = item.enabled,
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
@@ -137,28 +143,31 @@ actual fun UnifyPicker(
                                         RadioButton(
                                             selected = isSelected,
                                             onClick = null,
-                                            enabled = item.enabled
+                                            enabled = item.enabled,
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                     }
                                     else -> {}
                                 }
-                                
+
                                 Text(
                                     text = item.label,
-                                    color = if (item.enabled) 
-                                        MaterialTheme.colorScheme.onSurface 
-                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    color =
+                                        if (item.enabled) {
+                                            MaterialTheme.colorScheme.onSurface
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                        },
                                 )
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showDialog = false }) {
                             Text("取消")
@@ -183,24 +192,25 @@ actual fun UnifyWheelPicker(
     modifier: Modifier,
     visibleItemCount: Int,
     infiniteLoop: Boolean,
-    textColor: Color
+    textColor: Color,
 ) {
     LazyColumn(
         modifier = modifier.height((visibleItemCount * 48).dp),
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         itemsIndexed(items) { index, item ->
             val isSelected = index == selectedIndex
-            
+
             Text(
                 text = item,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSelectionChanged(index, item) }
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectionChanged(index, item) }
+                        .padding(vertical = 12.dp, horizontal = 16.dp),
                 color = if (isSelected) MaterialTheme.colorScheme.primary else textColor,
                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                style = if (isSelected) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium
+                style = if (isSelected) MaterialTheme.typography.bodyLarge else MaterialTheme.typography.bodyMedium,
             )
         }
     }
@@ -213,28 +223,28 @@ actual fun UnifyMultiWheelPicker(
     onSelectionChanged: (List<Int>, List<String>) -> Unit,
     modifier: Modifier,
     visibleItemCount: Int,
-    wheelSpacing: Int
+    wheelSpacing: Int,
 ) {
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(wheelSpacing.dp)
+        horizontalArrangement = Arrangement.spacedBy(wheelSpacing.dp),
     ) {
         wheels.forEachIndexed { wheelIndex, wheelItems ->
             val selectedIndex = selectedIndices.getOrElse(wheelIndex) { 0 }
-            
+
             UnifyWheelPicker(
                 items = wheelItems,
                 selectedIndex = selectedIndex,
                 onSelectionChanged = { index, item ->
                     val newIndices = selectedIndices.toMutableList()
                     val newItems = mutableListOf<String>()
-                    
+
                     // Update indices
                     while (newIndices.size <= wheelIndex) {
                         newIndices.add(0)
                     }
                     newIndices[wheelIndex] = index
-                    
+
                     // Get selected items
                     wheels.forEachIndexed { i, wheel ->
                         val idx = newIndices.getOrElse(i) { 0 }
@@ -242,11 +252,11 @@ actual fun UnifyMultiWheelPicker(
                             newItems.add(wheel[idx])
                         }
                     }
-                    
+
                     onSelectionChanged(newIndices, newItems)
                 },
                 modifier = Modifier.weight(1f),
-                visibleItemCount = visibleItemCount
+                visibleItemCount = visibleItemCount,
             )
         }
     }
@@ -259,102 +269,107 @@ actual fun UnifyCascadePicker(
     onSelectionChanged: (List<String>) -> Unit,
     modifier: Modifier,
     maxLevels: Int,
-    showFullPath: Boolean
+    showFullPath: Boolean,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var currentLevel by remember { mutableStateOf(0) }
     var levelData by remember { mutableStateOf(listOf(cascadeData)) }
-    
+
     OutlinedTextField(
-        value = if (selectedPath.isEmpty()) "请选择" else {
-            if (showFullPath) selectedPath.joinToString(" > ") else selectedPath.lastOrNull() ?: ""
-        },
+        value =
+            if (selectedPath.isEmpty()) {
+                "请选择"
+            } else {
+                if (showFullPath) selectedPath.joinToString(" > ") else selectedPath.lastOrNull() ?: ""
+            },
         onValueChange = { },
         modifier = modifier.clickable { showDialog = true },
         enabled = false,
         label = { Text("级联选择") },
         trailingIcon = {
             Icon(Icons.Default.ArrowDropDown, contentDescription = "Open")
-        }
+        },
     )
-    
+
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 400.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
                         text = "级联选择",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
-                    
+
                     // Level tabs
                     if (levelData.size > 1) {
                         ScrollableTabRow(
                             selectedTabIndex = currentLevel,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             levelData.forEachIndexed { index, _ ->
                                 Tab(
                                     selected = currentLevel == index,
                                     onClick = { currentLevel = index },
-                                    text = { Text("级别 ${index + 1}") }
+                                    text = { Text("级别 ${index + 1}") },
                                 )
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     LazyColumn {
                         items(levelData.getOrElse(currentLevel) { emptyList() }) { item ->
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        val newPath = selectedPath.take(currentLevel) + item.id
-                                        onSelectionChanged(newPath)
-                                        
-                                        if (item.children.isNotEmpty() && currentLevel < maxLevels - 1) {
-                                            val newLevelData = levelData.toMutableList()
-                                            while (newLevelData.size <= currentLevel + 1) {
-                                                newLevelData.add(emptyList())
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            val newPath = selectedPath.take(currentLevel) + item.id
+                                            onSelectionChanged(newPath)
+
+                                            if (item.children.isNotEmpty() && currentLevel < maxLevels - 1) {
+                                                val newLevelData = levelData.toMutableList()
+                                                while (newLevelData.size <= currentLevel + 1) {
+                                                    newLevelData.add(emptyList())
+                                                }
+                                                newLevelData[currentLevel + 1] = item.children
+                                                levelData = newLevelData
+                                                currentLevel = currentLevel + 1
+                                            } else {
+                                                showDialog = false
                                             }
-                                            newLevelData[currentLevel + 1] = item.children
-                                            levelData = newLevelData
-                                            currentLevel = currentLevel + 1
-                                        } else {
-                                            showDialog = false
                                         }
-                                    }
-                                    .padding(vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                        .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Text(
                                     text = item.label,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
                                 )
                                 if (item.children.isNotEmpty()) {
                                     Icon(
                                         Icons.Default.ChevronRight,
-                                        contentDescription = "Has children"
+                                        contentDescription = "Has children",
                                     )
                                 }
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showDialog = false }) {
                             Text("取消")
@@ -375,41 +390,43 @@ actual fun UnifyDropdownPicker(
     placeholder: String,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    searchEnabled: Boolean
+    searchEnabled: Boolean,
 ) {
     var isExpanded by remember { mutableStateOf(expanded) }
     var searchQuery by remember { mutableStateOf("") }
-    
+
     LaunchedEffect(expanded) {
         isExpanded = expanded
     }
-    
+
     LaunchedEffect(isExpanded) {
         onExpandedChange(isExpanded)
     }
-    
+
     ExposedDropdownMenuBox(
         expanded = isExpanded,
         onExpandedChange = { isExpanded = it },
-        modifier = modifier
+        modifier = modifier,
     ) {
         OutlinedTextField(
-            value = selectedItem?.let { id ->
-                items.find { it.id == id }?.label
-            } ?: placeholder,
+            value =
+                selectedItem?.let { id ->
+                    items.find { it.id == id }?.label
+                } ?: placeholder,
             onValueChange = { },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
+            modifier =
+                Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
             readOnly = true,
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded)
-            }
+            },
         )
-        
+
         ExposedDropdownMenu(
             expanded = isExpanded,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
         ) {
             if (searchEnabled) {
                 OutlinedTextField(
@@ -417,18 +434,20 @@ actual fun UnifyDropdownPicker(
                     onValueChange = { searchQuery = it },
                     placeholder = { Text("搜索...") },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(8.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
                 )
             }
-            
-            val filteredItems = if (searchQuery.isEmpty()) {
-                items
-            } else {
-                items.filter { it.label.contains(searchQuery, ignoreCase = true) }
-            }
-            
+
+            val filteredItems =
+                if (searchQuery.isEmpty()) {
+                    items
+                } else {
+                    items.filter { it.label.contains(searchQuery, ignoreCase = true) }
+                }
+
             filteredItems.forEach { item ->
                 DropdownMenuItem(
                     text = { Text(item.label) },
@@ -436,7 +455,7 @@ actual fun UnifyDropdownPicker(
                         onSelectionChanged(item.id)
                         isExpanded = false
                     },
-                    enabled = item.enabled
+                    enabled = item.enabled,
                 )
             }
         }
@@ -450,89 +469,92 @@ actual fun UnifyColorPicker(
     modifier: Modifier,
     showAlphaSlider: Boolean,
     showHexInput: Boolean,
-    presetColors: List<Color>
+    presetColors: List<Color>,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var currentColor by remember { mutableStateOf(selectedColor) }
     var hexInput by remember { mutableStateOf(colorToHex(selectedColor)) }
-    
+
     // Color preview button
     OutlinedButton(
         onClick = { showDialog = true },
-        modifier = modifier
+        modifier = modifier,
     ) {
         Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(CircleShape)
-                .background(selectedColor)
+            modifier =
+                Modifier
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(selectedColor),
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text("选择颜色")
     }
-    
+
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 500.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 500.dp),
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(16.dp),
                 ) {
                     Text(
                         text = "颜色选择器",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // Color preview
                     Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(60.dp)
-                            .clip(MaterialTheme.shapes.medium)
-                            .background(currentColor)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .clip(MaterialTheme.shapes.medium)
+                                .background(currentColor),
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     // RGB sliders
                     val red = (currentColor.red * 255).toInt()
                     val green = (currentColor.green * 255).toInt()
                     val blue = (currentColor.blue * 255).toInt()
                     val alpha = (currentColor.alpha * 255).toInt()
-                    
+
                     ColorSlider(
                         label = "Red",
                         value = red,
                         onValueChange = { newRed ->
                             currentColor = Color(newRed, green, blue, alpha)
                             hexInput = colorToHex(currentColor)
-                        }
+                        },
                     )
-                    
+
                     ColorSlider(
                         label = "Green",
                         value = green,
                         onValueChange = { newGreen ->
                             currentColor = Color(red, newGreen, blue, alpha)
                             hexInput = colorToHex(currentColor)
-                        }
+                        },
                     )
-                    
+
                     ColorSlider(
                         label = "Blue",
                         value = blue,
                         onValueChange = { newBlue ->
                             currentColor = Color(red, green, newBlue, alpha)
                             hexInput = colorToHex(currentColor)
-                        }
+                        },
                     )
-                    
+
                     if (showAlphaSlider) {
                         ColorSlider(
                             label = "Alpha",
@@ -540,10 +562,10 @@ actual fun UnifyColorPicker(
                             onValueChange = { newAlpha ->
                                 currentColor = Color(red, green, blue, newAlpha)
                                 hexInput = colorToHex(currentColor)
-                            }
+                            },
                         )
                     }
-                    
+
                     if (showHexInput) {
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedTextField(
@@ -555,32 +577,33 @@ actual fun UnifyColorPicker(
                                 }
                             },
                             label = { Text("Hex Color") },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
-                    
+
                     // Preset colors
                     if (presetColors.isNotEmpty()) {
                         Spacer(modifier = Modifier.height(16.dp))
                         Text("预设颜色", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         LazyColumn {
                             items(presetColors.chunked(6)) { colorRow ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 ) {
                                     colorRow.forEach { color ->
                                         Box(
-                                            modifier = Modifier
-                                                .size(40.dp)
-                                                .clip(CircleShape)
-                                                .background(color)
-                                                .clickable {
-                                                    currentColor = color
-                                                    hexInput = colorToHex(color)
-                                                }
+                                            modifier =
+                                                Modifier
+                                                    .size(40.dp)
+                                                    .clip(CircleShape)
+                                                    .background(color)
+                                                    .clickable {
+                                                        currentColor = color
+                                                        hexInput = colorToHex(color)
+                                                    },
                                         )
                                     }
                                 }
@@ -588,12 +611,12 @@ actual fun UnifyColorPicker(
                             }
                         }
                     }
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
+                        horizontalArrangement = Arrangement.End,
                     ) {
                         TextButton(onClick = { showDialog = false }) {
                             Text("取消")
@@ -602,7 +625,7 @@ actual fun UnifyColorPicker(
                             onClick = {
                                 onColorSelected(currentColor)
                                 showDialog = false
-                            }
+                            },
                         ) {
                             Text("确定")
                         }
@@ -617,27 +640,27 @@ actual fun UnifyColorPicker(
 private fun ColorSlider(
     label: String,
     value: Int,
-    onValueChange: (Int) -> Unit
+    onValueChange: (Int) -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
             modifier = Modifier.width(60.dp),
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
         )
         Slider(
             value = value.toFloat(),
             onValueChange = { onValueChange(it.toInt()) },
             valueRange = 0f..255f,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Text(
             text = value.toString(),
             modifier = Modifier.width(40.dp),
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
         )
     }
 }

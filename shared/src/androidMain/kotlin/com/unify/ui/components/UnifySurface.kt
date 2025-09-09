@@ -24,12 +24,13 @@ actual fun UnifySurface(
     contentColor: Color,
     elevation: Dp,
     border: UnifyBorder?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val borderStroke = border?.let {
-        BorderStroke(it.width, it.color)
-    }
-    
+    val borderStroke =
+        border?.let {
+            BorderStroke(it.width, it.color)
+        }
+
     Surface(
         modifier = modifier,
         shape = shape ?: MaterialTheme.shapes.medium,
@@ -37,7 +38,7 @@ actual fun UnifySurface(
         contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
         tonalElevation = elevation,
         border = borderStroke,
-        content = content
+        content = content,
     )
 }
 
@@ -48,20 +49,22 @@ actual fun UnifyPlatformCard(
     backgroundColor: Color,
     contentColor: Color,
     border: UnifyBorder?,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val borderStroke = border?.let {
-        BorderStroke(it.width, it.color)
-    }
-    
+    val borderStroke =
+        border?.let {
+            BorderStroke(it.width, it.color)
+        }
+
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        colors = CardDefaults.cardColors(
-            containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
-            contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface
-        ),
-        border = borderStroke
+        colors =
+            CardDefaults.cardColors(
+                containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.surface,
+                contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onSurface,
+            ),
+        border = borderStroke,
     ) {
         content()
     }
@@ -72,14 +75,15 @@ actual fun UnifyContainer(
     modifier: Modifier,
     backgroundColor: Color,
     padding: PaddingValues,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(
-        modifier = modifier
-            .background(
-                if (backgroundColor != Color.Unspecified) backgroundColor else Color.Transparent
-            )
-            .padding(padding)
+        modifier =
+            modifier
+                .background(
+                    if (backgroundColor != Color.Unspecified) backgroundColor else Color.Transparent,
+                )
+                .padding(padding),
     ) {
         content()
     }

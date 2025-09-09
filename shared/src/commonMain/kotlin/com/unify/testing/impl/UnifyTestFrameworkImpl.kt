@@ -1,53 +1,45 @@
 package com.unify.testing.impl
 
+import com.unify.core.platform.getCurrentTimeMillis
 import kotlinx.coroutines.flow.Flow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.asStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * Unify测试框架核心实现
  * 提供跨平台测试基础功能和测试管理
  */
 open class UnifyTestFrameworkImpl {
-    
     private val _testResults = MutableStateFlow<List<UnifyTestResult>>(emptyList())
     val testResults: Flow<List<UnifyTestResult>> = _testResults.asStateFlow()
-    
+
     private val _testSuites = MutableStateFlow<List<UnifyTestSuite>>(emptyList())
     val testSuites: Flow<List<UnifyTestSuite>> = _testSuites.asStateFlow()
-    
+
     private val _isRunning = MutableStateFlow(false)
     val isRunning: Flow<Boolean> = _isRunning.asStateFlow()
-    
+
     /**
      * 执行单个测试用例
      */
     suspend fun runTest(testCase: UnifyTestCase): UnifyTestResult {
         val startTime = getCurrentTimeMillis()
-        
+
         return try {
             _isRunning.value = true
-            
+
             // 执行测试前置条件
             executeSetup(testCase.setup)
-            
+
             // 执行测试主体
             val result = executeTestBody(testCase)
-            
+
             // 执行测试清理
             executeTeardown(testCase.teardown)
-            
+
             val endTime = getCurrentTimeMillis()
-            
+
             UnifyTestResult(
                 testName = testCase.name,
                 description = testCase.description,
@@ -56,11 +48,11 @@ open class UnifyTestFrameworkImpl {
                 errorMessage = null,
                 timestamp = getCurrentTimeMillis(),
                 platform = getCurrentPlatform(),
-                category = testCase.category
+                category = testCase.category,
             )
         } catch (e: Exception) {
             val endTime = getCurrentTimeMillis()
-            
+
             UnifyTestResult(
                 testName = testCase.name,
                 description = testCase.description,
@@ -69,44 +61,43 @@ open class UnifyTestFrameworkImpl {
                 errorMessage = e.message,
                 timestamp = getCurrentTimeMillis(),
                 platform = getCurrentPlatform(),
-                category = testCase.category
+                category = testCase.category,
             )
         } finally {
             _isRunning.value = false
         }
     }
-    
+
     /**
      * 执行测试套件
      */
     suspend fun runTestSuite(testSuite: UnifyTestSuite): UnifyTestSuiteResult {
         val startTime = getCurrentTimeMillis()
         val results = mutableListOf<UnifyTestResult>()
-        
+
         _isRunning.value = true
-        
+
         try {
             // 执行套件前置条件
             executeSetup(testSuite.setup)
-            
+
             // 执行所有测试用例
             testSuite.testCases.forEach { testCase ->
                 val result = runTest(testCase)
                 results.add(result)
-                
+
                 // 更新测试结果流
                 _testResults.value = _testResults.value + result
             }
-            
+
             // 执行套件清理
             executeTeardown(testSuite.teardown)
-            
         } finally {
             _isRunning.value = false
         }
-        
+
         val endTime = getCurrentTimeMillis()
-        
+
         return UnifyTestSuiteResult(
             suiteName = testSuite.name,
             description = testSuite.description,
@@ -117,24 +108,24 @@ open class UnifyTestFrameworkImpl {
             skippedTests = results.count { it.status == TestExecutionStatus.SKIPPED },
             executionTime = endTime - startTime,
             timestamp = getCurrentTimeMillis(),
-            platform = getCurrentPlatform()
+            platform = getCurrentPlatform(),
         )
     }
-    
+
     /**
      * 批量执行多个测试套件
      */
     suspend fun runAllTestSuites(testSuites: List<UnifyTestSuite>): UnifyTestBatchResult {
         val startTime = getCurrentTimeMillis()
         val suiteResults = mutableListOf<UnifyTestSuiteResult>()
-        
+
         testSuites.forEach { suite ->
             val result = runTestSuite(suite)
             suiteResults.add(result)
         }
-        
+
         val endTime = getCurrentTimeMillis()
-        
+
         return UnifyTestBatchResult(
             suiteResults = suiteResults,
             totalSuites = suiteResults.size,
@@ -144,10 +135,10 @@ open class UnifyTestFrameworkImpl {
             totalSkipped = suiteResults.sumOf { it.skippedTests },
             executionTime = endTime - startTime,
             timestamp = getCurrentTimeMillis(),
-            platform = getCurrentPlatform()
+            platform = getCurrentPlatform(),
         )
     }
-    
+
     /**
      * 创建基础测试套件
      */
@@ -155,20 +146,21 @@ open class UnifyTestFrameworkImpl {
         return UnifyTestSuite(
             name = "Unify基础功能测试",
             description = "验证Unify核心功能的基础测试套件",
-            testCases = listOf(
-                createPlatformInfoTest(),
-                createUIComponentTest(),
-                createDataStorageTest(),
-                createNetworkTest(),
-                createDeviceFeatureTest()
-            ),
+            testCases =
+                listOf(
+                    createPlatformInfoTest(),
+                    createUIComponentTest(),
+                    createDataStorageTest(),
+                    createNetworkTest(),
+                    createDeviceFeatureTest(),
+                ),
             setup = { /* 套件初始化 */ },
             teardown = { /* 套件清理 */ },
             category = TestCategory.FUNCTIONAL,
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         )
     }
-    
+
     /**
      * 创建性能测试套件
      */
@@ -176,25 +168,26 @@ open class UnifyTestFrameworkImpl {
         return UnifyTestSuite(
             name = "Unify性能测试",
             description = "验证Unify性能指标的测试套件",
-            testCases = listOf(
-                createStartupPerformanceTest(),
-                createMemoryUsageTest(),
-                createRenderingPerformanceTest(),
-                createNetworkPerformanceTest()
-            ),
+            testCases =
+                listOf(
+                    createStartupPerformanceTest(),
+                    createMemoryUsageTest(),
+                    createRenderingPerformanceTest(),
+                    createNetworkPerformanceTest(),
+                ),
             setup = { /* 性能测试初始化 */ },
             teardown = { /* 性能测试清理 */ },
             category = TestCategory.PERFORMANCE,
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         )
     }
-    
+
     /**
      * 获取测试统计信息
      */
     fun getTestStatistics(): UnifyTestStatistics {
         val allResults = _testResults.value
-        
+
         return UnifyTestStatistics(
             totalTests = allResults.size,
             passedTests = allResults.count { it.status == TestExecutionStatus.PASSED },
@@ -203,10 +196,10 @@ open class UnifyTestFrameworkImpl {
             averageExecutionTime = if (allResults.isNotEmpty()) allResults.map { it.executionTime }.average() else 0.0,
             passRate = if (allResults.isNotEmpty()) allResults.count { it.status == TestExecutionStatus.PASSED }.toDouble() / allResults.size else 0.0,
             testCoverage = calculateTestCoverage(),
-            lastRunTimestamp = allResults.maxOfOrNull { it.timestamp } ?: 0L
+            lastRunTimestamp = allResults.maxOfOrNull { it.timestamp } ?: 0L,
         )
     }
-    
+
     // 私有辅助方法
     private suspend fun executeSetup(setup: suspend () -> Unit) {
         try {
@@ -215,7 +208,7 @@ open class UnifyTestFrameworkImpl {
             throw TestSetupException("测试前置条件执行失败: ${e.message}", e)
         }
     }
-    
+
     private suspend fun executeTeardown(teardown: suspend () -> Unit) {
         try {
             teardown()
@@ -224,7 +217,7 @@ open class UnifyTestFrameworkImpl {
             println("WARNING: 测试清理失败: ${e.message}")
         }
     }
-    
+
     private suspend fun executeTestBody(testCase: UnifyTestCase): Boolean {
         return try {
             testCase.testBody()
@@ -235,16 +228,16 @@ open class UnifyTestFrameworkImpl {
             throw TestExecutionException("测试执行失败: ${e.message}", e)
         }
     }
-    
+
     private fun getCurrentPlatform(): String {
         return "Common" // 在实际实现中会根据平台返回具体值
     }
-    
+
     private fun calculateTestCoverage(): Double {
         // 模拟测试覆盖率计算
         return 0.96 // 96%
     }
-    
+
     // 测试用例创建方法
     private fun createPlatformInfoTest(): UnifyTestCase {
         return UnifyTestCase(
@@ -261,10 +254,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 测试清理 */ },
             category = TestCategory.FUNCTIONAL,
             priority = TestPriority.HIGH,
-            timeout = 5000L
+            timeout = 5000L,
         )
     }
-    
+
     private fun createUIComponentTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "UI组件渲染测试",
@@ -280,10 +273,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* UI测试清理 */ },
             category = TestCategory.UI,
             priority = TestPriority.MEDIUM,
-            timeout = 10000L
+            timeout = 10000L,
         )
     }
-    
+
     private fun createDataStorageTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "数据存储测试",
@@ -300,10 +293,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 数据测试清理 */ },
             category = TestCategory.DATA,
             priority = TestPriority.HIGH,
-            timeout = 8000L
+            timeout = 8000L,
         )
     }
-    
+
     private fun createNetworkTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "网络请求测试",
@@ -320,10 +313,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 网络测试清理 */ },
             category = TestCategory.NETWORK,
             priority = TestPriority.MEDIUM,
-            timeout = 15000L
+            timeout = 15000L,
         )
     }
-    
+
     private fun createDeviceFeatureTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "设备功能测试",
@@ -340,10 +333,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 设备测试清理 */ },
             category = TestCategory.DEVICE,
             priority = TestPriority.MEDIUM,
-            timeout = 12000L
+            timeout = 12000L,
         )
     }
-    
+
     private fun createStartupPerformanceTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "启动性能测试",
@@ -358,10 +351,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 性能测试清理 */ },
             category = TestCategory.PERFORMANCE,
             priority = TestPriority.HIGH,
-            timeout = 30000L
+            timeout = 30000L,
         )
     }
-    
+
     private fun createMemoryUsageTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "内存使用测试",
@@ -377,10 +370,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 内存测试清理 */ },
             category = TestCategory.PERFORMANCE,
             priority = TestPriority.MEDIUM,
-            timeout = 20000L
+            timeout = 20000L,
         )
     }
-    
+
     private fun createRenderingPerformanceTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "渲染性能测试",
@@ -395,10 +388,10 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 渲染测试清理 */ },
             category = TestCategory.PERFORMANCE,
             priority = TestPriority.HIGH,
-            timeout = 10000L
+            timeout = 10000L,
         )
     }
-    
+
     private fun createNetworkPerformanceTest(): UnifyTestCase {
         return UnifyTestCase(
             name = "网络性能测试",
@@ -413,7 +406,7 @@ open class UnifyTestFrameworkImpl {
             teardown = { /* 网络性能测试清理 */ },
             category = TestCategory.PERFORMANCE,
             priority = TestPriority.MEDIUM,
-            timeout = 25000L
+            timeout = 25000L,
         )
     }
 }
@@ -428,7 +421,7 @@ data class UnifyTestCase(
     val teardown: suspend () -> Unit = {},
     val category: TestCategory,
     val priority: TestPriority,
-    val timeout: Long = 10000L
+    val timeout: Long = 10000L,
 )
 
 @Serializable
@@ -439,7 +432,7 @@ data class UnifyTestSuite(
     val setup: suspend () -> Unit = {},
     val teardown: suspend () -> Unit = {},
     val category: TestCategory,
-    val priority: TestPriority
+    val priority: TestPriority,
 )
 
 @Serializable
@@ -451,7 +444,7 @@ data class UnifyTestResult(
     val errorMessage: String?,
     val timestamp: Long,
     val platform: String,
-    val category: TestCategory
+    val category: TestCategory,
 )
 
 @Serializable
@@ -465,7 +458,7 @@ data class UnifyTestSuiteResult(
     val skippedTests: Int,
     val executionTime: Long,
     val timestamp: Long,
-    val platform: String
+    val platform: String,
 )
 
 @Serializable
@@ -478,7 +471,7 @@ data class UnifyTestBatchResult(
     val totalSkipped: Int,
     val executionTime: Long,
     val timestamp: Long,
-    val platform: String
+    val platform: String,
 )
 
 @Serializable
@@ -490,22 +483,37 @@ data class UnifyTestStatistics(
     val averageExecutionTime: Double,
     val passRate: Double,
     val testCoverage: Double,
-    val lastRunTimestamp: Long
+    val lastRunTimestamp: Long,
 )
 
 enum class TestExecutionStatus {
-    PASSED, FAILED, SKIPPED, RUNNING
+    PASSED,
+    FAILED,
+    SKIPPED,
+    RUNNING,
 }
 
 enum class TestCategory {
-    FUNCTIONAL, PERFORMANCE, UI, DATA, NETWORK, DEVICE, SECURITY, INTEGRATION
+    FUNCTIONAL,
+    PERFORMANCE,
+    UI,
+    DATA,
+    NETWORK,
+    DEVICE,
+    SECURITY,
+    INTEGRATION,
 }
 
 enum class TestPriority {
-    LOW, MEDIUM, HIGH, CRITICAL
+    LOW,
+    MEDIUM,
+    HIGH,
+    CRITICAL,
 }
 
 // 异常类定义
 class TestSetupException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 class TestExecutionException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
 class TestAssertionException(message: String, cause: Throwable? = null) : Exception(message, cause)

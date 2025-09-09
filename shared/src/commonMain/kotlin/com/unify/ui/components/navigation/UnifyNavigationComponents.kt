@@ -15,7 +15,7 @@ expect fun UnifyNavigationHost(
     startDestination: String,
     modifier: Modifier = Modifier,
     route: String? = null,
-    builder: NavigationGraphBuilder.() -> Unit
+    builder: NavigationGraphBuilder.() -> Unit,
 )
 
 @Composable
@@ -23,9 +23,16 @@ expect fun UnifyNavController(): NavController
 
 interface NavController {
     fun navigate(route: String)
+
     fun navigateUp(): Boolean
+
     fun popBackStack(): Boolean
-    fun popBackStack(route: String, inclusive: Boolean): Boolean
+
+    fun popBackStack(
+        route: String,
+        inclusive: Boolean,
+    ): Boolean
+
     val currentDestination: NavDestination?
 }
 
@@ -37,15 +44,15 @@ interface NavDestination {
 class NavigationGraphBuilder {
     fun composable(
         route: String,
-        content: @Composable (NavBackStackEntry) -> Unit
+        content: @Composable (NavBackStackEntry) -> Unit,
     ) {
         // Implementation will be platform-specific
     }
-    
+
     fun navigation(
         startDestination: String,
         route: String,
-        builder: NavigationGraphBuilder.() -> Unit
+        builder: NavigationGraphBuilder.() -> Unit,
     ) {
         // Implementation will be platform-specific
     }
@@ -58,14 +65,16 @@ interface NavBackStackEntry {
 
 interface Bundle {
     fun getString(key: String): String?
+
     fun getInt(key: String): Int
+
     fun getBoolean(key: String): Boolean
 }
 
 @Composable
 expect fun UnifyBackHandler(
     enabled: Boolean = true,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 )
 
 @Composable
@@ -74,11 +83,14 @@ expect fun UnifyNavigationSuite(
     modifier: Modifier = Modifier,
     layoutType: NavigationSuiteType = NavigationSuiteType.Auto,
     colors: NavigationSuiteColors = NavigationSuiteDefaults.colors(),
-    content: @Composable () -> Unit = {}
+    content: @Composable () -> Unit = {},
 )
 
 enum class NavigationSuiteType {
-    NavigationBar, NavigationRail, NavigationDrawer, Auto
+    NavigationBar,
+    NavigationRail,
+    NavigationDrawer,
+    Auto,
 }
 
 class NavigationSuiteScope {
@@ -89,7 +101,7 @@ class NavigationSuiteScope {
         modifier: Modifier = Modifier,
         enabled: Boolean = true,
         label: (@Composable () -> Unit)? = null,
-        badge: (@Composable () -> Unit)? = null
+        badge: (@Composable () -> Unit)? = null,
     ) {
         // Implementation will be platform-specific
     }
@@ -101,7 +113,7 @@ data class NavigationSuiteColors(
     val navigationRailContainerColor: Color,
     val navigationRailContentColor: Color,
     val navigationDrawerContainerColor: Color,
-    val navigationDrawerContentColor: Color
+    val navigationDrawerContentColor: Color,
 )
 
 object NavigationSuiteDefaults {
@@ -112,13 +124,14 @@ object NavigationSuiteDefaults {
         navigationRailContainerColor: Color = Color.Unspecified,
         navigationRailContentColor: Color = Color.Unspecified,
         navigationDrawerContainerColor: Color = Color.Unspecified,
-        navigationDrawerContentColor: Color = Color.Unspecified
-    ): NavigationSuiteColors = NavigationSuiteColors(
-        navigationBarContainerColor = navigationBarContainerColor,
-        navigationBarContentColor = navigationBarContentColor,
-        navigationRailContainerColor = navigationRailContainerColor,
-        navigationRailContentColor = navigationRailContentColor,
-        navigationDrawerContainerColor = navigationDrawerContainerColor,
-        navigationDrawerContentColor = navigationDrawerContentColor
-    )
+        navigationDrawerContentColor: Color = Color.Unspecified,
+    ): NavigationSuiteColors =
+        NavigationSuiteColors(
+            navigationBarContainerColor = navigationBarContainerColor,
+            navigationBarContentColor = navigationBarContentColor,
+            navigationRailContainerColor = navigationRailContainerColor,
+            navigationRailContentColor = navigationRailContentColor,
+            navigationDrawerContainerColor = navigationDrawerContainerColor,
+            navigationDrawerContentColor = navigationDrawerContentColor,
+        )
 }

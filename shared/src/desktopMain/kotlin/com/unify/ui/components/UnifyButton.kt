@@ -21,26 +21,27 @@ actual fun UnifyButton(
     text: String,
     backgroundColor: Color,
     contentColor: Color,
-    contentPadding: PaddingValues
+    contentPadding: PaddingValues,
 ) {
-    val buttonColors = ButtonDefaults.buttonColors(
-        containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else Color(0xFF2196F3),
-        contentColor = if (contentColor != Color.Unspecified) contentColor else Color.White,
-        disabledContainerColor = Color(0xFFBDBDBD),
-        disabledContentColor = Color(0xFF757575)
-    )
-    
+    val buttonColors =
+        ButtonDefaults.buttonColors(
+            containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else Color(0xFF2196F3),
+            contentColor = if (contentColor != Color.Unspecified) contentColor else Color.White,
+            disabledContainerColor = Color(0xFFBDBDBD),
+            disabledContentColor = Color(0xFF757575),
+        )
+
     Button(
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
         colors = buttonColors,
         shape = RoundedCornerShape(6.dp),
-        contentPadding = contentPadding
+        contentPadding = contentPadding,
     ) {
         Text(
             text = text,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -50,12 +51,12 @@ actual fun UnifyIconButton(
     onClick: () -> Unit,
     modifier: Modifier,
     enabled: Boolean,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     IconButton(
         onClick = onClick,
         modifier = modifier,
-        enabled = enabled
+        enabled = enabled,
     ) {
         content()
     }
@@ -67,13 +68,13 @@ actual fun UnifyFloatingActionButton(
     modifier: Modifier,
     backgroundColor: Color,
     contentColor: Color,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier,
         containerColor = if (backgroundColor != Color.Unspecified) backgroundColor else MaterialTheme.colorScheme.primary,
-        contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary
+        contentColor = if (contentColor != Color.Unspecified) contentColor else MaterialTheme.colorScheme.onPrimary,
     ) {
         content()
     }

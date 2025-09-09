@@ -8,11 +8,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.unify.core.components.UnifyCardType
-
 
 /**
  * Unify反馈类型枚举
@@ -22,7 +19,7 @@ enum class UnifyFeedbackType {
     ERROR,
     WARNING,
     INFO,
-    LOADING
+    LOADING,
 }
 
 /**
@@ -32,9 +29,8 @@ enum class UnifySpacing(val value: Dp) {
     SMALL(4.dp),
     MEDIUM(12.dp),
     LARGE(20.dp),
-    EXTRA_LARGE(28.dp)
+    EXTRA_LARGE(28.dp),
 }
-
 
 // UnifyCard moved to UnifySurface.kt to use expect/actual mechanism and avoid duplicate declarations
 
@@ -48,38 +44,39 @@ fun UnifyFeedbackBanner(
     message: String,
     type: UnifyFeedbackType,
     modifier: Modifier = Modifier,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
 ) {
-    val backgroundColor = when (type) {
-        UnifyFeedbackType.SUCCESS -> Color(0xFF4CAF50)
-        UnifyFeedbackType.ERROR -> Color(0xFFF44336)
-        UnifyFeedbackType.WARNING -> Color(0xFFFF9800)
-        UnifyFeedbackType.INFO -> Color(0xFF2196F3)
-        UnifyFeedbackType.LOADING -> Color(0xFF9C27B0)
-    }
-    
+    val backgroundColor =
+        when (type) {
+            UnifyFeedbackType.SUCCESS -> Color(0xFF4CAF50)
+            UnifyFeedbackType.ERROR -> Color(0xFFF44336)
+            UnifyFeedbackType.WARNING -> Color(0xFFFF9800)
+            UnifyFeedbackType.INFO -> Color(0xFF2196F3)
+            UnifyFeedbackType.LOADING -> Color(0xFF9C27B0)
+        }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = backgroundColor.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     tint = backgroundColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(20.dp),
                 )
                 Spacer(modifier = Modifier.width(12.dp))
             }
             Text(
                 text = message,
                 color = backgroundColor,
-                style = MaterialTheme.typography.bodyMedium
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
     }
@@ -92,19 +89,19 @@ fun UnifyFeedbackBanner(
 fun UnifyProgressIndicator(
     progress: Float,
     modifier: Modifier = Modifier,
-    isLinear: Boolean = true
+    isLinear: Boolean = true,
 ) {
     if (isLinear) {
         LinearProgressIndicator(
             progress = { progress },
             modifier = modifier,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
     } else {
         CircularProgressIndicator(
             progress = { progress },
             modifier = modifier,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
         )
     }
 }

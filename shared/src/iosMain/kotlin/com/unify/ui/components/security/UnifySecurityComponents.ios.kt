@@ -14,6 +14,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import com.unify.core.types.AuthenticationResult
+import com.unify.core.types.BiometricType
+import com.unify.core.types.PasswordStrength
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.collectAsState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +49,7 @@ actual fun UnifyBiometricAuth(
                 onClick = { 
                     val result = AuthenticationResult(
                         isSuccess = true,
-                        biometricType = BiometricType.FINGERPRINT
+                        biometricType = BiometricType.FINGERPRINT.toString()
                     )
                     onAuthResult(result)
                 }
@@ -185,10 +188,10 @@ actual fun UnifyPasswordStrengthIndicator(
     colors: PasswordStrengthColors
 ) {
     val strength = when {
-        password.length >= 12 && password.any { it.isUpperCase() } && password.any { it.isLowerCase() } && password.any { it.isDigit() } -> PasswordStrength.VERY_STRONG
-        password.length >= 8 && password.any { it.isUpperCase() } && password.any { it.isLowerCase() } -> PasswordStrength.STRONG
-        password.length >= 6 -> PasswordStrength.MEDIUM
-        else -> PasswordStrength.WEAK
+        password.length >= 12 && password.any { it.isUpperCase() } && password.any { it.isLowerCase() } && password.any { it.isDigit() } -> PasswordStrength.STRONG
+        password.length >= 8 && password.any { it.isUpperCase() } && password.any { it.isLowerCase() } -> PasswordStrength.GOOD
+        password.length >= 6 -> PasswordStrength.FAIR
+        else -> PasswordStrength.VERY_WEAK
     }
     
     Card(
@@ -206,10 +209,12 @@ actual fun UnifyPasswordStrengthIndicator(
             
             // 显示强度颜色条
             val color = when (strength) {
-                PasswordStrength.WEAK -> colors.weakColor
-                PasswordStrength.MEDIUM -> colors.mediumColor
-                PasswordStrength.STRONG -> colors.strongColor
-                PasswordStrength.VERY_STRONG -> colors.veryStrongColor
+                PasswordStrength.VERY_WEAK -> Color.Red
+                PasswordStrength.WEAK -> Color(0xFFE91E63)
+                PasswordStrength.FAIR -> Color(0xFFFF9800)
+                PasswordStrength.GOOD -> Color(0xFFFFEB3B)
+                PasswordStrength.STRONG -> Color.Green
+                PasswordStrength.VERY_STRONG -> Color(0xFF4CAF50)
             }
             
             Box(
@@ -276,8 +281,8 @@ actual fun UnifySecuritySettings(
     config: SecurityConfig,
     onConfigChange: (SecurityConfig) -> Unit,
     modifier: Modifier,
-    availableBiometrics: Set<BiometricType>,
-    onTestBiometric: (BiometricType) -> Unit
+    availableBiometrics: Set<String>,
+    onTestBiometric: (String) -> Unit
 ) {
     Card(
         modifier = modifier.padding(16.dp),
@@ -297,6 +302,26 @@ actual fun UnifySecuritySettings(
                     checked = config.enableBiometric,
                     onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) }
                 )
+            }
+            
+            availableBiometrics.forEach { biometric ->
+                Row {
+                    Switch(
+                        checked = config.enabledBiometrics.contains(biometric),
+                        onCheckedChange = { enabled ->
+                            val newBiometrics = if (enabled) {
+                                config.enabledBiometrics + biometric
+                            } else {
+                                config.enabledBiometrics - biometric
+                            }
+                            onConfigChange(config.copy(enabledBiometrics = newBiometrics))
+                        }
+                    )
+                    Text(biometric)
+                    Button(onClick = { onTestBiometric(biometric) }) {
+                        Text("Test")
+                    }
+                }
             }
             
             Row(
@@ -370,12 +395,16 @@ actual fun UnifySecureStorage(
 
 @Composable
 actual fun UnifyPrivacyConsent(
-    privacyItems: List<PrivacyItem>,
-    onConsentChange: (Map<String, Boolean>) -> Unit,
+    consentItems: List<String>,
+    onConsentChange: (List<String>) -> Unit,
     modifier: Modifier,
     title: String,
-    showSelectAll: Boolean
+    description: String,
+    allowPartialConsent: Boolean
 ) {
+    var selectedItems by remember { 
+        mutableStateOf(emptyList<String>())
+    }
     Card(
         modifier = modifier.padding(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -384,37 +413,76 @@ actual fun UnifyPrivacyConsent(
             modifier = Modifier.padding(16.dp)
         ) {
             Text(title)
+            Text(description, style = MaterialTheme.typography.bodyMedium)
             
-            if (showSelectAll) {
-                Button(
-                    onClick = {
-                        val allConsents = privacyItems.associate { it.id to true }
-                        onConsentChange(allConsents)
-                    }
-                ) {
-                    Text("Select All")
-                }
-            }
-            
-            privacyItems.forEach { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(item.title)
-                        Text(item.description, style = MaterialTheme.typography.bodySmall)
-                        if (item.required) {
-                            Text("Required", style = MaterialTheme.typography.labelSmall)
-                        }
-                    }
-                    Switch(
-                        checked = item.defaultValue,
-                        onCheckedChange = { 
-                            val newConsents = mapOf(item.id to it)
-                            onConsentChange(newConsents)
+            consentItems.forEach { item ->
+                Row {
+                    Checkbox(
+                        checked = selectedItems.contains(item),
+                        onCheckedChange = { checked ->
+                            selectedItems = if (checked) {
+                                selectedItems + item
+                            } else {
+                                selectedItems - item
+                            }
+                            onConsentChange(selectedItems)
                         }
                     )
+                    Text(item, modifier = Modifier.padding(start = 8.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+actual fun UnifySecurityDashboard(
+    config: SecurityConfig,
+    onConfigChange: (SecurityConfig) -> Unit,
+    modifier: Modifier,
+    availableBiometrics: Set<String>,
+    onTestBiometric: (String) -> Unit
+) {
+    Column(modifier = modifier) {
+        Text("iOS Security Dashboard", style = MaterialTheme.typography.titleLarge)
+        
+        Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Security Settings", style = MaterialTheme.typography.titleMedium)
+                
+                Row {
+                    Switch(
+                        checked = config.enableBiometric,
+                        onCheckedChange = { onConfigChange(config.copy(enableBiometric = it)) }
+                    )
+                    Text("Enable Biometric Authentication")
+                }
+                
+                Row {
+                    Switch(
+                        checked = config.enablePinCode,
+                        onCheckedChange = { onConfigChange(config.copy(enablePinCode = it)) }
+                    )
+                    Text("Enable PIN Code")
+                }
+                
+                Text("Max Attempts: ${config.maxAttempts}")
+                Text("Lockout Duration: ${config.lockoutDuration / 1000}s")
+            }
+        }
+        
+        if (availableBiometrics.isNotEmpty()) {
+            Card(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("Available Biometrics", style = MaterialTheme.typography.titleMedium)
+                    availableBiometrics.forEach { biometric ->
+                        Row {
+                            Text(biometric, modifier = Modifier.weight(1f))
+                            Button(onClick = { onTestBiometric(biometric) }) {
+                                Text("Test")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -437,11 +505,10 @@ private fun calculatePasswordStrength(
     if (!requireNumbers || password.any { it.isDigit() }) score++
     if (!requireSymbols || password.any { !it.isLetterOrDigit() }) score++
     
-    return when (score) {
-        0, 1 -> PasswordStrength.WEAK
-        2, 3 -> PasswordStrength.MEDIUM
-        4 -> PasswordStrength.STRONG
-        5 -> PasswordStrength.VERY_STRONG
-        else -> PasswordStrength.WEAK
+    return when {
+        score >= 4 -> PasswordStrength.STRONG
+        score >= 3 -> PasswordStrength.GOOD
+        score >= 2 -> PasswordStrength.FAIR
+        else -> PasswordStrength.VERY_WEAK
     }
 }

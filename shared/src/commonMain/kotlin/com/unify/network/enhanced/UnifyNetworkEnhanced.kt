@@ -1,15 +1,14 @@
 package com.unify.network.enhanced
 
 import com.unify.core.network.*
-import com.unify.network.UnifyNetworkManager
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.delay
 import com.unify.core.utils.UnifyTimeUtils
+import com.unify.network.UnifyNetworkManager
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 
 /**
@@ -21,11 +20,11 @@ class UnifyNetworkEnhanced {
     private val requestDeduplicator = RequestDeduplicator()
     private val loadBalancer = LoadBalancer()
     private val performanceMonitor = NetworkPerformanceMonitor()
-    
+
     fun initialize(config: NetworkConfig) {
         networkManager.initialize(config)
     }
-    
+
     /**
      * 智能请求 - 自动处理重试、去重、负载均衡
      */
@@ -34,65 +33,70 @@ class UnifyNetworkEnhanced {
         method: HttpMethod = HttpMethod.GET,
         body: String? = null,
         headers: Map<String, String> = emptyMap(),
-        options: SmartRequestOptions = SmartRequestOptions()
+        options: SmartRequestOptions = SmartRequestOptions(),
     ): NetworkResponse<String> {
         val requestId = generateRequestId(url, method, body)
-        
+
         // 请求去重
         if (options.enableDeduplication && requestDeduplicator.isDuplicate(requestId)) {
             return requestDeduplicator.getResult(requestId) ?: NetworkResponse(
                 success = false,
-                error = NetworkError(NetworkErrorCode.UNKNOWN, "Duplicate request processing")
+                error = NetworkError(NetworkErrorCode.UNKNOWN, "Duplicate request processing"),
             )
         }
-        
+
         // 负载均衡
-        val targetUrl = if (options.enableLoadBalancing) {
-            loadBalancer.selectEndpoint(url)
-        } else url
-        
+        val targetUrl =
+            if (options.enableLoadBalancing) {
+                loadBalancer.selectEndpoint(url)
+            } else {
+                url
+            }
+
         // 性能监控开始
         val startTime = UnifyTimeUtils.currentTimeMillis()
-        
+
         try {
-            val response = when (method) {
-                HttpMethod.GET -> networkManager.getCached(
-                    targetUrl, 
-                    headers, 
-                    options.cacheStrategy,
-                    options.cacheTimeout
-                )
-                HttpMethod.POST -> TODO("实现POST请求")
-                HttpMethod.PUT -> TODO("实现PUT请求")
-                HttpMethod.DELETE -> TODO("实现DELETE请求")
-                else -> TODO("实现其他HTTP方法")
-            }
-            
+            val response =
+                when (method) {
+                    HttpMethod.GET ->
+                        networkManager.getCached(
+                            targetUrl,
+                            headers,
+                            options.cacheStrategy,
+                            options.cacheTimeout,
+                        )
+                    HttpMethod.POST -> TODO("实现POST请求")
+                    HttpMethod.PUT -> TODO("实现PUT请求")
+                    HttpMethod.DELETE -> TODO("实现DELETE请求")
+                    else -> TODO("实现其他HTTP方法")
+                }
+
             // 记录性能指标
             val duration = UnifyTimeUtils.currentTimeMillis() - startTime
             performanceMonitor.recordRequest(url, method, duration, response.success)
-            
+
             // 缓存结果用于去重
             if (options.enableDeduplication) {
                 requestDeduplicator.cacheResult(requestId, response)
             }
-            
+
             // 简化实现，返回response
             return response
         } catch (e: Exception) {
             val duration = UnifyTimeUtils.currentTimeMillis() - startTime
             performanceMonitor.recordRequest(url, method, duration, false)
-            
+
             throw e
         }
     }
-    
+
     /**
      * 批量智能请求
      */
     suspend fun smartBatchRequest(
         requests: List<SmartRequest>,
-        options: BatchRequestOptions = BatchRequestOptions()
+        options: BatchRequestOptions = BatchRequestOptions(),
     ): List<NetworkResponse<String>> {
         return if (options.parallel) {
             coroutineScope {
@@ -104,7 +108,7 @@ class UnifyNetworkEnhanced {
                                     data = "Processed: ${request.url}",
                                     success = true,
                                     statusCode = 200,
-                                    headers = emptyMap()
+                                    headers = emptyMap(),
                                 )
                             }
                         }.awaitAll()
@@ -117,48 +121,56 @@ class UnifyNetworkEnhanced {
                     data = "Processed request: ${request.url}",
                     success = true,
                     statusCode = 200,
-                    headers = emptyMap()
+                    headers = emptyMap(),
                 )
             }
         }
     }
-    
+
     /**
      * 轮询流
      */
-    suspend fun createPollingFlow(url: String, intervalMs: Long = 5000): Flow<List<NetworkResponse<String>>> = flow {
-        val responses = mutableListOf<NetworkResponse<String>>()
-        while (true) {
-            val response = smartRequest(url)
-            responses.add(response)
-            emit(responses)
-            
-            if (response.success) {
-                // 成功后等待间隔
-                delay(intervalMs)
-            } else {
-                // 失败后等待较短间隔重试
-                // 轮询失败，等待重试
-                delay(intervalMs / 2)
+    suspend fun createPollingFlow(
+        url: String,
+        intervalMs: Long = 5000,
+    ): Flow<List<NetworkResponse<String>>> =
+        flow {
+            val responses = mutableListOf<NetworkResponse<String>>()
+            while (true) {
+                val response = smartRequest(url)
+                responses.add(response)
+                emit(responses)
+
+                if (response.success) {
+                    // 成功后等待间隔
+                    delay(intervalMs)
+                } else {
+                    // 失败后等待较短间隔重试
+                    // 轮询失败，等待重试
+                    delay(intervalMs / 2)
+                }
             }
         }
-    }
-    
+
     /**
      * 获取性能统计
      */
     fun getPerformanceStats(): NetworkPerformanceStats {
         return performanceMonitor.getStats()
     }
-    
+
     /**
      * 获取负载均衡状态
      */
     fun getLoadBalancerStats(): LoadBalancerStats {
         return loadBalancer.getStats()
     }
-    
-    private fun generateRequestId(url: String, method: HttpMethod, body: String?): String {
+
+    private fun generateRequestId(
+        url: String,
+        method: HttpMethod,
+        body: String?,
+    ): String {
         return "${method.name}:$url:${body?.hashCode() ?: 0}"
     }
 }
@@ -172,7 +184,7 @@ data class SmartRequestOptions(
     val enableLoadBalancing: Boolean = false,
     val cacheStrategy: CacheStrategy = CacheStrategy.CACHE_FIRST,
     val cacheTimeout: Long = 300000L,
-    val retryPolicy: RetryPolicy = RetryPolicy()
+    val retryPolicy: RetryPolicy = RetryPolicy(),
 )
 
 /**
@@ -184,7 +196,7 @@ data class SmartRequest(
     val method: HttpMethod = HttpMethod.GET,
     val body: String? = null,
     val headers: Map<String, String> = emptyMap(),
-    val options: SmartRequestOptions = SmartRequestOptions()
+    val options: SmartRequestOptions = SmartRequestOptions(),
 )
 
 /**
@@ -194,7 +206,7 @@ data class SmartRequest(
 data class BatchRequestOptions(
     val parallel: Boolean = true,
     val maxConcurrency: Int = 5,
-    val stopOnFirstError: Boolean = false
+    val stopOnFirstError: Boolean = false,
 )
 
 /**
@@ -203,7 +215,7 @@ data class BatchRequestOptions(
 @Serializable
 data class StreamOptions(
     val stopOnError: Boolean = false,
-    val requestOptions: SmartRequestOptions = SmartRequestOptions()
+    val requestOptions: SmartRequestOptions = SmartRequestOptions(),
 )
 
 /**
@@ -211,16 +223,19 @@ data class StreamOptions(
  */
 private class RequestDeduplicator {
     private val activeRequests = mutableMapOf<String, NetworkResponse<String>?>()
-    
+
     fun isDuplicate(requestId: String): Boolean {
         return activeRequests.containsKey(requestId)
     }
-    
+
     fun getResult(requestId: String): NetworkResponse<String>? {
         return activeRequests[requestId]
     }
-    
-    fun cacheResult(requestId: String, response: NetworkResponse<String>) {
+
+    fun cacheResult(
+        requestId: String,
+        response: NetworkResponse<String>,
+    ) {
         activeRequests[requestId] = response
         // 清理旧的缓存
         if (activeRequests.size > 100) {
@@ -236,22 +251,22 @@ private class RequestDeduplicator {
 private class LoadBalancer {
     private val endpoints = mutableMapOf<String, List<String>>()
     private val currentIndex = mutableMapOf<String, Int>()
-    
+
     fun selectEndpoint(baseUrl: String): String {
         val availableEndpoints = endpoints[baseUrl] ?: listOf(baseUrl)
         if (availableEndpoints.size == 1) return baseUrl
-        
+
         val index = currentIndex[baseUrl] ?: 0
         val selectedEndpoint = availableEndpoints[index % availableEndpoints.size]
         currentIndex[baseUrl] = (index + 1) % availableEndpoints.size
-        
+
         return selectedEndpoint
     }
-    
+
     fun getStats(): LoadBalancerStats {
         return LoadBalancerStats(
             totalEndpoints = endpoints.values.sumOf { it.size },
-            activeEndpoints = endpoints.size
+            activeEndpoints = endpoints.size,
         )
     }
 }
@@ -261,32 +276,39 @@ private class LoadBalancer {
  */
 private class NetworkPerformanceMonitor {
     private val requests = mutableListOf<RequestMetric>()
-    
-    fun recordRequest(url: String, method: HttpMethod, duration: Long, success: Boolean) {
-        requests.add(RequestMetric(
-            url = url,
-            method = method,
-            duration = duration,
-            success = success,
-            timestamp = UnifyTimeUtils.currentTimeMillis()
-        ))
-        
+
+    fun recordRequest(
+        url: String,
+        method: HttpMethod,
+        duration: Long,
+        success: Boolean,
+    ) {
+        requests.add(
+            RequestMetric(
+                url = url,
+                method = method,
+                duration = duration,
+                success = success,
+                timestamp = UnifyTimeUtils.currentTimeMillis(),
+            ),
+        )
+
         // 保持最近1000个请求
         if (requests.size > 1000) {
             requests.removeAt(0)
         }
     }
-    
+
     fun getStats(): NetworkPerformanceStats {
         if (requests.isEmpty()) {
             return NetworkPerformanceStats()
         }
-        
+
         val successfulRequests = requests.count { it.success }
         val averageDuration = requests.map { it.duration }.average()
         val maxDuration = requests.maxOf { it.duration }
         val minDuration = requests.minOf { it.duration }
-        
+
         return NetworkPerformanceStats(
             totalRequests = requests.size,
             successfulRequests = successfulRequests,
@@ -294,7 +316,7 @@ private class NetworkPerformanceMonitor {
             averageResponseTime = averageDuration,
             maxResponseTime = maxDuration,
             minResponseTime = minDuration,
-            successRate = successfulRequests.toDouble() / requests.size
+            successRate = successfulRequests.toDouble() / requests.size,
         )
     }
 }
@@ -308,7 +330,7 @@ private data class RequestMetric(
     val method: HttpMethod,
     val duration: Long,
     val success: Boolean,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 /**
@@ -322,7 +344,7 @@ data class NetworkPerformanceStats(
     val averageResponseTime: Double = 0.0,
     val maxResponseTime: Long = 0L,
     val minResponseTime: Long = 0L,
-    val successRate: Double = 0.0
+    val successRate: Double = 0.0,
 )
 
 /**
@@ -331,5 +353,5 @@ data class NetworkPerformanceStats(
 @Serializable
 data class LoadBalancerStats(
     val totalEndpoints: Int = 0,
-    val activeEndpoints: Int = 0
+    val activeEndpoints: Int = 0,
 )

@@ -37,7 +37,7 @@ fun UnifyText(
     maxLines: Int = Int.MAX_VALUE,
     minLines: Int = 1,
     onTextLayout: (TextLayoutResult) -> Unit = {},
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     Text(
         text = text,
@@ -56,7 +56,7 @@ fun UnifyText(
         maxLines = maxLines,
         minLines = minLines,
         onTextLayout = onTextLayout,
-        style = style
+        style = style,
     )
 }
 
@@ -71,7 +71,7 @@ fun UnifyHeadlineText(
     textAlign: TextAlign? = null,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     maxLines: Int = 2,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     UnifyText(
         text = text,
@@ -81,7 +81,7 @@ fun UnifyHeadlineText(
         overflow = overflow,
         maxLines = maxLines,
         style = style,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
     )
 }
 
@@ -96,7 +96,7 @@ fun UnifyBodyText(
     textAlign: TextAlign? = null,
     overflow: TextOverflow = TextOverflow.Clip,
     maxLines: Int = Int.MAX_VALUE,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     UnifyText(
         text = text,
@@ -105,7 +105,7 @@ fun UnifyBodyText(
         textAlign = textAlign,
         overflow = overflow,
         maxLines = maxLines,
-        style = style
+        style = style,
     )
 }
 
@@ -120,7 +120,7 @@ fun UnifyLabelText(
     textAlign: TextAlign? = null,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     maxLines: Int = 1,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     UnifyText(
         text = text,
@@ -130,7 +130,7 @@ fun UnifyLabelText(
         overflow = overflow,
         maxLines = maxLines,
         style = style,
-        fontSize = TextUnit.Unspecified
+        fontSize = TextUnit.Unspecified,
     )
 }
 
@@ -145,7 +145,7 @@ fun UnityCaptionText(
     textAlign: TextAlign? = null,
     overflow: TextOverflow = TextOverflow.Ellipsis,
     maxLines: Int = 2,
-    style: TextStyle = LocalTextStyle.current
+    style: TextStyle = LocalTextStyle.current,
 ) {
     UnifyText(
         text = text,
@@ -154,6 +154,6 @@ fun UnityCaptionText(
         textAlign = textAlign,
         overflow = overflow,
         maxLines = maxLines,
-        style = style
+        style = style,
     )
 }

@@ -19,7 +19,7 @@ expect fun UnifySurface(
     contentColor: Color = Color.Unspecified,
     elevation: Dp = 0.dp,
     border: UnifyBorder? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -32,7 +32,7 @@ expect fun UnifyPlatformCard(
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
     border: UnifyBorder? = null,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -43,7 +43,7 @@ expect fun UnifyContainer(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Unspecified,
     padding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(0.dp),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -52,7 +52,7 @@ expect fun UnifyContainer(
 data class UnifyBorder(
     val width: Dp,
     val color: Color,
-    val style: BorderStyle = BorderStyle.SOLID
+    val style: BorderStyle = BorderStyle.SOLID,
 )
 
 /**
@@ -61,5 +61,5 @@ data class UnifyBorder(
 enum class BorderStyle {
     SOLID,
     DASHED,
-    DOTTED
+    DOTTED,
 }

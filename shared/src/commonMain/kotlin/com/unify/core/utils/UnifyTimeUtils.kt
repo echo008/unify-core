@@ -8,7 +8,7 @@ expect object UnifyTimeUtils {
      * 获取当前时间戳（毫秒）
      */
     fun currentTimeMillis(): Long
-    
+
     /**
      * 获取当前时间戳（纳秒）
      */

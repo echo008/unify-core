@@ -1,29 +1,17 @@
 package com.unify.core.dynamic
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.StateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.asStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.launch
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 动态管理控制台 - 提供动态组件的可视化管理界面
  */
 class DynamicManagementConsole {
-    
     companion object {
         const val MAX_LOG_ENTRIES = 1000
         const val REFRESH_INTERVAL_MS = 5000L
@@ -34,38 +22,38 @@ class DynamicManagementConsole {
         const val ALERT_THRESHOLD_MEMORY = 85.0
         const val ALERT_THRESHOLD_ERROR_RATE = 5.0
     }
-    
+
     private val _consoleState = MutableStateFlow(ConsoleState.INITIALIZING)
     val consoleState: StateFlow<ConsoleState> = _consoleState.asStateFlow()
-    
+
     private val _components = MutableStateFlow<Map<String, DynamicComponentInfo>>(emptyMap())
     val components: StateFlow<Map<String, DynamicComponentInfo>> = _components.asStateFlow()
-    
+
     private val _systemMetrics = MutableStateFlow(SystemMetrics())
     val systemMetrics: StateFlow<SystemMetrics> = _systemMetrics.asStateFlow()
-    
+
     private val _logEntries = MutableStateFlow<List<LogEntry>>(emptyList())
     val logEntries: StateFlow<List<LogEntry>> = _logEntries.asStateFlow()
-    
+
     private val _alerts = MutableStateFlow<List<Alert>>(emptyList())
     val alerts: StateFlow<List<Alert>> = _alerts.asStateFlow()
-    
+
     private val _activeOperations = MutableStateFlow<Map<String, Operation>>(emptyMap())
     val activeOperations: StateFlow<Map<String, Operation>> = _activeOperations.asStateFlow()
-    
+
     /**
      * 初始化控制台
      */
     suspend fun initialize(): Boolean {
         return try {
             _consoleState.value = ConsoleState.INITIALIZING
-            
+
             // 加载组件信息
             loadComponentsInfo()
-            
+
             // 启动监控
             startMonitoring()
-            
+
             _consoleState.value = ConsoleState.RUNNING
             addLogEntry("控制台初始化完成", LogLevel.INFO)
             true
@@ -75,63 +63,68 @@ class DynamicManagementConsole {
             false
         }
     }
-    
+
     /**
      * 加载组件信息
      */
     private suspend fun loadComponentsInfo() {
         delay(500) // 模拟加载时间
-        
-        val mockComponents = mapOf(
-            "ui-components" to DynamicComponentInfo(
-                id = "ui-components",
-                name = "UI组件库",
-                version = "1.0.0",
-                status = ComponentStatus.RUNNING,
-                loadTime = 1200L,
-                memoryUsage = 45.6,
-                cpuUsage = 12.3,
-                errorCount = 0,
-                lastUpdate = getCurrentTimeMillis()
-            ),
-            "data-manager" to DynamicComponentInfo(
-                id = "data-manager",
-                name = "数据管理器",
-                version = "1.0.0",
-                status = ComponentStatus.RUNNING,
-                loadTime = 800L,
-                memoryUsage = 32.1,
-                cpuUsage = 8.7,
-                errorCount = 0,
-                lastUpdate = getCurrentTimeMillis()
-            ),
-            "network-client" to DynamicComponentInfo(
-                id = "network-client",
-                name = "网络客户端",
-                version = "1.0.0",
-                status = ComponentStatus.RUNNING,
-                loadTime = 600L,
-                memoryUsage = 28.9,
-                cpuUsage = 15.2,
-                errorCount = 1,
-                lastUpdate = getCurrentTimeMillis()
-            ),
-            "ai-engine" to DynamicComponentInfo(
-                id = "ai-engine",
-                name = "AI引擎",
-                version = "1.0.0",
-                status = ComponentStatus.LOADING,
-                loadTime = 3000L,
-                memoryUsage = 156.7,
-                cpuUsage = 45.8,
-                errorCount = 0,
-                lastUpdate = getCurrentTimeMillis()
+
+        val mockComponents =
+            mapOf(
+                "ui-components" to
+                    DynamicComponentInfo(
+                        id = "ui-components",
+                        name = "UI组件库",
+                        version = "1.0.0",
+                        status = ComponentStatus.RUNNING,
+                        loadTime = 1200L,
+                        memoryUsage = 45.6,
+                        cpuUsage = 12.3,
+                        errorCount = 0,
+                        lastUpdate = getCurrentTimeMillis(),
+                    ),
+                "data-manager" to
+                    DynamicComponentInfo(
+                        id = "data-manager",
+                        name = "数据管理器",
+                        version = "1.0.0",
+                        status = ComponentStatus.RUNNING,
+                        loadTime = 800L,
+                        memoryUsage = 32.1,
+                        cpuUsage = 8.7,
+                        errorCount = 0,
+                        lastUpdate = getCurrentTimeMillis(),
+                    ),
+                "network-client" to
+                    DynamicComponentInfo(
+                        id = "network-client",
+                        name = "网络客户端",
+                        version = "1.0.0",
+                        status = ComponentStatus.RUNNING,
+                        loadTime = 600L,
+                        memoryUsage = 28.9,
+                        cpuUsage = 15.2,
+                        errorCount = 1,
+                        lastUpdate = getCurrentTimeMillis(),
+                    ),
+                "ai-engine" to
+                    DynamicComponentInfo(
+                        id = "ai-engine",
+                        name = "AI引擎",
+                        version = "1.0.0",
+                        status = ComponentStatus.LOADING,
+                        loadTime = 3000L,
+                        memoryUsage = 156.7,
+                        cpuUsage = 45.8,
+                        errorCount = 0,
+                        lastUpdate = getCurrentTimeMillis(),
+                    ),
             )
-        )
-        
+
         _components.value = mockComponents
     }
-    
+
     /**
      * 启动监控
      */
@@ -145,134 +138,148 @@ class DynamicManagementConsole {
             }
         }
     }
-    
+
     /**
      * 更新系统指标
      */
     private fun updateSystemMetrics() {
         val currentMetrics = _systemMetrics.value
-        val newMetrics = currentMetrics.copy(
-            cpuUsage = (currentMetrics.cpuUsage + kotlin.random.Random.nextDouble(-5.0, 5.0))
-                .coerceIn(0.0, 100.0),
-            memoryUsage = (currentMetrics.memoryUsage + kotlin.random.Random.nextDouble(-3.0, 3.0))
-                .coerceIn(0.0, 100.0),
-            networkLatency = (currentMetrics.networkLatency + kotlin.random.Random.nextLong(-50, 50))
-                .coerceAtLeast(0),
-            activeConnections = (currentMetrics.activeConnections + kotlin.random.Random.nextInt(-2, 3))
-                .coerceAtLeast(0),
-            errorRate = (currentMetrics.errorRate + kotlin.random.Random.nextDouble(-0.5, 0.5))
-                .coerceIn(0.0, 100.0),
-            timestamp = getCurrentTimeMillis()
-        )
-        
+        val newMetrics =
+            currentMetrics.copy(
+                cpuUsage =
+                    (currentMetrics.cpuUsage + kotlin.random.Random.nextDouble(-5.0, 5.0))
+                        .coerceIn(0.0, 100.0),
+                memoryUsage =
+                    (currentMetrics.memoryUsage + kotlin.random.Random.nextDouble(-3.0, 3.0))
+                        .coerceIn(0.0, 100.0),
+                networkLatency =
+                    (currentMetrics.networkLatency + kotlin.random.Random.nextLong(-50, 50))
+                        .coerceAtLeast(0),
+                activeConnections =
+                    (currentMetrics.activeConnections + kotlin.random.Random.nextInt(-2, 3))
+                        .coerceAtLeast(0),
+                errorRate =
+                    (currentMetrics.errorRate + kotlin.random.Random.nextDouble(-0.5, 0.5))
+                        .coerceIn(0.0, 100.0),
+                timestamp = getCurrentTimeMillis(),
+            )
+
         _systemMetrics.value = newMetrics
     }
-    
+
     /**
      * 检查告警
      */
     private fun checkAlerts() {
         val metrics = _systemMetrics.value
         val currentAlerts = _alerts.value.toMutableList()
-        
+
         // CPU使用率告警
         if (metrics.cpuUsage > ALERT_THRESHOLD_CPU) {
-            val alert = Alert(
-                id = "cpu-high",
-                type = AlertType.WARNING,
-                message = "CPU使用率过高: ${metrics.cpuUsage}%",
-                timestamp = getCurrentTimeMillis()
-            )
+            val alert =
+                Alert(
+                    id = "cpu-high",
+                    type = AlertType.WARNING,
+                    message = "CPU使用率过高: ${metrics.cpuUsage}%",
+                    timestamp = getCurrentTimeMillis(),
+                )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
             }
         } else {
             currentAlerts.removeAll { it.id == "cpu-high" }
         }
-        
+
         // 内存使用率告警
         if (metrics.memoryUsage > ALERT_THRESHOLD_MEMORY) {
-            val alert = Alert(
-                id = "memory-high",
-                type = AlertType.WARNING,
-                message = "内存使用率过高: ${metrics.memoryUsage}%",
-                timestamp = getCurrentTimeMillis()
-            )
+            val alert =
+                Alert(
+                    id = "memory-high",
+                    type = AlertType.WARNING,
+                    message = "内存使用率过高: ${metrics.memoryUsage}%",
+                    timestamp = getCurrentTimeMillis(),
+                )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
             }
         } else {
             currentAlerts.removeAll { it.id == "memory-high" }
         }
-        
+
         // 错误率告警
         if (metrics.errorRate > ALERT_THRESHOLD_ERROR_RATE) {
-            val alert = Alert(
-                id = "error-rate-high",
-                type = AlertType.ERROR,
-                message = "错误率过高: ${metrics.errorRate}%",
-                timestamp = getCurrentTimeMillis()
-            )
+            val alert =
+                Alert(
+                    id = "error-rate-high",
+                    type = AlertType.ERROR,
+                    message = "错误率过高: ${metrics.errorRate}%",
+                    timestamp = getCurrentTimeMillis(),
+                )
             if (!currentAlerts.any { it.id == alert.id }) {
                 currentAlerts.add(alert)
             }
         } else {
             currentAlerts.removeAll { it.id == "error-rate-high" }
         }
-        
+
         _alerts.value = currentAlerts
     }
-    
+
     /**
      * 执行命令
      */
-    suspend fun executeCommand(command: String, parameters: Map<String, String> = emptyMap()): CommandResult {
+    suspend fun executeCommand(
+        command: String,
+        parameters: Map<String, String> = emptyMap(),
+    ): CommandResult {
         val operationId = kotlin.random.Random.nextInt().toString()
-        
+
         return try {
             // 添加到活动操作
-            val operation = Operation(
-                id = operationId,
-                command = command,
-                parameters = parameters,
-                status = OperationStatus.RUNNING,
-                startTime = getCurrentTimeMillis()
-            )
-            
+            val operation =
+                Operation(
+                    id = operationId,
+                    command = command,
+                    parameters = parameters,
+                    status = OperationStatus.RUNNING,
+                    startTime = getCurrentTimeMillis(),
+                )
+
             val currentOps = _activeOperations.value.toMutableMap()
             currentOps[operationId] = operation
             _activeOperations.value = currentOps
-            
+
             addLogEntry("执行命令: $command", LogLevel.INFO)
-            
+
             // 执行命令
-            val result = when (command) {
-                "reload-component" -> reloadComponent(parameters["componentId"] ?: "")
-                "stop-component" -> stopComponent(parameters["componentId"] ?: "")
-                "start-component" -> startComponent(parameters["componentId"] ?: "")
-                "clear-cache" -> clearCache()
-                "restart-system" -> restartSystem()
-                "export-logs" -> exportLogs()
-                "update-component" -> updateComponent(parameters["componentId"] ?: "", parameters["version"] ?: "")
-                else -> CommandResult.Error("未知命令: $command")
-            }
-            
+            val result =
+                when (command) {
+                    "reload-component" -> reloadComponent(parameters["componentId"] ?: "")
+                    "stop-component" -> stopComponent(parameters["componentId"] ?: "")
+                    "start-component" -> startComponent(parameters["componentId"] ?: "")
+                    "clear-cache" -> clearCache()
+                    "restart-system" -> restartSystem()
+                    "export-logs" -> exportLogs()
+                    "update-component" -> updateComponent(parameters["componentId"] ?: "", parameters["version"] ?: "")
+                    else -> CommandResult.Error("未知命令: $command")
+                }
+
             // 更新操作状态
-            val updatedOp = operation.copy(
-                status = if (result is CommandResult.Success) OperationStatus.COMPLETED else OperationStatus.FAILED,
-                endTime = getCurrentTimeMillis()
-            )
+            val updatedOp =
+                operation.copy(
+                    status = if (result is CommandResult.Success) OperationStatus.COMPLETED else OperationStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                )
             currentOps[operationId] = updatedOp
             _activeOperations.value = currentOps
-            
+
             result
-            
         } catch (e: Exception) {
             addLogEntry("命令执行失败: $command - ${e.message}", LogLevel.ERROR)
             CommandResult.Error("命令执行失败: ${e.message}")
         }
     }
-    
+
     /**
      * 重新加载组件
      */
@@ -280,26 +287,28 @@ class DynamicManagementConsole {
         if (componentId.isEmpty()) {
             return CommandResult.Error("组件ID不能为空")
         }
-        
-        val component = _components.value[componentId]
-            ?: return CommandResult.Error("组件不存在: $componentId")
-        
+
+        val component =
+            _components.value[componentId]
+                ?: return CommandResult.Error("组件不存在: $componentId")
+
         delay(2000) // 模拟重新加载时间
-        
-        val updatedComponent = component.copy(
-            status = ComponentStatus.RUNNING,
-            lastUpdate = getCurrentTimeMillis(),
-            errorCount = 0
-        )
-        
+
+        val updatedComponent =
+            component.copy(
+                status = ComponentStatus.RUNNING,
+                lastUpdate = getCurrentTimeMillis(),
+                errorCount = 0,
+            )
+
         val updatedComponents = _components.value.toMutableMap()
         updatedComponents[componentId] = updatedComponent
         _components.value = updatedComponents
-        
+
         addLogEntry("组件重新加载完成: $componentId", LogLevel.INFO)
         return CommandResult.Success("组件 $componentId 重新加载成功")
     }
-    
+
     /**
      * 停止组件
      */
@@ -307,25 +316,27 @@ class DynamicManagementConsole {
         if (componentId.isEmpty()) {
             return CommandResult.Error("组件ID不能为空")
         }
-        
-        val component = _components.value[componentId]
-            ?: return CommandResult.Error("组件不存在: $componentId")
-        
+
+        val component =
+            _components.value[componentId]
+                ?: return CommandResult.Error("组件不存在: $componentId")
+
         delay(1000) // 模拟停止时间
-        
-        val updatedComponent = component.copy(
-            status = ComponentStatus.RUNNING,
-            lastUpdate = getCurrentTimeMillis()
-        )
-        
+
+        val updatedComponent =
+            component.copy(
+                status = ComponentStatus.RUNNING,
+                lastUpdate = getCurrentTimeMillis(),
+            )
+
         val updatedComponents = _components.value.toMutableMap()
         updatedComponents[componentId] = updatedComponent
         _components.value = updatedComponents
-        
+
         addLogEntry("组件已停止: $componentId", LogLevel.INFO)
         return CommandResult.Success("组件 $componentId 已停止")
     }
-    
+
     /**
      * 启动组件
      */
@@ -333,25 +344,27 @@ class DynamicManagementConsole {
         if (componentId.isEmpty()) {
             return CommandResult.Error("组件ID不能为空")
         }
-        
-        val component = _components.value[componentId]
-            ?: return CommandResult.Error("组件不存在: $componentId")
-        
+
+        val component =
+            _components.value[componentId]
+                ?: return CommandResult.Error("组件不存在: $componentId")
+
         delay(1500) // 模拟启动时间
-        
-        val updatedComponent = component.copy(
-            status = ComponentStatus.RUNNING,
-            lastUpdate = getCurrentTimeMillis()
-        )
-        
+
+        val updatedComponent =
+            component.copy(
+                status = ComponentStatus.RUNNING,
+                lastUpdate = getCurrentTimeMillis(),
+            )
+
         val updatedComponents = _components.value.toMutableMap()
         updatedComponents[componentId] = updatedComponent
         _components.value = updatedComponents
-        
+
         addLogEntry("组件已启动: $componentId", LogLevel.INFO)
         return CommandResult.Success("组件 $componentId 已启动")
     }
-    
+
     /**
      * 清理缓存
      */
@@ -360,7 +373,7 @@ class DynamicManagementConsole {
         addLogEntry("系统缓存已清理", LogLevel.INFO)
         return CommandResult.Success("系统缓存清理完成")
     }
-    
+
     /**
      * 重启系统
      */
@@ -369,7 +382,7 @@ class DynamicManagementConsole {
         addLogEntry("系统重启完成", LogLevel.INFO)
         return CommandResult.Success("系统重启完成")
     }
-    
+
     /**
      * 导出日志
      */
@@ -379,56 +392,65 @@ class DynamicManagementConsole {
         addLogEntry("日志导出完成，共 $logCount 条记录", LogLevel.INFO)
         return CommandResult.Success("日志导出完成，共 $logCount 条记录")
     }
-    
+
     /**
      * 更新组件
      */
-    private suspend fun updateComponent(componentId: String, version: String): CommandResult {
+    private suspend fun updateComponent(
+        componentId: String,
+        version: String,
+    ): CommandResult {
         if (componentId.isEmpty() || version.isEmpty()) {
             return CommandResult.Error("组件ID和版本不能为空")
         }
-        
-        val component = _components.value[componentId]
-            ?: return CommandResult.Error("组件不存在: $componentId")
-        
+
+        val component =
+            _components.value[componentId]
+                ?: return CommandResult.Error("组件不存在: $componentId")
+
         delay(3000) // 模拟更新时间
-        
-        val updatedComponent = component.copy(
-            version = version,
-            status = ComponentStatus.RUNNING,
-            lastUpdate = getCurrentTimeMillis()
-        )
-        
+
+        val updatedComponent =
+            component.copy(
+                version = version,
+                status = ComponentStatus.RUNNING,
+                lastUpdate = getCurrentTimeMillis(),
+            )
+
         val updatedComponents = _components.value.toMutableMap()
         updatedComponents[componentId] = updatedComponent
         _components.value = updatedComponents
-        
+
         addLogEntry("组件更新完成: $componentId -> $version", LogLevel.INFO)
         return CommandResult.Success("组件 $componentId 更新到版本 $version 成功")
     }
-    
+
     /**
      * 添加日志条目
      */
-    private fun addLogEntry(message: String, level: LogLevel) {
+    private fun addLogEntry(
+        message: String,
+        level: LogLevel,
+    ) {
         val currentLogs = _logEntries.value.toMutableList()
-        val logEntry = LogEntry(
-            id = kotlin.random.Random.nextInt().toString(),
-            message = message,
-            level = level,
-            timestamp = getCurrentTimeMillis()
-        )
-        
+        val logEntry =
+            LogEntry(
+                id = kotlin.random.Random.nextInt().toString(),
+                message = message,
+                level = level,
+                timestamp = getCurrentTimeMillis(),
+            )
+
         currentLogs.add(0, logEntry) // 添加到开头
-        
+
         // 保持日志数量限制
         if (currentLogs.size > MAX_LOG_ENTRIES) {
             currentLogs.removeAt(currentLogs.size - 1)
         }
-        
+
         _logEntries.value = currentLogs
     }
-    
+
     /**
      * 清理日志
      */
@@ -436,7 +458,7 @@ class DynamicManagementConsole {
         _logEntries.value = emptyList()
         addLogEntry("日志已清理", LogLevel.INFO)
     }
-    
+
     /**
      * 获取控制台统计信息
      */
@@ -445,7 +467,7 @@ class DynamicManagementConsole {
         val logs = _logEntries.value
         val alerts = _alerts.value
         val operations = _activeOperations.value
-        
+
         return ConsoleStats(
             totalComponents = components.size,
             runningComponents = components.values.count { it.status == ComponentStatus.RUNNING },
@@ -456,10 +478,10 @@ class DynamicManagementConsole {
             warningLogs = logs.count { it.level == LogLevel.WARNING },
             activeAlerts = alerts.size,
             activeOperations = operations.values.count { it.status == OperationStatus.RUNNING },
-            systemUptime = getCurrentTimeMillis() - (getCurrentTimeMillis() - 3600000L) // 模拟1小时运行时间
+            systemUptime = getCurrentTimeMillis() - (getCurrentTimeMillis() - 3600000L), // 模拟1小时运行时间
         )
     }
-    
+
     /**
      * 关闭控制台
      */
@@ -480,7 +502,7 @@ enum class ConsoleState {
     RUNNING,
     SHUTTING_DOWN,
     STOPPED,
-    ERROR
+    ERROR,
 }
 
 // ComponentStatus已在DynamicManagementComponents.kt中定义，此处移除重复声明
@@ -492,7 +514,7 @@ enum class LogLevel {
     DEBUG,
     INFO,
     WARNING,
-    ERROR
+    ERROR,
 }
 
 /**
@@ -502,7 +524,7 @@ enum class AlertType {
     INFO,
     WARNING,
     ERROR,
-    CRITICAL
+    CRITICAL,
 }
 
 /**
@@ -512,7 +534,7 @@ enum class OperationStatus {
     RUNNING,
     COMPLETED,
     FAILED,
-    CANCELLED
+    CANCELLED,
 }
 
 /**
@@ -528,7 +550,7 @@ data class DynamicComponentInfo(
     val memoryUsage: Double,
     val cpuUsage: Double,
     val errorCount: Int,
-    val lastUpdate: Long
+    val lastUpdate: Long,
 )
 
 /**
@@ -542,7 +564,7 @@ data class SystemMetrics(
     val networkLatency: Long = 120L,
     val activeConnections: Int = 15,
     val errorRate: Double = 1.2,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -553,7 +575,7 @@ data class LogEntry(
     val id: String,
     val message: String,
     val level: LogLevel,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 /**
@@ -564,7 +586,7 @@ data class Alert(
     val id: String,
     val type: AlertType,
     val message: String,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 /**
@@ -577,7 +599,7 @@ data class Operation(
     val parameters: Map<String, String>,
     val status: OperationStatus,
     val startTime: Long,
-    val endTime: Long? = null
+    val endTime: Long? = null,
 )
 
 /**
@@ -585,6 +607,7 @@ data class Operation(
  */
 sealed class CommandResult {
     data class Success(val message: String) : CommandResult()
+
     data class Error(val message: String) : CommandResult()
 }
 
@@ -602,5 +625,5 @@ data class ConsoleStats(
     val warningLogs: Int,
     val activeAlerts: Int,
     val activeOperations: Int,
-    val systemUptime: Long
+    val systemUptime: Long,
 )

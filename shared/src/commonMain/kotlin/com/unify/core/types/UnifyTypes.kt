@@ -1,11 +1,7 @@
 package com.unify.core.types
 
-import kotlinx.coroutines.flow.StateFlow
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 企业级结果封装类
@@ -16,92 +12,102 @@ sealed class UnifyResult<out T> {
      * 成功结果
      */
     data class Success<T>(val data: T) : UnifyResult<T>()
-    
+
     /**
      * 失败结果
      */
     data class Failure(val exception: com.unify.core.error.UnifyException) : UnifyResult<Nothing>()
-    
+
     /**
      * 是否成功
      */
     val isSuccess: Boolean get() = this is Success
-    
+
     /**
      * 是否失败
      */
     val isFailure: Boolean get() = this is Failure
-    
+
     /**
      * 获取数据（成功时）
      */
-    fun getOrNull(): T? = when (this) {
-        is Success -> data
-        is Failure -> null
-    }
-    
+    fun getOrNull(): T? =
+        when (this) {
+            is Success -> data
+            is Failure -> null
+        }
+
     /**
      * 获取异常（失败时）
      */
-    fun exceptionOrNull(): com.unify.core.error.UnifyException? = when (this) {
-        is Success -> null
-        is Failure -> exception
-    }
-    
+    fun exceptionOrNull(): com.unify.core.error.UnifyException? =
+        when (this) {
+            is Success -> null
+            is Failure -> exception
+        }
+
     /**
      * 获取数据或抛出异常
      */
-    fun getOrThrow(): T = when (this) {
-        is Success -> data
-        is Failure -> throw exception
-    }
-    
+    fun getOrThrow(): T =
+        when (this) {
+            is Success -> data
+            is Failure -> throw exception
+        }
+
     /**
      * 映射成功结果
      */
-    inline fun <R> map(transform: (T) -> R): UnifyResult<R> = when (this) {
-        is Success -> try {
-            Success(transform(data))
-        } catch (e: Exception) {
-            Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
+    inline fun <R> map(transform: (T) -> R): UnifyResult<R> =
+        when (this) {
+            is Success ->
+                try {
+                    Success(transform(data))
+                } catch (e: Exception) {
+                    Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
+                }
+            is Failure -> this
         }
-        is Failure -> this
-    }
-    
+
     /**
      * 平面映射
      */
-    inline fun <R> flatMap(transform: (T) -> UnifyResult<R>): UnifyResult<R> = when (this) {
-        is Success -> try {
-            transform(data)
-        } catch (e: Exception) {
-            Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
+    inline fun <R> flatMap(transform: (T) -> UnifyResult<R>): UnifyResult<R> =
+        when (this) {
+            is Success ->
+                try {
+                    transform(data)
+                } catch (e: Exception) {
+                    Failure(com.unify.core.error.UnifyTransformException("数据转换失败", e))
+                }
+            is Failure -> this
         }
-        is Failure -> this
-    }
-    
+
     companion object {
         /**
          * 创建成功结果
          */
         fun <T> success(data: T): UnifyResult<T> = Success(data)
-        
+
         /**
          * 创建失败结果
          */
         fun <T> failure(exception: com.unify.core.error.UnifyException): UnifyResult<T> = Failure(exception)
-        
+
         /**
          * 从可能抛出异常的代码块创建结果
          */
-        inline fun <T> runCatching(block: () -> T): UnifyResult<T> = try {
-            Success(block())
-        } catch (e: Exception) {
-            Failure(when (e) {
-                is com.unify.core.error.UnifyException -> e
-                else -> com.unify.core.error.UnifyUnknownException("未知错误", e)
-            })
-        }
+        inline fun <T> runCatching(block: () -> T): UnifyResult<T> =
+            try {
+                Success(block())
+            } catch (e: Exception) {
+                Failure(
+                    when (e) {
+                        is com.unify.core.error.UnifyException -> e
+                        else -> com.unify.core.error.UnifyUnknownException("未知错误", e)
+                    },
+                )
+            }
     }
 }
 
@@ -114,11 +120,13 @@ enum class PlatformType(val displayName: String, val identifier: String) {
     IOS("iOS", "ios"),
     WEB("Web", "web"),
     DESKTOP("Desktop", "desktop"),
+    NATIVE("Native", "native"),
     HARMONY_OS("HarmonyOS", "harmonyos"),
     MINI_PROGRAM("MiniProgram", "miniprogram"),
     WATCH("Watch", "watch"),
-    TV("TV", "tv");
-    
+    TV("TV", "tv"),
+    ;
+
     companion object {
         /**
          * 从标识符获取平台
@@ -141,8 +149,9 @@ enum class UnifyPlatform(val displayName: String, val identifier: String) {
     HARMONY_OS("HarmonyOS", "harmonyos"),
     MINI_APP("MiniApp", "miniapp"),
     WATCH("Watch", "watch"),
-    TV("TV", "tv");
-    
+    TV("TV", "tv"),
+    ;
+
     companion object {
         /**
          * 从标识符获取平台
@@ -160,16 +169,21 @@ enum class UnifyPlatform(val displayName: String, val identifier: String) {
 enum class UnifyInitializationState {
     /** 未初始化 */
     NOT_INITIALIZED,
+
     /** 初始化中 */
     INITIALIZING,
+
     /** 初始化成功 */
     INITIALIZED,
+
     /** 初始化失败 */
     FAILED,
+
     /** 清理中 */
     CLEANING_UP,
+
     /** 已清理 */
-    CLEANED_UP
+    CLEANED_UP,
 }
 
 /**
@@ -179,25 +193,18 @@ enum class UnifyInitializationState {
 enum class UnifyHealthState {
     /** 健康 */
     HEALTHY,
+
     /** 警告 */
     WARNING,
+
     /** 错误 */
     ERROR,
+
     /** 严重错误 */
     CRITICAL,
-    /** 未知 */
-    UNKNOWN
-}
 
-/**
- * 健康状态（兼容性别名）
- */
-@Serializable
-enum class HealthStatus {
-    GOOD,
-    FAIR,
-    WARNING,
-    CRITICAL
+    /** 未知 */
+    UNKNOWN,
 }
 
 /**
@@ -208,7 +215,7 @@ enum class IssueSeverity {
     LOW,
     MEDIUM,
     HIGH,
-    CRITICAL
+    CRITICAL,
 }
 
 /**
@@ -218,7 +225,7 @@ enum class IssueSeverity {
 enum class TestStatus {
     PASSED,
     FAILED,
-    SKIPPED
+    SKIPPED,
 }
 
 /**
@@ -227,11 +234,11 @@ enum class TestStatus {
 @Serializable
 enum class UnifyActivityType {
     CYCLING,
-    STOPPED, 
+    STOPPED,
     WALKING,
     RUNNING,
     DRIVING,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -244,7 +251,7 @@ data class UnifyVersionInfo(
     val releaseDate: String,
     val gitCommit: String,
     val kotlinVersion: String,
-    val composeVersion: String
+    val composeVersion: String,
 )
 
 /**
@@ -257,7 +264,7 @@ data class UnifyPlatformConfig(
     val capabilities: List<String>,
     val features: Map<String, String>,
     val limitations: List<String> = emptyList(),
-    val metadata: Map<String, String> = emptyMap()
+    val metadata: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -271,7 +278,7 @@ data class UnifyPerformanceMetrics(
     val renderTime: Long,
     val networkLatency: Long,
     val frameRate: Double = 60.0,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -282,7 +289,7 @@ data class UnifyHealthCheckResult(
     val overallState: UnifyHealthState,
     val checks: Map<String, UnifyHealthCheck>,
     val timestamp: Long = getCurrentTimeMillis(),
-    val duration: Long
+    val duration: Long,
 )
 
 /**
@@ -294,7 +301,7 @@ data class UnifyHealthCheck(
     val state: UnifyHealthState,
     val status: HealthStatus,
     val message: String,
-    val details: Map<String, String> = emptyMap()
+    val details: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -306,7 +313,7 @@ data class UnifyConfiguration(
     val enablePerformanceMonitoring: Boolean = true,
     val enableHealthChecks: Boolean = true,
     val logLevel: UnifyLogLevel = UnifyLogLevel.INFO,
-    val customProperties: Map<String, String> = emptyMap()
+    val customProperties: Map<String, String> = emptyMap(),
 ) {
     companion object {
         fun default() = UnifyConfiguration()
@@ -320,7 +327,7 @@ data class UnifyConfiguration(
 data class UnifyAppConfiguration(
     val themeConfig: UnifyThemeConfig = UnifyThemeConfig.default(),
     val errorConfig: UnifyErrorConfig = UnifyErrorConfig.default(),
-    val performanceConfig: UnifyPerformanceConfig = UnifyPerformanceConfig.default()
+    val performanceConfig: UnifyPerformanceConfig = UnifyPerformanceConfig.default(),
 ) {
     companion object {
         fun default() = UnifyAppConfiguration()
@@ -335,7 +342,7 @@ data class UnifyThemeConfig(
     val useDarkTheme: Boolean = false,
     val useSystemTheme: Boolean = true,
     val primaryColor: String = "#6200EE",
-    val customColors: Map<String, String> = emptyMap()
+    val customColors: Map<String, String> = emptyMap(),
 ) {
     companion object {
         fun default() = UnifyThemeConfig()
@@ -350,7 +357,7 @@ data class UnifyErrorConfig(
     val enableErrorBoundary: Boolean = true,
     val enableCrashReporting: Boolean = false,
     val maxErrorRetries: Int = 3,
-    val errorDisplayMode: UnifyErrorDisplayMode = UnifyErrorDisplayMode.USER_FRIENDLY
+    val errorDisplayMode: UnifyErrorDisplayMode = UnifyErrorDisplayMode.USER_FRIENDLY,
 ) {
     companion object {
         fun default() = UnifyErrorConfig()
@@ -364,7 +371,7 @@ data class UnifyErrorConfig(
 data class UnifyPerformanceConfig(
     val enableMonitoring: Boolean = true,
     val samplingRate: Double = 0.1,
-    val maxMetricsHistory: Int = 1000
+    val maxMetricsHistory: Int = 1000,
 ) {
     companion object {
         fun default() = UnifyPerformanceConfig()
@@ -376,7 +383,11 @@ data class UnifyPerformanceConfig(
  */
 @Serializable
 enum class UnifyLogLevel {
-    VERBOSE, DEBUG, INFO, WARN, ERROR
+    VERBOSE,
+    DEBUG,
+    INFO,
+    WARN,
+    ERROR,
 }
 
 /**
@@ -384,7 +395,9 @@ enum class UnifyLogLevel {
  */
 @Serializable
 enum class UnifyErrorDisplayMode {
-    USER_FRIENDLY, TECHNICAL, HIDDEN
+    USER_FRIENDLY,
+    TECHNICAL,
+    HIDDEN,
 }
 
 /**
@@ -397,5 +410,5 @@ data class DeviceInfo(
     val systemName: String,
     val systemVersion: String,
     val deviceId: String,
-    val isEmulator: Boolean
+    val isEmulator: Boolean,
 )

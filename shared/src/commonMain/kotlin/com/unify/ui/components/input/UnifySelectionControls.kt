@@ -7,10 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.unify.core.utils.UnifyStringUtils
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
+import com.unify.core.utils.UnifyStringUtils
 
 /**
  * Unify跨平台选择控件组件
@@ -23,14 +22,14 @@ fun UnifyCheckbox(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: CheckboxColors = CheckboxDefaults.colors()
+    colors: CheckboxColors = CheckboxDefaults.colors(),
 ) {
     Checkbox(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         enabled = enabled,
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -40,27 +39,28 @@ fun UnifyCheckboxWithLabel(
     onCheckedChange: ((Boolean) -> Unit)?,
     label: String,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Row(
-        modifier = modifier
-            .selectable(
-                selected = checked,
-                onClick = { onCheckedChange?.invoke(!checked) },
-                role = Role.Checkbox
-            )
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .selectable(
+                    selected = checked,
+                    onClick = { onCheckedChange?.invoke(!checked) },
+                    role = Role.Checkbox,
+                )
+                .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         UnifyCheckbox(
             checked = checked,
             onCheckedChange = null,
-            enabled = enabled
+            enabled = enabled,
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyLarge
+            style = MaterialTheme.typography.bodyLarge,
         )
     }
 }
@@ -71,14 +71,14 @@ fun UnifyRadioButton(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: RadioButtonColors = RadioButtonDefaults.colors()
+    colors: RadioButtonColors = RadioButtonDefaults.colors(),
 ) {
     RadioButton(
         selected = selected,
         onClick = onClick,
         modifier = modifier,
         enabled = enabled,
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -88,32 +88,33 @@ fun UnifyRadioGroup(
     selectedOption: String,
     onOptionSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 ) {
     Column(
-        modifier = modifier.selectableGroup()
+        modifier = modifier.selectableGroup(),
     ) {
         options.forEach { option ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = (option == selectedOption),
-                        onClick = { onOptionSelected(option) },
-                        role = Role.RadioButton
-                    )
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = (option == selectedOption),
+                            onClick = { onOptionSelected(option) },
+                            role = Role.RadioButton,
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 UnifyRadioButton(
                     selected = (option == selectedOption),
                     onClick = null,
-                    enabled = enabled
+                    enabled = enabled,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = option,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
                 )
             }
         }
@@ -126,14 +127,14 @@ fun UnifySwitch(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    colors: SwitchColors = SwitchDefaults.colors()
+    colors: SwitchColors = SwitchDefaults.colors(),
 ) {
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
         modifier = modifier,
         enabled = enabled,
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -144,31 +145,32 @@ fun UnifySwitchWithLabel(
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    description: String? = null
+    description: String? = null,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .selectable(
-                selected = checked,
-                onClick = { onCheckedChange?.invoke(!checked) },
-                role = Role.Switch
-            )
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .selectable(
+                    selected = checked,
+                    onClick = { onCheckedChange?.invoke(!checked) },
+                    role = Role.Switch,
+                )
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (description != null) {
                 Text(
                     text = description,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -176,7 +178,7 @@ fun UnifySwitchWithLabel(
         UnifySwitch(
             checked = checked,
             onCheckedChange = null,
-            enabled = enabled
+            enabled = enabled,
         )
     }
 }
@@ -189,7 +191,7 @@ fun UnifySlider(
     enabled: Boolean = true,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
-    colors: SliderColors = SliderDefaults.colors()
+    colors: SliderColors = SliderDefaults.colors(),
 ) {
     Slider(
         value = value,
@@ -198,7 +200,7 @@ fun UnifySlider(
         enabled = enabled,
         valueRange = valueRange,
         steps = steps,
-        colors = colors
+        colors = colors,
     )
 }
 
@@ -212,25 +214,25 @@ fun UnifySliderWithLabel(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     showValue: Boolean = true,
-    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it) }
+    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it) },
 ) {
     Column(
-        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyLarge
+                style = MaterialTheme.typography.bodyLarge,
             )
             if (showValue) {
                 Text(
                     text = valueFormatter(value),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -240,7 +242,7 @@ fun UnifySliderWithLabel(
             onValueChange = onValueChange,
             enabled = enabled,
             valueRange = valueRange,
-            steps = steps
+            steps = steps,
         )
     }
 }

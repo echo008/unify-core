@@ -1,38 +1,17 @@
 package com.unify.ui.components.test
 
 import androidx.compose.foundation.layout.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.LazyColumn
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.foundation.lazy.items
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.material3.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.runtime.*
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Alignment
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.Modifier
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.graphics.Color
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.text.font.FontWeight
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import androidx.compose.ui.unit.dp
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.delay
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * 跨平台统一测试套件组件系统
@@ -46,28 +25,28 @@ import com.unify.core.platform.getNanoTime
 fun UnifyTestSuite(
     testSuites: List<TestSuite> = getDefaultTestSuites(),
     onTestResult: (TestResult) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var selectedSuite by remember { mutableStateOf<TestSuite?>(null) }
     var testResults by remember { mutableStateOf<List<TestResult>>(emptyList()) }
     var isRunning by remember { mutableStateOf(false) }
-    
+
     Column(
         modifier = modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // 测试套件头部
         TestSuiteHeader(
             totalSuites = testSuites.size,
             completedTests = testResults.size,
-            isRunning = isRunning
+            isRunning = isRunning,
         )
-        
+
         // 测试套件列表
         if (selectedSuite == null) {
             TestSuiteList(
                 testSuites = testSuites,
-                onSuiteSelected = { selectedSuite = it }
+                onSuiteSelected = { selectedSuite = it },
             )
         } else {
             // 测试执行界面
@@ -83,15 +62,15 @@ fun UnifyTestSuite(
                     results.forEach { onTestResult(it) }
                 },
                 onBack = { selectedSuite = null },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
         }
-        
+
         // 测试结果摘要
         if (testResults.isNotEmpty()) {
             TestResultsSummary(
                 results = testResults,
-                onClearResults = { testResults = emptyList() }
+                onClearResults = { testResults = emptyList() },
             )
         }
     }
@@ -104,44 +83,45 @@ fun UnifyTestSuite(
 private fun TestSuiteHeader(
     totalSuites: Int,
     completedTests: Int,
-    isRunning: Boolean
+    isRunning: Boolean,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column {
                 Text(
                     text = "Unify测试套件",
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 Text(
                     text = "共${totalSuites}个测试套件，已完成${completedTests}个测试",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            
+
             if (isRunning) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                     Text(
                         text = "测试中...",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
                 }
             }
@@ -155,15 +135,15 @@ private fun TestSuiteHeader(
 @Composable
 private fun TestSuiteList(
     testSuites: List<TestSuite>,
-    onSuiteSelected: (TestSuite) -> Unit
+    onSuiteSelected: (TestSuite) -> Unit,
 ) {
     LazyColumn(
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(testSuites) { suite ->
             TestSuiteCard(
                 testSuite = suite,
-                onClick = { onSuiteSelected(suite) }
+                onClick = { onSuiteSelected(suite) },
             )
         }
     }
@@ -175,47 +155,47 @@ private fun TestSuiteList(
 @Composable
 private fun TestSuiteCard(
     testSuite: TestSuite,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     OutlinedCard(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = testSuite.name,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 TestSuiteTypeChip(testSuite.type)
             }
-            
+
             Text(
                 text = testSuite.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = "${testSuite.testCases.size}个测试用例",
-                    style = MaterialTheme.typography.bodySmall
+                    style = MaterialTheme.typography.bodySmall,
                 )
                 Text(
                     text = "预计${testSuite.estimatedDuration}分钟",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
@@ -227,24 +207,25 @@ private fun TestSuiteCard(
  */
 @Composable
 private fun TestSuiteTypeChip(type: TestSuiteType) {
-    val (color, text) = when (type) {
-        TestSuiteType.UI_COMPONENT -> Color(0xFF4CAF50) to "UI组件"
-        TestSuiteType.PERFORMANCE -> Color(0xFF2196F3) to "性能"
-        TestSuiteType.INTEGRATION -> Color(0xFFFF9800) to "集成"
-        TestSuiteType.UNIT -> Color(0xFF9C27B0) to "单元"
-        TestSuiteType.E2E -> Color(0xFFF44336) to "端到端"
-        TestSuiteType.ACCESSIBILITY -> Color(0xFF607D8B) to "无障碍"
-    }
-    
+    val (color, text) =
+        when (type) {
+            TestSuiteType.UI_COMPONENT -> Color(0xFF4CAF50) to "UI组件"
+            TestSuiteType.PERFORMANCE -> Color(0xFF2196F3) to "性能"
+            TestSuiteType.INTEGRATION -> Color(0xFFFF9800) to "集成"
+            TestSuiteType.UNIT -> Color(0xFF9C27B0) to "单元"
+            TestSuiteType.E2E -> Color(0xFFF44336) to "端到端"
+            TestSuiteType.ACCESSIBILITY -> Color(0xFF607D8B) to "无障碍"
+        }
+
     Surface(
         color = color.copy(alpha = 0.1f),
-        shape = MaterialTheme.shapes.small
+        shape = MaterialTheme.shapes.small,
     ) {
         Text(
             text = text,
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
             style = MaterialTheme.typography.labelSmall,
-            color = color
+            color = color,
         )
     }
 }
@@ -259,41 +240,41 @@ private fun TestExecutionView(
     onStartTest: () -> Unit,
     onTestComplete: (List<TestResult>) -> Unit,
     onBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var currentTestIndex by remember { mutableStateOf(0) }
     var testResults by remember { mutableStateOf<List<TestResult>>(emptyList()) }
-    
+
     LaunchedEffect(isRunning) {
         if (isRunning) {
             testResults = emptyList()
             currentTestIndex = 0
-            
+
             for (i in testSuite.testCases.indices) {
                 currentTestIndex = i
                 delay(1000) // 模拟测试执行时间
-                
+
                 val result = executeTestCase(testSuite.testCases[i])
                 testResults = testResults + result
             }
-            
+
             onTestComplete(testResults)
         }
     }
-    
+
     Column(
         modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // 测试套件信息和控制
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 TextButton(onClick = onBack) {
                     Text("← 返回")
@@ -301,41 +282,44 @@ private fun TestExecutionView(
                 Text(
                     text = testSuite.name,
                     style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             }
-            
+
             if (!isRunning) {
                 Button(onClick = onStartTest) {
                     Text("开始测试")
                 }
             }
         }
-        
+
         // 测试进度
         if (isRunning) {
             TestProgressIndicator(
                 currentTest = currentTestIndex + 1,
                 totalTests = testSuite.testCases.size,
-                currentTestName = if (currentTestIndex < testSuite.testCases.size) {
-                    testSuite.testCases[currentTestIndex].name
-                } else ""
+                currentTestName =
+                    if (currentTestIndex < testSuite.testCases.size) {
+                        testSuite.testCases[currentTestIndex].name
+                    } else {
+                        ""
+                    },
             )
         }
-        
+
         // 测试用例列表
         LazyColumn(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(testSuite.testCases.size) { index ->
                 val testCase = testSuite.testCases[index]
                 val result = testResults.find { it.testCaseId == testCase.id }
-                
+
                 TestCaseItem(
                     testCase = testCase,
                     result = result,
-                    isRunning = isRunning && currentTestIndex == index
+                    isRunning = isRunning && currentTestIndex == index,
                 )
             }
         }
@@ -349,39 +333,39 @@ private fun TestExecutionView(
 private fun TestProgressIndicator(
     currentTest: Int,
     totalTests: Int,
-    currentTestName: String
+    currentTestName: String,
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
                     text = "测试进度",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text = "$currentTest / $totalTests",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             }
-            
+
             LinearProgressIndicator(
                 progress = currentTest.toFloat() / totalTests.toFloat(),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
-            
+
             if (currentTestName.isNotEmpty()) {
                 Text(
                     text = "正在执行: $currentTestName",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
@@ -395,49 +379,51 @@ private fun TestProgressIndicator(
 private fun TestCaseItem(
     testCase: TestCase,
     result: TestResult?,
-    isRunning: Boolean
+    isRunning: Boolean,
 ) {
     OutlinedCard(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             ) {
                 Text(
                     text = testCase.name,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
                 Text(
                     text = testCase.description,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (result?.message?.isNotEmpty() == true) {
                     Text(
                         text = result.message,
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (result.status == TestStatus.PASSED) {
-                            Color.Green
-                        } else {
-                            Color.Red
-                        }
+                        color =
+                            if (result.status == TestStatus.PASSED) {
+                                Color.Green
+                            } else {
+                                Color.Red
+                            },
                     )
                 }
             }
-            
+
             when {
                 isRunning -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                        strokeWidth = 2.dp,
                     )
                 }
                 result != null -> {
@@ -447,7 +433,7 @@ private fun TestCaseItem(
                     Text(
                         text = "待执行",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -460,17 +446,18 @@ private fun TestCaseItem(
  */
 @Composable
 private fun TestStatusIcon(status: TestStatus) {
-    val (icon, color) = when (status) {
-        TestStatus.PASSED -> "✓" to Color.Green
-        TestStatus.FAILED -> "✗" to Color.Red
-        TestStatus.SKIPPED -> "⊘" to Color.Gray
-        TestStatus.PENDING -> "⏳" to Color(0xFFFFA500)
-    }
-    
+    val (icon, color) =
+        when (status) {
+            TestStatus.PASSED -> "✓" to Color.Green
+            TestStatus.FAILED -> "✗" to Color.Red
+            TestStatus.SKIPPED -> "⊘" to Color.Gray
+            TestStatus.PENDING -> "⏳" to Color(0xFFFFA500)
+        }
+
     Text(
         text = icon,
         color = color,
-        style = MaterialTheme.typography.titleMedium
+        style = MaterialTheme.typography.titleMedium,
     )
 }
 
@@ -480,51 +467,61 @@ private fun TestStatusIcon(status: TestStatus) {
 @Composable
 private fun TestResultsSummary(
     results: List<TestResult>,
-    onClearResults: () -> Unit
+    onClearResults: () -> Unit,
 ) {
     val passed = results.count { it.status == TestStatus.PASSED }
     val failed = results.count { it.status == TestStatus.FAILED }
     val skipped = results.count { it.status == TestStatus.SKIPPED }
-    
+
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "测试结果摘要",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
                 TextButton(onClick = onClearResults) {
                     Text("清空结果")
                 }
             }
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 TestResultStat("通过", passed, Color.Green)
                 TestResultStat("失败", failed, Color.Red)
                 TestResultStat("跳过", skipped, Color.Gray)
             }
-            
-            val successRate = if (results.isNotEmpty()) {
-                (passed.toFloat() / results.size * 100).toInt()
-            } else 0
-            
+
+            val successRate =
+                if (results.isNotEmpty()) {
+                    (passed.toFloat() / results.size * 100).toInt()
+                } else {
+                    0
+                }
+
             Text(
                 text = "成功率: $successRate%",
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (successRate >= 90) Color.Green else if (successRate >= 70) Color(0xFFFFA500) else Color.Red
+                color =
+                    if (successRate >= 90) {
+                        Color.Green
+                    } else if (successRate >= 70) {
+                        Color(0xFFFFA500)
+                    } else {
+                        Color.Red
+                    },
             )
         }
     }
@@ -537,21 +534,21 @@ private fun TestResultsSummary(
 private fun TestResultStat(
     label: String,
     count: Int,
-    color: Color
+    color: Color,
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             text = count.toString(),
             style = MaterialTheme.typography.headlineSmall,
             color = color,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }
@@ -572,7 +569,7 @@ private fun getDefaultTestSuites(): List<TestSuite> {
             description = "测试所有UI组件的渲染和交互功能",
             type = TestSuiteType.UI_COMPONENT,
             testCases = getUIComponentTestCases(),
-            estimatedDuration = 5
+            estimatedDuration = 5,
         ),
         TestSuite(
             id = "performance",
@@ -580,7 +577,7 @@ private fun getDefaultTestSuites(): List<TestSuite> {
             description = "测试应用性能指标和响应时间",
             type = TestSuiteType.PERFORMANCE,
             testCases = getPerformanceTestCases(),
-            estimatedDuration = 10
+            estimatedDuration = 10,
         ),
         TestSuite(
             id = "integration",
@@ -588,7 +585,7 @@ private fun getDefaultTestSuites(): List<TestSuite> {
             description = "测试各模块间的集成和数据流",
             type = TestSuiteType.INTEGRATION,
             testCases = getIntegrationTestCases(),
-            estimatedDuration = 8
+            estimatedDuration = 8,
         ),
         TestSuite(
             id = "accessibility",
@@ -596,8 +593,8 @@ private fun getDefaultTestSuites(): List<TestSuite> {
             description = "测试应用的无障碍访问功能",
             type = TestSuiteType.ACCESSIBILITY,
             testCases = getAccessibilityTestCases(),
-            estimatedDuration = 6
-        )
+            estimatedDuration = 6,
+        ),
     )
 }
 
@@ -610,32 +607,32 @@ private fun getUIComponentTestCases(): List<TestCase> {
             id = "button_render",
             name = "按钮渲染测试",
             description = "测试UnifyButton组件的正确渲染",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "button_click",
             name = "按钮点击测试",
             description = "测试UnifyButton的点击事件处理",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "text_display",
             name = "文本显示测试",
             description = "测试UnifyText组件的文本显示功能",
-            priority = TestPriority.MEDIUM
+            priority = TestPriority.MEDIUM,
         ),
         TestCase(
             id = "image_load",
             name = "图片加载测试",
             description = "测试UnifyImage组件的图片加载功能",
-            priority = TestPriority.MEDIUM
+            priority = TestPriority.MEDIUM,
         ),
         TestCase(
             id = "layout_responsive",
             name = "响应式布局测试",
             description = "测试UnifyLayout的响应式布局功能",
-            priority = TestPriority.HIGH
-        )
+            priority = TestPriority.HIGH,
+        ),
     )
 }
 
@@ -648,26 +645,26 @@ private fun getPerformanceTestCases(): List<TestCase> {
             id = "startup_time",
             name = "启动时间测试",
             description = "测试应用启动时间是否在可接受范围内",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "memory_usage",
             name = "内存使用测试",
             description = "测试应用内存使用情况",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "render_performance",
             name = "渲染性能测试",
             description = "测试UI组件渲染性能",
-            priority = TestPriority.MEDIUM
+            priority = TestPriority.MEDIUM,
         ),
         TestCase(
             id = "scroll_performance",
             name = "滚动性能测试",
             description = "测试列表滚动的流畅度",
-            priority = TestPriority.MEDIUM
-        )
+            priority = TestPriority.MEDIUM,
+        ),
     )
 }
 
@@ -680,20 +677,20 @@ private fun getIntegrationTestCases(): List<TestCase> {
             id = "data_flow",
             name = "数据流测试",
             description = "测试数据在各组件间的流转",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "navigation",
             name = "导航测试",
             description = "测试页面间的导航功能",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "state_management",
             name = "状态管理测试",
             description = "测试应用状态管理的正确性",
-            priority = TestPriority.MEDIUM
-        )
+            priority = TestPriority.MEDIUM,
+        ),
     )
 }
 
@@ -706,20 +703,20 @@ private fun getAccessibilityTestCases(): List<TestCase> {
             id = "screen_reader",
             name = "屏幕阅读器测试",
             description = "测试屏幕阅读器的兼容性",
-            priority = TestPriority.HIGH
+            priority = TestPriority.HIGH,
         ),
         TestCase(
             id = "keyboard_navigation",
             name = "键盘导航测试",
             description = "测试键盘导航功能",
-            priority = TestPriority.MEDIUM
+            priority = TestPriority.MEDIUM,
         ),
         TestCase(
             id = "contrast_ratio",
             name = "对比度测试",
             description = "测试颜色对比度是否符合标准",
-            priority = TestPriority.LOW
-        )
+            priority = TestPriority.LOW,
+        ),
     )
 }
 
@@ -732,7 +729,7 @@ data class TestSuite(
     val description: String,
     val type: TestSuiteType,
     val testCases: List<TestCase>,
-    val estimatedDuration: Int // 预计执行时间（分钟）
+    val estimatedDuration: Int, // 预计执行时间（分钟）
 )
 
 /**
@@ -742,7 +739,7 @@ data class TestCase(
     val id: String,
     val name: String,
     val description: String,
-    val priority: TestPriority
+    val priority: TestPriority,
 )
 
 /**
@@ -753,26 +750,36 @@ data class TestResult(
     val status: TestStatus,
     val message: String = "",
     val duration: Long = 0L, // 执行时间（毫秒）
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
  * 测试套件类型枚举
  */
 enum class TestSuiteType {
-    UI_COMPONENT, PERFORMANCE, INTEGRATION, UNIT, E2E, ACCESSIBILITY
+    UI_COMPONENT,
+    PERFORMANCE,
+    INTEGRATION,
+    UNIT,
+    E2E,
+    ACCESSIBILITY,
 }
 
 /**
  * 测试状态枚举
  */
 enum class TestStatus {
-    PASSED, FAILED, SKIPPED, PENDING
+    PASSED,
+    FAILED,
+    SKIPPED,
+    PENDING,
 }
 
 /**
  * 测试优先级枚举
  */
 enum class TestPriority {
-    HIGH, MEDIUM, LOW
+    HIGH,
+    MEDIUM,
+    LOW,
 }

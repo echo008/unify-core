@@ -12,14 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import com.unify.core.ai.UnifyAIEngine
 import com.unify.core.ai.AIResult
+import com.unify.core.ai.UnifyAIEngine
 import com.unify.core.platform.getCurrentTimeMillis
+import kotlinx.coroutines.launch
 
 /**
  * 聊天消息数据类
@@ -27,7 +26,7 @@ import com.unify.core.platform.getCurrentTimeMillis
 data class ChatMessage(
     val role: String,
     val content: String,
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 )
 
 /**
@@ -36,7 +35,7 @@ data class ChatMessage(
 data class ChatConfig(
     val maxMessages: Int = 100,
     val enableHistory: Boolean = true,
-    val placeholder: String = "输入消息..."
+    val placeholder: String = "输入消息...",
 )
 
 /**
@@ -45,7 +44,7 @@ data class ChatConfig(
 data class AIConfig(
     val temperature: Float = 0.7f,
     val maxTokens: Int = 1000,
-    val model: String = "default"
+    val model: String = "default",
 )
 
 /**
@@ -56,29 +55,29 @@ fun UnifyAIChatComponent(
     aiEngine: UnifyAIEngine,
     modifier: Modifier = Modifier,
     config: ChatConfig = ChatConfig(),
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 ) {
     var messages by remember { mutableStateOf(listOf<ChatMessage>()) }
     var inputText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    
+
     Column(modifier = modifier.fillMaxSize()) {
         // 消息列表
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             items(messages) { message ->
                 ChatMessageItem(message = message)
             }
-            
+
             if (isLoading) {
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start
+                        horizontalArrangement = Arrangement.Start,
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
@@ -87,35 +86,38 @@ fun UnifyAIChatComponent(
                 }
             }
         }
-        
+
         // 输入区域
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
                 value = inputText,
                 onValueChange = { inputText = it },
                 placeholder = { Text(config.placeholder) },
                 modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Send
-                ),
-                keyboardActions = KeyboardActions(
-                    onSend = {
-                        if (inputText.isNotBlank()) {
-                            messages = messages + ChatMessage("user", inputText)
-                            inputText = ""
-                        }
-                    }
-                )
+                keyboardOptions =
+                    KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Send,
+                    ),
+                keyboardActions =
+                    KeyboardActions(
+                        onSend = {
+                            if (inputText.isNotBlank()) {
+                                messages = messages + ChatMessage("user", inputText)
+                                inputText = ""
+                            }
+                        },
+                    ),
             )
-            
+
             Spacer(modifier = Modifier.width(8.dp))
-            
+
             IconButton(
                 onClick = {
                     if (inputText.isNotBlank() && !isLoading) {
@@ -127,16 +129,16 @@ fun UnifyAIChatComponent(
                             coroutineScope,
                             onMessagesUpdate = { messages = it },
                             onLoadingUpdate = { isLoading = it },
-                            onError = onError
+                            onError = onError,
                         )
                         inputText = ""
                     }
                 },
-                enabled = inputText.isNotBlank() && !isLoading
+                enabled = inputText.isNotBlank() && !isLoading,
             ) {
                 Icon(
                     imageVector = Icons.Default.Send,
-                    contentDescription = "发送"
+                    contentDescription = "发送",
                 )
             }
         }
@@ -149,47 +151,50 @@ fun UnifyAIChatComponent(
 @Composable
 private fun ChatMessageItem(message: ChatMessage) {
     val isUser = message.role == "user"
-    
+
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
         if (!isUser) {
             Icon(
                 imageVector = Icons.Default.SmartToy,
                 contentDescription = "AI",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        
+
         Card(
             modifier = Modifier.widthIn(max = 280.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isUser) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant
-                }
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        if (isUser) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant
+                        },
+                ),
         ) {
             Text(
                 text = message.content,
                 modifier = Modifier.padding(12.dp),
-                color = if (isUser) {
-                    MaterialTheme.colorScheme.onPrimary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                color =
+                    if (isUser) {
+                        MaterialTheme.colorScheme.onPrimary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
             )
         }
-        
+
         if (isUser) {
             Spacer(modifier = Modifier.width(8.dp))
             Icon(
                 imageVector = Icons.Default.Person,
                 contentDescription = "用户",
-                modifier = Modifier.size(32.dp)
+                modifier = Modifier.size(32.dp),
             )
         }
     }
@@ -206,15 +211,15 @@ private fun sendMessage(
     coroutineScope: kotlinx.coroutines.CoroutineScope,
     onMessagesUpdate: (List<ChatMessage>) -> Unit,
     onLoadingUpdate: (Boolean) -> Unit,
-    onError: (String) -> Unit
+    onError: (String) -> Unit,
 ) {
     val userMessage = ChatMessage(role = "user", content = text)
     val updatedMessages = currentMessages + userMessage
     onMessagesUpdate(updatedMessages)
-    
+
     coroutineScope.launch {
         onLoadingUpdate(true)
-        
+
         when (val result = aiEngine.generateText(updatedMessages.joinToString("\n") { "${it.role}: ${it.content}" })) {
             is AIResult.Success -> {
                 val aiMessage = ChatMessage(role = "assistant", content = result.content)
@@ -224,7 +229,7 @@ private fun sendMessage(
                 onError(result.message)
             }
         }
-        
+
         onLoadingUpdate(false)
     }
 }
@@ -237,13 +242,13 @@ fun UnifyAITextGenerator(
     aiEngine: UnifyAIEngine,
     modifier: Modifier = Modifier,
     config: AIConfig = AIConfig(),
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 ) {
     var prompt by remember { mutableStateOf("") }
     var generatedText by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    
+
     Column(modifier = modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = prompt,
@@ -252,11 +257,11 @@ fun UnifyAITextGenerator(
             label = { Text("输入提示词") },
             placeholder = { Text("请输入您想要生成的内容...") },
             minLines = 3,
-            maxLines = 5
+            maxLines = 5,
         )
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Button(
             onClick = {
                 if (prompt.isNotBlank() && !isLoading) {
@@ -276,26 +281,26 @@ fun UnifyAITextGenerator(
                 }
             },
             enabled = prompt.isNotBlank() && !isLoading,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(16.dp),
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.onPrimary,
                 )
                 Spacer(modifier = Modifier.width(8.dp))
             }
             Text(if (isLoading) "生成中..." else "生成文本")
         }
-        
+
         if (generatedText.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "生成结果",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = generatedText)
@@ -313,40 +318,40 @@ fun UnifyAIImageAnalyzer(
     aiEngine: UnifyAIEngine,
     imageData: ByteArray?,
     modifier: Modifier = Modifier,
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 ) {
     var analysisPrompt by remember { mutableStateOf("") }
     var analysisResult by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
-    
+
     Column(modifier = modifier.fillMaxWidth()) {
         if (imageData != null) {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "图像已加载",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text = "大小: ${imageData.size} 字节",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             OutlinedTextField(
                 value = analysisPrompt,
                 onValueChange = { analysisPrompt = it },
                 modifier = Modifier.fillMaxWidth(),
                 label = { Text("分析提示（可选）") },
-                placeholder = { Text("请描述您想了解图像的什么内容...") }
+                placeholder = { Text("请描述您想了解图像的什么内容...") },
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Button(
                 onClick = {
                     if (!isLoading) {
@@ -365,26 +370,26 @@ fun UnifyAIImageAnalyzer(
                     }
                 },
                 enabled = !isLoading,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(16.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                        color = MaterialTheme.colorScheme.onPrimary,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                 }
                 Text(if (isLoading) "分析中..." else "开始分析")
             }
-            
+
             if (analysisResult.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             text = "分析结果",
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(text = analysisResult)
@@ -394,30 +399,32 @@ fun UnifyAIImageAnalyzer(
         } else {
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    ),
             ) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Icon(
                         imageVector = Icons.Default.CloudUpload,
                         contentDescription = "上传图像",
-                        modifier = Modifier.size(48.dp)
+                        modifier = Modifier.size(48.dp),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = "请先上传图像",
-                        style = MaterialTheme.typography.bodyLarge
+                        style = MaterialTheme.typography.bodyLarge,
                     )
                     Text(
                         text = "支持 JPG、PNG 格式",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
@@ -434,16 +441,16 @@ fun UnifyAISpeechToText(
     modifier: Modifier = Modifier,
     language: String = "zh-CN",
     onResult: (String) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 ) {
     var isRecording by remember { mutableStateOf(false) }
     var isProcessing by remember { mutableStateOf(false) }
     var recognizedText by remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
-    
+
     Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 录音按钮
         IconButton(
@@ -471,45 +478,48 @@ fun UnifyAISpeechToText(
                     }
                 }
             },
-            modifier = Modifier.size(80.dp)
+            modifier = Modifier.size(80.dp),
         ) {
             when {
                 isProcessing -> CircularProgressIndicator()
-                isRecording -> Icon(
-                    imageVector = Icons.Default.Stop,
-                    contentDescription = "停止录音",
-                    modifier = Modifier.size(32.dp),
-                    tint = Color.Red
-                )
-                else -> Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = "开始录音",
-                    modifier = Modifier.size(32.dp)
-                )
+                isRecording ->
+                    Icon(
+                        imageVector = Icons.Default.Stop,
+                        contentDescription = "停止录音",
+                        modifier = Modifier.size(32.dp),
+                        tint = Color.Red,
+                    )
+                else ->
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "开始录音",
+                        modifier = Modifier.size(32.dp),
+                    )
             }
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         Text(
-            text = when {
-                isProcessing -> "正在处理语音..."
-                isRecording -> "正在录音中，点击停止"
-                recognizedText.isNotEmpty() -> "识别结果: $recognizedText"
-                else -> "点击麦克风开始录音"
-            },
+            text =
+                when {
+                    isProcessing -> "正在处理语音..."
+                    isRecording -> "正在录音中，点击停止"
+                    recognizedText.isNotEmpty() -> "识别结果: $recognizedText"
+                    else -> "点击麦克风开始录音"
+                },
             style = MaterialTheme.typography.bodyMedium,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
         )
-        
+
         if (recognizedText.isNotEmpty()) {
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
                         text = "识别结果",
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = recognizedText)

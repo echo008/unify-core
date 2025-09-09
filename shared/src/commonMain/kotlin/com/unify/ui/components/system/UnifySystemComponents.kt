@@ -1,33 +1,18 @@
 package com.unify.ui.components.system
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.flow.Flow
+import com.unify.core.types.PerformanceMetric
+import com.unify.core.types.SystemInfo
 
 /**
  * Unify跨平台系统组件
- * 支持系统信息显示、性能监控、设备管理等功能
+ * 支持系统信息显示、性能监控等功能
  */
 
-data class SystemInfo(
-    val deviceName: String,
-    val osVersion: String,
-    val appVersion: String,
-    val totalMemory: Long,
-    val availableMemory: Long,
-    val totalStorage: Long,
-    val availableStorage: Long,
-    val batteryLevel: Float,
-    val isCharging: Boolean,
-    val networkType: String,
-    val cpuUsage: Float
-)
-
-enum class PerformanceMetric {
-    CPU_USAGE, MEMORY_USAGE, BATTERY_LEVEL, NETWORK_SPEED, FPS, TEMPERATURE
-}
+// 使用统一的PerformanceMetric定义，避免重复声明
+// 注意：由于PerformanceMetric可能不存在，暂时使用String类型替代
 
 @Composable
 expect fun UnifySystemInfo(
@@ -37,7 +22,7 @@ expect fun UnifySystemInfo(
     showMemory: Boolean = true,
     showStorage: Boolean = true,
     showNetwork: Boolean = true,
-    refreshInterval: Long = 5000L
+    refreshInterval: Long = 5000L,
 )
 
 @Composable
@@ -46,8 +31,8 @@ expect fun UnifyPerformanceMonitor(
     onMetricsUpdate: (Map<PerformanceMetric, Float>) -> Unit,
     modifier: Modifier = Modifier,
     showRealTimeChart: Boolean = true,
-    maxDataPoints: Int = 60,
-    updateInterval: Long = 1000L
+    maxDataPoints: Int = 100,
+    updateInterval: Long = 1000L,
 )
 
 @Composable
@@ -59,7 +44,7 @@ expect fun UnifyBatteryIndicator(
     lowBatteryThreshold: Float = 0.2f,
     warningColor: Color = Color.Red,
     normalColor: Color = Color.Green,
-    chargingColor: Color = Color.Blue
+    chargingColor: Color = Color.Blue,
 )
 
 @Composable
@@ -69,7 +54,7 @@ expect fun UnifyMemoryUsage(
     modifier: Modifier = Modifier,
     showChart: Boolean = true,
     showDetails: Boolean = true,
-    warningThreshold: Float = 0.8f
+    warningThreshold: Float = 0.8f,
 )
 
 @Composable
@@ -79,7 +64,7 @@ expect fun UnifyStorageUsage(
     modifier: Modifier = Modifier,
     showBreakdown: Boolean = true,
     categories: Map<String, Long> = emptyMap(),
-    warningThreshold: Float = 0.9f
+    warningThreshold: Float = 0.9f,
 )
 
 @Composable
@@ -90,7 +75,7 @@ expect fun UnifyNetworkStatus(
     modifier: Modifier = Modifier,
     showSpeed: Boolean = true,
     onNetworkTest: () -> Unit = {},
-    showDetails: Boolean = true
+    showDetails: Boolean = true,
 )
 
 @Composable
@@ -98,11 +83,14 @@ expect fun UnifyDeviceOrientation(
     onOrientationChange: (DeviceOrientation) -> Unit,
     modifier: Modifier = Modifier,
     showIndicator: Boolean = true,
-    lockOrientation: DeviceOrientation? = null
+    lockOrientation: DeviceOrientation? = null,
 )
 
 enum class DeviceOrientation {
-    PORTRAIT, LANDSCAPE, PORTRAIT_REVERSE, LANDSCAPE_REVERSE
+    PORTRAIT,
+    LANDSCAPE,
+    PORTRAIT_REVERSE,
+    LANDSCAPE_REVERSE,
 }
 
 @Composable
@@ -110,13 +98,13 @@ expect fun UnifyVibrationControl(
     onVibrate: (VibrationPattern) -> Unit,
     modifier: Modifier = Modifier,
     enableCustomPatterns: Boolean = true,
-    presetPatterns: List<VibrationPattern> = emptyList()
+    presetPatterns: List<VibrationPattern> = emptyList(),
 )
 
 data class VibrationPattern(
     val name: String,
     val pattern: LongArray,
-    val repeat: Int = -1
+    val repeat: Int = -1,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -142,7 +130,7 @@ expect fun UnifyBrightnessControl(
     onBrightnessChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     enableAutoAdjust: Boolean = true,
-    showSlider: Boolean = true
+    showSlider: Boolean = true,
 )
 
 @Composable
@@ -152,11 +140,15 @@ expect fun UnifyVolumeControl(
     modifier: Modifier = Modifier,
     volumeType: VolumeType = VolumeType.MEDIA,
     showSlider: Boolean = true,
-    enableMute: Boolean = true
+    enableMute: Boolean = true,
 )
 
 enum class VolumeType {
-    MEDIA, RING, NOTIFICATION, ALARM, CALL
+    MEDIA,
+    RING,
+    NOTIFICATION,
+    ALARM,
+    CALL,
 }
 
 @Composable
@@ -165,19 +157,19 @@ expect fun UnifyClipboard(
     modifier: Modifier = Modifier,
     showHistory: Boolean = true,
     maxHistorySize: Int = 10,
-    enableAutoDetect: Boolean = true
+    enableAutoDetect: Boolean = true,
 )
 
 @Composable
 expect fun UnifyBatteryStatus(
     modifier: Modifier = Modifier,
-    showPercentage: Boolean = true
+    showPercentage: Boolean = true,
 )
 
 @Composable
 expect fun UnifyCPUUsage(
     modifier: Modifier = Modifier,
-    refreshInterval: Long = 1000L
+    refreshInterval: Long = 1000L,
 )
 
 @Composable
@@ -186,7 +178,7 @@ expect fun UnifyNotificationManager(
     onNotificationAction: (String, NotificationAction) -> Unit,
     modifier: Modifier = Modifier,
     enableGrouping: Boolean = true,
-    showBadges: Boolean = true
+    showBadges: Boolean = true,
 )
 
 data class NotificationItem(
@@ -197,15 +189,19 @@ data class NotificationItem(
     val priority: NotificationPriority,
     val category: String,
     val actions: List<NotificationAction> = emptyList(),
-    val isRead: Boolean = false
+    val isRead: Boolean = false,
 )
 
-data class NotificationAction(
-    val id: String,
-    val title: String,
-    val icon: String? = null
-)
+enum class NotificationAction(val title: String) {
+    DISMISS("关闭"),
+    MARK_READ("标记已读"),
+    REPLY("回复"),
+    OPEN("打开"),
+}
 
 enum class NotificationPriority {
-    LOW, NORMAL, HIGH, URGENT
+    LOW,
+    NORMAL,
+    HIGH,
+    URGENT,
 }

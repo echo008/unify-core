@@ -12,13 +12,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.interaction.MutableInteractionSource
 
 /**
  * Unify主题颜色
@@ -36,7 +33,7 @@ object UnifyColors {
     val OnBackground = Color(0xFF000000)
     val OnSurface = Color(0xFF000000)
     val OnError = Color(0xFFFFFFFF)
-    
+
     // 扩展颜色
     val Success = Color(0xFF4CAF50)
     val Warning = Color(0xFFFF9800)
@@ -112,17 +109,17 @@ fun UnifyContainer(
     padding: PaddingValues = PaddingValues(UnifySpacing.md),
     elevation: androidx.compose.ui.unit.Dp = UnifyElevation.none,
     cornerRadius: androidx.compose.ui.unit.Dp = UnifyCornerRadius.none,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = backgroundColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation),
-        shape = RoundedCornerShape(cornerRadius)
+        shape = RoundedCornerShape(cornerRadius),
     ) {
         Column(
             modifier = Modifier.padding(padding),
-            content = content
+            content = content,
         )
     }
 }
@@ -137,12 +134,12 @@ fun UnifyDivider(
     modifier: Modifier = Modifier,
     color: Color = UnifyColors.OnSurface.copy(alpha = 0.12f),
     thickness: androidx.compose.ui.unit.Dp = 1.dp,
-    startIndent: androidx.compose.ui.unit.Dp = 0.dp
+    startIndent: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     HorizontalDivider(
         modifier = modifier,
         color = color,
-        thickness = thickness
+        thickness = thickness,
     )
 }
 
@@ -153,12 +150,12 @@ fun UnifyDivider(
 fun UnifyVerticalDivider(
     modifier: Modifier = Modifier,
     color: Color = UnifyColors.OnSurface.copy(alpha = 0.12f),
-    thickness: androidx.compose.ui.unit.Dp = 1.dp
+    thickness: androidx.compose.ui.unit.Dp = 1.dp,
 ) {
     VerticalDivider(
         modifier = modifier,
         color = color,
-        thickness = thickness
+        thickness = thickness,
     )
 }
 
@@ -168,12 +165,13 @@ fun UnifyVerticalDivider(
 @Composable
 fun UnifySpacer(
     height: androidx.compose.ui.unit.Dp = 0.dp,
-    width: androidx.compose.ui.unit.Dp = 0.dp
+    width: androidx.compose.ui.unit.Dp = 0.dp,
 ) {
     Spacer(
-        modifier = Modifier
-            .height(height)
-            .width(width)
+        modifier =
+            Modifier
+                .height(height)
+                .width(width),
     )
 }
 
@@ -185,13 +183,13 @@ fun UnifyRow(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     Row(
         modifier = modifier,
         horizontalArrangement = horizontalArrangement,
         verticalAlignment = verticalAlignment,
-        content = content
+        content = content,
     )
 }
 
@@ -207,13 +205,13 @@ fun UnifyBox(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment = Alignment.TopStart,
     propagateMinConstraints: Boolean = false,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier,
         contentAlignment = contentAlignment,
         propagateMinConstraints = propagateMinConstraints,
-        content = content
+        content = content,
     )
 }
 
@@ -223,12 +221,12 @@ fun UnifyBox(
 @Composable
 fun UnifyCenter(
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
-        content = content
+        content = content,
     )
 }
 
@@ -243,7 +241,7 @@ fun UnifyChip(
     enabled: Boolean = true,
     backgroundColor: Color = if (selected) UnifyColors.Primary else UnifyColors.Surface,
     contentColor: Color = if (selected) UnifyColors.OnPrimary else UnifyColors.OnSurface,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
 ) {
     FilterChip(
         selected = selected,
@@ -252,17 +250,18 @@ fun UnifyChip(
             Text(
                 text = text,
                 color = contentColor,
-                fontSize = UnifyFontSizes.sm
+                fontSize = UnifyFontSizes.sm,
             )
         },
         modifier = modifier,
         enabled = enabled,
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = backgroundColor,
-            labelColor = contentColor,
-            selectedContainerColor = UnifyColors.Primary,
-            selectedLabelColor = UnifyColors.OnPrimary
-        )
+        colors =
+            FilterChipDefaults.filterChipColors(
+                containerColor = backgroundColor,
+                labelColor = contentColor,
+                selectedContainerColor = UnifyColors.Primary,
+                selectedLabelColor = UnifyColors.OnPrimary,
+            ),
     )
 }
 
@@ -274,13 +273,13 @@ fun UnifyBadge(
     modifier: Modifier = Modifier,
     backgroundColor: Color = UnifyColors.Error,
     contentColor: Color = UnifyColors.OnError,
-    content: @Composable (RowScope.() -> Unit)? = null
+    content: @Composable (RowScope.() -> Unit)? = null,
 ) {
     Badge(
         modifier = modifier,
         containerColor = backgroundColor,
         contentColor = contentColor,
-        content = content
+        content = content,
     )
 }
 
@@ -291,7 +290,7 @@ fun UnifyBadge(
 fun UnifyBadgedBox(
     badge: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    content: @Composable BoxScope.() -> Unit
+    content: @Composable BoxScope.() -> Unit,
 ) {
     Box(modifier = modifier) {
         content()
@@ -306,7 +305,7 @@ fun UnifyBadgedBox(
 fun UnifyTooltip(
     tooltip: String,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     TooltipBox(
         positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
@@ -315,7 +314,7 @@ fun UnifyTooltip(
                 Text(tooltip)
             }
         },
-        state = rememberTooltipState()
+        state = rememberTooltipState(),
     ) {
         content()
     }
@@ -328,7 +327,7 @@ fun UnifyTooltip(
 fun UnifySwipeToDismiss(
     modifier: Modifier = Modifier,
     background: @Composable RowScope.() -> Unit,
-    dismissContent: @Composable RowScope.() -> Unit
+    dismissContent: @Composable RowScope.() -> Unit,
 ) {
     // 简化实现，避免复杂的SwipeToDismiss API
     Row(modifier = modifier) {
@@ -345,24 +344,25 @@ fun UnifyExpandable(
     onExpandedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     header: @Composable () -> Unit,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Column(modifier = modifier) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onExpandedChange(!expanded) },
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onExpandedChange(!expanded) },
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(modifier = Modifier.weight(1f)) {
                 header()
             }
             Icon(
                 imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                contentDescription = if (expanded) "收起" else "展开"
+                contentDescription = if (expanded) "收起" else "展开",
             )
         }
-        
+
         AnimatedVisibility(visible = expanded) {
             content()
         }
@@ -378,35 +378,36 @@ fun UnifyEmptyState(
     title: String,
     description: String? = null,
     icon: @Composable (() -> Unit)? = null,
-    action: @Composable (() -> Unit)? = null
+    action: @Composable (() -> Unit)? = null,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(UnifySpacing.xl),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(UnifySpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         icon?.invoke()
-        
+
         Spacer(modifier = Modifier.height(UnifySpacing.md))
-        
+
         Text(
             text = title,
             fontSize = UnifyFontSizes.lg,
             fontWeight = FontWeight.Bold,
-            color = UnifyColors.OnSurface
+            color = UnifyColors.OnSurface,
         )
-        
+
         description?.let {
             Spacer(modifier = Modifier.height(UnifySpacing.sm))
             Text(
                 text = it,
                 fontSize = UnifyFontSizes.md,
-                color = UnifyColors.OnSurface.copy(alpha = 0.7f)
+                color = UnifyColors.OnSurface.copy(alpha = 0.7f),
             )
         }
-        
+
         action?.let {
             Spacer(modifier = Modifier.height(UnifySpacing.lg))
             it()
@@ -422,7 +423,7 @@ fun UnifyErrorState(
     modifier: Modifier = Modifier,
     title: String = "出错了",
     description: String? = null,
-    onRetry: (() -> Unit)? = null
+    onRetry: (() -> Unit)? = null,
 ) {
     UnifyEmptyState(
         modifier = modifier,
@@ -433,16 +434,17 @@ fun UnifyErrorState(
                 imageVector = Icons.Default.Error,
                 contentDescription = "错误",
                 tint = UnifyColors.Error,
-                modifier = Modifier.size(48.dp)
+                modifier = Modifier.size(48.dp),
             )
         },
-        action = onRetry?.let {
-            {
-                Button(onClick = it) {
-                    Text("重试")
+        action =
+            onRetry?.let {
+                {
+                    Button(onClick = it) {
+                        Text("重试")
+                    }
                 }
-            }
-        }
+            },
     )
 }
 
@@ -452,25 +454,26 @@ fun UnifyErrorState(
 @Composable
 fun UnifyLoadingState(
     modifier: Modifier = Modifier,
-    message: String = "加载中..."
+    message: String = "加载中...",
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(UnifySpacing.xl),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(UnifySpacing.xl),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         CircularProgressIndicator(
-            color = UnifyColors.Primary
+            color = UnifyColors.Primary,
         )
-        
+
         Spacer(modifier = Modifier.height(UnifySpacing.md))
-        
+
         Text(
             text = message,
             fontSize = UnifyFontSizes.md,
-            color = UnifyColors.OnSurface.copy(alpha = 0.7f)
+            color = UnifyColors.OnSurface.copy(alpha = 0.7f),
         )
     }
 }

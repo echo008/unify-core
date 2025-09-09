@@ -1,6 +1,5 @@
 package com.unify.core.network
 
-import com.unify.core.UnifyCore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 
@@ -13,17 +12,17 @@ expect object NetworkServiceFactory {
      * 创建HTTP客户端实例
      */
     fun createHttpClient(config: NetworkConfig = NetworkConfig()): UnifyNetworkService
-    
+
     /**
      * 创建WebSocket客户端
      */
     fun createWebSocketClient(url: String): WebSocketClient
-    
+
     /**
      * 创建文件上传客户端
      */
     fun createFileUploadClient(): FileUploadClient
-    
+
     /**
      * 获取网络状态监听器
      */
@@ -41,7 +40,7 @@ data class NetworkConfig(
     val enableLogging: Boolean = true,
     val enableCache: Boolean = true,
     val cacheSize: Long = 10 * 1024 * 1024L, // 10MB
-    val headers: Map<String, String> = emptyMap()
+    val headers: Map<String, String> = emptyMap(),
 )
 
 /**
@@ -54,7 +53,7 @@ enum class NetworkStatus {
     WIFI,
     MOBILE,
     ETHERNET,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -62,10 +61,15 @@ enum class NetworkStatus {
  */
 interface WebSocketClient {
     suspend fun connect(): Boolean
+
     suspend fun disconnect()
+
     suspend fun send(message: String)
+
     fun onMessage(callback: (String) -> Unit)
+
     fun onError(callback: (Throwable) -> Unit)
+
     fun onClose(callback: (Int, String) -> Unit)
 }
 
@@ -78,13 +82,13 @@ interface FileUploadClient {
         filePath: String,
         fieldName: String = "file",
         additionalData: Map<String, String> = emptyMap(),
-        onProgress: ((Float) -> Unit)? = null
+        onProgress: ((Float) -> Unit)? = null,
     ): UploadResult
-    
+
     suspend fun uploadMultipleFiles(
         url: String,
         files: List<FileUploadInfo>,
-        onProgress: ((Float) -> Unit)? = null
+        onProgress: ((Float) -> Unit)? = null,
     ): List<UploadResult>
 }
 
@@ -96,7 +100,7 @@ data class FileUploadInfo(
     val filePath: String,
     val fieldName: String,
     val fileName: String? = null,
-    val mimeType: String? = null
+    val mimeType: String? = null,
 )
 
 /**
@@ -108,5 +112,5 @@ data class UploadResult(
     val url: String? = null,
     val error: String? = null,
     val fileSize: Long = 0L,
-    val uploadTime: Long = 0L
+    val uploadTime: Long = 0L,
 )

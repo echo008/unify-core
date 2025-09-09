@@ -5,24 +5,33 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.media.AudioManager
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.provider.Settings
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.unify.ui.components.system.PerformanceMetric
-import com.unify.ui.components.system.NotificationItem
-import com.unify.ui.components.system.NotificationAction
+import com.unify.core.types.PerformanceMetric
+import com.unify.core.types.SystemInfo
 
 /**
  * Android平台系统组件实现
@@ -35,22 +44,22 @@ actual fun UnifySystemInfo(
     showMemory: Boolean,
     showStorage: Boolean,
     showNetwork: Boolean,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("System Information")
             Text("Refresh Interval: ${refreshInterval}ms")
-            
-            Text("Device: ${systemInfo.deviceName}")
-            Text("OS: ${systemInfo.osVersion}")
-            Text("App: ${systemInfo.appVersion}")
-            Text("Build: ${systemInfo.appVersion}")
-            
+
+            Text("OS: ${systemInfo.operatingSystem} ${systemInfo.version}")
+            Text("Device: ${systemInfo.deviceName} (${systemInfo.deviceModel})")
+            Text("Architecture: ${systemInfo.architecture}")
+            Text("Memory: ${systemInfo.availableMemory / (1024 * 1024 * 1024)}GB / ${systemInfo.totalMemory / (1024 * 1024 * 1024)}GB")
+
             if (showBattery) {
                 Text("Battery: Available")
             }
@@ -74,39 +83,41 @@ actual fun UnifyPerformanceMonitor(
     modifier: Modifier,
     showRealTimeChart: Boolean,
     maxDataPoints: Int,
-    updateInterval: Long
+    updateInterval: Long,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Performance Monitor")
             Text("Update Interval: ${updateInterval}ms")
-            Text("Max Data Points: ${maxDataPoints}")
-            
-            val metricsMap: Map<PerformanceMetric, Float> = mapOf(
-                PerformanceMetric.CPU_USAGE to 45.0f,
-                PerformanceMetric.MEMORY_USAGE to 67.0f,
-                PerformanceMetric.NETWORK_SPEED to 23.0f,
-                PerformanceMetric.BATTERY_LEVEL to 12.0f
-            ).filterKeys { it in metrics }
-            
+            Text("Max Data Points: $maxDataPoints")
+
+            val metricsMap: Map<PerformanceMetric, Float> =
+                mapOf(
+                    PerformanceMetric.CPU_USAGE to 45.0f,
+                    PerformanceMetric.MEMORY_USAGE to 67.0f,
+                    PerformanceMetric.NETWORK_SPEED to 23.0f,
+                    PerformanceMetric.BATTERY_LEVEL to 12.0f,
+                ).filterKeys { it in metrics }
+
             LaunchedEffect(metrics) {
                 onMetricsUpdate(metricsMap)
             }
-            
+
             metricsMap.forEach { (metric: PerformanceMetric, value: Float) ->
-                Text("${metric}: ${value}%")
+                Text("$metric: $value%")
             }
-            
+
             if (showRealTimeChart) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(Color.Gray.copy(alpha = 0.1f))
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(Color.Gray.copy(alpha = 0.1f)),
                 ) {
                     Text("Real-time Chart Placeholder")
                 }
@@ -124,50 +135,52 @@ actual fun UnifyBatteryIndicator(
     lowBatteryThreshold: Float,
     warningColor: Color,
     normalColor: Color,
-    chargingColor: Color
+    chargingColor: Color,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Battery Status")
-            
-            val batteryColor = when {
-                isCharging -> chargingColor
-                batteryLevel < lowBatteryThreshold -> warningColor
-                else -> normalColor
-            }
-            
+
+            val batteryColor =
+                when {
+                    isCharging -> chargingColor
+                    batteryLevel < lowBatteryThreshold -> warningColor
+                    else -> normalColor
+                }
+
             if (showPercentage) {
                 Text("Level: ${(batteryLevel * 100).toInt()}%")
             }
-            
+
             LinearProgressIndicator(
                 progress = batteryLevel,
                 modifier = Modifier.fillMaxWidth(),
-                color = batteryColor
+                color = batteryColor,
             )
-            
+
             Text("Charging: ${if (isCharging) "Yes" else "No"}")
-            
+
             if (batteryLevel < lowBatteryThreshold) {
                 Text("Low Battery Warning!", color = warningColor)
             }
         }
     }
 }
+
 @Composable
 actual fun UnifyBatteryStatus(
     modifier: Modifier,
-    showPercentage: Boolean
+    showPercentage: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Battery Status")
             Text("85%") // 简化实现
@@ -178,18 +191,18 @@ actual fun UnifyBatteryStatus(
 @Composable
 actual fun UnifyCPUUsage(
     modifier: Modifier,
-    refreshInterval: Long
+    refreshInterval: Long,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("CPU Usage")
             LinearProgressIndicator(
                 progress = 0.45f,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
         }
     }
@@ -202,36 +215,37 @@ actual fun UnifyMemoryUsage(
     modifier: Modifier,
     showChart: Boolean,
     showDetails: Boolean,
-    warningThreshold: Float
+    warningThreshold: Float,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Memory Usage")
             val usagePercentage = (usedMemory.toFloat() / totalMemory.toFloat())
             val availableMemory = totalMemory - usedMemory
-            
+
             LinearProgressIndicator(
                 progress = usagePercentage,
                 color = if (usagePercentage > warningThreshold) Color.Red else Color.Green,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
-            
+
             if (showDetails) {
                 Text("Used: ${usedMemory}MB / ${totalMemory}MB")
                 Text("Available: ${availableMemory}MB")
                 Text("Usage: ${(usagePercentage * 100).toInt()}%")
             }
-            
+
             if (showChart) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(100.dp)
-                        .background(Color.Gray.copy(alpha = 0.1f))
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(100.dp)
+                            .background(Color.Gray.copy(alpha = 0.1f)),
                 ) {
                     Text("Memory Chart Placeholder")
                 }
@@ -247,28 +261,28 @@ actual fun UnifyStorageUsage(
     modifier: Modifier,
     showBreakdown: Boolean,
     categories: Map<String, Long>,
-    warningThreshold: Float
+    warningThreshold: Float,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Storage Usage")
             val usagePercentage = (usedStorage.toFloat() / totalStorage.toFloat())
             val availableStorage = totalStorage - usedStorage
-            
+
             LinearProgressIndicator(
                 progress = usagePercentage,
                 color = if (usagePercentage > warningThreshold) Color.Red else Color.Green,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
-            
+
             Text("Used: ${usedStorage}MB / ${totalStorage}MB")
             Text("Available: ${availableStorage}MB")
             Text("Usage: ${(usagePercentage * 100).toInt()}%")
-            
+
             if (showBreakdown && categories.isNotEmpty()) {
                 Text("Storage Breakdown:")
                 categories.forEach { (category, size) ->
@@ -287,36 +301,36 @@ actual fun UnifyNetworkStatus(
     modifier: Modifier,
     showSpeed: Boolean,
     onNetworkTest: () -> Unit,
-    showDetails: Boolean
+    showDetails: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Network Status")
-            
-            Text("Connected: ${isConnected}")
-            Text("Type: ${networkType}")
+
+            Text("Connected: $isConnected")
+            Text("Type: $networkType")
             Text("Signal: ${(signalStrength * 100).toInt()}%")
-            
+
             LinearProgressIndicator(
                 progress = signalStrength,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
             )
-            
+
             if (showSpeed) {
                 Text("Speed: 100 Mbps")
             }
-            
+
             if (showDetails) {
                 Text("IP: 192.168.1.100")
                 Text("DNS: 8.8.8.8")
             }
-            
+
             Button(
-                onClick = onNetworkTest
+                onClick = onNetworkTest,
             ) {
                 Text("Test Network")
             }
@@ -329,33 +343,34 @@ actual fun UnifyDeviceOrientation(
     onOrientationChange: (DeviceOrientation) -> Unit,
     modifier: Modifier,
     showIndicator: Boolean,
-    lockOrientation: DeviceOrientation?
+    lockOrientation: DeviceOrientation?,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Device Orientation")
             val currentOrientation = DeviceOrientation.PORTRAIT
-            
+
             LaunchedEffect(Unit) {
                 onOrientationChange(currentOrientation)
             }
-            
+
             Text("Current: ${currentOrientation.name}")
-            
+
             if (showIndicator) {
                 Box(
-                    modifier = Modifier
-                        .size(60.dp)
-                        .background(Color.Gray.copy(alpha = 0.3f))
+                    modifier =
+                        Modifier
+                            .size(60.dp)
+                            .background(Color.Gray.copy(alpha = 0.3f)),
                 ) {
                     Text("📱", modifier = Modifier.align(Alignment.Center))
                 }
             }
-            
+
             lockOrientation?.let {
                 Text("Locked to: ${it.name}")
             }
@@ -368,37 +383,38 @@ actual fun UnifyVibrationControl(
     onVibrate: (VibrationPattern) -> Unit,
     modifier: Modifier,
     enableCustomPatterns: Boolean,
-    presetPatterns: List<VibrationPattern>
+    presetPatterns: List<VibrationPattern>,
 ) {
     val context = LocalContext.current
-    
+
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Vibration Control")
-            
+
             Button(
-                onClick = { 
-                    val defaultPattern = VibrationPattern(
-                        name = "Default",
-                        pattern = longArrayOf(0, 250, 250, 250)
-                    )
+                onClick = {
+                    val defaultPattern =
+                        VibrationPattern(
+                            name = "Default",
+                            pattern = longArrayOf(0, 250, 250, 250),
+                        )
                     onVibrate(defaultPattern)
-                }
+                },
             ) {
                 Text("Vibrate")
             }
-            
+
             if (enableCustomPatterns) {
                 Text("Custom Patterns Available")
             }
-            
+
             presetPatterns.forEach { pattern ->
                 Button(
-                    onClick = { onVibrate(pattern) }
+                    onClick = { onVibrate(pattern) },
                 ) {
                     Text(pattern.name)
                 }
@@ -413,19 +429,19 @@ actual fun UnifyBrightnessControl(
     onBrightnessChange: (Float) -> Unit,
     modifier: Modifier,
     enableAutoAdjust: Boolean,
-    showSlider: Boolean
+    showSlider: Boolean,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Brightness Control")
             if (showSlider) {
                 Slider(
                     value = brightness,
-                    onValueChange = onBrightnessChange
+                    onValueChange = onBrightnessChange,
                 )
             }
             if (enableAutoAdjust) {
@@ -442,28 +458,28 @@ actual fun UnifyVolumeControl(
     modifier: Modifier,
     volumeType: VolumeType,
     showSlider: Boolean,
-    enableMute: Boolean
+    enableMute: Boolean,
 ) {
     val context = LocalContext.current
     val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-    
+
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Volume Control - ${volumeType.name}")
             if (showSlider) {
                 Slider(
                     value = volume,
                     onValueChange = onVolumeChange,
-                    valueRange = 0f..1f
+                    valueRange = 0f..1f,
                 )
             }
             if (enableMute) {
                 Button(
-                    onClick = { onVolumeChange(0f) }
+                    onClick = { onVolumeChange(0f) },
                 ) {
                     Text("Mute")
                 }
@@ -478,27 +494,27 @@ actual fun UnifyClipboard(
     modifier: Modifier,
     showHistory: Boolean,
     maxHistorySize: Int,
-    enableAutoDetect: Boolean
+    enableAutoDetect: Boolean,
 ) {
     val context = LocalContext.current
     val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
     var clipboardText by remember { mutableStateOf("") }
-    
+
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Clipboard Manager")
             TextField(
                 value = clipboardText,
-                onValueChange = { 
+                onValueChange = {
                     clipboardText = it
                     val clip = ClipData.newPlainText("text", it)
                     clipboardManager.setPrimaryClip(clip)
                     onClipboardChange(it)
-                }
+                },
             )
             if (showHistory) {
                 Text("History: $maxHistorySize items")
@@ -516,16 +532,16 @@ actual fun UnifyNotificationManager(
     onNotificationAction: (String, NotificationAction) -> Unit,
     modifier: Modifier,
     enableGrouping: Boolean,
-    showBadges: Boolean
+    showBadges: Boolean,
 ) {
     val context = LocalContext.current
     val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    
+
     Card(
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth(),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Text("Notification Manager")
             if (showBadges) {
@@ -534,21 +550,22 @@ actual fun UnifyNotificationManager(
             LazyColumn {
                 items(notifications) { notification ->
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp),
                     ) {
                         Column(
-                            modifier = Modifier.padding(8.dp)
+                            modifier = Modifier.padding(8.dp),
                         ) {
                             Text(notification.title)
                             Text(notification.content)
                             Row {
                                 notification.actions.forEach { action ->
                                     Button(
-                                        onClick = { onNotificationAction(notification.id, action) }
+                                        onClick = { onNotificationAction(notification.id, action) },
                                     ) {
-                                        Text(action.title)
+                                        Text(action.name)
                                     }
                                 }
                             }

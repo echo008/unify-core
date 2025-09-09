@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -37,7 +36,7 @@ import kotlinx.coroutines.delay
  */
 data class UnifyLatLng(
     val latitude: Double,
-    val longitude: Double
+    val longitude: Double,
 ) {
     companion object {
         val BEIJING = UnifyLatLng(39.9042, 116.4074)
@@ -60,7 +59,7 @@ data class UnifyMapMarker(
     val isVisible: Boolean = true,
     val isDraggable: Boolean = false,
     val zIndex: Float = 0f,
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
 )
 
 /**
@@ -68,23 +67,24 @@ data class UnifyMapMarker(
  */
 data class UnifyMapBounds(
     val southwest: UnifyLatLng,
-    val northeast: UnifyLatLng
+    val northeast: UnifyLatLng,
 ) {
     val center: UnifyLatLng
-        get() = UnifyLatLng(
-            (southwest.latitude + northeast.latitude) / 2,
-            (southwest.longitude + northeast.longitude) / 2
-        )
+        get() =
+            UnifyLatLng(
+                (southwest.latitude + northeast.latitude) / 2,
+                (southwest.longitude + northeast.longitude) / 2,
+            )
 }
 
 /**
  * 地图类型枚举
  */
 enum class UnifyMapType {
-    NORMAL,      // 普通地图
-    SATELLITE,   // 卫星地图
-    TERRAIN,     // 地形地图
-    HYBRID       // 混合地图
+    NORMAL, // 普通地图
+    SATELLITE, // 卫星地图
+    TERRAIN, // 地形地图
+    HYBRID, // 混合地图
 }
 
 /**
@@ -104,7 +104,7 @@ data class UnifyMapConfig(
     val isScrollGesturesEnabled: Boolean = true,
     val isZoomGesturesEnabled: Boolean = true,
     val isRotateGesturesEnabled: Boolean = true,
-    val isTiltGesturesEnabled: Boolean = true
+    val isTiltGesturesEnabled: Boolean = true,
 )
 
 /**
@@ -118,32 +118,32 @@ class UnifyMapState {
     var tilt by mutableStateOf(0f)
     var bounds by mutableStateOf<UnifyMapBounds?>(null)
     var isLoading by mutableStateOf(false)
-    
+
     fun animateToLocation(
         location: UnifyLatLng,
         zoom: Float = zoomLevel,
-        duration: Long = 1000L
+        duration: Long = 1000L,
     ) {
         // 模拟动画效果
         center = location
         zoomLevel = zoom
     }
-    
+
     fun animateToBounds(
         bounds: UnifyMapBounds,
-        padding: Dp = 50.dp
+        padding: Dp = 50.dp,
     ) {
         this.bounds = bounds
         center = bounds.center
         // 根据边界计算合适的缩放级别
         zoomLevel = calculateZoomLevel(bounds)
     }
-    
+
     private fun calculateZoomLevel(bounds: UnifyMapBounds): Float {
         val latDiff = kotlin.math.abs(bounds.northeast.latitude - bounds.southwest.latitude)
         val lngDiff = kotlin.math.abs(bounds.northeast.longitude - bounds.southwest.longitude)
         val maxDiff = maxOf(latDiff, lngDiff)
-        
+
         return when {
             maxDiff > 10 -> 4f
             maxDiff > 5 -> 6f
@@ -162,7 +162,7 @@ class UnifyMapState {
 @Composable
 fun rememberUnifyMapState(
     initialCenter: UnifyLatLng = UnifyLatLng.BEIJING,
-    initialZoom: Float = 10f
+    initialZoom: Float = 10f,
 ): UnifyMapState {
     return remember {
         UnifyMapState().apply {
@@ -184,115 +184,121 @@ fun UnifyMap(
     onMapClick: ((UnifyLatLng) -> Unit)? = null,
     onMapLongClick: ((UnifyLatLng) -> Unit)? = null,
     onMarkerClick: ((UnifyMapMarker) -> Unit)? = null,
-    onCameraMove: ((UnifyLatLng, Float) -> Unit)? = null
+    onCameraMove: ((UnifyLatLng, Float) -> Unit)? = null,
 ) {
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Gray.copy(alpha = 0.1f))
-            .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(Color.Gray.copy(alpha = 0.1f))
+                .border(1.dp, Color.Gray.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp)),
     ) {
         // 地图背景
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    when (config.mapType) {
-                        UnifyMapType.NORMAL -> Color(0xFFF5F5DC)
-                        UnifyMapType.SATELLITE -> Color(0xFF2E4057)
-                        UnifyMapType.TERRAIN -> Color(0xFF8FBC8F)
-                        UnifyMapType.HYBRID -> Color(0xFF696969)
-                    }
-                )
-                .clickable {
-                    // 模拟地图点击
-                    onMapClick?.invoke(state.center)
-                }
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(
+                        when (config.mapType) {
+                            UnifyMapType.NORMAL -> Color(0xFFF5F5DC)
+                            UnifyMapType.SATELLITE -> Color(0xFF2E4057)
+                            UnifyMapType.TERRAIN -> Color(0xFF8FBC8F)
+                            UnifyMapType.HYBRID -> Color(0xFF696969)
+                        },
+                    )
+                    .clickable {
+                        // 模拟地图点击
+                        onMapClick?.invoke(state.center)
+                    },
         ) {
             // 地图网格线（模拟）
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val gridSize = 50.dp.toPx()
                 val width = size.width
                 val height = size.height
-                
+
                 // 绘制网格
                 for (x in 0..width.toInt() step gridSize.toInt()) {
                     drawLine(
                         color = Color.Gray.copy(alpha = 0.2f),
                         start = androidx.compose.ui.geometry.Offset(x.toFloat(), 0f),
                         end = androidx.compose.ui.geometry.Offset(x.toFloat(), height),
-                        strokeWidth = 1.dp.toPx()
+                        strokeWidth = 1.dp.toPx(),
                     )
                 }
-                
+
                 for (y in 0..height.toInt() step gridSize.toInt()) {
                     drawLine(
                         color = Color.Gray.copy(alpha = 0.2f),
                         start = androidx.compose.ui.geometry.Offset(0f, y.toFloat()),
                         end = androidx.compose.ui.geometry.Offset(width, y.toFloat()),
-                        strokeWidth = 1.dp.toPx()
+                        strokeWidth = 1.dp.toPx(),
                     )
                 }
             }
         }
-        
+
         // 标记层
         markers.filter { it.isVisible }.forEach { marker ->
             UnifyMapMarkerComponent(
                 marker = marker,
                 modifier = Modifier.align(Alignment.Center),
-                onClick = { onMarkerClick?.invoke(marker) }
+                onClick = { onMarkerClick?.invoke(marker) },
             )
         }
-        
+
         // 控制层
         if (config.isZoomControlsEnabled) {
             UnifyMapZoomControls(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp),
-                onZoomIn = { 
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp),
+                onZoomIn = {
                     state.zoomLevel = (state.zoomLevel + 1f).coerceAtMost(config.maxZoomLevel)
                 },
-                onZoomOut = { 
+                onZoomOut = {
                     state.zoomLevel = (state.zoomLevel - 1f).coerceAtLeast(config.minZoomLevel)
-                }
+                },
             )
         }
-        
+
         if (config.isCompassEnabled) {
             UnifyMapCompass(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(16.dp),
                 bearing = state.bearing,
-                onClick = { state.bearing = 0f }
+                onClick = { state.bearing = 0f },
             )
         }
-        
+
         // 加载指示器
         if (state.isLoading) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.3f)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center,
             ) {
                 CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
             }
         }
-        
+
         // 地图信息
         UnifyMapInfo(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp),
             center = state.center,
             zoomLevel = state.zoomLevel,
-            mapType = config.mapType
+            mapType = config.mapType,
         )
     }
 }
@@ -304,42 +310,44 @@ fun UnifyMap(
 fun UnifyMapMarkerComponent(
     marker: UnifyMapMarker,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
 ) {
     Column(
         modifier = modifier.clickable { onClick?.invoke() },
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         // 标记图标
         Box(
-            modifier = Modifier
-                .size(32.dp)
-                .background(marker.color, CircleShape)
-                .border(2.dp, Color.White, CircleShape),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .size(32.dp)
+                    .background(marker.color, CircleShape)
+                    .border(2.dp, Color.White, CircleShape),
+            contentAlignment = Alignment.Center,
         ) {
             Icon(
                 imageVector = marker.icon,
                 contentDescription = marker.title,
                 tint = Color.White,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
-        
+
         // 标记标题
         if (marker.title.isNotEmpty()) {
             Card(
                 modifier = Modifier.padding(top = 4.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.White.copy(alpha = 0.9f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor = Color.White.copy(alpha = 0.9f),
+                    ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
             ) {
                 Text(
                     text = marker.title,
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Medium,
                 )
             }
         }
@@ -353,35 +361,35 @@ fun UnifyMapMarkerComponent(
 fun UnifyMapZoomControls(
     modifier: Modifier = Modifier,
     onZoomIn: () -> Unit,
-    onZoomOut: () -> Unit
+    onZoomOut: () -> Unit,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         FloatingActionButton(
             onClick = onZoomIn,
             modifier = Modifier.size(40.dp),
             containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "放大",
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
-        
+
         FloatingActionButton(
             onClick = onZoomOut,
             modifier = Modifier.size(40.dp),
             containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Icon(
                 imageVector = Icons.Default.Remove,
                 contentDescription = "缩小",
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
     }
@@ -394,22 +402,23 @@ fun UnifyMapZoomControls(
 fun UnifyMapCompass(
     modifier: Modifier = Modifier,
     bearing: Float,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     FloatingActionButton(
         onClick = onClick,
         modifier = modifier.size(40.dp),
         containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.onSurface
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
         Icon(
             imageVector = Icons.Default.Navigation,
             contentDescription = "指南针",
-            modifier = Modifier
-                .size(20.dp)
-                .graphicsLayer {
-                    rotationZ = bearing
-                }
+            modifier =
+                Modifier
+                    .size(20.dp)
+                    .graphicsLayer {
+                        rotationZ = bearing
+                    },
         )
     }
 }
@@ -422,37 +431,38 @@ fun UnifyMapInfo(
     modifier: Modifier = Modifier,
     center: UnifyLatLng,
     zoomLevel: Float,
-    mapType: UnifyMapType
+    mapType: UnifyMapType,
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.7f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = Color.Black.copy(alpha = 0.7f),
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
     ) {
         Column(
-            modifier = Modifier.padding(8.dp)
+            modifier = Modifier.padding(8.dp),
         ) {
             Text(
                 text = "经度: ${center.longitude}",
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 10.sp
+                fontSize = 10.sp,
             )
             Text(
                 text = "纬度: ${center.latitude}",
                 style = MaterialTheme.typography.bodyMedium,
-                fontSize = 10.sp
+                fontSize = 10.sp,
             )
             Text(
                 text = "缩放: $zoomLevel",
                 color = Color.White,
-                fontSize = 10.sp
+                fontSize = 10.sp,
             )
             Text(
                 text = "类型: ${mapType.name}",
                 color = Color.White,
-                fontSize = 10.sp
+                fontSize = 10.sp,
             )
         }
     }
@@ -464,7 +474,7 @@ fun UnifyMapInfo(
 data class UnifyMapSearchResult(
     val name: String,
     val location: UnifyLocation,
-    val distance: Float? = null
+    val distance: Float? = null,
 )
 
 /**
@@ -473,7 +483,7 @@ data class UnifyMapSearchResult(
 data class UnifyLocation(
     val latitude: Double,
     val longitude: Double,
-    val accuracy: Float = 0f
+    val accuracy: Float = 0f,
 )
 
 /**
@@ -486,7 +496,7 @@ fun UnifyMapSearch(
     onSearchQueryChange: (String) -> Unit,
     searchResults: List<UnifyMapSearchResult> = emptyList(),
     onResultClick: (UnifyMapSearchResult) -> Unit,
-    onSearch: (String) -> Unit
+    onSearch: (String) -> Unit,
 ) {
     Column(modifier = modifier) {
         OutlinedTextField(
@@ -497,7 +507,7 @@ fun UnifyMapSearch(
             leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "搜索"
+                    contentDescription = "搜索",
                 )
             },
             trailingIcon = {
@@ -505,28 +515,29 @@ fun UnifyMapSearch(
                     IconButton(onClick = { onSearchQueryChange("") }) {
                         Icon(
                             imageVector = Icons.Default.Clear,
-                            contentDescription = "清除"
+                            contentDescription = "清除",
                         )
                     }
                 }
             },
-            singleLine = true
+            singleLine = true,
         )
-        
+
         if (searchResults.isNotEmpty()) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             ) {
                 LazyColumn(
-                    modifier = Modifier.heightIn(max = 200.dp)
+                    modifier = Modifier.heightIn(max = 200.dp),
                 ) {
                     items(searchResults) { result ->
                         UnifyMapSearchResultItem(
                             result = result,
-                            onClick = { onResultClick(result) }
+                            onClick = { onResultClick(result) },
                         )
                     }
                 }
@@ -541,7 +552,7 @@ fun UnifyMapSearch(
 @Composable
 fun UnifyMapSearchResultItem(
     result: UnifyMapSearchResult,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     ListItem(
         headlineContent = { Text(result.name) },
@@ -551,11 +562,11 @@ fun UnifyMapSearchResultItem(
                 Text(
                     text = "${UnifyStringUtils.format("%.2f", distance)}km",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         },
-        modifier = Modifier.clickable { onClick() }
+        modifier = Modifier.clickable { onClick() },
     )
 }
 
@@ -568,17 +579,18 @@ fun UnifyMapRoute(
     endLocation: UnifyLatLng,
     waypoints: List<UnifyLatLng> = emptyList(),
     routeType: UnifyRouteType = UnifyRouteType.DRIVING,
-    onRouteCalculated: (UnifyMapRoute) -> Unit
+    onRouteCalculated: (UnifyMapRoute) -> Unit,
 ) {
     LaunchedEffect(startLocation, endLocation, waypoints, routeType) {
         // 模拟路线计算
         delay(1000)
-        val route = UnifyMapRoute(
-            points = listOf(startLocation) + waypoints + listOf(endLocation),
-            distance = calculateDistance(startLocation, endLocation),
-            duration = calculateDuration(startLocation, endLocation, routeType),
-            instructions = generateInstructions(startLocation, endLocation)
-        )
+        val route =
+            UnifyMapRoute(
+                points = listOf(startLocation) + waypoints + listOf(endLocation),
+                distance = calculateDistance(startLocation, endLocation),
+                duration = calculateDuration(startLocation, endLocation, routeType),
+                instructions = generateInstructions(startLocation, endLocation),
+            )
         onRouteCalculated(route)
     }
 }
@@ -587,10 +599,10 @@ fun UnifyMapRoute(
  * 路线类型枚举
  */
 enum class UnifyRouteType {
-    DRIVING,    // 驾车
-    WALKING,    // 步行
-    CYCLING,    // 骑行
-    TRANSIT     // 公交
+    DRIVING, // 驾车
+    WALKING, // 步行
+    CYCLING, // 骑行
+    TRANSIT, // 公交
 }
 
 /**
@@ -599,14 +611,17 @@ enum class UnifyRouteType {
 data class UnifyMapRoute(
     val points: List<UnifyLatLng>,
     val distance: Double, // 距离（米）
-    val duration: Long,   // 时长（秒）
-    val instructions: List<String>
+    val duration: Long, // 时长（秒）
+    val instructions: List<String>,
 )
 
 /**
  * 计算两点间距离（简化版）
  */
-private fun calculateDistance(start: UnifyLatLng, end: UnifyLatLng): Double {
+private fun calculateDistance(
+    start: UnifyLatLng,
+    end: UnifyLatLng,
+): Double {
     val latDiff = end.latitude - start.latitude
     val lngDiff = end.longitude - start.longitude
     return kotlin.math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111000 // 粗略计算
@@ -615,25 +630,33 @@ private fun calculateDistance(start: UnifyLatLng, end: UnifyLatLng): Double {
 /**
  * 计算路线时长（简化版）
  */
-private fun calculateDuration(start: UnifyLatLng, end: UnifyLatLng, type: UnifyRouteType): Long {
+private fun calculateDuration(
+    start: UnifyLatLng,
+    end: UnifyLatLng,
+    type: UnifyRouteType,
+): Long {
     val distance = calculateDistance(start, end)
-    val speed = when (type) {
-        UnifyRouteType.DRIVING -> 50.0 // 50km/h
-        UnifyRouteType.WALKING -> 5.0  // 5km/h
-        UnifyRouteType.CYCLING -> 15.0 // 15km/h
-        UnifyRouteType.TRANSIT -> 30.0 // 30km/h
-    }
+    val speed =
+        when (type) {
+            UnifyRouteType.DRIVING -> 50.0 // 50km/h
+            UnifyRouteType.WALKING -> 5.0 // 5km/h
+            UnifyRouteType.CYCLING -> 15.0 // 15km/h
+            UnifyRouteType.TRANSIT -> 30.0 // 30km/h
+        }
     return ((distance / 1000) / speed * 3600).toLong()
 }
 
 /**
  * 生成导航指令（简化版）
  */
-private fun generateInstructions(start: UnifyLatLng, end: UnifyLatLng): List<String> {
+private fun generateInstructions(
+    start: UnifyLatLng,
+    end: UnifyLatLng,
+): List<String> {
     return listOf(
         "从起点出发",
-        "直行 ${(calculateDistance(start, end) / 1000.0).toString()}公里",
-        "到达目的地"
+        "直行 ${(calculateDistance(start, end) / 1000.0)}公里",
+        "到达目的地",
     )
 }
 

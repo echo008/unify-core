@@ -6,6 +6,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.unify.core.types.PerformanceMetric
+import com.unify.core.types.SystemInfo
 
 @Composable
 actual fun UnifyDeviceOrientation(
@@ -156,12 +158,12 @@ actual fun UnifyNotificationManager(
                     Text(notification.content)
                     Row {
                         Button(onClick = { 
-                            onNotificationAction(notification.id, NotificationAction("view", "View"))
+                            onNotificationAction(notification.id, NotificationAction.OPEN)
                         }) {
                             Text("View")
                         }
                         Button(onClick = { 
-                            onNotificationAction(notification.id, NotificationAction("dismiss", "Dismiss"))
+                            onNotificationAction(notification.id, NotificationAction.DISMISS)
                         }) {
                             Text("Dismiss")
                         }
@@ -190,12 +192,20 @@ actual fun UnifySystemInfo(
 ) {
     Column(modifier = modifier) {
         Text("JS System Info")
-        Text("OS: ${systemInfo.osVersion}")
+        Text("OS: ${systemInfo.operatingSystem} ${systemInfo.version}")
         Text("Device: ${systemInfo.deviceName}")
-        if (showBattery) Text("Battery: 85%")
-        if (showMemory) Text("Memory: 4GB")
-        if (showStorage) Text("Storage: 256GB")
-        if (showNetwork) Text("Network: Connected")
+        if (showBattery) {
+            Text("Battery: ${systemInfo.batteryLevel?.let { "${(it * 100).toInt()}%" } ?: "N/A"}")
+        }
+        if (showMemory) {
+            Text("Memory: ${systemInfo.availableMemory / (1024 * 1024 * 1024)}GB / ${systemInfo.totalMemory / (1024 * 1024 * 1024)}GB")
+        }
+        if (showStorage) {
+            Text("Storage: Available")
+        }
+        if (showNetwork) {
+            Text("Network: WiFi")
+        }
         Text("Refresh: ${refreshInterval}ms")
     }
 }

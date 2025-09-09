@@ -1,16 +1,15 @@
 package com.unify.core.providers
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocal
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.unify.core.UnifyCore
 import com.unify.core.data.UnifyDataManager
+import com.unify.core.performance.UnifyPerformanceMonitor
+import com.unify.core.platform.PlatformManager
+import com.unify.core.security.UnifySecurityManager
 import com.unify.core.ui.UnifyUIManager
 import com.unify.device.UnifyDeviceManager
-import com.unify.core.performance.UnifyPerformanceMonitor
-import com.unify.core.security.UnifySecurityManager
-import com.unify.core.platform.PlatformManager
 
 /**
  * Unify框架的Composition Local提供器
@@ -20,57 +19,68 @@ import com.unify.core.platform.PlatformManager
 /**
  * 核心管理器CompositionLocal
  */
-val LocalUnifyCore = staticCompositionLocalOf<UnifyCore> {
-    error("UnifyCore not provided")
-}
+val LocalUnifyCore =
+    staticCompositionLocalOf<UnifyCore> {
+        error("UnifyCore not provided")
+    }
 
-val LocalUnifyDataManager = staticCompositionLocalOf<UnifyDataManager> {
-    error("UnifyDataManager not provided")
-}
+val LocalUnifyDataManager =
+    staticCompositionLocalOf<UnifyDataManager> {
+        error("UnifyDataManager not provided")
+    }
 
-val LocalUnifyUIManager = staticCompositionLocalOf<UnifyUIManager> {
-    error("UnifyUIManager not provided")
-}
+val LocalUnifyUIManager =
+    staticCompositionLocalOf<UnifyUIManager> {
+        error("UnifyUIManager not provided")
+    }
 
 // Temporarily removed UnifyNetworkManager to fix compilation
 
-val LocalUnifyDeviceManager = staticCompositionLocalOf<UnifyDeviceManager> {
-    error("UnifyDeviceManager not provided")
-}
+val LocalUnifyDeviceManager =
+    staticCompositionLocalOf<UnifyDeviceManager> {
+        error("UnifyDeviceManager not provided")
+    }
 
-val LocalUnifyPerformanceMonitor = staticCompositionLocalOf<UnifyPerformanceMonitor> {
-    error("UnifyPerformanceMonitor not provided")
-}
+val LocalUnifyPerformanceMonitor =
+    staticCompositionLocalOf<UnifyPerformanceMonitor> {
+        error("UnifyPerformanceMonitor not provided")
+    }
 
-val LocalUnifySecurityManager = staticCompositionLocalOf<UnifySecurityManager> {
-    error("UnifySecurityManager not provided")
-}
+val LocalUnifySecurityManager =
+    staticCompositionLocalOf<UnifySecurityManager> {
+        error("UnifySecurityManager not provided")
+    }
 
-val LocalPlatformManager = staticCompositionLocalOf<PlatformManager> {
-    error("PlatformManager not provided")
-}
+val LocalPlatformManager =
+    staticCompositionLocalOf<PlatformManager> {
+        error("PlatformManager not provided")
+    }
 
 /**
  * 主题和配置CompositionLocal
  */
-val LocalUnifyTheme = staticCompositionLocalOf<UnifyTheme> {
-    UnifyTheme.Default
-}
+val LocalUnifyTheme =
+    staticCompositionLocalOf<UnifyTheme> {
+        UnifyTheme.Default
+    }
 
-val LocalUnifyConfiguration = staticCompositionLocalOf<UnifyConfiguration> {
-    UnifyConfiguration.Default
-}
+val LocalUnifyConfiguration =
+    staticCompositionLocalOf<UnifyConfiguration> {
+        UnifyConfiguration.Default
+    }
 
 /**
  * 平台特定CompositionLocal
  */
-val LocalPlatformInfo = staticCompositionLocalOf<PlatformInfo> {
-    error("PlatformInfo not provided")
-}
+val LocalPlatformInfo =
+    staticCompositionLocalOf<PlatformInfo> {
+        error("PlatformInfo not provided")
+    }
 
-val LocalPlatformCapabilities = staticCompositionLocalOf<PlatformCapabilities> {
-    PlatformCapabilities.Default
-}
+val LocalPlatformCapabilities =
+    staticCompositionLocalOf<PlatformCapabilities> {
+        PlatformCapabilities.Default
+    }
 
 /**
  * Unify主题配置
@@ -80,18 +90,20 @@ data class UnifyTheme(
     val typography: UnifyTypography = UnifyTypography.Default,
     val shapes: UnifyShapes = UnifyShapes.Default,
     val spacing: UnifySpacing = UnifySpacing.Default,
-    val elevation: UnifyElevation = UnifyElevation.Default
+    val elevation: UnifyElevation = UnifyElevation.Default,
 ) {
     companion object {
         val Default = UnifyTheme()
-        
-        val Light = UnifyTheme(
-            colorScheme = UnifyColorScheme.Light
-        )
-        
-        val Dark = UnifyTheme(
-            colorScheme = UnifyColorScheme.Dark
-        )
+
+        val Light =
+            UnifyTheme(
+                colorScheme = UnifyColorScheme.Light,
+            )
+
+        val Dark =
+            UnifyTheme(
+                colorScheme = UnifyColorScheme.Dark,
+            )
     }
 }
 
@@ -110,26 +122,28 @@ data class UnifyColorScheme(
     val onSecondary: Long = 0xFF000000,
     val onBackground: Long = 0xFF000000,
     val onSurface: Long = 0xFF000000,
-    val onError: Long = 0xFFFFFFFF
+    val onError: Long = 0xFFFFFFFF,
 ) {
     companion object {
         val Default = UnifyColorScheme()
-        
-        val Light = UnifyColorScheme(
-            primary = 0xFF6200EE,
-            background = 0xFFFFFFFF,
-            surface = 0xFFFFFFFF,
-            onBackground = 0xFF000000,
-            onSurface = 0xFF000000
-        )
-        
-        val Dark = UnifyColorScheme(
-            primary = 0xFFBB86FC,
-            background = 0xFF121212,
-            surface = 0xFF121212,
-            onBackground = 0xFFFFFFFF,
-            onSurface = 0xFFFFFFFF
-        )
+
+        val Light =
+            UnifyColorScheme(
+                primary = 0xFF6200EE,
+                background = 0xFFFFFFFF,
+                surface = 0xFFFFFFFF,
+                onBackground = 0xFF000000,
+                onSurface = 0xFF000000,
+            )
+
+        val Dark =
+            UnifyColorScheme(
+                primary = 0xFFBB86FC,
+                background = 0xFF121212,
+                surface = 0xFF121212,
+                onBackground = 0xFFFFFFFF,
+                onSurface = 0xFFFFFFFF,
+            )
     }
 }
 
@@ -149,7 +163,7 @@ data class UnifyTypography(
     val body2: UnifyTextStyle = UnifyTextStyle.Body2,
     val button: UnifyTextStyle = UnifyTextStyle.Button,
     val caption: UnifyTextStyle = UnifyTextStyle.Caption,
-    val overline: UnifyTextStyle = UnifyTextStyle.Overline
+    val overline: UnifyTextStyle = UnifyTextStyle.Overline,
 ) {
     companion object {
         val Default = UnifyTypography()
@@ -163,7 +177,7 @@ data class UnifyTextStyle(
     val fontSize: Float,
     val lineHeight: Float,
     val fontWeight: Int = 400,
-    val letterSpacing: Float = 0f
+    val letterSpacing: Float = 0f,
 ) {
     companion object {
         val H1 = UnifyTextStyle(fontSize = 96f, lineHeight = 112f, fontWeight = 300, letterSpacing = -1.5f)
@@ -188,7 +202,7 @@ data class UnifyTextStyle(
 data class UnifyShapes(
     val small: Float = 4f,
     val medium: Float = 8f,
-    val large: Float = 16f
+    val large: Float = 16f,
 ) {
     companion object {
         val Default = UnifyShapes()
@@ -204,7 +218,7 @@ data class UnifySpacing(
     val md: Float = 16f,
     val lg: Float = 24f,
     val xl: Float = 32f,
-    val xxl: Float = 48f
+    val xxl: Float = 48f,
 ) {
     companion object {
         val Default = UnifySpacing()
@@ -219,7 +233,7 @@ data class UnifyElevation(
     val small: Float = 2f,
     val medium: Float = 4f,
     val large: Float = 8f,
-    val xlarge: Float = 16f
+    val xlarge: Float = 16f,
 ) {
     companion object {
         val Default = UnifyElevation()
@@ -236,23 +250,25 @@ data class UnifyConfiguration(
     val enableAnalytics: Boolean = false,
     val maxCacheSize: Long = 100 * 1024 * 1024, // 100MB
     val networkTimeout: Long = 30000, // 30秒
-    val retryCount: Int = 3
+    val retryCount: Int = 3,
 ) {
     companion object {
         val Default = UnifyConfiguration()
-        
-        val Debug = UnifyConfiguration(
-            enableDebugMode = true,
-            enablePerformanceMonitoring = true,
-            enableErrorReporting = true
-        )
-        
-        val Production = UnifyConfiguration(
-            enableDebugMode = false,
-            enablePerformanceMonitoring = true,
-            enableErrorReporting = true,
-            enableAnalytics = true
-        )
+
+        val Debug =
+            UnifyConfiguration(
+                enableDebugMode = true,
+                enablePerformanceMonitoring = true,
+                enableErrorReporting = true,
+            )
+
+        val Production =
+            UnifyConfiguration(
+                enableDebugMode = false,
+                enablePerformanceMonitoring = true,
+                enableErrorReporting = true,
+                enableAnalytics = true,
+            )
     }
 }
 
@@ -263,7 +279,7 @@ data class PlatformInfo(
     val name: String,
     val version: String,
     val type: PlatformType,
-    val capabilities: PlatformCapabilities
+    val capabilities: PlatformCapabilities,
 )
 
 /**
@@ -277,7 +293,7 @@ enum class PlatformType {
     HARMONY_OS,
     MINI_APP,
     WATCH,
-    TV
+    TV,
 }
 
 /**
@@ -296,7 +312,7 @@ data class PlatformCapabilities(
     val supportsNotifications: Boolean = true,
     val supportsVibration: Boolean = true,
     val supportsFileSystem: Boolean = true,
-    val supportsNetworking: Boolean = true
+    val supportsNetworking: Boolean = true,
 ) {
     companion object {
         val Default = PlatformCapabilities()
@@ -310,13 +326,13 @@ data class PlatformCapabilities(
 @Composable
 fun UnifyProvider(
     core: UnifyCore,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
         LocalUnifyCore provides core,
         LocalUnifyDataManager provides core.dataManager,
         LocalUnifyUIManager provides core.uiManager,
-        LocalUnifyDeviceManager provides core.deviceManager
+        LocalUnifyDeviceManager provides core.deviceManager,
     ) {
         content()
     }

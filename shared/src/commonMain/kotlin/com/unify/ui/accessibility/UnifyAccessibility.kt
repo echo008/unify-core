@@ -1,7 +1,9 @@
 package com.unify.ui.accessibility
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -9,16 +11,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.*
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.border
-import androidx.compose.foundation.Image
-import kotlin.math.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.*
 
 /**
  * Unify无障碍访问支持
@@ -36,7 +35,7 @@ data class AccessibilityConfig(
     val enableReducedMotion: Boolean = false,
     val enableFocusIndicator: Boolean = true,
     val minimumTouchTargetSize: androidx.compose.ui.unit.Dp = 48.dp,
-    val colorContrastRatio: Float = 4.5f
+    val colorContrastRatio: Float = 4.5f,
 )
 
 /**
@@ -58,10 +57,10 @@ class AccessibilityState {
 class UnifyAccessibilityManager {
     private val _state = mutableStateOf(AccessibilityState())
     val state: State<AccessibilityState> = _state
-    
+
     private val _config = mutableStateOf(AccessibilityConfig())
     val config: State<AccessibilityConfig> = _config
-    
+
     /**
      * 更新无障碍配置
      */
@@ -69,34 +68,38 @@ class UnifyAccessibilityManager {
         _config.value = config
         applyConfig(config)
     }
-    
+
     /**
      * 应用配置
      */
     private fun applyConfig(config: AccessibilityConfig) {
-        _state.value = _state.value.apply {
-            isScreenReaderEnabled = config.enableScreenReader
-            isHighContrastEnabled = config.enableHighContrast
-            isLargeTextEnabled = config.enableLargeText
-            isReducedMotionEnabled = config.enableReducedMotion
-            currentFontScale = if (config.enableLargeText) 1.3f else 1.0f
-            currentColorContrast = if (config.enableHighContrast) 2.0f else 1.0f
-        }
+        _state.value =
+            _state.value.apply {
+                isScreenReaderEnabled = config.enableScreenReader
+                isHighContrastEnabled = config.enableHighContrast
+                isLargeTextEnabled = config.enableLargeText
+                isReducedMotionEnabled = config.enableReducedMotion
+                currentFontScale = if (config.enableLargeText) 1.3f else 1.0f
+                currentColorContrast = if (config.enableHighContrast) 2.0f else 1.0f
+            }
     }
-    
+
     /**
      * 检查颜色对比度
      */
-    fun checkColorContrast(foreground: Color, background: Color): Float {
+    fun checkColorContrast(
+        foreground: Color,
+        background: Color,
+    ): Float {
         val foregroundLuminance = calculateLuminance(foreground)
         val backgroundLuminance = calculateLuminance(background)
-        
+
         val lighter = maxOf(foregroundLuminance, backgroundLuminance)
         val darker = minOf(foregroundLuminance, backgroundLuminance)
-        
+
         return (lighter + 0.05f) / (darker + 0.05f)
     }
-    
+
     /**
      * 计算颜色亮度
      */
@@ -105,19 +108,23 @@ class UnifyAccessibilityManager {
         val r = if (color.red <= 0.03928f) color.red / 12.92f else ((color.red + 0.055f) / 1.055f).let { it * it * it }
         val g = if (color.green <= 0.03928f) color.green / 12.92f else ((color.green + 0.055f) / 1.055f).let { it * it * it }
         val b = if (color.blue <= 0.03928f) color.blue / 12.92f else ((color.blue + 0.055f) / 1.055f).let { it * it * it }
-        
+
         return 0.2126f * r + 0.7152f * g + 0.0722f * b
     }
-    
+
     /**
      * 获取建议的颜色
      */
-    fun getSuggestedColor(originalColor: Color, backgroundColor: Color, targetContrast: Float = 4.5f): Color {
+    fun getSuggestedColor(
+        originalColor: Color,
+        backgroundColor: Color,
+        targetContrast: Float = 4.5f,
+    ): Color {
         val currentContrast = checkColorContrast(originalColor, backgroundColor)
         if (currentContrast >= targetContrast) {
             return originalColor
         }
-        
+
         // 简化的颜色调整逻辑
         val backgroundLuminance = calculateLuminance(backgroundColor)
         return if (backgroundLuminance > 0.5f) {
@@ -125,14 +132,14 @@ class UnifyAccessibilityManager {
             originalColor.copy(
                 red = originalColor.red * 0.7f,
                 green = originalColor.green * 0.7f,
-                blue = originalColor.blue * 0.7f
+                blue = originalColor.blue * 0.7f,
             )
         } else {
             // 深色背景，使用浅色文字
             originalColor.copy(
                 red = minOf(1.0f, originalColor.red * 1.3f),
                 green = minOf(1.0f, originalColor.green * 1.3f),
-                blue = minOf(1.0f, originalColor.blue * 1.3f)
+                blue = minOf(1.0f, originalColor.blue * 1.3f),
             )
         }
     }
@@ -141,9 +148,10 @@ class UnifyAccessibilityManager {
 /**
  * 无障碍提供器
  */
-val LocalAccessibilityManager = staticCompositionLocalOf<UnifyAccessibilityManager> {
-    error("AccessibilityManager not provided")
-}
+val LocalAccessibilityManager =
+    staticCompositionLocalOf<UnifyAccessibilityManager> {
+        error("AccessibilityManager not provided")
+    }
 
 /**
  * 无障碍提供器组件
@@ -151,10 +159,10 @@ val LocalAccessibilityManager = staticCompositionLocalOf<UnifyAccessibilityManag
 @Composable
 fun AccessibilityProvider(
     manager: UnifyAccessibilityManager = remember { UnifyAccessibilityManager() },
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     CompositionLocalProvider(
-        LocalAccessibilityManager provides manager
+        LocalAccessibilityManager provides manager,
     ) {
         content()
     }
@@ -178,30 +186,34 @@ fun AccessibleText(
     fontSize: androidx.compose.ui.unit.TextUnit = 16.sp,
     fontWeight: FontWeight? = null,
     color: Color = Color.Unspecified,
-    maxLines: Int = Int.MAX_VALUE
+    maxLines: Int = Int.MAX_VALUE,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val state = accessibilityManager.state.value
     val config = accessibilityManager.config.value
-    
+
     val adjustedFontSize = fontSize * state.currentFontScale
-    val adjustedColor = if (color != Color.Unspecified && config.enableHighContrast) {
-        accessibilityManager.getSuggestedColor(color, MaterialTheme.colorScheme.background)
-    } else color
-    
+    val adjustedColor =
+        if (color != Color.Unspecified && config.enableHighContrast) {
+            accessibilityManager.getSuggestedColor(color, MaterialTheme.colorScheme.background)
+        } else {
+            color
+        }
+
     Text(
         text = text,
-        modifier = modifier.semantics {
-            contentDescription?.let { this.contentDescription = it }
-            role?.let { this.role = it }
-            if (config.enableScreenReader) {
-                this.text = AnnotatedString(text)
-            }
-        },
+        modifier =
+            modifier.semantics {
+                contentDescription?.let { this.contentDescription = it }
+                role?.let { this.role = it }
+                if (config.enableScreenReader) {
+                    this.text = AnnotatedString(text)
+                }
+            },
         fontSize = adjustedFontSize,
         fontWeight = fontWeight,
         color = adjustedColor,
-        maxLines = maxLines
+        maxLines = maxLines,
     )
 }
 
@@ -214,24 +226,28 @@ fun AccessibleButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     contentDescription: String? = null,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     Button(
         onClick = onClick,
-        modifier = modifier
-            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Button
-                if (enabled) {
-                    this.onClick(label = contentDescription) { onClick(); true }
-                }
-            },
+        modifier =
+            modifier
+                .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Button
+                    if (enabled) {
+                        this.onClick(label = contentDescription) {
+                            onClick()
+                            true
+                        }
+                    }
+                },
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -244,24 +260,28 @@ fun AccessibleIconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     contentDescription: String,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     IconButton(
         onClick = onClick,
-        modifier = modifier
-            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                this.contentDescription = contentDescription
-                this.role = Role.Button
-                if (enabled) {
-                    this.onClick(label = contentDescription) { onClick(); true }
-                }
-            },
+        modifier =
+            modifier
+                .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    this.contentDescription = contentDescription
+                    this.role = Role.Button
+                    if (enabled) {
+                        this.onClick(label = contentDescription) {
+                            onClick()
+                            true
+                        }
+                    }
+                },
         enabled = enabled,
-        content = content
+        content = content,
     )
 }
 
@@ -284,26 +304,27 @@ fun AccessibleTextField(
     singleLine: Boolean = false,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     contentDescription: String? = null,
-    errorMessage: String? = null
+    errorMessage: String? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     TextField(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier
-            .sizeIn(minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Button
-                if (isError && errorMessage != null) {
-                    this.error(errorMessage)
-                }
-                if (config.enableScreenReader) {
-                    this.text = AnnotatedString(value)
-                }
-            },
+        modifier =
+            modifier
+                .sizeIn(minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Button
+                    if (isError && errorMessage != null) {
+                        this.error(errorMessage)
+                    }
+                    if (config.enableScreenReader) {
+                        this.text = AnnotatedString(value)
+                    }
+                },
         enabled = enabled,
         readOnly = readOnly,
         label = label,
@@ -313,7 +334,7 @@ fun AccessibleTextField(
         supportingText = supportingText,
         isError = isError,
         singleLine = singleLine,
-        maxLines = maxLines
+        maxLines = maxLines,
     )
 }
 
@@ -326,28 +347,29 @@ fun AccessibleCheckbox(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    contentDescription: String? = null
+    contentDescription: String? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     Checkbox(
         checked = checked,
         onCheckedChange = onCheckedChange,
-        modifier = modifier
-            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Checkbox
-                this.toggleableState = ToggleableState(checked)
-                if (enabled && onCheckedChange != null) {
-                    this.onClick(label = contentDescription) { 
-                        onCheckedChange(!checked)
-                        true 
+        modifier =
+            modifier
+                .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Checkbox
+                    this.toggleableState = ToggleableState(checked)
+                    if (enabled && onCheckedChange != null) {
+                        this.onClick(label = contentDescription) {
+                            onCheckedChange(!checked)
+                            true
+                        }
                     }
-                }
-            },
-        enabled = enabled
+                },
+        enabled = enabled,
     )
 }
 
@@ -360,28 +382,29 @@ fun AccessibleRadioButton(
     onClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    contentDescription: String? = null
+    contentDescription: String? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     RadioButton(
         selected = selected,
         onClick = onClick,
-        modifier = modifier
-            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.RadioButton
-                this.toggleableState = ToggleableState(selected)
-                if (enabled && onClick != null) {
-                    this.onClick(label = contentDescription) { 
-                        onClick()
-                        true 
+        modifier =
+            modifier
+                .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.RadioButton
+                    this.toggleableState = ToggleableState(selected)
+                    if (enabled && onClick != null) {
+                        this.onClick(label = contentDescription) {
+                            onClick()
+                            true
+                        }
                     }
-                }
-            },
-        enabled = enabled
+                },
+        enabled = enabled,
     )
 }
 
@@ -394,28 +417,29 @@ fun AccessibleSwitch(
     onCheckedChange: ((Boolean) -> Unit)?,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    contentDescription: String? = null
+    contentDescription: String? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     Switch(
         checked = checked,
         onCheckedChange = onCheckedChange,
-        modifier = modifier
-            .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Switch
-                this.toggleableState = ToggleableState(checked)
-                if (enabled && onCheckedChange != null) {
-                    this.onClick(label = contentDescription) { 
-                        onCheckedChange(!checked)
-                        true 
+        modifier =
+            modifier
+                .sizeIn(minWidth = config.minimumTouchTargetSize, minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Switch
+                    this.toggleableState = ToggleableState(checked)
+                    if (enabled && onCheckedChange != null) {
+                        this.onClick(label = contentDescription) {
+                            onCheckedChange(!checked)
+                            true
+                        }
                     }
-                }
-            },
-        enabled = enabled
+                },
+        enabled = enabled,
     )
 }
 
@@ -431,28 +455,29 @@ fun AccessibleSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     contentDescription: String? = null,
-    valueDescription: String? = null
+    valueDescription: String? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     Slider(
         value = value,
         onValueChange = onValueChange,
-        modifier = modifier
-            .sizeIn(minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Button
-                this.setProgress(label = valueDescription) { targetValue ->
-                    val newValue = valueRange.start + (valueRange.endInclusive - valueRange.start) * targetValue
-                    onValueChange(newValue.coerceIn(valueRange))
-                    true
-                }
-            },
+        modifier =
+            modifier
+                .sizeIn(minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Button
+                    this.setProgress(label = valueDescription) { targetValue ->
+                        val newValue = valueRange.start + (valueRange.endInclusive - valueRange.start) * targetValue
+                        onValueChange(newValue.coerceIn(valueRange))
+                        true
+                    }
+                },
         enabled = enabled,
         valueRange = valueRange,
-        steps = steps
+        steps = steps,
     )
 }
 
@@ -467,21 +492,22 @@ fun AccessibleImage(
     alignment: Alignment = Alignment.Center,
     contentScale: androidx.compose.ui.layout.ContentScale = androidx.compose.ui.layout.ContentScale.Fit,
     alpha: Float = 1.0f,
-    colorFilter: androidx.compose.ui.graphics.ColorFilter? = null
+    colorFilter: androidx.compose.ui.graphics.ColorFilter? = null,
 ) {
     Image(
         painter = painter,
         contentDescription = contentDescription,
-        modifier = modifier.semantics {
-            contentDescription?.let { 
-                this.contentDescription = it
-                this.role = Role.Image
-            }
-        },
+        modifier =
+            modifier.semantics {
+                contentDescription?.let {
+                    this.contentDescription = it
+                    this.role = Role.Image
+                }
+            },
         alignment = alignment,
         contentScale = contentScale,
         alpha = alpha,
-        colorFilter = colorFilter
+        colorFilter = colorFilter,
     )
 }
 
@@ -500,37 +526,40 @@ fun AccessibleListItem(
     tonalElevation: androidx.compose.ui.unit.Dp = ListItemDefaults.Elevation,
     shadowElevation: androidx.compose.ui.unit.Dp = ListItemDefaults.Elevation,
     contentDescription: String? = null,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     ListItem(
         headlineContent = headlineContent,
-        modifier = modifier
-            .sizeIn(minHeight = config.minimumTouchTargetSize)
-            .semantics {
-                contentDescription?.let { this.contentDescription = it }
-                this.role = Role.Button
-                if (onClick != null) {
-                    this.onClick(label = contentDescription) { 
-                        onClick()
-                        true 
+        modifier =
+            modifier
+                .sizeIn(minHeight = config.minimumTouchTargetSize)
+                .semantics {
+                    contentDescription?.let { this.contentDescription = it }
+                    this.role = Role.Button
+                    if (onClick != null) {
+                        this.onClick(label = contentDescription) {
+                            onClick()
+                            true
+                        }
                     }
                 }
-            }
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable { onClick() }
-                } else Modifier
-            ),
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable { onClick() }
+                    } else {
+                        Modifier
+                    },
+                ),
         overlineContent = overlineContent,
         supportingContent = supportingContent,
         leadingContent = leadingContent,
         trailingContent = trailingContent,
         colors = colors,
         tonalElevation = tonalElevation,
-        shadowElevation = shadowElevation
+        shadowElevation = shadowElevation,
     )
 }
 
@@ -540,20 +569,21 @@ fun AccessibleListItem(
 @Composable
 fun AccessibilityFocusIndicator(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     if (config.enableFocusIndicator) {
         Box(
-            modifier = modifier
-                .border(
-                    width = 2.dp,
-                    color = MaterialTheme.colorScheme.primary,
-                    shape = RoundedCornerShape(4.dp)
-                )
-                .padding(2.dp)
+            modifier =
+                modifier
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = RoundedCornerShape(4.dp),
+                    )
+                    .padding(2.dp),
         ) {
             content()
         }
@@ -568,11 +598,11 @@ fun AccessibilityFocusIndicator(
 @Composable
 fun AccessibilityAnnouncement(
     message: String,
-    priority: AccessibilityAnnouncementPriority = AccessibilityAnnouncementPriority.NORMAL
+    priority: AccessibilityAnnouncementPriority = AccessibilityAnnouncementPriority.NORMAL,
 ) {
     val accessibilityManager = currentAccessibilityManager()
     val config = accessibilityManager.config.value
-    
+
     if (config.enableScreenReader) {
         LaunchedEffect(message) {
             // 在实际实现中，这里会调用平台特定的屏幕阅读器API
@@ -588,7 +618,7 @@ enum class AccessibilityAnnouncementPriority {
     LOW,
     NORMAL,
     HIGH,
-    URGENT
+    URGENT,
 }
 
 /**
@@ -599,24 +629,24 @@ object AccessibilityUtils {
      * 检查是否满足WCAG AA标准
      */
     fun meetsWCAGAA(contrastRatio: Float): Boolean = contrastRatio >= 4.5f
-    
+
     /**
      * 检查是否满足WCAG AAA标准
      */
     fun meetsWCAGAAA(contrastRatio: Float): Boolean = contrastRatio >= 7.0f
-    
+
     /**
      * 获取建议的最小触摸目标大小
      */
     fun getMinimumTouchTargetSize(): androidx.compose.ui.unit.Dp = 48.dp
-    
+
     /**
      * 检查文本大小是否足够大
      */
     fun isTextSizeAccessible(fontSize: androidx.compose.ui.unit.TextUnit): Boolean {
         return fontSize.value >= 14f // 最小14sp
     }
-    
+
     /**
      * 生成无障碍内容描述
      */
@@ -624,7 +654,7 @@ object AccessibilityUtils {
         type: String,
         label: String? = null,
         state: String? = null,
-        position: String? = null
+        position: String? = null,
     ): String {
         val parts = mutableListOf<String>()
         parts.add(type)

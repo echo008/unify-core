@@ -7,17 +7,37 @@ import kotlinx.serialization.Serializable
  * 动态存储适配器接口
  */
 interface DynamicStorageAdapter {
-    suspend fun loadModule(moduleId: String, moduleData: ByteArray): ModuleLoadResult
+    suspend fun loadModule(
+        moduleId: String,
+        moduleData: ByteArray,
+    ): ModuleLoadResult
+
     suspend fun unloadModule(moduleId: String): Boolean
+
     suspend fun getModule(moduleId: String): DynamicModule?
+
     suspend fun getAllModules(): List<DynamicModule>
-    suspend fun installPlugin(pluginId: String, pluginData: ByteArray): PluginInstallResult
+
+    suspend fun installPlugin(
+        pluginId: String,
+        pluginData: ByteArray,
+    ): PluginInstallResult
+
     suspend fun uninstallPlugin(pluginId: String): Boolean
+
     suspend fun getPlugin(pluginId: String): DynamicPlugin?
+
     suspend fun getAllPlugins(): List<DynamicPlugin>
-    suspend fun updateModule(moduleId: String, newModuleData: ByteArray): ModuleUpdateResult
+
+    suspend fun updateModule(
+        moduleId: String,
+        newModuleData: ByteArray,
+    ): ModuleUpdateResult
+
     suspend fun reloadModule(moduleId: String): Boolean
+
     fun observeModuleStates(): Flow<Map<String, ModuleState>>
+
     fun observePluginStates(): Flow<Map<String, PluginState>>
 }
 
@@ -28,10 +48,13 @@ interface DynamicModule {
     val id: String
     val info: ModuleInfo
     val file: Any // Platform-specific file type
-    
+
     fun initialize(): Boolean
+
     fun stop()
+
     fun cleanup()
+
     fun reload()
 }
 
@@ -42,10 +65,13 @@ interface DynamicPlugin {
     val id: String
     val info: PluginInfo
     val file: Any // Platform-specific file type
-    
+
     fun install(): Boolean
+
     fun uninstall()
+
     fun stop()
+
     fun cleanup()
 }
 
@@ -57,7 +83,7 @@ enum class ModuleState {
     LOADED,
     UNLOADED,
     ERROR,
-    RELOADED
+    RELOADED,
 }
 
 /**
@@ -67,7 +93,7 @@ enum class PluginState {
     INSTALLING,
     INSTALLED,
     UNINSTALLED,
-    ERROR
+    ERROR,
 }
 
 /**
@@ -75,6 +101,7 @@ enum class PluginState {
  */
 sealed class ModuleLoadResult {
     data class Success(val module: DynamicModule) : ModuleLoadResult()
+
     data class Error(val error: String) : ModuleLoadResult()
 }
 
@@ -83,6 +110,7 @@ sealed class ModuleLoadResult {
  */
 sealed class ModuleUpdateResult {
     data class Success(val module: DynamicModule) : ModuleUpdateResult()
+
     data class Error(val error: String) : ModuleUpdateResult()
 }
 
@@ -91,6 +119,7 @@ sealed class ModuleUpdateResult {
  */
 sealed class PluginInstallResult {
     data class Success(val plugin: DynamicPlugin) : PluginInstallResult()
+
     data class Error(val error: String) : PluginInstallResult()
 }
 
@@ -106,7 +135,7 @@ data class ModuleInfo(
     val author: String,
     val minPlatformVersion: String,
     val permissions: List<String> = emptyList(),
-    val dependencies: List<String> = emptyList()
+    val dependencies: List<String> = emptyList(),
 )
 
 /**
@@ -121,5 +150,5 @@ data class PluginInfo(
     val author: String,
     val minPlatformVersion: String,
     val permissions: List<String> = emptyList(),
-    val dependencies: List<String> = emptyList()
+    val dependencies: List<String> = emptyList(),
 )

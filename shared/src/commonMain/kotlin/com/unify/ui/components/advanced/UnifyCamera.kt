@@ -11,15 +11,21 @@ import androidx.compose.ui.graphics.ImageBitmap
  */
 
 enum class CameraFacing {
-    FRONT, BACK
+    FRONT,
+    BACK,
 }
 
 enum class CameraMode {
-    PHOTO, VIDEO, SCAN
+    PHOTO,
+    VIDEO,
+    SCAN,
 }
 
 enum class FlashMode {
-    OFF, ON, AUTO, TORCH
+    OFF,
+    ON,
+    AUTO,
+    TORCH,
 }
 
 data class CameraConfig(
@@ -29,18 +35,22 @@ data class CameraConfig(
     val enableZoom: Boolean = true,
     val enableFocus: Boolean = true,
     val maxZoom: Float = 10f,
-    val videoQuality: VideoQuality = VideoQuality.HD
+    val videoQuality: VideoQuality = VideoQuality.HD,
 )
 
 enum class VideoQuality {
-    LOW, MEDIUM, HD, FULL_HD, ULTRA_HD
+    LOW,
+    MEDIUM,
+    HD,
+    FULL_HD,
+    ULTRA_HD,
 }
 
 data class CaptureResult(
     val success: Boolean,
     val filePath: String? = null,
     val bitmap: ImageBitmap? = null,
-    val error: String? = null
+    val error: String? = null,
 )
 
 @Composable
@@ -50,7 +60,7 @@ expect fun UnifyCamera(
     modifier: Modifier = Modifier,
     showControls: Boolean = true,
     enableGestures: Boolean = true,
-    onPermissionDenied: () -> Unit = {}
+    onPermissionDenied: () -> Unit = {},
 )
 
 @Composable
@@ -58,7 +68,7 @@ expect fun UnifyCameraPreview(
     config: CameraConfig = CameraConfig(),
     modifier: Modifier = Modifier,
     onCameraReady: () -> Unit = {},
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 @Composable
@@ -67,7 +77,7 @@ expect fun UnifyImageCapture(
     modifier: Modifier = Modifier,
     facing: CameraFacing = CameraFacing.BACK,
     flashMode: FlashMode = FlashMode.AUTO,
-    showPreview: Boolean = true
+    showPreview: Boolean = true,
 )
 
 @Composable
@@ -77,7 +87,7 @@ expect fun UnifyVideoCapture(
     facing: CameraFacing = CameraFacing.BACK,
     quality: VideoQuality = VideoQuality.HD,
     maxDuration: Long = 60000L, // 60 seconds
-    showPreview: Boolean = true
+    showPreview: Boolean = true,
 )
 
 @Composable
@@ -86,7 +96,7 @@ expect fun UnifyQRScanner(
     modifier: Modifier = Modifier,
     showOverlay: Boolean = true,
     overlayColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Red,
-    enableFlash: Boolean = true
+    enableFlash: Boolean = true,
 )
 
 @Composable
@@ -95,5 +105,5 @@ expect fun UnifyBarcodeScanner(
     modifier: Modifier = Modifier,
     supportedFormats: List<String> = listOf("QR_CODE", "CODE_128", "CODE_39", "EAN_13"),
     showOverlay: Boolean = true,
-    enableFlash: Boolean = true
+    enableFlash: Boolean = true,
 )

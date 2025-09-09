@@ -1,41 +1,23 @@
 package com.unify.core.mvi
 
-import kotlinx.coroutines.flow.MutableStateFlow
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.StateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.asStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.MutableSharedFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.SharedFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.coroutines.flow.asSharedFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.CoroutineScope
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * Unify MVI架构实现 - Model-View-Intent模式
  */
 abstract class UnifyMVIViewModel<S : MVIState, I : MVIIntent, E : MVIEffect>(
     initialState: S,
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
 ) {
-    
     companion object {
         const val MAX_EFFECT_BUFFER = 64
         const val MAX_INTENT_BUFFER = 128
@@ -44,24 +26,26 @@ abstract class UnifyMVIViewModel<S : MVIState, I : MVIIntent, E : MVIEffect>(
         const val PROCESSING_TIMEOUT_MS = 5000L
         const val MAX_RETRY_COUNT = 3
     }
-    
+
     private val _state = MutableStateFlow(initialState)
     val state: StateFlow<S> = _state.asStateFlow()
-    
-    private val _effects = MutableSharedFlow<E>(
-        replay = EFFECT_REPLAY_CACHE,
-        extraBufferCapacity = MAX_EFFECT_BUFFER
-    )
+
+    private val _effects =
+        MutableSharedFlow<E>(
+            replay = EFFECT_REPLAY_CACHE,
+            extraBufferCapacity = MAX_EFFECT_BUFFER,
+        )
     val effects: SharedFlow<E> = _effects.asSharedFlow()
-    
-    private val _intents = MutableSharedFlow<I>(
-        replay = 0,
-        extraBufferCapacity = MAX_INTENT_BUFFER
-    )
-    
+
+    private val _intents =
+        MutableSharedFlow<I>(
+            replay = 0,
+            extraBufferCapacity = MAX_INTENT_BUFFER,
+        )
+
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
-    
+
     init {
         scope.launch {
             _intents.collect { intent ->
@@ -69,19 +53,19 @@ abstract class UnifyMVIViewModel<S : MVIState, I : MVIIntent, E : MVIEffect>(
             }
         }
     }
-    
+
     /**
      * 发送Intent
      */
     fun sendIntent(intent: I) {
         _intents.tryEmit(intent)
     }
-    
+
     /**
      * 处理Intent - 子类需要实现
      */
     protected abstract suspend fun processIntent(intent: I)
-    
+
     /**
      * 更新状态
      */
@@ -90,26 +74,26 @@ abstract class UnifyMVIViewModel<S : MVIState, I : MVIIntent, E : MVIEffect>(
         val newState = reducer(currentState)
         _state.value = newState
     }
-    
+
     /**
      * 发送Effect
      */
     protected fun sendEffect(effect: E) {
         _effects.tryEmit(effect)
     }
-    
+
     /**
      * 获取当前状态
      */
     protected fun getCurrentState(): S = _state.value
-    
+
     /**
      * 设置处理状态
      */
     protected fun setProcessing(processing: Boolean) {
         _isProcessing.value = processing
     }
-    
+
     /**
      * 批量处理Intent
      */
@@ -118,7 +102,7 @@ abstract class UnifyMVIViewModel<S : MVIState, I : MVIIntent, E : MVIEffect>(
             sendIntent(intent)
         }
     }
-    
+
     /**
      * 清理资源
      */
@@ -150,7 +134,7 @@ data class UnifyMVIState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val data: Map<String, String> = emptyMap(),
-    val timestamp: Long = getCurrentTimeMillis()
+    val timestamp: Long = getCurrentTimeMillis(),
 ) : MVIState
 
 /**
@@ -158,10 +142,15 @@ data class UnifyMVIState(
  */
 sealed class UnifyMVIIntent : MVIIntent {
     object LoadData : UnifyMVIIntent()
+
     object RefreshData : UnifyMVIIntent()
+
     object ClearError : UnifyMVIIntent()
+
     data class UpdateData(val key: String, val value: String) : UnifyMVIIntent()
+
     data class DeleteData(val key: String) : UnifyMVIIntent()
+
     data class CustomIntent(val action: String, val payload: Map<String, String> = emptyMap()) : UnifyMVIIntent()
 }
 
@@ -170,10 +159,15 @@ sealed class UnifyMVIIntent : MVIIntent {
  */
 sealed class UnifyMVIEffect : MVIEffect {
     data class ShowMessage(val message: String) : UnifyMVIEffect()
+
     data class NavigateTo(val destination: String) : UnifyMVIEffect()
+
     data class ShowError(val error: String) : UnifyMVIEffect()
+
     object ShowLoading : UnifyMVIEffect()
+
     object HideLoading : UnifyMVIEffect()
+
     data class CustomEffect(val type: String, val data: Map<String, String> = emptyMap()) : UnifyMVIEffect()
 }
 
@@ -181,15 +175,14 @@ sealed class UnifyMVIEffect : MVIEffect {
  * 通用MVI ViewModel实现
  */
 class UnifyMVIViewModelImpl(
-    scope: CoroutineScope
+    scope: CoroutineScope,
 ) : UnifyMVIViewModel<UnifyMVIState, UnifyMVIIntent, UnifyMVIEffect>(
-    initialState = UnifyMVIState(),
-    scope = scope
-) {
-    
+        initialState = UnifyMVIState(),
+        scope = scope,
+    ) {
     override suspend fun processIntent(intent: UnifyMVIIntent) {
         setProcessing(true)
-        
+
         try {
             when (intent) {
                 is UnifyMVIIntent.LoadData -> handleLoadData()
@@ -206,104 +199,111 @@ class UnifyMVIViewModelImpl(
             setProcessing(false)
         }
     }
-    
+
     private suspend fun handleLoadData() {
         updateState { it.copy(isLoading = true, error = null) }
         sendEffect(UnifyMVIEffect.ShowLoading)
-        
+
         // 模拟数据加载
         kotlinx.coroutines.delay(1000)
-        
-        val mockData = mapOf(
-            "user_id" to "12345",
-            "username" to "test_user",
-            "email" to "test@example.com",
-            "last_login" to getCurrentTimeMillis().toString()
-        )
-        
-        updateState { 
+
+        val mockData =
+            mapOf(
+                "user_id" to "12345",
+                "username" to "test_user",
+                "email" to "test@example.com",
+                "last_login" to getCurrentTimeMillis().toString(),
+            )
+
+        updateState {
             it.copy(
-                isLoading = false, 
+                isLoading = false,
                 data = mockData,
-                timestamp = getCurrentTimeMillis()
-            ) 
+                timestamp = getCurrentTimeMillis(),
+            )
         }
         sendEffect(UnifyMVIEffect.HideLoading)
         sendEffect(UnifyMVIEffect.ShowMessage("数据加载完成"))
     }
-    
+
     private suspend fun handleRefreshData() {
         updateState { it.copy(isLoading = true, error = null) }
-        
+
         // 模拟刷新延迟
         kotlinx.coroutines.delay(500)
-        
+
         val currentData = getCurrentState().data.toMutableMap()
         currentData["last_refresh"] = getCurrentTimeMillis().toString()
-        
-        updateState { 
+
+        updateState {
             it.copy(
-                isLoading = false, 
+                isLoading = false,
                 data = currentData,
-                timestamp = getCurrentTimeMillis()
-            ) 
+                timestamp = getCurrentTimeMillis(),
+            )
         }
         sendEffect(UnifyMVIEffect.ShowMessage("数据刷新完成"))
     }
-    
+
     private fun handleClearError() {
         updateState { it.copy(error = null) }
     }
-    
-    private fun handleUpdateData(key: String, value: String) {
+
+    private fun handleUpdateData(
+        key: String,
+        value: String,
+    ) {
         val currentData = getCurrentState().data.toMutableMap()
         currentData[key] = value
-        
-        updateState { 
+
+        updateState {
             it.copy(
                 data = currentData,
-                timestamp = getCurrentTimeMillis()
-            ) 
+                timestamp = getCurrentTimeMillis(),
+            )
         }
         sendEffect(UnifyMVIEffect.ShowMessage("数据已更新: $key"))
     }
-    
+
     private fun handleDeleteData(key: String) {
         val currentData = getCurrentState().data.toMutableMap()
         val removed = currentData.remove(key)
-        
+
         if (removed != null) {
-            updateState { 
+            updateState {
                 it.copy(
                     data = currentData,
-                    timestamp = getCurrentTimeMillis()
-                ) 
+                    timestamp = getCurrentTimeMillis(),
+                )
             }
             sendEffect(UnifyMVIEffect.ShowMessage("数据已删除: $key"))
         } else {
             sendEffect(UnifyMVIEffect.ShowError("要删除的数据不存在: $key"))
         }
     }
-    
-    private suspend fun handleCustomIntent(action: String, payload: Map<String, String>) {
+
+    private suspend fun handleCustomIntent(
+        action: String,
+        payload: Map<String, String>,
+    ) {
         when (action) {
             "BATCH_UPDATE" -> {
                 val currentData = getCurrentState().data.toMutableMap()
                 currentData.putAll(payload)
-                updateState { 
+                updateState {
                     it.copy(
                         data = currentData,
-                        timestamp = getCurrentTimeMillis()
-                    ) 
+                        timestamp = getCurrentTimeMillis(),
+                    )
                 }
                 sendEffect(UnifyMVIEffect.ShowMessage("批量更新完成"))
             }
             "CLEAR_ALL" -> {
-                updateState { 
+                updateState {
                     it.copy(
                         data = emptyMap(),
-                        timestamp = getCurrentTimeMillis()
-                    ) 
+                        timestamp = getCurrentTimeMillis(),
+                    )
                 }
                 sendEffect(UnifyMVIEffect.ShowMessage("所有数据已清除"))
             }
@@ -321,10 +321,9 @@ class UnifyMVIViewModelImpl(
  * MVI状态管理器
  */
 class MVIStateManager<S : MVIState> {
-    
     private val _stateHistory = mutableListOf<S>()
     private val maxHistorySize = 50
-    
+
     /**
      * 保存状态到历史记录
      */
@@ -334,28 +333,30 @@ class MVIStateManager<S : MVIState> {
             _stateHistory.removeAt(0)
         }
     }
-    
+
     /**
      * 获取状态历史
      */
     fun getStateHistory(): List<S> = _stateHistory.toList()
-    
+
     /**
      * 获取上一个状态
      */
     fun getPreviousState(): S? {
         return if (_stateHistory.size >= 2) {
             _stateHistory[_stateHistory.size - 2]
-        } else null
+        } else {
+            null
+        }
     }
-    
+
     /**
      * 清除历史记录
      */
     fun clearHistory() {
         _stateHistory.clear()
     }
-    
+
     /**
      * 获取历史记录大小
      */
@@ -369,7 +370,7 @@ interface MVIMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> {
     suspend fun process(
         intent: I,
         currentState: S,
-        next: suspend (I) -> Unit
+        next: suspend (I) -> Unit,
     )
 }
 
@@ -377,15 +378,14 @@ interface MVIMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> {
  * 日志中间件实现
  */
 class LoggingMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> : MVIMiddleware<S, I, E> {
-    
     override suspend fun process(
         intent: I,
         currentState: S,
-        next: suspend (I) -> Unit
+        next: suspend (I) -> Unit,
     ) {
         val startTime = getCurrentTimeMillis()
         println("MVI: 处理Intent: ${intent::class.simpleName}")
-        
+
         try {
             next(intent)
             val duration = getCurrentTimeMillis() - startTime
@@ -402,17 +402,16 @@ class LoggingMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> : MVIMiddlew
  * 性能监控中间件
  */
 class PerformanceMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> : MVIMiddleware<S, I, E> {
-    
     private val performanceMetrics = mutableMapOf<String, MutableList<Long>>()
-    
+
     override suspend fun process(
         intent: I,
         currentState: S,
-        next: suspend (I) -> Unit
+        next: suspend (I) -> Unit,
     ) {
         val intentName = intent::class.simpleName ?: "Unknown"
         val startTime = getCurrentTimeMillis()
-        
+
         try {
             next(intent)
         } finally {
@@ -420,24 +419,29 @@ class PerformanceMiddleware<S : MVIState, I : MVIIntent, E : MVIEffect> : MVIMid
             recordMetric(intentName, duration)
         }
     }
-    
-    private fun recordMetric(intentName: String, duration: Long) {
+
+    private fun recordMetric(
+        intentName: String,
+        duration: Long,
+    ) {
         val metrics = performanceMetrics.getOrPut(intentName) { mutableListOf() }
         metrics.add(duration)
-        
+
         // 保持最近100次记录
         if (metrics.size > 100) {
             metrics.removeAt(0)
         }
     }
-    
+
     fun getAverageProcessingTime(intentName: String): Double? {
         val metrics = performanceMetrics[intentName]
         return if (metrics?.isNotEmpty() == true) {
             metrics.average()
-        } else null
+        } else {
+            null
+        }
     }
-    
+
     fun getAllMetrics(): Map<String, List<Long>> {
         return performanceMetrics.mapValues { it.value.toList() }
     }

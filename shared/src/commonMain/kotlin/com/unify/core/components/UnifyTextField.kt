@@ -1,6 +1,5 @@
 package com.unify.core.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
@@ -40,19 +39,21 @@ fun UnifyTextField(
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     isPassword: Boolean = false,
-    isOutlined: Boolean = true
+    isOutlined: Boolean = true,
 ) {
-    val actualVisualTransformation = if (isPassword) {
-        PasswordVisualTransformation()
-    } else {
-        visualTransformation
-    }
-    
-    val keyboardOptions = KeyboardOptions(
-        keyboardType = keyboardType,
-        imeAction = imeAction
-    )
-    
+    val actualVisualTransformation =
+        if (isPassword) {
+            PasswordVisualTransformation()
+        } else {
+            visualTransformation
+        }
+
+    val keyboardOptions =
+        KeyboardOptions(
+            keyboardType = keyboardType,
+            imeAction = imeAction,
+        )
+
     if (isOutlined) {
         OutlinedTextField(
             value = value,
@@ -71,9 +72,12 @@ fun UnifyTextField(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             visualTransformation = actualVisualTransformation,
-            supportingText = if (isError && errorMessage != null) {
-                { Text(errorMessage, color = Color.Red) }
-            } else null
+            supportingText =
+                if (isError && errorMessage != null) {
+                    { Text(errorMessage, color = Color.Red) }
+                } else {
+                    null
+                },
         )
     } else {
         TextField(
@@ -93,10 +97,13 @@ fun UnifyTextField(
             keyboardOptions = keyboardOptions,
             keyboardActions = keyboardActions,
             visualTransformation = actualVisualTransformation,
-            supportingText = if (isError && errorMessage != null) {
-                { Text(errorMessage, color = Color.Red) }
-            } else null,
-            colors = TextFieldDefaults.colors()
+            supportingText =
+                if (isError && errorMessage != null) {
+                    { Text(errorMessage, color = Color.Red) }
+                } else {
+                    null
+                },
+            colors = TextFieldDefaults.colors(),
         )
     }
 }

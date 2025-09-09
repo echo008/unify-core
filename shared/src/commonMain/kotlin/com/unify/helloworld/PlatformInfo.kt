@@ -1,8 +1,5 @@
 package com.unify.helloworld
 
-import kotlinx.serialization.Serializable
-import com.unify.core.utils.UnifyTimeUtils
-
 /**
  * 跨平台信息接口
  * 定义获取平台名称和设备信息的统一接口
@@ -22,7 +19,7 @@ data class PlatformInfo(
     val version: String,
     val deviceInfo: String,
     val architecture: String,
-    val isDebug: Boolean = false
+    val isDebug: Boolean = false,
 )
 
 /**
@@ -36,18 +33,18 @@ class SimplePlatformInfo {
             version = getPlatformVersion(),
             deviceInfo = getDeviceInfo(),
             architecture = getArchitecture(),
-            isDebug = isDebugBuild()
+            isDebug = isDebugBuild(),
         )
     }
-    
+
     private fun getPlatformVersion(): String {
         return "1.0.0"
     }
-    
+
     private fun getArchitecture(): String {
         return "unknown" // 简化实现，避免System引用
     }
-    
+
     private fun isDebugBuild(): Boolean {
         return true // 在实际项目中应该根据构建配置确定
     }

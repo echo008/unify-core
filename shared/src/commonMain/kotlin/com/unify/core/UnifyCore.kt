@@ -11,12 +11,16 @@ import com.unify.device.UnifyDeviceManager
 interface UnifyCore {
     val uiManager: UnifyUIManager
     val dataManager: UnifyDataManager
+
     // val networkManager: UnifyNetworkManager // 暂时禁用，等待修复编译器内部错误
     val deviceManager: UnifyDeviceManager
-    
+
     suspend fun initialize()
+
     suspend fun shutdown()
+
     fun isInitialized(): Boolean
+
     fun getPlatformInfo(): PlatformInfo
 }
 
@@ -28,7 +32,7 @@ data class PlatformInfo(
     val version: String,
     val deviceModel: String,
     val osVersion: String,
-    val capabilities: List<String>
+    val capabilities: List<String>,
 )
 
 /**

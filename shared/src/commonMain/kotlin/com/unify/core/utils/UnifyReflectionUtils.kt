@@ -10,7 +10,7 @@ expect object UnifyReflectionUtils {
      * 获取类的简单名称
      */
     fun <T : Any> getClassName(obj: T): String
-    
+
     /**
      * 获取KClass的简单名称
      */

@@ -1,11 +1,9 @@
 package com.unify.ui.components.performance
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -14,17 +12,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.text.font.FontWeight
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import com.unify.core.utils.UnifyStringUtils
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.unify.core.platform.getCurrentTimeMillis
 import com.unify.core.utils.UnifyRuntimeUtils
+import com.unify.core.utils.UnifyStringUtils
 import kotlinx.coroutines.delay
-import kotlin.math.sin
-import kotlin.random.Random
 
 /**
  * 跨平台统一性能监控组件
@@ -38,31 +31,34 @@ data class PerformanceMetric(
     val value: Double,
     val unit: String,
     val status: PerformanceStatus,
-    val trend: List<Double> = emptyList()
+    val trend: List<Double> = emptyList(),
 )
 
 enum class PerformanceStatus {
-    EXCELLENT, GOOD, WARNING, CRITICAL
+    EXCELLENT,
+    GOOD,
+    WARNING,
+    CRITICAL,
 }
 
 data class MemoryInfo(
     val used: Long,
     val total: Long,
     val available: Long,
-    val gcCount: Int = 0
+    val gcCount: Int = 0,
 )
 
 data class CPUInfo(
     val usage: Double,
     val cores: Int,
-    val frequency: Double = 0.0
+    val frequency: Double = 0.0,
 )
 
 data class NetworkInfo(
     val downloadSpeed: Double,
     val uploadSpeed: Double,
     val latency: Double,
-    val packetsLost: Int = 0
+    val packetsLost: Int = 0,
 )
 
 /**
@@ -71,56 +67,57 @@ data class NetworkInfo(
 @Composable
 fun UnifyPerformanceDashboard(
     modifier: Modifier = Modifier,
-    refreshInterval: Long = 1000L
+    refreshInterval: Long = 1000L,
 ) {
     var performanceMetrics by remember { mutableStateOf(generateRealMetrics()) }
     var isMonitoring by remember { mutableStateOf(true) }
-    
+
     LaunchedEffect(isMonitoring) {
         while (isMonitoring) {
             delay(refreshInterval)
             performanceMetrics = generateRealMetrics()
         }
     }
-    
+
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .padding(16.dp),
     ) {
         // 标题和控制
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = "性能监控",
                 style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
             )
-            
+
             Switch(
                 checked = isMonitoring,
-                onCheckedChange = { isMonitoring = it }
+                onCheckedChange = { isMonitoring = it },
             )
         }
-        
+
         Spacer(modifier = Modifier.height(16.dp))
-        
+
         // 性能指标网格
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(performanceMetrics.chunked(2)) { rowMetrics ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     rowMetrics.forEach { metric ->
                         PerformanceMetricCard(
                             metric = metric,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                     }
                     // 如果行中只有一个项目，添加空白占位
@@ -139,61 +136,64 @@ fun UnifyPerformanceDashboard(
 @Composable
 fun PerformanceMetricCard(
     metric: PerformanceMetric,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val statusColor = when (metric.status) {
-        PerformanceStatus.EXCELLENT -> Color(0xFF4CAF50)
-        PerformanceStatus.GOOD -> Color(0xFF8BC34A)
-        PerformanceStatus.WARNING -> Color(0xFFFF9800)
-        PerformanceStatus.CRITICAL -> Color(0xFFF44336)
-    }
-    
+    val statusColor =
+        when (metric.status) {
+            PerformanceStatus.EXCELLENT -> Color(0xFF4CAF50)
+            PerformanceStatus.GOOD -> Color(0xFF8BC34A)
+            PerformanceStatus.WARNING -> Color(0xFFFF9800)
+            PerformanceStatus.CRITICAL -> Color(0xFFF44336)
+        }
+
     Card(
         modifier = modifier,
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = statusColor.copy(alpha = 0.1f)
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor = statusColor.copy(alpha = 0.1f),
+            ),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = metric.name,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
-                
+
                 Icon(
                     imageVector = getStatusIcon(metric.status),
                     contentDescription = null,
                     tint = statusColor,
-                    modifier = Modifier.size(16.dp)
+                    modifier = Modifier.size(16.dp),
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Text(
                 text = "${metric.value} ${metric.unit}",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = statusColor
+                color = statusColor,
             )
-            
+
             if (metric.trend.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 TrendChart(
                     data = metric.trend,
                     color = statusColor,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(40.dp)
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .height(40.dp),
                 )
             }
         }
@@ -207,37 +207,38 @@ fun PerformanceMetricCard(
 fun TrendChart(
     data: List<Double>,
     color: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Canvas(modifier = modifier) {
         if (data.size < 2) return@Canvas
-        
+
         val maxValue = data.maxOrNull() ?: 1.0
         val minValue = data.minOrNull() ?: 0.0
         val range = maxValue - minValue
-        
+
         val path = Path()
         val stepX = size.width / (data.size - 1)
-        
+
         data.forEachIndexed { index, value ->
             val x = index * stepX
-            val y = if (range > 0) {
-                size.height - ((value - minValue) / range * size.height).toFloat()
-            } else {
-                size.height / 2
-            }
-            
+            val y =
+                if (range > 0) {
+                    size.height - ((value - minValue) / range * size.height).toFloat()
+                } else {
+                    size.height / 2
+                }
+
             if (index == 0) {
                 path.moveTo(x, y)
             } else {
                 path.lineTo(x, y)
             }
         }
-        
+
         drawPath(
             path = path,
             color = color,
-            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx())
+            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()),
         )
     }
 }
@@ -249,88 +250,89 @@ fun TrendChart(
 fun UnifyMemoryMonitor(
     cpuUsage: Float = 45.2f,
     fps: Float = 60.0f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     var memoryInfo by remember { mutableStateOf(generateRealMemoryInfo()) }
     var isMonitoring by remember { mutableStateOf(true) }
-    
+
     LaunchedEffect(isMonitoring) {
         while (isMonitoring) {
             delay(2000)
             memoryInfo = generateRealMemoryInfo()
         }
     }
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "内存使用情况",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
-                
+
                 Switch(
                     checked = isMonitoring,
-                    onCheckedChange = { isMonitoring = it }
+                    onCheckedChange = { isMonitoring = it },
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             // 内存使用进度条
             val usagePercentage = (memoryInfo.used.toFloat() / memoryInfo.total.toFloat())
-            
+
             Column {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "CPU: ${cpuUsage}%",
-                        style = MaterialTheme.typography.bodySmall
+                        text = "CPU: $cpuUsage%",
+                        style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
                         text = "FPS: ${fps.toInt()}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
                         text = "已使用: ${formatBytes(memoryInfo.used)}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                     Text(
                         text = "总计: ${formatBytes(memoryInfo.total)}",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 LinearProgressIndicator(
                     progress = { usagePercentage },
                     modifier = Modifier.fillMaxWidth(),
-                    color = when {
-                        usagePercentage > 0.9f -> Color(0xFFF44336)
-                        usagePercentage > 0.7f -> Color(0xFFFF9800)
-                        else -> Color(0xFF4CAF50)
-                    }
+                    color =
+                        when {
+                            usagePercentage > 0.9f -> Color(0xFFF44336)
+                            usagePercentage > 0.7f -> Color(0xFFFF9800)
+                            else -> Color(0xFF4CAF50)
+                        },
                 )
-                
+
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
                     text = "可用: ${formatBytes(memoryInfo.available)} | GC次数: ${memoryInfo.gcCount}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 )
             }
         }
@@ -341,13 +343,11 @@ fun UnifyMemoryMonitor(
  * CPU使用监控组件
  */
 @Composable
-fun UnifyCPUMonitor(
-    modifier: Modifier = Modifier
-) {
+fun UnifyCPUMonitor(modifier: Modifier = Modifier) {
     var cpuInfo by remember { mutableStateOf(generateRealCPUInfo()) }
     var cpuHistory by remember { mutableStateOf(List(20) { 0.0 }) }
     var isMonitoring by remember { mutableStateOf(true) }
-    
+
     LaunchedEffect(isMonitoring) {
         while (isMonitoring) {
             delay(1000)
@@ -355,89 +355,91 @@ fun UnifyCPUMonitor(
             cpuHistory = cpuHistory.drop(1) + cpuInfo.usage
         }
     }
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "CPU使用情况",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
-                
+
                 Switch(
                     checked = isMonitoring,
-                    onCheckedChange = { isMonitoring = it }
+                    onCheckedChange = { isMonitoring = it },
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column {
                     Text(
                         text = "${UnifyStringUtils.format("%.1f", cpuInfo.usage)}%",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
-                        color = when {
-                            cpuInfo.usage > 80 -> Color(0xFFF44336)
-                            cpuInfo.usage > 60 -> Color(0xFFFF9800)
-                            else -> Color(0xFF4CAF50)
-                        }
+                        color =
+                            when {
+                                cpuInfo.usage > 80 -> Color(0xFFF44336)
+                                cpuInfo.usage > 60 -> Color(0xFFFF9800)
+                                else -> Color(0xFF4CAF50)
+                            },
                     )
                     Text(
                         text = "CPU使用率",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 Column {
                     Text(
                         text = "${cpuInfo.cores}",
                         style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                     Text(
                         text = "核心数",
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
-                
+
                 if (cpuInfo.frequency > 0) {
                     Column {
                         Text(
                             text = "${UnifyStringUtils.format("%.1f", cpuInfo.frequency)}GHz",
                             style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                         Text(
                             text = "频率",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
                         )
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             TrendChart(
                 data = cpuHistory,
                 color = Color(0xFF2196F3),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(60.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .height(60.dp),
             )
         }
     }
@@ -447,81 +449,80 @@ fun UnifyCPUMonitor(
  * 网络性能监控组件
  */
 @Composable
-fun UnifyNetworkMonitor(
-    modifier: Modifier = Modifier
-) {
+fun UnifyNetworkMonitor(modifier: Modifier = Modifier) {
     var networkInfo by remember { mutableStateOf(generateRealNetworkInfo()) }
     var isMonitoring by remember { mutableStateOf(true) }
-    
+
     LaunchedEffect(isMonitoring) {
         while (isMonitoring) {
             delay(2000)
             networkInfo = generateRealNetworkInfo()
         }
     }
-    
+
     Card(
         modifier = modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = "网络性能",
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
-                
+
                 Switch(
                     checked = isMonitoring,
-                    onCheckedChange = { isMonitoring = it }
+                    onCheckedChange = { isMonitoring = it },
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 NetworkMetricItem(
                     icon = Icons.Default.Download,
                     label = "下载",
                     value = "${UnifyStringUtils.format("%.1f", networkInfo.downloadSpeed)} MB/s",
-                    color = Color(0xFF4CAF50)
+                    color = Color(0xFF4CAF50),
                 )
-                
+
                 NetworkMetricItem(
                     icon = Icons.Default.Upload,
                     label = "上传",
                     value = "${UnifyStringUtils.format("%.1f", networkInfo.uploadSpeed)} MB/s",
-                    color = Color(0xFF2196F3)
+                    color = Color(0xFF2196F3),
                 )
-                
+
                 NetworkMetricItem(
                     icon = Icons.Default.Speed,
                     label = "延迟",
                     value = "${UnifyStringUtils.format("%.0f", networkInfo.latency)} ms",
-                    color = when {
-                        networkInfo.latency > 100 -> Color(0xFFF44336)
-                        networkInfo.latency > 50 -> Color(0xFFFF9800)
-                        else -> Color(0xFF4CAF50)
-                    }
+                    color =
+                        when {
+                            networkInfo.latency > 100 -> Color(0xFFF44336)
+                            networkInfo.latency > 50 -> Color(0xFFFF9800)
+                            else -> Color(0xFF4CAF50)
+                        },
                 )
             }
-            
+
             if (networkInfo.packetsLost > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "丢包: ${networkInfo.packetsLost} 个",
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color(0xFFF44336)
+                    color = Color(0xFFF44336),
                 )
             }
         }
@@ -533,50 +534,51 @@ private fun NetworkMetricItem(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
-    color: Color
+    color: Color,
 ) {
     Column(
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
             imageVector = icon,
             contentDescription = null,
             tint = color,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = value,
             fontWeight = FontWeight.Bold,
-            color = color
+            color = color,
         )
         Text(
             text = label,
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         )
     }
 }
 
 // 辅助函数
-private fun getStatusIcon(status: PerformanceStatus) = when (status) {
-    PerformanceStatus.EXCELLENT -> Icons.Default.CheckCircle
-    PerformanceStatus.GOOD -> Icons.Default.Check
-    PerformanceStatus.WARNING -> Icons.Default.Warning
-    PerformanceStatus.CRITICAL -> Icons.Default.Error
-}
+private fun getStatusIcon(status: PerformanceStatus) =
+    when (status) {
+        PerformanceStatus.EXCELLENT -> Icons.Default.CheckCircle
+        PerformanceStatus.GOOD -> Icons.Default.Check
+        PerformanceStatus.WARNING -> Icons.Default.Warning
+        PerformanceStatus.CRITICAL -> Icons.Default.Error
+    }
 
 private fun formatBytes(bytes: Long): String {
     val units = arrayOf("B", "KB", "MB", "GB", "TB")
     var size = bytes.toDouble()
     var unitIndex = 0
-    
+
     while (size >= 1024 && unitIndex < units.size - 1) {
         size /= 1024
         unitIndex++
     }
-    
-    return "${size} ${units[unitIndex]}"
+
+    return "$size ${units[unitIndex]}"
 }
 
 // 真实性能数据获取函数
@@ -584,48 +586,48 @@ private fun generateRealMetrics(): List<PerformanceMetric> {
     val memoryInfo = generateRealMemoryInfo()
     val cpuInfo = generateRealCPUInfo()
     val networkInfo = generateRealNetworkInfo()
-    
+
     return listOf(
         PerformanceMetric(
             name = "FPS",
             value = getCurrentFPS(),
             unit = "fps",
             status = if (getCurrentFPS() >= 55.0) PerformanceStatus.EXCELLENT else PerformanceStatus.GOOD,
-            trend = getFPSHistory()
+            trend = getFPSHistory(),
         ),
         PerformanceMetric(
             name = "内存",
             value = (memoryInfo.used.toDouble() / memoryInfo.total.toDouble()) * 100,
             unit = "%",
             status = getMemoryStatus(memoryInfo),
-            trend = getMemoryHistory()
+            trend = getMemoryHistory(),
         ),
         PerformanceMetric(
             name = "CPU",
             value = cpuInfo.usage,
             unit = "%",
             status = getCPUStatus(cpuInfo.usage),
-            trend = getCPUHistory()
+            trend = getCPUHistory(),
         ),
         PerformanceMetric(
             name = "网络",
             value = networkInfo.latency,
             unit = "ms",
             status = getNetworkStatus(networkInfo.latency),
-            trend = getNetworkHistory()
+            trend = getNetworkHistory(),
         ),
         PerformanceMetric(
             name = "电池",
             value = getBatteryLevel(),
             unit = "%",
-            status = getBatteryStatus()
+            status = getBatteryStatus(),
         ),
         PerformanceMetric(
             name = "温度",
             value = getDeviceTemperature(),
             unit = "°C",
-            status = getTemperatureStatus()
-        )
+            status = getTemperatureStatus(),
+        ),
     )
 }
 
@@ -634,12 +636,12 @@ private fun generateRealMemoryInfo(): MemoryInfo {
     val totalMemory = UnifyRuntimeUtils.getTotalMemory()
     val freeMemory = UnifyRuntimeUtils.getAvailableMemory()
     val usedMemory = totalMemory - freeMemory
-    
+
     return MemoryInfo(
         used = usedMemory,
         total = maxMemory,
         available = maxMemory - usedMemory,
-        gcCount = getGCCount()
+        gcCount = getGCCount(),
     )
 }
 
@@ -647,7 +649,7 @@ private fun generateRealCPUInfo(): CPUInfo {
     return CPUInfo(
         usage = getCurrentCPUUsage(),
         cores = UnifyRuntimeUtils.availableProcessors(),
-        frequency = getCPUFrequency()
+        frequency = getCPUFrequency(),
     )
 }
 
@@ -656,7 +658,7 @@ private fun generateRealNetworkInfo(): NetworkInfo {
         downloadSpeed = getCurrentDownloadSpeed(),
         uploadSpeed = getCurrentUploadSpeed(),
         latency = getCurrentNetworkLatency(),
-        packetsLost = getPacketLossCount()
+        packetsLost = getPacketLossCount(),
     )
 }
 
@@ -752,11 +754,12 @@ private fun getGCCount(): Int {
 
 private fun getCurrentCPUUsage(): Double {
     // 基于系统负载计算CPU使用率
-    val loadAverage = try {
-        UnifyRuntimeUtils.getSystemLoadAverage()
-    } catch (e: Exception) {
-        0.5 // 默认值
-    }
+    val loadAverage =
+        try {
+            UnifyRuntimeUtils.getSystemLoadAverage()
+        } catch (e: Exception) {
+            0.5 // 默认值
+        }
     return (loadAverage * 100).coerceIn(0.0, 100.0)
 }
 

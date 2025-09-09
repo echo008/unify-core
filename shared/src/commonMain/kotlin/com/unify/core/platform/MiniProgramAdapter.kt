@@ -4,7 +4,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 /**
  * 小程序适配器 - 统一小程序平台差异处理
@@ -13,9 +12,9 @@ import kotlinx.serialization.json.Json
 class MiniProgramAdapter {
     private val bridge = MiniAppBridgeFactory.getInstance()
     private val _platformState = MutableStateFlow(MiniProgramPlatformState())
-    
+
     val platformState: StateFlow<MiniProgramPlatformState> = _platformState
-    
+
     /**
      * 初始化小程序适配器
      */
@@ -23,89 +22,95 @@ class MiniProgramAdapter {
         return try {
             val appInfo = bridge.getAppInfo()
             val platformType = bridge.getPlatformType()
-            
-            _platformState.value = _platformState.value.copy(
-                isInitialized = true,
-                platformType = platformType,
-                appInfo = appInfo
-            )
-            
+
+            _platformState.value =
+                _platformState.value.copy(
+                    isInitialized = true,
+                    platformType = platformType,
+                    appInfo = appInfo,
+                )
+
             MiniProgramInitResult.Success(appInfo)
         } catch (e: Exception) {
-            _platformState.value = _platformState.value.copy(
-                isInitialized = false,
-                error = e.message
-            )
+            _platformState.value =
+                _platformState.value.copy(
+                    isInitialized = false,
+                    error = e.message,
+                )
             MiniProgramInitResult.Error(e.message ?: "初始化失败")
         }
     }
-    
+
     /**
      * 获取平台能力支持情况
      */
     fun getPlatformCapabilities(): MiniProgramCapabilities {
         val platformType = _platformState.value.platformType
         return when (platformType) {
-            MiniAppPlatformType.WECHAT -> MiniProgramCapabilities(
-                supportLogin = true,
-                supportPayment = true,
-                supportShare = true,
-                supportLocation = true,
-                supportCamera = true,
-                supportBluetooth = true,
-                supportNFC = false,
-                supportBiometric = false,
-                supportPush = true,
-                supportLivePlayer = true,
-                supportCanvas = true,
-                supportWebGL = false
-            )
-            MiniAppPlatformType.ALIPAY -> MiniProgramCapabilities(
-                supportLogin = true,
-                supportPayment = true,
-                supportShare = true,
-                supportLocation = true,
-                supportCamera = true,
-                supportBluetooth = false,
-                supportNFC = true,
-                supportBiometric = true,
-                supportPush = true,
-                supportLivePlayer = false,
-                supportCanvas = true,
-                supportWebGL = false
-            )
-            MiniAppPlatformType.BYTEDANCE -> MiniProgramCapabilities(
-                supportLogin = true,
-                supportPayment = false,
-                supportShare = true,
-                supportLocation = true,
-                supportCamera = true,
-                supportBluetooth = false,
-                supportNFC = false,
-                supportBiometric = false,
-                supportPush = true,
-                supportLivePlayer = true,
-                supportCanvas = true,
-                supportWebGL = true
-            )
-            MiniAppPlatformType.BAIDU -> MiniProgramCapabilities(
-                supportLogin = true,
-                supportPayment = true,
-                supportShare = true,
-                supportLocation = true,
-                supportCamera = true,
-                supportBluetooth = false,
-                supportNFC = false,
-                supportBiometric = false,
-                supportPush = true,
-                supportLivePlayer = false,
-                supportCanvas = true,
-                supportWebGL = false
-            )
+            MiniAppPlatformType.WECHAT ->
+                MiniProgramCapabilities(
+                    supportLogin = true,
+                    supportPayment = true,
+                    supportShare = true,
+                    supportLocation = true,
+                    supportCamera = true,
+                    supportBluetooth = true,
+                    supportNFC = false,
+                    supportBiometric = false,
+                    supportPush = true,
+                    supportLivePlayer = true,
+                    supportCanvas = true,
+                    supportWebGL = false,
+                )
+            MiniAppPlatformType.ALIPAY ->
+                MiniProgramCapabilities(
+                    supportLogin = true,
+                    supportPayment = true,
+                    supportShare = true,
+                    supportLocation = true,
+                    supportCamera = true,
+                    supportBluetooth = false,
+                    supportNFC = true,
+                    supportBiometric = true,
+                    supportPush = true,
+                    supportLivePlayer = false,
+                    supportCanvas = true,
+                    supportWebGL = false,
+                )
+            MiniAppPlatformType.BYTEDANCE ->
+                MiniProgramCapabilities(
+                    supportLogin = true,
+                    supportPayment = false,
+                    supportShare = true,
+                    supportLocation = true,
+                    supportCamera = true,
+                    supportBluetooth = false,
+                    supportNFC = false,
+                    supportBiometric = false,
+                    supportPush = true,
+                    supportLivePlayer = true,
+                    supportCanvas = true,
+                    supportWebGL = true,
+                )
+            MiniAppPlatformType.BAIDU ->
+                MiniProgramCapabilities(
+                    supportLogin = true,
+                    supportPayment = true,
+                    supportShare = true,
+                    supportLocation = true,
+                    supportCamera = true,
+                    supportBluetooth = false,
+                    supportNFC = false,
+                    supportBiometric = false,
+                    supportPush = true,
+                    supportLivePlayer = false,
+                    supportCanvas = true,
+                    supportWebGL = false,
+                )
             else -> MiniProgramCapabilities()
         }
     }
-    
+
     /**
      * 统一登录接口
      */
@@ -114,7 +119,7 @@ class MiniProgramAdapter {
         if (!capabilities.supportLogin) {
             return MiniProgramLoginResult.NotSupported
         }
-        
+
         return try {
             val result = bridge.callAPI("login", emptyMap())
             if (result.success) {
@@ -131,7 +136,7 @@ class MiniProgramAdapter {
             MiniProgramLoginResult.Error(e.message ?: "登录异常")
         }
     }
-    
+
     /**
      * 统一支付接口
      */
@@ -140,16 +145,17 @@ class MiniProgramAdapter {
         if (!capabilities.supportPayment) {
             return MiniProgramPaymentResult.NotSupported
         }
-        
+
         return try {
-            val params = mapOf(
-                "timeStamp" to paymentInfo.timeStamp,
-                "nonceStr" to paymentInfo.nonceStr,
-                "package" to paymentInfo.packageValue,
-                "signType" to paymentInfo.signType,
-                "paySign" to paymentInfo.paySign
-            )
-            
+            val params =
+                mapOf(
+                    "timeStamp" to paymentInfo.timeStamp,
+                    "nonceStr" to paymentInfo.nonceStr,
+                    "package" to paymentInfo.packageValue,
+                    "signType" to paymentInfo.signType,
+                    "paySign" to paymentInfo.paySign,
+                )
+
             val result = bridge.callAPI("requestPayment", params)
             if (result.success) {
                 MiniProgramPaymentResult.Success
@@ -160,7 +166,7 @@ class MiniProgramAdapter {
             MiniProgramPaymentResult.Error(e.message ?: "支付异常")
         }
     }
-    
+
     /**
      * 统一分享接口
      */
@@ -169,15 +175,16 @@ class MiniProgramAdapter {
         if (!capabilities.supportShare) {
             return MiniProgramShareResult.NotSupported
         }
-        
+
         return try {
-            val params = mapOf(
-                "title" to shareInfo.title,
-                "desc" to shareInfo.desc,
-                "path" to shareInfo.path,
-                "imageUrl" to shareInfo.imageUrl
-            )
-            
+            val params =
+                mapOf(
+                    "title" to shareInfo.title,
+                    "desc" to shareInfo.desc,
+                    "path" to shareInfo.path,
+                    "imageUrl" to shareInfo.imageUrl,
+                )
+
             val result = bridge.callAPI("share", params)
             if (result.success) {
                 MiniProgramShareResult.Success
@@ -188,7 +195,7 @@ class MiniProgramAdapter {
             MiniProgramShareResult.Error(e.message ?: "分享异常")
         }
     }
-    
+
     /**
      * 获取位置信息
      */
@@ -197,23 +204,24 @@ class MiniProgramAdapter {
         if (!capabilities.supportLocation) {
             return MiniProgramLocationResult.NotSupported
         }
-        
+
         return try {
             val params = mapOf("type" to type)
             val result = bridge.callAPI("getLocation", params)
-            
+
             if (result.success && result.data != null) {
                 val latitude = result.data["latitude"] as? Double ?: 0.0
                 val longitude = result.data["longitude"] as? Double ?: 0.0
                 val speed = result.data["speed"] as? Double ?: 0.0
                 val accuracy = result.data["accuracy"] as? Double ?: 0.0
-                
-                val location = MiniProgramLocation(
-                    latitude = latitude,
-                    longitude = longitude,
-                    speed = speed,
-                    accuracy = accuracy
-                )
+
+                val location =
+                    MiniProgramLocation(
+                        latitude = latitude,
+                        longitude = longitude,
+                        speed = speed,
+                        accuracy = accuracy,
+                    )
                 MiniProgramLocationResult.Success(location)
             } else {
                 MiniProgramLocationResult.Error(result.errorMsg ?: "获取位置失败")
@@ -222,7 +230,7 @@ class MiniProgramAdapter {
             MiniProgramLocationResult.Error(e.message ?: "获取位置异常")
         }
     }
-    
+
     /**
      * 监听小程序生命周期
      */
@@ -239,7 +247,7 @@ data class MiniProgramPlatformState(
     val isInitialized: Boolean = false,
     val platformType: MiniAppPlatformType = MiniAppPlatformType.UNKNOWN,
     val appInfo: MiniAppInfo? = null,
-    val error: String? = null
+    val error: String? = null,
 )
 
 /**
@@ -247,6 +255,7 @@ data class MiniProgramPlatformState(
  */
 sealed class MiniProgramInitResult {
     data class Success(val appInfo: MiniAppInfo) : MiniProgramInitResult()
+
     data class Error(val message: String) : MiniProgramInitResult()
 }
 
@@ -266,7 +275,7 @@ data class MiniProgramCapabilities(
     val supportPush: Boolean = false,
     val supportLivePlayer: Boolean = false,
     val supportCanvas: Boolean = false,
-    val supportWebGL: Boolean = false
+    val supportWebGL: Boolean = false,
 )
 
 /**
@@ -274,7 +283,9 @@ data class MiniProgramCapabilities(
  */
 sealed class MiniProgramLoginResult {
     data class Success(val code: String) : MiniProgramLoginResult()
+
     data class Error(val message: String) : MiniProgramLoginResult()
+
     object NotSupported : MiniProgramLoginResult()
 }
 
@@ -287,7 +298,7 @@ data class MiniProgramPaymentInfo(
     val nonceStr: String,
     val packageValue: String,
     val signType: String,
-    val paySign: String
+    val paySign: String,
 )
 
 /**
@@ -295,7 +306,9 @@ data class MiniProgramPaymentInfo(
  */
 sealed class MiniProgramPaymentResult {
     object Success : MiniProgramPaymentResult()
+
     data class Error(val message: String) : MiniProgramPaymentResult()
+
     object NotSupported : MiniProgramPaymentResult()
 }
 
@@ -307,7 +320,7 @@ data class MiniProgramShareInfo(
     val title: String,
     val desc: String,
     val path: String,
-    val imageUrl: String
+    val imageUrl: String,
 )
 
 /**
@@ -315,7 +328,9 @@ data class MiniProgramShareInfo(
  */
 sealed class MiniProgramShareResult {
     object Success : MiniProgramShareResult()
+
     data class Error(val message: String) : MiniProgramShareResult()
+
     object NotSupported : MiniProgramShareResult()
 }
 
@@ -327,7 +342,7 @@ data class MiniProgramLocation(
     val latitude: Double,
     val longitude: Double,
     val speed: Double,
-    val accuracy: Double
+    val accuracy: Double,
 )
 
 /**
@@ -335,6 +350,8 @@ data class MiniProgramLocation(
  */
 sealed class MiniProgramLocationResult {
     data class Success(val location: MiniProgramLocation) : MiniProgramLocationResult()
+
     data class Error(val message: String) : MiniProgramLocationResult()
+
     object NotSupported : MiniProgramLocationResult()
 }

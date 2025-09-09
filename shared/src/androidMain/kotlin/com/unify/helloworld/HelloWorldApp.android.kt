@@ -7,7 +7,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.unify.core.UnifyCore
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
@@ -18,7 +17,7 @@ import kotlinx.coroutines.launch
 fun AndroidHelloWorldApp() {
     val context = LocalContext.current
     var platformInfo by remember { mutableStateOf("加载中...") }
-    
+
     LaunchedEffect(Unit) {
         try {
             platformInfo = "平台: ${getPlatformName()}\n设备信息: ${getDeviceInfo()}"
@@ -26,52 +25,53 @@ fun AndroidHelloWorldApp() {
             platformInfo = "错误: ${e.message}"
         }
     }
-    
+
     MaterialTheme {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+            color = MaterialTheme.colorScheme.background,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = "Hello Unify-Core!",
                     style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.primary
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.padding(16.dp),
                     ) {
                         Text(
                             text = "Android平台信息",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = MaterialTheme.colorScheme.onSurface,
                         )
-                        
+
                         Spacer(modifier = Modifier.height(8.dp))
-                        
+
                         Text(
                             text = platformInfo,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Button(
                     onClick = {
                         // 演示网络功能
@@ -83,7 +83,7 @@ fun AndroidHelloWorldApp() {
                                 platformInfo = "网络演示错误: ${e.message}"
                             }
                         }
-                    }
+                    },
                 ) {
                     Text("测试网络功能")
                 }

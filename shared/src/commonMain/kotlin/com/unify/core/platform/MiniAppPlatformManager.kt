@@ -1,20 +1,19 @@
 package com.unify.core.platform
 
-import com.unify.core.types.PlatformType
 import com.unify.core.types.DeviceInfo
+import com.unify.core.types.PlatformType
 
 /**
  * 小程序平台管理器实现
  * 支持微信小程序、支付宝小程序、百度小程序、字节跳动小程序等
  */
 class MiniAppPlatformManager : BasePlatformManager() {
-    
     override fun getPlatformType(): PlatformType = PlatformType.MINI_PROGRAM
-    
+
     override fun getPlatformName(): String = "MiniProgram"
-    
+
     override fun getPlatformVersion(): String = getMiniAppVersion()
-    
+
     override suspend fun getDeviceInfo(): DeviceInfo {
         return DeviceInfo(
             manufacturer = getHostAppManufacturer(),
@@ -22,10 +21,10 @@ class MiniAppPlatformManager : BasePlatformManager() {
             systemName = "MiniProgram",
             systemVersion = getMiniAppVersion(),
             deviceId = getMiniAppDeviceId(),
-            isEmulator = isSimulator()
+            isEmulator = isSimulator(),
         )
     }
-    
+
     override fun hasCapability(capability: String): Boolean {
         return when (capability) {
             "camera" -> hasCamera()
@@ -77,10 +76,10 @@ class MiniAppPlatformManager : BasePlatformManager() {
             else -> false
         }
     }
-    
+
     override fun getSupportedCapabilities(): List<String> {
         val capabilities = mutableListOf<String>()
-        
+
         // 基础硬件能力
         if (hasCapability("camera")) capabilities.add("camera")
         if (hasCapability("gps")) capabilities.add("gps")
@@ -94,7 +93,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
         if (hasCapability("microphone")) capabilities.add("microphone")
         if (hasCapability("telephony")) capabilities.add("telephony")
         if (hasCapability("vibration")) capabilities.add("vibration")
-        
+
         // 小程序特有能力
         if (hasCapability("storage")) capabilities.add("storage")
         if (hasCapability("payment")) capabilities.add("payment")
@@ -130,10 +129,10 @@ class MiniAppPlatformManager : BasePlatformManager() {
         if (hasCapability("template")) capabilities.add("template")
         if (hasCapability("ad")) capabilities.add("ad")
         if (hasCapability("analytics")) capabilities.add("analytics")
-        
+
         return capabilities
     }
-    
+
     override suspend fun performPlatformInitialization() {
         // 小程序特定初始化
         config["miniapp_type"] = getMiniAppType()
@@ -185,12 +184,12 @@ class MiniAppPlatformManager : BasePlatformManager() {
         config["memory_info"] = getMemoryInfo()
         config["performance_info"] = getPerformanceInfo()
     }
-    
+
     override suspend fun performPlatformCleanup() {
         // 小程序特定清理
         config.clear()
     }
-    
+
     // 小程序类型检测
     private fun getMiniAppType(): String {
         return try {
@@ -208,9 +207,9 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getHostApp(): String = getMiniAppType()
-    
+
     private fun getHostVersion(): String {
         return try {
             when (getMiniAppType()) {
@@ -227,7 +226,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getMiniAppVersion(): String {
         return try {
             getSystemInfoValue("version") ?: "1.0.0"
@@ -235,7 +234,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "1.0.0"
         }
     }
-    
+
     private fun getSDKVersion(): String {
         return try {
             getSystemInfoValue("SDKVersion") ?: "Unknown"
@@ -243,7 +242,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getAppId(): String {
         return try {
             getLaunchOptionsValue("appId") ?: "Unknown"
@@ -251,7 +250,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getScene(): String {
         return try {
             getLaunchOptionsValue("scene") ?: "Unknown"
@@ -259,7 +258,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             "Unknown"
         }
     }
-    
+
     private fun getHostAppManufacturer(): String {
         return when (getMiniAppType()) {
             "WeChat" -> "Tencent"
@@ -272,137 +271,229 @@ class MiniAppPlatformManager : BasePlatformManager() {
             else -> "Unknown"
         }
     }
-    
+
     private fun getHostAppModel(): String {
         return "${getMiniAppType()} MiniProgram"
     }
-    
+
     private fun getMiniAppDeviceId(): String {
         return try {
             // 小程序通常不提供真实设备ID，生成一个基于特征的ID
-            val features = listOf(
-                getMiniAppType(),
-                getSystemInfoValue("brand") ?: "",
-                getSystemInfoValue("model") ?: "",
-                getSystemInfoValue("system") ?: "",
-                getSystemInfoValue("platform") ?: ""
-            )
+            val features =
+                listOf(
+                    getMiniAppType(),
+                    getSystemInfoValue("brand") ?: "",
+                    getSystemInfoValue("model") ?: "",
+                    getSystemInfoValue("system") ?: "",
+                    getSystemInfoValue("platform") ?: "",
+                )
             "miniapp-${features.joinToString("-").hashCode()}"
         } catch (e: Exception) {
             "miniapp-unknown"
         }
     }
-    
+
     private fun isSimulator(): Boolean {
         return try {
             val platform = getSystemInfoValue("platform") ?: ""
             platform.contains("devtools", ignoreCase = true) ||
-            platform.contains("simulator", ignoreCase = true)
+                platform.contains("simulator", ignoreCase = true)
         } catch (e: Exception) {
             false
         }
     }
-    
+
     // 能力检测方法
     private fun hasCamera(): Boolean = checkAPI("chooseImage") || checkAPI("chooseMedia")
+
     private fun hasLocation(): Boolean = checkAPI("getLocation")
+
     private fun hasBluetooth(): Boolean = checkAPI("openBluetoothAdapter")
+
     private fun hasNetworkInfo(): Boolean = checkAPI("getNetworkType")
+
     private fun hasNFC(): Boolean = checkAPI("getHCEState")
+
     private fun hasBiometric(): Boolean = checkAPI("checkIsSupportSoterAuthentication")
+
     private fun hasAccelerometer(): Boolean = checkAPI("onAccelerometerChange")
+
     private fun hasGyroscope(): Boolean = checkAPI("onGyroscopeChange")
+
     private fun hasCompass(): Boolean = checkAPI("onCompassChange")
+
     private fun hasRecorder(): Boolean = checkAPI("getRecorderManager")
+
     private fun hasPhoneCall(): Boolean = checkAPI("makePhoneCall")
+
     private fun hasVibrate(): Boolean = checkAPI("vibrateLong") || checkAPI("vibrateShort")
+
     private fun hasStorage(): Boolean = checkAPI("setStorage")
+
     private fun hasPayment(): Boolean = checkAPI("requestPayment")
+
     private fun hasShare(): Boolean = checkAPI("shareAppMessage")
+
     private fun hasQRCode(): Boolean = checkAPI("scanCode")
+
     private fun hasCanvas(): Boolean = checkAPI("createCanvasContext")
+
     private fun hasWebView(): Boolean = checkAPI("web-view")
+
     private fun hasMap(): Boolean = checkAPI("createMapContext")
+
     private fun hasLive(): Boolean = checkAPI("createLivePlayerContext")
+
     private fun hasVideo(): Boolean = checkAPI("createVideoContext")
+
     private fun hasAudio(): Boolean = checkAPI("createInnerAudioContext")
+
     private fun hasImage(): Boolean = checkAPI("chooseImage")
+
     private fun hasFile(): Boolean = checkAPI("getFileSystemManager")
+
     private fun hasClipboard(): Boolean = checkAPI("setClipboardData")
+
     private fun hasContacts(): Boolean = checkAPI("addPhoneContact")
+
     private fun hasCalendar(): Boolean = checkAPI("addPhoneCalendar")
+
     private fun hasDeviceInfo(): Boolean = checkAPI("getSystemInfo")
+
     private fun hasNetworkType(): Boolean = checkAPI("getNetworkType")
+
     private fun hasBatteryInfo(): Boolean = checkAPI("getBatteryInfo")
+
     private fun hasScreenInfo(): Boolean = checkAPI("getSystemInfo")
+
     private fun hasSystemInfo(): Boolean = checkAPI("getSystemInfo")
+
     private fun hasLaunchOptions(): Boolean = checkAPI("getLaunchOptionsSync")
+
     private fun hasUpdateManager(): Boolean = checkAPI("getUpdateManager")
+
     private fun hasPerformance(): Boolean = checkAPI("getPerformance")
+
     private fun hasWorker(): Boolean = checkAPI("createWorker")
+
     private fun hasWebSocket(): Boolean = checkAPI("connectSocket")
+
     private fun hasDownload(): Boolean = checkAPI("downloadFile")
+
     private fun hasUpload(): Boolean = checkAPI("uploadFile")
+
     private fun hasRequest(): Boolean = checkAPI("request")
+
     private fun hasBackground(): Boolean = checkAPI("setBackgroundColor")
+
     private fun hasPush(): Boolean = checkAPI("requestSubscribeMessage")
+
     private fun hasSubscribe(): Boolean = checkAPI("requestSubscribeMessage")
+
     private fun hasTemplate(): Boolean = checkAPI("requestSubscribeMessage")
+
     private fun hasAd(): Boolean = checkAPI("createBannerAd")
+
     private fun hasAnalytics(): Boolean = checkAPI("reportAnalytics")
-    
+
     // 系统信息获取方法
     private fun getLaunchOptions(): String = "Launch Options Available"
+
     private fun getSystemInfo(): String = "System Info Available"
+
     private fun getDeviceInfoString(): String = "Device Info Available"
+
     private fun getNetworkType(): String = "Network Type Available"
+
     private fun getLocationEnabled(): String = "Location Status"
+
     private fun getNotificationEnabled(): String = "Notification Status"
+
     private fun getCameraEnabled(): String = "Camera Status"
+
     private fun getMicrophoneEnabled(): String = "Microphone Status"
+
     private fun getAlbumEnabled(): String = "Album Status"
+
     private fun getUserInfoEnabled(): String = "UserInfo Status"
+
     private fun getLocationReducedAccuracy(): String = "Location Accuracy"
+
     private fun getSafeArea(): String = "Safe Area Info"
+
     private fun getStatusBarHeight(): String = "Status Bar Height"
+
     private fun getNavigationBarHeight(): String = "Navigation Bar Height"
+
     private fun getTabBarHeight(): String = "Tab Bar Height"
+
     private fun getWindowWidth(): String = "Window Width"
+
     private fun getWindowHeight(): String = "Window Height"
+
     private fun getScreenWidth(): String = "Screen Width"
+
     private fun getScreenHeight(): String = "Screen Height"
+
     private fun getPixelRatio(): String = "Pixel Ratio"
+
     private fun getFontSizeSetting(): String = "Font Size Setting"
+
     private fun getTheme(): String = "Theme"
+
     private fun getLanguage(): String = "Language"
+
     private fun getVersion(): String = "Version"
+
     private fun getPlatform(): String = "Platform"
+
     private fun getBrand(): String = "Brand"
+
     private fun getModel(): String = "Model"
+
     private fun getSystem(): String = "System"
+
     private fun getBenchmarkLevel(): String = "Benchmark Level"
+
     private fun getAlbumAuthorized(): String = "Album Authorization"
+
     private fun getCameraAuthorized(): String = "Camera Authorization"
+
     private fun getLocationAuthorized(): String = "Location Authorization"
+
     private fun getMicrophoneAuthorized(): String = "Microphone Authorization"
+
     private fun getNotificationAuthorized(): String = "Notification Authorization"
+
     private fun getBluetoothEnabled(): String = "Bluetooth Status"
+
     private fun getLocationEnabledString(): String = "Location Status"
+
     private fun getWiFiEnabled(): String = "WiFi Status"
+
     private fun getStorageInfo(): String = "Storage Info"
+
     private fun getBatteryInfo(): String = "Battery Info"
+
     private fun getMemoryInfo(): String = "Memory Info"
+
     private fun getPerformanceInfo(): String = "Performance Info"
-    
+
     // 版本获取方法
     private fun getWeChatVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getAlipayVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getBaiduVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getByteDanceVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getQQVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getJDVersion(): String = getSystemInfoValue("version") ?: "Unknown"
+
     private fun getKuaishouVersion(): String = getSystemInfoValue("version") ?: "Unknown"
-    
+
     // 辅助方法
     private fun checkAPI(apiName: String): Boolean {
         return try {
@@ -413,7 +504,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             false
         }
     }
-    
+
     private fun getSystemInfoValue(key: String): String? {
         return try {
             // 这里应该调用小程序的getSystemInfo API
@@ -431,7 +522,7 @@ class MiniAppPlatformManager : BasePlatformManager() {
             null
         }
     }
-    
+
     private fun getLaunchOptionsValue(key: String): String? {
         return try {
             // 这里应该调用小程序的getLaunchOptionsSync API

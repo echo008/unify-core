@@ -18,7 +18,7 @@ data class NavigationItem(
     val icon: (@Composable () -> Unit)? = null,
     val selectedIcon: (@Composable () -> Unit)? = null,
     val badge: String? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 @Composable
@@ -29,7 +29,7 @@ expect fun UnifyTopAppBar(
     actions: @Composable RowScope.() -> Unit = {},
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
-    elevation: Dp = 4.dp
+    elevation: Dp = 4.dp,
 )
 
 @Composable
@@ -41,7 +41,7 @@ expect fun UnifyBottomNavigationBar(
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
     selectedContentColor: Color = Color.Unspecified,
-    unselectedContentColor: Color = Color.Unspecified
+    unselectedContentColor: Color = Color.Unspecified,
 )
 
 @Composable
@@ -54,7 +54,7 @@ expect fun UnifyNavigationRail(
     backgroundColor: Color = Color.Unspecified,
     contentColor: Color = Color.Unspecified,
     selectedContentColor: Color = Color.Unspecified,
-    unselectedContentColor: Color = Color.Unspecified
+    unselectedContentColor: Color = Color.Unspecified,
 )
 
 @Composable
@@ -67,7 +67,7 @@ expect fun UnifyNavigationBarItem(
     label: (@Composable () -> Unit)? = null,
     alwaysShowLabel: Boolean = true,
     selectedIcon: (@Composable () -> Unit)? = null,
-    badge: (@Composable () -> Unit)? = null
+    badge: (@Composable () -> Unit)? = null,
 )
 
 @Composable
@@ -78,7 +78,7 @@ expect fun UnifyTabRow(
     contentColor: Color = Color.Unspecified,
     indicator: @Composable (tabPositions: List<TabPosition>) -> Unit = {},
     divider: @Composable () -> Unit = {},
-    tabs: @Composable () -> Unit
+    tabs: @Composable () -> Unit,
 )
 
 @Composable
@@ -90,10 +90,10 @@ expect fun UnifyTab(
     text: (@Composable () -> Unit)? = null,
     icon: (@Composable () -> Unit)? = null,
     selectedContentColor: Color = Color.Unspecified,
-    unselectedContentColor: Color = Color.Unspecified
+    unselectedContentColor: Color = Color.Unspecified,
 )
 
 data class TabPosition(
     val left: Dp,
-    val width: Dp
+    val width: Dp,
 )

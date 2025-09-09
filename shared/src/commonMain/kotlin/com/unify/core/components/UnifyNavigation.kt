@@ -2,7 +2,6 @@ package com.unify.core.components
 
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -19,11 +18,11 @@ import androidx.compose.material3.NavigationRailDefaults
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.NavigationRailItemDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.material3.contentColorFor
 import androidx.compose.ui.unit.dp
 
 /**
@@ -37,7 +36,7 @@ data class UnifyNavigationItem(
     val selectedIcon: ImageVector? = null,
     val badge: String? = null,
     val badgeCount: Int? = null,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 @Composable
@@ -49,20 +48,20 @@ fun UnifyBottomNavigation(
     containerColor: Color = NavigationBarDefaults.containerColor,
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
     tonalElevation: androidx.compose.ui.unit.Dp = NavigationBarDefaults.Elevation,
-    windowInsets: WindowInsets = NavigationBarDefaults.windowInsets
+    windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
 ) {
     NavigationBar(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
         tonalElevation = tonalElevation,
-        windowInsets = windowInsets
+        windowInsets = windowInsets,
     ) {
         items.forEach { item ->
             UnifyNavigationBarItem(
                 item = item,
                 selected = selectedItemId == item.id,
-                onClick = { onItemSelected(item.id) }
+                onClick = { onItemSelected(item.id) },
             )
         }
     }
@@ -72,7 +71,7 @@ fun UnifyBottomNavigation(
 private fun RowScope.UnifyNavigationBarItem(
     item: UnifyNavigationItem,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     NavigationBarItem(
         selected = selected,
@@ -80,17 +79,17 @@ private fun RowScope.UnifyNavigationBarItem(
         icon = {
             NavigationItemIcon(
                 item = item,
-                selected = selected
+                selected = selected,
             )
         },
         label = {
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.labelMedium
+                style = MaterialTheme.typography.labelMedium,
             )
         },
         enabled = item.enabled,
-        colors = NavigationBarItemDefaults.colors()
+        colors = NavigationBarItemDefaults.colors(),
     )
 }
 
@@ -102,13 +101,13 @@ fun UnifyNavigationRail(
     modifier: Modifier = Modifier,
     containerColor: Color = NavigationRailDefaults.ContainerColor,
     contentColor: Color = MaterialTheme.colorScheme.contentColorFor(containerColor),
-    header: (@Composable () -> Unit)? = null
+    header: (@Composable () -> Unit)? = null,
 ) {
     NavigationRail(
         modifier = modifier,
         containerColor = containerColor,
         contentColor = contentColor,
-        header = header?.let { { it() } }
+        header = header?.let { { it() } },
     ) {
         items.forEach { item ->
             NavigationRailItem(
@@ -117,17 +116,17 @@ fun UnifyNavigationRail(
                 icon = {
                     NavigationItemIcon(
                         item = item,
-                        selected = selectedItemId == item.id
+                        selected = selectedItemId == item.id,
                     )
                 },
                 label = {
                     Text(
                         text = item.label,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 },
                 enabled = item.enabled,
-                colors = NavigationRailItemDefaults.colors()
+                colors = NavigationRailItemDefaults.colors(),
             )
         }
     }
@@ -139,13 +138,13 @@ fun UnifyNavigationDrawerItem(
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    colors: androidx.compose.material3.NavigationDrawerItemColors = NavigationDrawerItemDefaults.colors()
+    colors: androidx.compose.material3.NavigationDrawerItemColors = NavigationDrawerItemDefaults.colors(),
 ) {
     NavigationDrawerItem(
         label = {
             Text(
                 text = item.label,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         },
         selected = selected,
@@ -154,52 +153,56 @@ fun UnifyNavigationDrawerItem(
         icon = {
             NavigationItemIcon(
                 item = item,
-                selected = selected
+                selected = selected,
             )
         },
-        badge = if (item.badge != null || item.badgeCount != null) {
-            {
-                NavigationItemBadge(
-                    badge = item.badge,
-                    badgeCount = item.badgeCount
-                )
-            }
-        } else null,
-        colors = colors
+        badge =
+            if (item.badge != null || item.badgeCount != null) {
+                {
+                    NavigationItemBadge(
+                        badge = item.badge,
+                        badgeCount = item.badgeCount,
+                    )
+                }
+            } else {
+                null
+            },
+        colors = colors,
     )
 }
 
 @Composable
 private fun NavigationItemIcon(
     item: UnifyNavigationItem,
-    selected: Boolean
+    selected: Boolean,
 ) {
-    val iconVector = if (selected && item.selectedIcon != null) {
-        item.selectedIcon
-    } else {
-        item.icon
-    }
-    
+    val iconVector =
+        if (selected && item.selectedIcon != null) {
+            item.selectedIcon
+        } else {
+            item.icon
+        }
+
     if (item.badge != null || item.badgeCount != null) {
         BadgedBox(
             badge = {
                 NavigationItemBadge(
                     badge = item.badge,
-                    badgeCount = item.badgeCount
+                    badgeCount = item.badgeCount,
                 )
-            }
+            },
         ) {
             Icon(
                 imageVector = iconVector,
                 contentDescription = item.label,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
             )
         }
     } else {
         Icon(
             imageVector = iconVector,
             contentDescription = item.label,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
         )
     }
 }
@@ -207,14 +210,14 @@ private fun NavigationItemIcon(
 @Composable
 private fun NavigationItemBadge(
     badge: String? = null,
-    badgeCount: Int? = null
+    badgeCount: Int? = null,
 ) {
     when {
         badge != null -> {
             Badge {
                 Text(
                     text = badge,
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }
@@ -222,7 +225,7 @@ private fun NavigationItemBadge(
             Badge {
                 Text(
                     text = if (badgeCount > 99) "99+" else badgeCount.toString(),
-                    style = MaterialTheme.typography.labelSmall
+                    style = MaterialTheme.typography.labelSmall,
                 )
             }
         }

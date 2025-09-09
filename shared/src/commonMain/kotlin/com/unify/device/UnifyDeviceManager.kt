@@ -9,50 +9,81 @@ import kotlinx.coroutines.flow.Flow
 interface UnifyDeviceManager {
     // 设备信息
     fun getDeviceInfo(): DeviceInfo
+
     fun getPlatformName(): String
+
     fun getDeviceModel(): String
+
     fun getOSVersion(): String
+
     fun getAppVersion(): String
-    
+
     // 权限管理
     suspend fun requestPermission(permission: DevicePermission): PermissionStatus
+
     suspend fun requestPermissions(permissions: List<DevicePermission>): Map<DevicePermission, PermissionStatus>
+
     fun checkPermission(permission: DevicePermission): PermissionStatus
+
     fun observePermissionStatus(permission: DevicePermission): Flow<PermissionStatus>
-    
+
     // 传感器管理
     fun getSupportedSensors(): List<SensorType>
-    fun startSensorMonitoring(sensorType: SensorType, listener: SensorListener)
+
+    fun startSensorMonitoring(
+        sensorType: SensorType,
+        listener: SensorListener,
+    )
+
     fun stopSensorMonitoring(sensorType: SensorType)
+
     fun isSensorAvailable(sensorType: SensorType): Boolean
-    
+
     // 系统功能
     fun vibrate(durationMillis: Long)
+
     fun setScreenBrightness(brightness: Float)
+
     fun getScreenBrightness(): Float
+
     fun setVolume(volume: Float)
+
     fun getVolume(): Float
-    fun showNotification(title: String, message: String, id: String)
-    
+
+    fun showNotification(
+        title: String,
+        message: String,
+        id: String,
+    )
+
     // 硬件访问
     suspend fun takePicture(): String? // 返回图片路径
+
     suspend fun recordAudio(durationMillis: Long): String? // 返回音频文件路径
+
     suspend fun getCurrentLocation(): LocationInfo?
+
     fun observeLocationUpdates(): Flow<LocationInfo>
-    
+
     // 网络状态
     fun isNetworkAvailable(): Boolean
+
     fun getNetworkType(): NetworkType
+
     fun observeNetworkStatus(): Flow<NetworkStatus>
-    
+
     // 电池状态
     fun getBatteryLevel(): Float
+
     fun isBatteryCharging(): Boolean
+
     fun observeBatteryStatus(): Flow<BatteryStatus>
-    
+
     // 存储信息
     fun getAvailableStorage(): Long
+
     fun getTotalStorage(): Long
+
     fun getUsedStorage(): Long
 }
 
@@ -70,7 +101,7 @@ data class DeviceInfo(
     val screenHeight: Int,
     val screenDensity: Float,
     val totalMemory: Long,
-    val availableMemory: Long
+    val availableMemory: Long,
 )
 
 /**
@@ -88,7 +119,7 @@ enum class DevicePermission {
     NOTIFICATIONS,
     BLUETOOTH,
     NFC,
-    BIOMETRIC
+    BIOMETRIC,
 }
 
 /**
@@ -98,7 +129,7 @@ enum class PermissionStatus {
     GRANTED,
     DENIED,
     NOT_DETERMINED,
-    RESTRICTED
+    RESTRICTED,
 }
 
 /**
@@ -118,15 +149,23 @@ enum class SensorType {
     TEMPERATURE,
     HUMIDITY,
     HEART_RATE,
-    STEP_COUNTER
+    STEP_COUNTER,
 }
 
 /**
  * 传感器监听器接口
  */
 interface SensorListener {
-    fun onSensorChanged(sensorType: SensorType, values: FloatArray, timestamp: Long)
-    fun onAccuracyChanged(sensorType: SensorType, accuracy: Int)
+    fun onSensorChanged(
+        sensorType: SensorType,
+        values: FloatArray,
+        timestamp: Long,
+    )
+
+    fun onAccuracyChanged(
+        sensorType: SensorType,
+        accuracy: Int,
+    )
 }
 
 /**
@@ -137,7 +176,7 @@ data class LocationInfo(
     val longitude: Double,
     val altitude: Double,
     val accuracy: Float,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 /**
@@ -148,7 +187,7 @@ enum class NetworkType {
     CELLULAR,
     ETHERNET,
     BLUETOOTH,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -157,7 +196,7 @@ enum class NetworkType {
 enum class NetworkStatus {
     CONNECTED,
     DISCONNECTED,
-    CONNECTING
+    CONNECTING,
 }
 
 /**
@@ -167,7 +206,7 @@ data class BatteryStatus(
     val level: Float,
     val isCharging: Boolean,
     val chargingType: ChargingType,
-    val temperature: Float
+    val temperature: Float,
 )
 
 /**
@@ -177,7 +216,7 @@ enum class ChargingType {
     NONE,
     AC,
     USB,
-    WIRELESS
+    WIRELESS,
 }
 
 /**

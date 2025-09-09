@@ -1,7 +1,6 @@
 package com.unify.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -30,40 +29,41 @@ fun UnifyDesktopTitleBar(
     modifier: Modifier = Modifier,
     onMinimize: () -> Unit = {},
     onMaximize: () -> Unit = {},
-    onClose: () -> Unit = {}
+    onClose: () -> Unit = {},
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(40.dp)
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(40.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         // 标题
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
-        
+
         // 窗口控制按钮
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             UnifyWindowButton(
                 text = "−",
                 color = Color(0xFFFFBD2E),
-                onClick = onMinimize
+                onClick = onMinimize,
             )
             UnifyWindowButton(
                 text = "□",
                 color = Color(0xFF28CA42),
-                onClick = onMaximize
+                onClick = onMaximize,
             )
             UnifyWindowButton(
                 text = "×",
                 color = Color(0xFFFF5F57),
-                onClick = onClose
+                onClick = onClose,
             )
         }
     }
@@ -77,19 +77,20 @@ private fun UnifyWindowButton(
     text: String,
     color: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier
-            .size(20.dp)
-            .background(color, RoundedCornerShape(10.dp))
-            .clickable { onClick() },
-        contentAlignment = Alignment.Center
+        modifier =
+            modifier
+                .size(20.dp)
+                .background(color, RoundedCornerShape(10.dp))
+                .clickable { onClick() },
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = text,
             fontSize = 12.sp,
-            color = Color.Black
+            color = Color.Black,
         )
     }
 }
@@ -100,28 +101,29 @@ private fun UnifyWindowButton(
 @Composable
 fun UnifyDesktopMenuBar(
     menus: List<DesktopMenu>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         menus.forEach { menu ->
             var expanded by remember { mutableStateOf(false) }
-            
+
             Box {
                 TextButton(
-                    onClick = { expanded = true }
+                    onClick = { expanded = true },
                 ) {
                     Text(menu.title)
                 }
-                
+
                 DropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
                 ) {
                     menu.items.forEach { item ->
                         DropdownMenuItem(
@@ -129,7 +131,7 @@ fun UnifyDesktopMenuBar(
                             onClick = {
                                 item.onClick()
                                 expanded = false
-                            }
+                            },
                         )
                     }
                 }
@@ -144,23 +146,24 @@ fun UnifyDesktopMenuBar(
 @Composable
 fun UnifyDesktopToolbar(
     tools: List<DesktopTool>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         tools.forEach { tool ->
             IconButton(
                 onClick = tool.onClick,
-                enabled = tool.enabled
+                enabled = tool.enabled,
             ) {
                 Text(
                     text = tool.icon,
-                    fontSize = 16.sp
+                    fontSize = 16.sp,
                 )
             }
         }
@@ -174,22 +177,23 @@ fun UnifyDesktopToolbar(
 fun UnifyDesktopStatusBar(
     status: String,
     modifier: Modifier = Modifier,
-    actions: @Composable RowScope.() -> Unit = {}
+    actions: @Composable RowScope.() -> Unit = {},
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(24.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(horizontal = 8.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(24.dp)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = status,
             style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
-        
+
         actions()
     }
 }
@@ -203,50 +207,56 @@ fun UnifyDesktopSidebar(
     selectedItem: String?,
     onItemSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
-    width: Dp = 200.dp
+    width: Dp = 200.dp,
 ) {
     Column(
-        modifier = modifier
-            .width(width)
-            .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .padding(8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        modifier =
+            modifier
+                .width(width)
+                .fillMaxHeight()
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         items.forEach { item ->
             val isSelected = item.id == selectedItem
-            
+
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onItemSelected(item.id) },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        Color.Transparent
-                    }
-                )
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { onItemSelected(item.id) },
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                Color.Transparent
+                            },
+                    ),
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         text = item.icon,
                         fontSize = 16.sp,
-                        modifier = Modifier.padding(end = 8.dp)
+                        modifier = Modifier.padding(end = 8.dp),
                     )
                     Text(
                         text = item.title,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                        color =
+                            if (isSelected) {
+                                MaterialTheme.colorScheme.onPrimary
+                            } else {
+                                MaterialTheme.colorScheme.onSurface
+                            },
                     )
                 }
             }
@@ -262,22 +272,22 @@ fun UnifyDesktopSplitPane(
     leftContent: @Composable () -> Unit,
     rightContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    splitRatio: Float = 0.5f
+    splitRatio: Float = 0.5f,
 ) {
     Row(modifier = modifier.fillMaxSize()) {
         Box(
-            modifier = Modifier.weight(splitRatio)
+            modifier = Modifier.weight(splitRatio),
         ) {
             leftContent()
         }
-        
+
         VerticalDivider(
             modifier = Modifier.width(1.dp),
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.outline,
         )
-        
+
         Box(
-            modifier = Modifier.weight(1f - splitRatio)
+            modifier = Modifier.weight(1f - splitRatio),
         ) {
             rightContent()
         }
@@ -292,23 +302,23 @@ fun UnifyDesktopTabPane(
     tabs: List<DesktopTab>,
     selectedTabIndex: Int,
     onTabSelected: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
         // 标签头部
         ScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             tabs.forEachIndexed { index, tab ->
                 Tab(
                     selected = selectedTabIndex == index,
                     onClick = { onTabSelected(index) },
-                    text = { Text(tab.title) }
+                    text = { Text(tab.title) },
                 )
             }
         }
-        
+
         // 标签内容
         Box(modifier = Modifier.weight(1f)) {
             if (selectedTabIndex in tabs.indices) {
@@ -327,14 +337,14 @@ fun UnifyDesktopDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     buttons: @Composable RowScope.() -> Unit = {},
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall
+                style = MaterialTheme.typography.headlineSmall,
             )
         },
         text = {
@@ -343,10 +353,10 @@ fun UnifyDesktopDialog(
         confirmButton = {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                content = buttons
+                content = buttons,
             )
         },
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -358,45 +368,50 @@ fun UnifyDesktopNotification(
     message: String,
     type: NotificationType = NotificationType.Info,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = when (type) {
-                NotificationType.Info -> MaterialTheme.colorScheme.primaryContainer
-                NotificationType.Success -> Color(0xFF4CAF50)
-                NotificationType.Warning -> Color(0xFFFF9800)
-                NotificationType.Error -> Color(0xFFF44336)
-            }
-        )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(8.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    when (type) {
+                        NotificationType.Info -> MaterialTheme.colorScheme.primaryContainer
+                        NotificationType.Success -> Color(0xFF4CAF50)
+                        NotificationType.Warning -> Color(0xFFFF9800)
+                        NotificationType.Error -> Color(0xFFF44336)
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = when (type) {
-                    NotificationType.Info -> "ℹ️"
-                    NotificationType.Success -> "✅"
-                    NotificationType.Warning -> "⚠️"
-                    NotificationType.Error -> "❌"
-                },
+                text =
+                    when (type) {
+                        NotificationType.Info -> "ℹ️"
+                        NotificationType.Success -> "✅"
+                        NotificationType.Warning -> "⚠️"
+                        NotificationType.Error -> "❌"
+                    },
                 fontSize = 20.sp,
-                modifier = Modifier.padding(end = 8.dp)
+                modifier = Modifier.padding(end = 8.dp),
             )
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.weight(1f),
-                color = Color.White
+                color = Color.White,
             )
-            
+
             IconButton(onClick = onDismiss) {
                 Text("×", color = Color.White, fontSize = 18.sp)
             }
@@ -410,34 +425,36 @@ fun UnifyDesktopNotification(
 @Composable
 fun UnifyDesktopShortcutHint(
     shortcuts: List<KeyboardShortcut>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     LazyColumn(
         modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(shortcuts) { shortcut ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     text = shortcut.description,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
-                
+
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                    )
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        ),
                 ) {
                     Text(
                         text = shortcut.keys,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
-                        )
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                            ),
                     )
                 }
             }
@@ -448,40 +465,43 @@ fun UnifyDesktopShortcutHint(
 // 数据类
 data class DesktopMenu(
     val title: String,
-    val items: List<MenuItem>
+    val items: List<MenuItem>,
 )
 
 data class MenuItem(
     val title: String,
     val onClick: () -> Unit,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 data class DesktopTool(
     val icon: String,
     val tooltip: String,
     val onClick: () -> Unit,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
 )
 
 data class SidebarItem(
     val id: String,
     val title: String,
-    val icon: String
+    val icon: String,
 )
 
 data class DesktopTab(
     val title: String,
-    val content: @Composable () -> Unit
+    val content: @Composable () -> Unit,
 )
 
 data class KeyboardShortcut(
     val keys: String,
-    val description: String
+    val description: String,
 )
 
 enum class NotificationType {
-    Info, Success, Warning, Error
+    Info,
+    Success,
+    Warning,
+    Error,
 }
 
 // 扩展函数

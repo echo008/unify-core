@@ -2,23 +2,19 @@
 
 package com.unify.ui.components.platform
 
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
@@ -34,11 +30,12 @@ actual fun getPlatformInfo(): PlatformInfo {
         architecture = Build.SUPPORTED_ABIS.firstOrNull() ?: "unknown",
         deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}",
         screenSize = "unknown", // 需要在Composable中获取
-        capabilities = listOf(
-            "Camera", "Microphone", "GPS", "Bluetooth", "NFC", 
-            "Biometric", "Push Notifications", "Background Processing",
-            "File System", "Network", "Sensors", "Vibration"
-        )
+        capabilities =
+            listOf(
+                "Camera", "Microphone", "GPS", "Bluetooth", "NFC",
+                "Biometric", "Push Notifications", "Background Processing",
+                "File System", "Network", "Sensors", "Vibration",
+            ),
     )
 }
 
@@ -83,41 +80,42 @@ actual fun getPlatformSpecificUI(): PlatformSpecificUI {
  * Android平台UI实现
  */
 class AndroidPlatformUI : PlatformSpecificUI {
-    
     @Composable
     override fun NativeButton(
         text: String,
         onClick: () -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Button(
             onClick = onClick,
             modifier = modifier,
             enabled = enabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            ),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = 6.dp,
-                pressedElevation = 8.dp
-            )
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            elevation =
+                ButtonDefaults.buttonElevation(
+                    defaultElevation = 6.dp,
+                    pressedElevation = 8.dp,
+                ),
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
-    
+
     @Composable
     override fun NativeTextField(
         value: String,
         onValueChange: (String) -> Unit,
         modifier: Modifier,
         placeholder: String,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         OutlinedTextField(
             value = value,
@@ -125,42 +123,44 @@ class AndroidPlatformUI : PlatformSpecificUI {
             modifier = modifier,
             placeholder = { Text(placeholder) },
             enabled = enabled,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            ),
-            shape = RoundedCornerShape(12.dp)
+            colors =
+                OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+                ),
+            shape = RoundedCornerShape(12.dp),
         )
     }
-    
+
     @Composable
     override fun NativeSwitch(
         checked: Boolean,
         onCheckedChange: (Boolean) -> Unit,
         modifier: Modifier,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
             modifier = modifier,
             enabled = enabled,
-            colors = SwitchDefaults.colors(
-                checkedThumbColor = MaterialTheme.colorScheme.primary,
-                checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors =
+                SwitchDefaults.colors(
+                    checkedThumbColor = MaterialTheme.colorScheme.primary,
+                    checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         )
     }
-    
+
     @Composable
     override fun NativeSlider(
         value: Float,
         onValueChange: (Float) -> Unit,
         modifier: Modifier,
         valueRange: ClosedFloatingPointRange<Float>,
-        enabled: Boolean
+        enabled: Boolean,
     ) {
         Slider(
             value = value,
@@ -168,28 +168,29 @@ class AndroidPlatformUI : PlatformSpecificUI {
             modifier = modifier,
             enabled = enabled,
             valueRange = valueRange,
-            colors = SliderDefaults.colors(
-                thumbColor = MaterialTheme.colorScheme.primary,
-                activeTrackColor = MaterialTheme.colorScheme.primary,
-                inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+            colors =
+                SliderDefaults.colors(
+                    thumbColor = MaterialTheme.colorScheme.primary,
+                    activeTrackColor = MaterialTheme.colorScheme.primary,
+                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                ),
         )
     }
-    
+
     @Composable
     override fun NativeProgressBar(
         progress: Float,
         modifier: Modifier,
-        color: Color
+        color: Color,
     ) {
         LinearProgressIndicator(
             progress = { progress },
             modifier = modifier,
             color = color,
-            trackColor = color.copy(alpha = 0.3f)
+            trackColor = color.copy(alpha = 0.3f),
         )
     }
-    
+
     @Composable
     override fun NativeDialog(
         title: String,
@@ -197,7 +198,7 @@ class AndroidPlatformUI : PlatformSpecificUI {
         onConfirm: () -> Unit,
         onDismiss: () -> Unit,
         confirmText: String,
-        dismissText: String
+        dismissText: String,
     ) {
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -205,21 +206,22 @@ class AndroidPlatformUI : PlatformSpecificUI {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
                 )
             },
             text = {
                 Text(
                     text = message,
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
             },
             confirmButton = {
                 TextButton(
                     onClick = onConfirm,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary,
+                        ),
                 ) {
                     Text(confirmText)
                 }
@@ -227,114 +229,121 @@ class AndroidPlatformUI : PlatformSpecificUI {
             dismissButton = {
                 TextButton(
                     onClick = onDismiss,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                 ) {
                     Text(dismissText)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
-            tonalElevation = 6.dp
+            tonalElevation = 6.dp,
         )
     }
-    
+
     @Composable
     override fun NativeToast(
         message: String,
         duration: Long,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
         val context = LocalContext.current
-        
+
         LaunchedEffect(message) {
             // 使用Android原生Toast
             android.widget.Toast.makeText(
                 context,
                 message,
-                if (duration > 3000) android.widget.Toast.LENGTH_LONG else android.widget.Toast.LENGTH_SHORT
+                if (duration > 3000) android.widget.Toast.LENGTH_LONG else android.widget.Toast.LENGTH_SHORT,
             ).show()
-            
+
             kotlinx.coroutines.delay(duration)
             onDismiss()
         }
     }
-    
+
     @Composable
     override fun NativeActionSheet(
         title: String,
         actions: List<ActionSheetItem>,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 8.dp
+            tonalElevation = 8.dp,
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
             ) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
-                
+
                 actions.forEach { action ->
                     ListItem(
                         headlineContent = {
                             Text(
                                 text = action.title,
-                                color = if (action.isDestructive) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        },
-                        leadingContent = action.icon?.let { icon ->
-                            {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = action.title,
-                                    tint = if (action.isDestructive) {
+                                color =
+                                    if (action.isDestructive) {
                                         MaterialTheme.colorScheme.error
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
-                                    }
-                                )
-                            }
+                                    },
+                            )
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable {
-                                action.action()
-                                onDismiss()
-                            }
-                            .padding(vertical = 4.dp)
+                        leadingContent =
+                            action.icon?.let { icon ->
+                                {
+                                    Icon(
+                                        imageVector = icon,
+                                        contentDescription = action.title,
+                                        tint =
+                                            if (action.isDestructive) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface
+                                            },
+                                    )
+                                }
+                            },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    action.action()
+                                    onDismiss()
+                                }
+                                .padding(vertical = 4.dp),
                     )
                 }
-                
+
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
-    
+
     @Composable
     override fun NativeDatePicker(
         selectedDate: Long?,
         onDateSelected: (Long) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
-        val datePickerState = rememberDatePickerState(
-            initialSelectedDateMillis = selectedDate
-        )
-        
+        val datePickerState =
+            rememberDatePickerState(
+                initialSelectedDateMillis = selectedDate,
+            )
+
         DatePickerDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -342,7 +351,7 @@ class AndroidPlatformUI : PlatformSpecificUI {
                     onClick = {
                         datePickerState.selectedDateMillis?.let { onDateSelected(it) }
                         onDismiss()
-                    }
+                    },
                 ) {
                     Text("确定")
                 }
@@ -352,32 +361,35 @@ class AndroidPlatformUI : PlatformSpecificUI {
                     Text("取消")
                 }
             },
-            colors = DatePickerDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
+            colors =
+                DatePickerDefaults.colors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
         ) {
             DatePicker(
                 state = datePickerState,
-                colors = DatePickerDefaults.colors(
-                    selectedDayContainerColor = MaterialTheme.colorScheme.primary,
-                    selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
-                    todayDateBorderColor = MaterialTheme.colorScheme.primary
-                )
+                colors =
+                    DatePickerDefaults.colors(
+                        selectedDayContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedDayContentColor = MaterialTheme.colorScheme.onPrimary,
+                        todayDateBorderColor = MaterialTheme.colorScheme.primary,
+                    ),
             )
         }
     }
-    
+
     @Composable
     override fun NativeTimePicker(
         selectedTime: Pair<Int, Int>?,
         onTimeSelected: (Int, Int) -> Unit,
-        onDismiss: () -> Unit
+        onDismiss: () -> Unit,
     ) {
-        val timePickerState = rememberTimePickerState(
-            initialHour = selectedTime?.first ?: 12,
-            initialMinute = selectedTime?.second ?: 0
-        )
-        
+        val timePickerState =
+            rememberTimePickerState(
+                initialHour = selectedTime?.first ?: 12,
+                initialMinute = selectedTime?.second ?: 0,
+            )
+
         AlertDialog(
             onDismissRequest = onDismiss,
             confirmButton = {
@@ -385,7 +397,7 @@ class AndroidPlatformUI : PlatformSpecificUI {
                     onClick = {
                         onTimeSelected(timePickerState.hour, timePickerState.minute)
                         onDismiss()
-                    }
+                    },
                 ) {
                     Text("确定")
                 }
@@ -398,13 +410,14 @@ class AndroidPlatformUI : PlatformSpecificUI {
             text = {
                 TimePicker(
                     state = timePickerState,
-                    colors = TimePickerDefaults.colors(
-                        selectorColor = MaterialTheme.colorScheme.primary,
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
+                    colors =
+                        TimePickerDefaults.colors(
+                            selectorColor = MaterialTheme.colorScheme.primary,
+                            containerColor = MaterialTheme.colorScheme.surface,
+                        ),
                 )
             },
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface,
         )
     }
 }
@@ -417,7 +430,7 @@ fun checkAndroidPermission(permission: String): Boolean {
     val context = LocalContext.current
     return ContextCompat.checkSelfPermission(
         context,
-        permission
+        permission,
     ) == PackageManager.PERMISSION_GRANTED
 }
 
@@ -434,14 +447,15 @@ object AndroidSpecificFeatures {
             "RELEASE" to Build.VERSION.RELEASE,
             "CODENAME" to Build.VERSION.CODENAME,
             "INCREMENTAL" to Build.VERSION.INCREMENTAL,
-            "SECURITY_PATCH" to if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                Build.VERSION.SECURITY_PATCH
-            } else {
-                "N/A"
-            }
+            "SECURITY_PATCH" to
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Build.VERSION.SECURITY_PATCH
+                } else {
+                    "N/A"
+                },
         )
     }
-    
+
     /**
      * 获取设备硬件信息
      */
@@ -454,10 +468,10 @@ object AndroidSpecificFeatures {
             "PRODUCT" to Build.PRODUCT,
             "HARDWARE" to Build.HARDWARE,
             "BOARD" to Build.BOARD,
-            "SUPPORTED_ABIS" to Build.SUPPORTED_ABIS.joinToString(", ")
+            "SUPPORTED_ABIS" to Build.SUPPORTED_ABIS.joinToString(", "),
         )
     }
-    
+
     /**
      * 检查是否为平板设备
      */
@@ -465,11 +479,11 @@ object AndroidSpecificFeatures {
     fun isTablet(): Boolean {
         val context = LocalContext.current
         val configuration = context.resources.configuration
-        return configuration.screenLayout and 
-                android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK >= 
-                android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
+        return configuration.screenLayout and
+            android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK >=
+            android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
-    
+
     /**
      * 获取屏幕密度信息
      */
@@ -477,13 +491,13 @@ object AndroidSpecificFeatures {
     fun getScreenDensityInfo(): Map<String, String> {
         val context = LocalContext.current
         val displayMetrics = context.resources.displayMetrics
-        
+
         return mapOf(
             "DENSITY" to displayMetrics.density.toString(),
             "DENSITY_DPI" to displayMetrics.densityDpi.toString(),
             "SCALED_DENSITY" to displayMetrics.scaledDensity.toString(),
             "WIDTH_PIXELS" to displayMetrics.widthPixels.toString(),
-            "HEIGHT_PIXELS" to displayMetrics.heightPixels.toString()
+            "HEIGHT_PIXELS" to displayMetrics.heightPixels.toString(),
         )
     }
 }

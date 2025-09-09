@@ -1,18 +1,19 @@
 package com.unify.core.ui.components
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.material.ripple.rememberRipple
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -22,15 +23,11 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.Spring
 
 /**
  * Android平台特定的Modifier扩展
@@ -43,10 +40,10 @@ import androidx.compose.animation.core.Spring
 @Composable
 actual fun Modifier.platformClickable(
     enabled: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ): Modifier {
     val haptic = LocalHapticFeedback.current
-    
+
     return this.clickable(
         enabled = enabled,
         indication = null,
@@ -56,7 +53,7 @@ actual fun Modifier.platformClickable(
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             }
-        }
+        },
     )
 }
 
@@ -66,17 +63,17 @@ actual fun Modifier.platformClickable(
 @Composable
 actual fun Modifier.platformLongClickable(
     enabled: Boolean,
-    onLongClick: () -> Unit
+    onLongClick: () -> Unit,
 ): Modifier {
     val haptic = LocalHapticFeedback.current
-    
+
     return this.pointerInput(enabled) {
         if (enabled) {
             detectTapGestures(
                 onLongPress = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onLongClick()
-                }
+                },
             )
         }
     }
@@ -89,15 +86,15 @@ actual fun Modifier.platformLongClickable(
 actual fun Modifier.platformShadow(
     elevation: Dp,
     shape: Shape,
-    clip: Boolean
+    clip: Boolean,
 ): Modifier {
     return this
         .let { if (clip) it.clip(shape) else it }
         .then(
             background(
                 MaterialTheme.colorScheme.surface,
-                shape
-            )
+                shape,
+            ),
         )
 }
 
@@ -105,9 +102,7 @@ actual fun Modifier.platformShadow(
  * Android平台圆角效果
  */
 @Composable
-actual fun Modifier.platformRoundedCorners(
-    radius: Dp
-): Modifier {
+actual fun Modifier.platformRoundedCorners(radius: Dp): Modifier {
     return this.clip(RoundedCornerShape(radius))
 }
 
@@ -118,14 +113,14 @@ actual fun Modifier.platformRoundedCorners(
 actual fun Modifier.platformBorder(
     width: Dp,
     color: Color,
-    shape: Shape
+    shape: Shape,
 ): Modifier {
     return this.then(
         border(
             width = width,
             color = color,
-            shape = shape
-        )
+            shape = shape,
+        ),
     )
 }
 
@@ -135,7 +130,7 @@ actual fun Modifier.platformBorder(
 @Composable
 actual fun Modifier.platformPadding(
     horizontal: Dp,
-    vertical: Dp
+    vertical: Dp,
 ): Modifier {
     return this.padding(horizontal = horizontal, vertical = vertical)
 }
@@ -146,7 +141,7 @@ actual fun Modifier.platformPadding(
 @Composable
 actual fun Modifier.platformSize(
     width: Dp,
-    height: Dp
+    height: Dp,
 ): Modifier {
     return this.size(width = width, height = height)
 }
@@ -155,17 +150,15 @@ actual fun Modifier.platformSize(
  * Android平台触摸反馈
  */
 @Composable
-actual fun Modifier.platformTouchFeedback(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformTouchFeedback(enabled: Boolean): Modifier {
     val haptic = LocalHapticFeedback.current
-    
+
     return this.pointerInput(enabled) {
         if (enabled) {
             detectTapGestures(
                 onPress = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                }
+                },
             )
         }
     }
@@ -177,7 +170,7 @@ actual fun Modifier.platformTouchFeedback(
 @Composable
 actual fun Modifier.platformAccessibility(
     contentDescription: String?,
-    role: String?
+    role: String?,
 ): Modifier {
     return this.then(
         semantics {
@@ -194,7 +187,7 @@ actual fun Modifier.platformAccessibility(
                     "image" -> this.role = Role.Image
                 }
             }
-        }
+        },
     )
 }
 
@@ -202,14 +195,12 @@ actual fun Modifier.platformAccessibility(
  * Android平台滚动行为
  */
 @Composable
-actual fun Modifier.platformScrollable(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformScrollable(enabled: Boolean): Modifier {
     return if (enabled) {
         this.then(
             verticalScroll(
-                rememberScrollState()
-            )
+                rememberScrollState(),
+            ),
         )
     } else {
         this
@@ -220,17 +211,16 @@ actual fun Modifier.platformScrollable(
  * Android平台动画效果
  */
 @Composable
-actual fun Modifier.platformAnimated(
-    enabled: Boolean
-): Modifier {
+actual fun Modifier.platformAnimated(enabled: Boolean): Modifier {
     return if (enabled) {
         this.then(
             animateContentSize(
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessLow
-                )
-            )
+                animationSpec =
+                    spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow,
+                    ),
+            ),
         )
     } else {
         this

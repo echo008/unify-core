@@ -1,20 +1,9 @@
 package com.unify.data.sync
 
-import kotlinx.coroutines.flow.Flow
 import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.MutableStateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.coroutines.flow.StateFlow
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 import kotlinx.serialization.Serializable
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
-import kotlinx.serialization.json.Json
-import com.unify.core.platform.getCurrentTimeMillis
-import com.unify.core.platform.getNanoTime
 
 /**
  * Unify数据同步实现
@@ -23,12 +12,12 @@ import com.unify.core.platform.getNanoTime
 class UnifyDataSyncImpl {
     private val _syncState = MutableStateFlow(SyncState())
     val syncState: StateFlow<SyncState> = _syncState
-    
+
     private val conflictResolver = ConflictResolver()
     private val syncQueue = mutableListOf<SyncOperation>()
     private val localChanges = mutableMapOf<String, LocalChange>()
     private val remoteChanges = mutableMapOf<String, RemoteChange>()
-    
+
     // 同步常量
     companion object {
         private const val SYNC_BATCH_SIZE = 50
@@ -44,194 +33,210 @@ class UnifyDataSyncImpl {
         private const val SYNC_PRIORITY_NORMAL = 2
         private const val SYNC_PRIORITY_LOW = 3
     }
-    
+
     /**
      * 同步数据
      */
     suspend fun syncData(localData: Map<String, String>): SyncResult {
         return try {
-            _syncState.value = _syncState.value.copy(
-                isActive = true,
-                status = SyncStatus.SYNCING,
-                startTime = getCurrentTimeMillis(),
-                error = null
-            )
-            
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = true,
+                    status = SyncStatus.SYNCING,
+                    startTime = getCurrentTimeMillis(),
+                    error = null,
+                )
+
             // 1. 准备同步数据
             val syncPayload = prepareSyncPayload(localData)
-            
+
             // 2. 检测本地变更
             detectLocalChanges(localData)
-            
+
             // 3. 获取远程变更
             val remoteChangesResult = fetchRemoteChanges()
-            
+
             // 4. 解决冲突
             val conflictResolution = resolveConflicts()
-            
+
             // 5. 应用变更
             val applyResult = applyChanges(conflictResolution)
-            
+
             // 6. 上传本地变更
             val uploadResult = uploadLocalChanges(syncPayload)
-            
+
             // 7. 完成同步
             val finalResult = completeSyncProcess(uploadResult, applyResult)
-            
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = if (finalResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                lastSyncTime = if (finalResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime,
-                error = if (!finalResult.isSuccess) finalResult.error else null
-            )
-            
+
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = if (finalResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    lastSyncTime = if (finalResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime,
+                    error = if (!finalResult.isSuccess) finalResult.error else null,
+                )
+
             finalResult
-            
         } catch (e: Exception) {
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                error = "同步异常: ${e.message}"
-            )
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    error = "同步异常: ${e.message}",
+                )
             SyncResult.Error("同步失败: ${e.message}")
         }
     }
-    
+
     /**
      * 增量同步
      */
     suspend fun incrementalSync(lastSyncTime: Long): SyncResult {
         return try {
-            _syncState.value = _syncState.value.copy(
-                isActive = true,
-                status = SyncStatus.INCREMENTAL_SYNC,
-                startTime = getCurrentTimeMillis()
-            )
-            
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = true,
+                    status = SyncStatus.INCREMENTAL_SYNC,
+                    startTime = getCurrentTimeMillis(),
+                )
+
             // 获取增量变更
             val incrementalChanges = getIncrementalChanges(lastSyncTime)
-            
+
             if (incrementalChanges.isEmpty()) {
-                _syncState.value = _syncState.value.copy(
-                    isActive = false,
-                    status = SyncStatus.UP_TO_DATE,
-                    endTime = getCurrentTimeMillis()
+                _syncState.value =
+                    _syncState.value.copy(
+                        isActive = false,
+                        status = SyncStatus.UP_TO_DATE,
+                        endTime = getCurrentTimeMillis(),
+                    )
+                return SyncResult.Success(
+                    SyncStats(
+                        itemsSynced = 0,
+                        conflictsResolved = 0,
+                        syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
+                        dataTransferred = 0,
+                    ),
                 )
-                return SyncResult.Success(SyncStats(
-                    itemsSynced = 0,
-                    conflictsResolved = 0,
-                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
-                    dataTransferred = 0
-                ))
             }
-            
+
             // 应用增量变更
             val applyResult = applyIncrementalChanges(incrementalChanges)
-            
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = if (applyResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                lastSyncTime = if (applyResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime
-            )
-            
+
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = if (applyResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    lastSyncTime = if (applyResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime,
+                )
+
             applyResult
-            
         } catch (e: Exception) {
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                error = "增量同步失败: ${e.message}"
-            )
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    error = "增量同步失败: ${e.message}",
+                )
             SyncResult.Error("增量同步失败: ${e.message}")
         }
     }
-    
+
     /**
      * 离线同步
      */
     suspend fun offlineSync(): SyncResult {
         return try {
             if (localChanges.isEmpty()) {
-                return SyncResult.Success(SyncStats(
-                    itemsSynced = 0,
-                    conflictsResolved = 0,
-                    syncDuration = 0,
-                    dataTransferred = 0
-                ))
+                return SyncResult.Success(
+                    SyncStats(
+                        itemsSynced = 0,
+                        conflictsResolved = 0,
+                        syncDuration = 0,
+                        dataTransferred = 0,
+                    ),
+                )
             }
-            
-            _syncState.value = _syncState.value.copy(
-                isActive = true,
-                status = SyncStatus.OFFLINE_SYNC,
-                startTime = getCurrentTimeMillis()
-            )
-            
+
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = true,
+                    status = SyncStatus.OFFLINE_SYNC,
+                    startTime = getCurrentTimeMillis(),
+                )
+
             // 处理离线变更队列
             val offlineChanges = localChanges.values.toList()
             val processedChanges = processOfflineChanges(offlineChanges)
-            
+
             // 批量上传
             val uploadResult = batchUploadChanges(processedChanges)
-            
+
             if (uploadResult.isSuccess) {
                 localChanges.clear()
             }
-            
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = if (uploadResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                lastSyncTime = if (uploadResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime
-            )
-            
+
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = if (uploadResult.isSuccess) SyncStatus.COMPLETED else SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    lastSyncTime = if (uploadResult.isSuccess) getCurrentTimeMillis() else _syncState.value.lastSyncTime,
+                )
+
             uploadResult
-            
         } catch (e: Exception) {
-            _syncState.value = _syncState.value.copy(
-                isActive = false,
-                status = SyncStatus.FAILED,
-                endTime = getCurrentTimeMillis(),
-                error = "离线同步失败: ${e.message}"
-            )
+            _syncState.value =
+                _syncState.value.copy(
+                    isActive = false,
+                    status = SyncStatus.FAILED,
+                    endTime = getCurrentTimeMillis(),
+                    error = "离线同步失败: ${e.message}",
+                )
             SyncResult.Error("离线同步失败: ${e.message}")
         }
     }
-    
+
     /**
      * 添加本地变更
      */
-    suspend fun addLocalChange(key: String, value: String, operation: ChangeOperation) {
-        val change = LocalChange(
-            key = key,
-            value = value,
-            operation = operation,
-            timestamp = getCurrentTimeMillis(),
-            priority = SYNC_PRIORITY_NORMAL,
-            retryCount = 0
-        )
-        
+    suspend fun addLocalChange(
+        key: String,
+        value: String,
+        operation: ChangeOperation,
+    ) {
+        val change =
+            LocalChange(
+                key = key,
+                value = value,
+                operation = operation,
+                timestamp = getCurrentTimeMillis(),
+                priority = SYNC_PRIORITY_NORMAL,
+                retryCount = 0,
+            )
+
         localChanges[key] = change
-        
+
         // 限制离线变更数量
         if (localChanges.size > MAX_OFFLINE_CHANGES) {
             val oldestKey = localChanges.minByOrNull { it.value.timestamp }?.key
             oldestKey?.let { localChanges.remove(it) }
         }
-        
+
         updateSyncState()
     }
-    
+
     /**
      * 获取最后同步时间
      */
     suspend fun getLastSyncTime(): Long? {
         return _syncState.value.lastSyncTime.takeIf { it > 0 }
     }
-    
+
     /**
      * 获取同步统计信息
      */
@@ -245,10 +250,10 @@ class UnifyDataSyncImpl {
             averageSyncDuration = state.averageSyncDuration,
             totalDataSynced = state.totalDataSynced,
             pendingChanges = localChanges.size,
-            conflictsResolved = state.totalConflictsResolved
+            conflictsResolved = state.totalConflictsResolved,
         )
     }
-    
+
     /**
      * 强制同步
      */
@@ -256,50 +261,54 @@ class UnifyDataSyncImpl {
         // 清除所有缓存和状态
         localChanges.clear()
         remoteChanges.clear()
-        
-        _syncState.value = _syncState.value.copy(
-            lastSyncTime = 0,
-            error = null
-        )
-        
+
+        _syncState.value =
+            _syncState.value.copy(
+                lastSyncTime = 0,
+                error = null,
+            )
+
         return syncData(localData)
     }
-    
+
     /**
      * 取消同步
      */
     suspend fun cancelSync() {
-        _syncState.value = _syncState.value.copy(
-            isActive = false,
-            status = SyncStatus.CANCELLED,
-            endTime = getCurrentTimeMillis(),
-            error = "同步已取消"
-        )
+        _syncState.value =
+            _syncState.value.copy(
+                isActive = false,
+                status = SyncStatus.CANCELLED,
+                endTime = getCurrentTimeMillis(),
+                error = "同步已取消",
+            )
     }
-    
+
     // 私有辅助方法
-    
+
     private suspend fun prepareSyncPayload(localData: Map<String, String>): SyncPayload {
         val changes = mutableListOf<DataChange>()
-        
+
         localData.forEach { (key, value) ->
-            changes.add(DataChange(
-                key = key,
-                value = value,
-                operation = ChangeOperation.UPDATE,
-                timestamp = getCurrentTimeMillis(),
-                checksum = calculateChecksum(value)
-            ))
+            changes.add(
+                DataChange(
+                    key = key,
+                    value = value,
+                    operation = ChangeOperation.UPDATE,
+                    timestamp = getCurrentTimeMillis(),
+                    checksum = calculateChecksum(value),
+                ),
+            )
         }
-        
+
         return SyncPayload(
             changes = changes,
             timestamp = getCurrentTimeMillis(),
             deviceId = getDeviceId(),
-            version = "1.0"
+            version = "1.0",
         )
     }
-    
+
     private suspend fun detectLocalChanges(localData: Map<String, String>) {
         // 检测本地数据变更
         localData.forEach { (key, value) ->
@@ -308,54 +317,57 @@ class UnifyDataSyncImpl {
             }
         }
     }
-    
+
     private suspend fun fetchRemoteChanges(): RemoteChangesResult {
         return try {
             // 模拟从服务器获取远程变更
             val changes = mutableMapOf<String, RemoteChange>()
-            
+
             // 这里应该调用实际的网络API
             // val response = networkClient.fetchChanges(lastSyncTime)
-            
+
             RemoteChangesResult.Success(changes)
         } catch (e: Exception) {
             RemoteChangesResult.Error("获取远程变更失败: ${e.message}")
         }
     }
-    
+
     private suspend fun resolveConflicts(): ConflictResolutionResult {
         val conflicts = mutableListOf<DataConflict>()
-        
+
         // 检测冲突
         localChanges.forEach { (key, localChange) ->
             remoteChanges[key]?.let { remoteChange ->
                 if (localChange.timestamp != remoteChange.timestamp) {
-                    conflicts.add(DataConflict(
-                        key = key,
-                        localChange = localChange,
-                        remoteChange = remoteChange,
-                        conflictType = determineConflictType(localChange, remoteChange)
-                    ))
+                    conflicts.add(
+                        DataConflict(
+                            key = key,
+                            localChange = localChange,
+                            remoteChange = remoteChange,
+                            conflictType = determineConflictType(localChange, remoteChange),
+                        ),
+                    )
                 }
             }
         }
-        
+
         // 解决冲突
-        val resolutions = conflicts.map { conflict ->
-            conflictResolver.resolve(conflict)
-        }
-        
+        val resolutions =
+            conflicts.map { conflict ->
+                conflictResolver.resolve(conflict)
+            }
+
         return ConflictResolutionResult(
             conflicts = conflicts,
             resolutions = resolutions,
-            resolvedCount = resolutions.count { it.resolution != ConflictResolution.UNRESOLVED }
+            resolvedCount = resolutions.count { it.resolution != ConflictResolution.UNRESOLVED },
         )
     }
-    
+
     private suspend fun applyChanges(conflictResolution: ConflictResolutionResult): ApplyChangesResult {
         var appliedCount = 0
         val errors = mutableListOf<String>()
-        
+
         try {
             // 应用冲突解决方案
             conflictResolution.resolutions.forEach { resolution ->
@@ -373,10 +385,11 @@ class UnifyDataSyncImpl {
                     }
                     ConflictResolution.MERGE -> {
                         // 合并版本
-                        val mergedValue = mergeValues(
-                            resolution.conflict.localChange.value,
-                            resolution.conflict.remoteChange.value
-                        )
+                        val mergedValue =
+                            mergeValues(
+                                resolution.conflict.localChange.value,
+                                resolution.conflict.remoteChange.value,
+                            )
                         appliedCount++
                     }
                     ConflictResolution.UNRESOLVED -> {
@@ -384,60 +397,61 @@ class UnifyDataSyncImpl {
                     }
                 }
             }
-            
+
             return ApplyChangesResult.Success(appliedCount, errors)
-            
         } catch (e: Exception) {
             return ApplyChangesResult.Error("应用变更失败: ${e.message}")
         }
     }
-    
+
     private suspend fun uploadLocalChanges(payload: SyncPayload): UploadResult {
         return try {
             // 模拟上传到服务器
             // val response = networkClient.uploadChanges(payload)
-            
-            val uploadStats = UploadStats(
-                itemsUploaded = payload.changes.size,
-                dataSize = payload.changes.sumOf { it.value.length },
-                uploadTime = getCurrentTimeMillis()
-            )
-            
+
+            val uploadStats =
+                UploadStats(
+                    itemsUploaded = payload.changes.size,
+                    dataSize = payload.changes.sumOf { it.value.length },
+                    uploadTime = getCurrentTimeMillis(),
+                )
+
             UploadResult.Success(uploadStats)
-            
         } catch (e: Exception) {
             UploadResult.Error("上传失败: ${e.message}")
         }
     }
-    
+
     private suspend fun completeSyncProcess(
         uploadResult: UploadResult,
-        applyResult: ApplyChangesResult
+        applyResult: ApplyChangesResult,
     ): SyncResult {
         return when {
             uploadResult is UploadResult.Success && applyResult is ApplyChangesResult.Success -> {
-                val stats = SyncStats(
-                    itemsSynced = uploadResult.stats.itemsUploaded + applyResult.appliedCount,
-                    conflictsResolved = 0, // 从冲突解决结果获取
-                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
-                    dataTransferred = uploadResult.stats.dataSize
-                )
-                
+                val stats =
+                    SyncStats(
+                        itemsSynced = uploadResult.stats.itemsUploaded + applyResult.appliedCount,
+                        conflictsResolved = 0, // 从冲突解决结果获取
+                        syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
+                        dataTransferred = uploadResult.stats.dataSize,
+                    )
+
                 updateSyncStatistics(true, stats)
                 SyncResult.Success(stats)
             }
             else -> {
-                val error = when {
-                    uploadResult is UploadResult.Error -> uploadResult.message
-                    applyResult is ApplyChangesResult.Error -> applyResult.message
-                    else -> "未知错误"
-                }
+                val error =
+                    when {
+                        uploadResult is UploadResult.Error -> uploadResult.message
+                        applyResult is ApplyChangesResult.Error -> applyResult.message
+                        else -> "未知错误"
+                    }
                 updateSyncStatistics(false, null)
                 SyncResult.Error(error)
             }
         }
     }
-    
+
     private suspend fun getIncrementalChanges(lastSyncTime: Long): List<IncrementalChange> {
         // 获取指定时间后的变更
         return localChanges.values
@@ -447,38 +461,38 @@ class UnifyDataSyncImpl {
                     key = localChange.key,
                     value = localChange.value,
                     operation = localChange.operation,
-                    timestamp = localChange.timestamp
+                    timestamp = localChange.timestamp,
                 )
             }
     }
-    
+
     private suspend fun applyIncrementalChanges(changes: List<IncrementalChange>): SyncResult {
         return try {
             var appliedCount = 0
             var dataSize = 0
-            
+
             changes.forEach { change ->
                 // 应用增量变更
                 appliedCount++
                 dataSize += change.value.length
             }
-            
-            val stats = SyncStats(
-                itemsSynced = appliedCount,
-                conflictsResolved = 0,
-                syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
-                dataTransferred = dataSize
-            )
-            
+
+            val stats =
+                SyncStats(
+                    itemsSynced = appliedCount,
+                    conflictsResolved = 0,
+                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
+                    dataTransferred = dataSize,
+                )
+
             updateSyncStatistics(true, stats)
             SyncResult.Success(stats)
-            
         } catch (e: Exception) {
             updateSyncStatistics(false, null)
             SyncResult.Error("应用增量变更失败: ${e.message}")
         }
     }
-    
+
     private suspend fun processOfflineChanges(changes: List<LocalChange>): List<ProcessedChange> {
         return changes.map { change ->
             ProcessedChange(
@@ -487,40 +501,43 @@ class UnifyDataSyncImpl {
                 operation = change.operation,
                 timestamp = change.timestamp,
                 compressed = change.value.length > COMPRESSION_THRESHOLD,
-                priority = change.priority
+                priority = change.priority,
             )
         }.sortedBy { it.priority }
     }
-    
+
     private suspend fun batchUploadChanges(changes: List<ProcessedChange>): SyncResult {
         return try {
             val batches = changes.chunked(SYNC_BATCH_SIZE)
             var totalUploaded = 0
             var totalDataSize = 0
-            
+
             batches.forEach { batch ->
                 // 上传批次
                 totalUploaded += batch.size
                 totalDataSize += batch.sumOf { it.value.length }
             }
-            
-            val stats = SyncStats(
-                itemsSynced = totalUploaded,
-                conflictsResolved = 0,
-                syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
-                dataTransferred = totalDataSize
-            )
-            
+
+            val stats =
+                SyncStats(
+                    itemsSynced = totalUploaded,
+                    conflictsResolved = 0,
+                    syncDuration = getCurrentTimeMillis() - _syncState.value.startTime,
+                    dataTransferred = totalDataSize,
+                )
+
             updateSyncStatistics(true, stats)
             SyncResult.Success(stats)
-            
         } catch (e: Exception) {
             updateSyncStatistics(false, null)
             SyncResult.Error("批量上传失败: ${e.message}")
         }
     }
-    
-    private fun determineConflictType(localChange: LocalChange, remoteChange: RemoteChange): ConflictType {
+
+    private fun determineConflictType(
+        localChange: LocalChange,
+        remoteChange: RemoteChange,
+    ): ConflictType {
         return when {
             localChange.operation == ChangeOperation.DELETE && remoteChange.operation == ChangeOperation.UPDATE -> ConflictType.DELETE_UPDATE
             localChange.operation == ChangeOperation.UPDATE && remoteChange.operation == ChangeOperation.DELETE -> ConflictType.UPDATE_DELETE
@@ -528,36 +545,44 @@ class UnifyDataSyncImpl {
             else -> ConflictType.OTHER
         }
     }
-    
-    private fun mergeValues(localValue: String, remoteValue: String): String {
+
+    private fun mergeValues(
+        localValue: String,
+        remoteValue: String,
+    ): String {
         // 简单的合并策略：使用较新的值
         return if (localValue.length > remoteValue.length) localValue else remoteValue
     }
-    
+
     private fun calculateChecksum(data: String): String {
         return data.hashCode().toString(16)
     }
-    
+
     private fun getDeviceId(): String {
         return "device_${getCurrentTimeMillis().hashCode()}"
     }
-    
+
     private fun updateSyncState() {
-        _syncState.value = _syncState.value.copy(
-            pendingChanges = localChanges.size,
-            lastUpdateTime = getCurrentTimeMillis()
-        )
+        _syncState.value =
+            _syncState.value.copy(
+                pendingChanges = localChanges.size,
+                lastUpdateTime = getCurrentTimeMillis(),
+            )
     }
-    
-    private fun updateSyncStatistics(success: Boolean, stats: SyncStats?) {
-        _syncState.value = _syncState.value.copy(
-            totalSyncs = _syncState.value.totalSyncs + 1,
-            successfulSyncs = if (success) _syncState.value.successfulSyncs + 1 else _syncState.value.successfulSyncs,
-            failedSyncs = if (!success) _syncState.value.failedSyncs + 1 else _syncState.value.failedSyncs,
-            averageSyncDuration = stats?.syncDuration ?: _syncState.value.averageSyncDuration,
-            totalDataSynced = _syncState.value.totalDataSynced + (stats?.dataTransferred ?: 0),
-            totalConflictsResolved = _syncState.value.totalConflictsResolved + (stats?.conflictsResolved ?: 0)
-        )
+
+    private fun updateSyncStatistics(
+        success: Boolean,
+        stats: SyncStats?,
+    ) {
+        _syncState.value =
+            _syncState.value.copy(
+                totalSyncs = _syncState.value.totalSyncs + 1,
+                successfulSyncs = if (success) _syncState.value.successfulSyncs + 1 else _syncState.value.successfulSyncs,
+                failedSyncs = if (!success) _syncState.value.failedSyncs + 1 else _syncState.value.failedSyncs,
+                averageSyncDuration = stats?.syncDuration ?: _syncState.value.averageSyncDuration,
+                totalDataSynced = _syncState.value.totalDataSynced + (stats?.dataTransferred ?: 0),
+                totalConflictsResolved = _syncState.value.totalConflictsResolved + (stats?.conflictsResolved ?: 0),
+            )
     }
 }
 
@@ -578,7 +603,7 @@ data class SyncState(
     val failedSyncs: Long = 0,
     val averageSyncDuration: Long = 0,
     val totalDataSynced: Long = 0,
-    val totalConflictsResolved: Long = 0
+    val totalConflictsResolved: Long = 0,
 )
 
 enum class SyncStatus {
@@ -589,7 +614,7 @@ enum class SyncStatus {
     COMPLETED,
     FAILED,
     CANCELLED,
-    UP_TO_DATE
+    UP_TO_DATE,
 }
 
 @Serializable
@@ -597,7 +622,7 @@ data class SyncPayload(
     val changes: List<DataChange>,
     val timestamp: Long,
     val deviceId: String,
-    val version: String
+    val version: String,
 )
 
 @Serializable
@@ -606,13 +631,13 @@ data class DataChange(
     val value: String,
     val operation: ChangeOperation,
     val timestamp: Long,
-    val checksum: String
+    val checksum: String,
 )
 
 enum class ChangeOperation {
     CREATE,
     UPDATE,
-    DELETE
+    DELETE,
 }
 
 @Serializable
@@ -622,7 +647,7 @@ data class LocalChange(
     val operation: ChangeOperation,
     val timestamp: Long,
     val priority: Int,
-    val retryCount: Int
+    val retryCount: Int,
 )
 
 @Serializable
@@ -631,7 +656,7 @@ data class RemoteChange(
     val value: String,
     val operation: ChangeOperation,
     val timestamp: Long,
-    val serverId: String
+    val serverId: String,
 )
 
 @Serializable
@@ -639,7 +664,7 @@ data class IncrementalChange(
     val key: String,
     val value: String,
     val operation: ChangeOperation,
-    val timestamp: Long
+    val timestamp: Long,
 )
 
 @Serializable
@@ -649,7 +674,7 @@ data class ProcessedChange(
     val operation: ChangeOperation,
     val timestamp: Long,
     val compressed: Boolean,
-    val priority: Int
+    val priority: Int,
 )
 
 @Serializable
@@ -657,35 +682,35 @@ data class DataConflict(
     val key: String,
     val localChange: LocalChange,
     val remoteChange: RemoteChange,
-    val conflictType: ConflictType
+    val conflictType: ConflictType,
 )
 
 enum class ConflictType {
     UPDATE_UPDATE,
     UPDATE_DELETE,
     DELETE_UPDATE,
-    OTHER
+    OTHER,
 }
 
 @Serializable
 data class ConflictResolutionResult(
     val conflicts: List<DataConflict>,
     val resolutions: List<ConflictResolutionEntry>,
-    val resolvedCount: Int
+    val resolvedCount: Int,
 )
 
 @Serializable
 data class ConflictResolutionEntry(
     val conflict: DataConflict,
     val resolution: ConflictResolution,
-    val resolvedValue: String? = null
+    val resolvedValue: String? = null,
 )
 
 enum class ConflictResolution {
     USE_LOCAL,
     USE_REMOTE,
     MERGE,
-    UNRESOLVED
+    UNRESOLVED,
 }
 
 @Serializable
@@ -693,7 +718,7 @@ data class SyncStats(
     val itemsSynced: Int,
     val conflictsResolved: Int,
     val syncDuration: Long,
-    val dataTransferred: Int
+    val dataTransferred: Int,
 )
 
 @Serializable
@@ -705,83 +730,89 @@ data class SyncStatistics(
     val averageSyncDuration: Long,
     val totalDataSynced: Long,
     val pendingChanges: Int,
-    val conflictsResolved: Long
+    val conflictsResolved: Long,
 )
 
 @Serializable
 data class UploadStats(
     val itemsUploaded: Int,
     val dataSize: Int,
-    val uploadTime: Long
+    val uploadTime: Long,
 )
 
 sealed class SyncResult {
     data class Success(val stats: SyncStats) : SyncResult()
+
     data class Error(val message: String) : SyncResult()
-    
+
     val isSuccess: Boolean get() = this is Success
     val error: String? get() = (this as? Error)?.message
 }
 
 sealed class RemoteChangesResult {
     data class Success(val changes: Map<String, RemoteChange>) : RemoteChangesResult()
+
     data class Error(val message: String) : RemoteChangesResult()
 }
 
 sealed class ApplyChangesResult {
     data class Success(val appliedCount: Int, val errors: List<String>) : ApplyChangesResult()
+
     data class Error(val message: String) : ApplyChangesResult()
 }
 
 sealed class UploadResult {
     data class Success(val stats: UploadStats) : UploadResult()
+
     data class Error(val message: String) : UploadResult()
 }
 
 // 冲突解决器
 class ConflictResolver {
     fun resolve(conflict: DataConflict): ConflictResolutionEntry {
-        val resolution = when (conflict.conflictType) {
-            ConflictType.UPDATE_UPDATE -> {
-                // 使用时间戳较新的版本
-                if (conflict.localChange.timestamp > conflict.remoteChange.timestamp) {
+        val resolution =
+            when (conflict.conflictType) {
+                ConflictType.UPDATE_UPDATE -> {
+                    // 使用时间戳较新的版本
+                    if (conflict.localChange.timestamp > conflict.remoteChange.timestamp) {
+                        ConflictResolution.USE_LOCAL
+                    } else {
+                        ConflictResolution.USE_REMOTE
+                    }
+                }
+                ConflictType.UPDATE_DELETE -> {
+                    // 保留更新，忽略删除
                     ConflictResolution.USE_LOCAL
-                } else {
+                }
+                ConflictType.DELETE_UPDATE -> {
+                    // 保留更新，忽略删除
                     ConflictResolution.USE_REMOTE
                 }
+                ConflictType.OTHER -> {
+                    ConflictResolution.USE_LOCAL
+                }
             }
-            ConflictType.UPDATE_DELETE -> {
-                // 保留更新，忽略删除
-                ConflictResolution.USE_LOCAL
+
+        val resolvedValue =
+            when (resolution) {
+                ConflictResolution.USE_LOCAL -> conflict.localChange.value
+                ConflictResolution.USE_REMOTE -> conflict.remoteChange.value
+                ConflictResolution.MERGE -> mergeConflictValues(conflict)
+                ConflictResolution.UNRESOLVED -> null
             }
-            ConflictType.DELETE_UPDATE -> {
-                // 保留更新，忽略删除
-                ConflictResolution.USE_REMOTE
-            }
-            ConflictType.OTHER -> {
-                ConflictResolution.USE_LOCAL
-            }
-        }
-        
-        val resolvedValue = when (resolution) {
-            ConflictResolution.USE_LOCAL -> conflict.localChange.value
-            ConflictResolution.USE_REMOTE -> conflict.remoteChange.value
-            ConflictResolution.MERGE -> mergeConflictValues(conflict)
-            ConflictResolution.UNRESOLVED -> null
-        }
-        
+
         return ConflictResolutionEntry(
             conflict = conflict,
             resolution = resolution,
-            resolvedValue = resolvedValue
+            resolvedValue = resolvedValue,
         )
     }
-    
+
     private fun mergeConflictValues(conflict: DataConflict): String {
         // 简单的合并策略
         val localValue = conflict.localChange.value
         val remoteValue = conflict.remoteChange.value
-        
+
         return if (localValue.length > remoteValue.length) localValue else remoteValue
     }
 }
@@ -794,13 +825,18 @@ data class SyncOperation(
     val key: String,
     val value: String?,
     val timestamp: Long,
-    val priority: SyncPriority = SyncPriority.NORMAL
+    val priority: SyncPriority = SyncPriority.NORMAL,
 )
 
 enum class SyncOperationType {
-    CREATE, UPDATE, DELETE
+    CREATE,
+    UPDATE,
+    DELETE,
 }
 
 enum class SyncPriority {
-    LOW, NORMAL, HIGH, CRITICAL
+    LOW,
+    NORMAL,
+    HIGH,
+    CRITICAL,
 }

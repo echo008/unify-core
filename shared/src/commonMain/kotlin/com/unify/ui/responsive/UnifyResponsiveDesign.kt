@@ -14,13 +14,17 @@ import androidx.compose.ui.unit.dp
 
 // 断点定义
 enum class ScreenSize {
-    COMPACT,    // 手机竖屏 < 600dp
-    MEDIUM,     // 手机横屏/小平板 600dp - 840dp
-    EXPANDED    // 大平板/桌面 > 840dp
+    COMPACT, // 手机竖屏 < 600dp
+    MEDIUM, // 手机横屏/小平板 600dp - 840dp
+    EXPANDED, // 大平板/桌面 > 840dp
 }
 
 enum class DeviceType {
-    PHONE, TABLET, DESKTOP, TV, WATCH
+    PHONE,
+    TABLET,
+    DESKTOP,
+    TV,
+    WATCH,
 }
 
 data class ResponsiveConfig(
@@ -28,37 +32,39 @@ data class ResponsiveConfig(
     val deviceType: DeviceType,
     val screenWidth: Dp,
     val screenHeight: Dp,
-    val isLandscape: Boolean
+    val isLandscape: Boolean,
 )
 
 @Composable
 fun rememberResponsiveConfig(): ResponsiveConfig {
     val density = LocalDensity.current
-    
+
     // 这里应该根据实际平台获取屏幕信息
     // 暂时使用模拟数据
     val screenWidth = 400.dp
     val screenHeight = 800.dp
     val isLandscape = screenWidth > screenHeight
-    
-    val screenSize = when {
-        screenWidth < 600.dp -> ScreenSize.COMPACT
-        screenWidth < 840.dp -> ScreenSize.MEDIUM
-        else -> ScreenSize.EXPANDED
-    }
-    
-    val deviceType = when {
-        screenWidth < 600.dp -> DeviceType.PHONE
-        screenWidth < 1200.dp -> DeviceType.TABLET
-        else -> DeviceType.DESKTOP
-    }
-    
+
+    val screenSize =
+        when {
+            screenWidth < 600.dp -> ScreenSize.COMPACT
+            screenWidth < 840.dp -> ScreenSize.MEDIUM
+            else -> ScreenSize.EXPANDED
+        }
+
+    val deviceType =
+        when {
+            screenWidth < 600.dp -> DeviceType.PHONE
+            screenWidth < 1200.dp -> DeviceType.TABLET
+            else -> DeviceType.DESKTOP
+        }
+
     return ResponsiveConfig(
         screenSize = screenSize,
         deviceType = deviceType,
         screenWidth = screenWidth,
         screenHeight = screenHeight,
-        isLandscape = isLandscape
+        isLandscape = isLandscape,
     )
 }
 
@@ -67,10 +73,10 @@ fun UnifyResponsiveLayout(
     modifier: Modifier = Modifier,
     compactContent: @Composable () -> Unit,
     mediumContent: (@Composable () -> Unit)? = null,
-    expandedContent: (@Composable () -> Unit)? = null
+    expandedContent: (@Composable () -> Unit)? = null,
 ) {
     val config = rememberResponsiveConfig()
-    
+
     Box(modifier = modifier) {
         when (config.screenSize) {
             ScreenSize.COMPACT -> compactContent()
@@ -84,10 +90,10 @@ fun UnifyResponsiveLayout(
 fun UnifyAdaptiveNavigation(
     navigationContent: @Composable () -> Unit,
     content: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val config = rememberResponsiveConfig()
-    
+
     when (config.screenSize) {
         ScreenSize.COMPACT -> {
             // 手机：底部导航
@@ -126,20 +132,21 @@ fun UnifyAdaptiveNavigation(
 @Composable
 fun UnifyAdaptiveGrid(
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     val config = rememberResponsiveConfig()
-    
-    val columns = when (config.screenSize) {
-        ScreenSize.COMPACT -> 1
-        ScreenSize.MEDIUM -> 2
-        ScreenSize.EXPANDED -> 3
-    }
-    
+
+    val columns =
+        when (config.screenSize) {
+            ScreenSize.COMPACT -> 1
+            ScreenSize.MEDIUM -> 2
+            ScreenSize.EXPANDED -> 3
+        }
+
     // 简化实现，避免LazyGridScope编译错误
     Column(
         modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         content()
     }
@@ -149,15 +156,15 @@ fun UnifyAdaptiveGrid(
 fun UnifyResponsiveRow(
     modifier: Modifier = Modifier,
     spacing: Dp = 8.dp,
-    content: @Composable RowScope.() -> Unit
+    content: @Composable RowScope.() -> Unit,
 ) {
     val config = rememberResponsiveConfig()
-    
+
     if (config.screenSize == ScreenSize.COMPACT && config.isLandscape.not()) {
         // 手机竖屏：垂直排列
         Column(
             modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(spacing)
+            verticalArrangement = Arrangement.spacedBy(spacing),
         ) {
             // 将Row内容转换为Column内容
             // 简化实现，避免RowScope编译错误
@@ -167,7 +174,7 @@ fun UnifyResponsiveRow(
         // 其他情况：水平排列
         Row(
             modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(spacing)
+            horizontalArrangement = Arrangement.spacedBy(spacing),
         ) {
             content(this)
         }
@@ -178,19 +185,19 @@ fun UnifyResponsiveRow(
 fun UnifyResponsiveColumn(
     modifier: Modifier = Modifier,
     spacing: Dp = 8.dp,
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val config = rememberResponsiveConfig()
-    
+
     if (config.screenSize == ScreenSize.EXPANDED) {
         // 大屏：可能需要限制宽度
         Row(
             modifier = modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.Center,
         ) {
             Column(
                 modifier = Modifier.widthIn(max = 800.dp),
-                verticalArrangement = Arrangement.spacedBy(spacing)
+                verticalArrangement = Arrangement.spacedBy(spacing),
             ) {
                 content(this)
             }
@@ -198,7 +205,7 @@ fun UnifyResponsiveColumn(
     } else {
         Column(
             modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(spacing)
+            verticalArrangement = Arrangement.spacedBy(spacing),
         ) {
             content(this)
         }
@@ -216,7 +223,7 @@ object ResponsiveSizes {
             ScreenSize.EXPANDED -> PaddingValues(24.dp)
         }
     }
-    
+
     @Composable
     fun cardElevation(): Dp {
         val config = rememberResponsiveConfig()
@@ -226,7 +233,7 @@ object ResponsiveSizes {
             ScreenSize.EXPANDED -> 8.dp
         }
     }
-    
+
     @Composable
     fun buttonHeight(): Dp {
         val config = rememberResponsiveConfig()
@@ -263,7 +270,7 @@ expect fun getScreenOrientation(): Int
 object BreakpointUtils {
     const val COMPACT_MAX_WIDTH = 600
     const val MEDIUM_MAX_WIDTH = 840
-    
+
     fun getScreenSize(widthDp: Int): ScreenSize {
         return when {
             widthDp < COMPACT_MAX_WIDTH -> ScreenSize.COMPACT
@@ -271,11 +278,14 @@ object BreakpointUtils {
             else -> ScreenSize.EXPANDED
         }
     }
-    
-    fun getDeviceType(widthDp: Int, heightDp: Int): DeviceType {
+
+    fun getDeviceType(
+        widthDp: Int,
+        heightDp: Int,
+    ): DeviceType {
         val minDimension = minOf(widthDp, heightDp)
         val maxDimension = maxOf(widthDp, heightDp)
-        
+
         return when {
             maxDimension < 600 -> DeviceType.PHONE
             minDimension < 600 -> DeviceType.PHONE

@@ -6,7 +6,7 @@ package com.unify.core.storage
 data class StorageConfig(
     val name: String,
     val version: Int = 1,
-    val encrypted: Boolean = false
+    val encrypted: Boolean = false,
 )
 
 /**
@@ -14,7 +14,10 @@ data class StorageConfig(
  */
 expect fun createStorage(config: StorageConfig): UnifyStorage
 
-expect fun createEncryptedStorage(config: StorageConfig, encryptionKey: String): UnifyStorage
+expect fun createEncryptedStorage(
+    config: StorageConfig,
+    encryptionKey: String,
+): UnifyStorage
 
 expect fun createMemoryStorage(): UnifyStorage
 

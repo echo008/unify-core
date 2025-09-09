@@ -22,12 +22,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.StrokeCap
-import com.unify.core.components.UnifyFeedbackType
 
 /**
  * Unify统一反馈组件
@@ -42,7 +40,7 @@ fun UnifyProgressIndicator(
     color: Color = MaterialTheme.colorScheme.primary,
     trackColor: Color = MaterialTheme.colorScheme.surfaceVariant,
     strokeWidth: androidx.compose.ui.unit.Dp = 4.dp,
-    isLinear: Boolean = false
+    isLinear: Boolean = false,
 ) {
     if (isLinear) {
         if (progress != null) {
@@ -51,14 +49,14 @@ fun UnifyProgressIndicator(
                 modifier = modifier,
                 color = color,
                 trackColor = trackColor,
-                strokeCap = StrokeCap.Round
+                strokeCap = StrokeCap.Round,
             )
         } else {
             LinearProgressIndicator(
                 modifier = modifier,
                 color = color,
                 trackColor = trackColor,
-                strokeCap = StrokeCap.Round
+                strokeCap = StrokeCap.Round,
             )
         }
     } else {
@@ -69,14 +67,14 @@ fun UnifyProgressIndicator(
                 color = color,
                 trackColor = trackColor,
                 strokeWidth = strokeWidth,
-                strokeCap = StrokeCap.Round
+                strokeCap = StrokeCap.Round,
             )
         } else {
             CircularProgressIndicator(
                 modifier = modifier,
                 color = color,
                 strokeWidth = strokeWidth,
-                strokeCap = StrokeCap.Round
+                strokeCap = StrokeCap.Round,
             )
         }
     }
@@ -87,29 +85,29 @@ fun UnifyLoadingState(
     message: String = "加载中...",
     modifier: Modifier = Modifier,
     showProgress: Boolean = true,
-    progress: Float? = null
+    progress: Float? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             if (showProgress) {
                 UnifyProgressIndicator(
                     progress = progress,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(48.dp),
                 )
                 Spacer(modifier = Modifier.size(16.dp))
             }
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -120,33 +118,33 @@ fun UnifyErrorState(
     message: String,
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
-    actionButton: @Composable (() -> Unit)? = null
+    actionButton: @Composable (() -> Unit)? = null,
 ) {
     Box(
         modifier = modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+        contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Center,
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.error
+                    tint = MaterialTheme.colorScheme.error,
                 )
                 Spacer(modifier = Modifier.size(16.dp))
             }
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.error,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
             )
-            
+
             if (actionButton != null) {
                 Spacer(modifier = Modifier.size(16.dp))
                 actionButton()
@@ -162,63 +160,65 @@ fun UnifyFeedbackBanner(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
     onDismiss: (() -> Unit)? = null,
-    action: @Composable (() -> Unit)? = null
+    action: @Composable (() -> Unit)? = null,
 ) {
-    val backgroundColor = when (type) {
-        UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.primaryContainer
-        UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.errorContainer
-        UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.tertiaryContainer
-        UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.secondaryContainer
-        UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.surfaceVariant
-    }
-    
-    val contentColor = when (type) {
-        UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.onPrimaryContainer
-        UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.onErrorContainer
-        UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.onTertiaryContainer
-        UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.onSecondaryContainer
-        UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    
+    val backgroundColor =
+        when (type) {
+            UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.primaryContainer
+            UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.errorContainer
+            UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.tertiaryContainer
+            UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.secondaryContainer
+            UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.surfaceVariant
+        }
+
+    val contentColor =
+        when (type) {
+            UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.onPrimaryContainer
+            UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.onErrorContainer
+            UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.onTertiaryContainer
+            UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.onSecondaryContainer
+            UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+
     UnifySurface(
         modifier = modifier.fillMaxWidth(),
         color = backgroundColor,
         contentColor = contentColor,
-        shape = RoundedCornerShape(8.dp)
+        shape = RoundedCornerShape(8.dp),
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
-                    tint = contentColor
+                    tint = contentColor,
                 )
                 Spacer(modifier = Modifier.width(12.dp))
             }
-            
+
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium,
                 color = contentColor,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
-            
+
             if (action != null) {
                 Spacer(modifier = Modifier.width(12.dp))
                 action()
             }
-            
+
             if (onDismiss != null) {
                 Spacer(modifier = Modifier.width(8.dp))
                 UnifyButton(
                     onClick = onDismiss,
                     text = "×",
                     type = UnifyButtonType.TEXT,
-                    size = UnifyButtonSize.SMALL
+                    size = UnifyButtonSize.SMALL,
                 )
             }
         }
@@ -228,11 +228,11 @@ fun UnifyFeedbackBanner(
 @Composable
 fun UnifySnackbarHost(
     hostState: SnackbarHostState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     SnackbarHost(
         hostState = hostState,
-        modifier = modifier
+        modifier = modifier,
     )
 }
 
@@ -240,19 +240,20 @@ fun UnifySnackbarHost(
 fun UnifyStatusIndicator(
     status: UnifyFeedbackType,
     modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 12.dp
+    size: androidx.compose.ui.unit.Dp = 12.dp,
 ) {
-    val color = when (status) {
-        UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.primary
-        UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.error
-        UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.tertiary
-        UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.secondary
-        UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.outline
-    }
-    
+    val color =
+        when (status) {
+            UnifyFeedbackType.SUCCESS -> MaterialTheme.colorScheme.primary
+            UnifyFeedbackType.ERROR -> MaterialTheme.colorScheme.error
+            UnifyFeedbackType.WARNING -> MaterialTheme.colorScheme.tertiary
+            UnifyFeedbackType.INFO -> MaterialTheme.colorScheme.secondary
+            UnifyFeedbackType.LOADING -> MaterialTheme.colorScheme.outline
+        }
+
     UnifySurface(
         modifier = modifier.size(size),
         color = color,
-        shape = androidx.compose.foundation.shape.CircleShape
+        shape = androidx.compose.foundation.shape.CircleShape,
     ) {}
 }

@@ -10,9 +10,13 @@ import kotlinx.serialization.Serializable
  */
 interface UnifyPlatformAdapter {
     fun getPlatformName(): String
+
     fun getPlatformVersion(): String
+
     fun isFeatureSupported(feature: PlatformFeature): Boolean
+
     fun getDeviceInfo(): DeviceInfo
+
     fun getSystemInfo(): SystemInfo
 }
 
@@ -40,7 +44,7 @@ enum class PlatformFeature {
     SMS,
     EMAIL,
     MAPS,
-    PAYMENTS
+    PAYMENTS,
 }
 
 /**
@@ -63,7 +67,7 @@ data class DeviceInfo(
     val totalMemory: Long,
     val availableMemory: Long,
     val totalStorage: Long,
-    val availableStorage: Long
+    val availableStorage: Long,
 )
 
 /**
@@ -80,7 +84,7 @@ data class SystemInfo(
     val networkType: NetworkType,
     val isOnline: Boolean,
     val isDarkMode: Boolean,
-    val systemFeatures: List<PlatformFeature>
+    val systemFeatures: List<PlatformFeature>,
 )
 
 /**
@@ -95,7 +99,7 @@ enum class PlatformType {
     HARMONY_OS,
     MINI_APP,
     WATCH,
-    TV
+    TV,
 }
 
 /**
@@ -108,7 +112,7 @@ enum class NetworkType {
     ETHERNET,
     BLUETOOTH,
     UNKNOWN,
-    NONE
+    NONE,
 }
 
 /**
@@ -118,7 +122,7 @@ enum class NetworkType {
 enum class PlatformButtonStyle {
     PRIMARY,
     SECONDARY,
-    DESTRUCTIVE
+    DESTRUCTIVE,
 }
 
 /**
@@ -128,7 +132,7 @@ enum class PlatformButtonStyle {
 enum class PlatformTextFieldStyle {
     DEFAULT,
     OUTLINED,
-    FILLED
+    FILLED,
 }
 
 /**
@@ -138,7 +142,7 @@ enum class PlatformTextFieldStyle {
 enum class ActionSheetItemStyle {
     DEFAULT,
     DESTRUCTIVE,
-    CANCEL
+    CANCEL,
 }
 
 /**
@@ -166,7 +170,7 @@ expect fun Modifier.platformSpecific(): Modifier
 @Composable
 expect fun UnifyStatusBarController(
     statusBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
-    darkIcons: Boolean = false
+    darkIcons: Boolean = false,
 )
 
 /**
@@ -175,7 +179,7 @@ expect fun UnifyStatusBarController(
 @Composable
 expect fun UnifyNavigationBarController(
     navigationBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
-    darkIcons: Boolean = false
+    darkIcons: Boolean = false,
 )
 
 /**
@@ -186,16 +190,14 @@ expect fun UnifySystemUIController(
     statusBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
     navigationBarColor: androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Transparent,
     statusBarDarkIcons: Boolean = false,
-    navigationBarDarkIcons: Boolean = false
+    navigationBarDarkIcons: Boolean = false,
 )
 
 /**
  * 平台特定的安全区域处理
  */
 @Composable
-expect fun UnifySafeAreaHandler(
-    content: @Composable () -> Unit
-)
+expect fun UnifySafeAreaHandler(content: @Composable () -> Unit)
 
 /**
  * 平台特定的键盘处理
@@ -203,7 +205,7 @@ expect fun UnifySafeAreaHandler(
 @Composable
 expect fun UnifyKeyboardHandler(
     onKeyboardVisibilityChanged: (Boolean) -> Unit = {},
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 )
 
 /**
@@ -212,7 +214,7 @@ expect fun UnifyKeyboardHandler(
 @Composable
 expect fun UnifyBackHandler(
     enabled: Boolean = true,
-    onBack: () -> Unit
+    onBack: () -> Unit,
 )
 
 /**
@@ -222,7 +224,7 @@ expect fun UnifyBackHandler(
 expect fun UnifyLifecycleHandler(
     onResume: () -> Unit = {},
     onPause: () -> Unit = {},
-    onDestroy: () -> Unit = {}
+    onDestroy: () -> Unit = {},
 )
 
 /**
@@ -231,7 +233,7 @@ expect fun UnifyLifecycleHandler(
 @Composable
 expect fun UnifyPermissionHandler(
     permissions: List<String>,
-    onPermissionResult: (Map<String, Boolean>) -> Unit
+    onPermissionResult: (Map<String, Boolean>) -> Unit,
 )
 
 /**
@@ -241,7 +243,7 @@ expect fun UnifyPermissionHandler(
 expect fun UnifyFilePicker(
     fileTypes: List<String> = listOf("*/*"),
     multipleSelection: Boolean = false,
-    onFileSelected: (List<String>) -> Unit
+    onFileSelected: (List<String>) -> Unit,
 )
 
 /**
@@ -251,7 +253,7 @@ expect fun UnifyFilePicker(
 expect fun UnifyCameraComponent(
     modifier: Modifier = Modifier,
     onImageCaptured: (ByteArray) -> Unit,
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 /**
@@ -263,7 +265,7 @@ expect fun UnifyMapComponent(
     latitude: Double = 0.0,
     longitude: Double = 0.0,
     zoom: Float = 10f,
-    onLocationSelected: (Double, Double) -> Unit = { _, _ -> }
+    onLocationSelected: (Double, Double) -> Unit = { _, _ -> },
 )
 
 /**
@@ -274,7 +276,7 @@ expect fun UnifyWebView(
     url: String,
     modifier: Modifier = Modifier,
     onPageLoaded: (String) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 /**
@@ -286,7 +288,7 @@ expect fun UnifyVideoPlayer(
     modifier: Modifier = Modifier,
     autoPlay: Boolean = false,
     showControls: Boolean = true,
-    onPlaybackStateChanged: (Boolean) -> Unit = {}
+    onPlaybackStateChanged: (Boolean) -> Unit = {},
 )
 
 /**
@@ -298,7 +300,7 @@ expect fun UnifyAudioPlayer(
     modifier: Modifier = Modifier,
     autoPlay: Boolean = false,
     showControls: Boolean = true,
-    onPlaybackStateChanged: (Boolean) -> Unit = {}
+    onPlaybackStateChanged: (Boolean) -> Unit = {},
 )
 
 /**
@@ -308,7 +310,7 @@ expect fun UnifyAudioPlayer(
 expect fun UnifyQRCodeScanner(
     modifier: Modifier = Modifier,
     onQRCodeScanned: (String) -> Unit,
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 /**
@@ -320,7 +322,7 @@ expect fun UnifyBiometricAuth(
     subtitle: String = "请验证您的身份",
     onAuthSuccess: () -> Unit,
     onAuthError: (String) -> Unit = {},
-    onAuthCancel: () -> Unit = {}
+    onAuthCancel: () -> Unit = {},
 )
 
 /**
@@ -331,7 +333,7 @@ expect fun UnifyPlatformButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     text: String,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 )
 
 /**
@@ -343,7 +345,7 @@ expect fun UnifyPlatformTextField(
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
     placeholder: String = "",
-    enabled: Boolean = true
+    enabled: Boolean = true,
 )
 
 /**
@@ -354,7 +356,7 @@ expect fun UnifyPlatformSwitch(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 )
 
 /**
@@ -366,7 +368,7 @@ expect fun UnifyPlatformSlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
-    enabled: Boolean = true
+    enabled: Boolean = true,
 )
 
 /**
@@ -376,7 +378,7 @@ expect fun UnifyPlatformSlider(
 expect fun UnifyPlatformProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
-    showPercentage: Boolean = false
+    showPercentage: Boolean = false,
 )
 
 /**
@@ -388,7 +390,7 @@ expect fun UnifyPlatformAlert(
     message: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 /**
@@ -400,7 +402,7 @@ expect fun UnifyPlatformActionSheet(
     actions: List<String>,
     onActionSelected: (Int) -> Unit,
     onCancel: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 /**
@@ -411,7 +413,7 @@ expect fun UnifyPlatformSegmentedControl(
     items: List<String>,
     selectedIndex: Int,
     onSelectionChanged: (Int) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 )
 
 /**
@@ -423,7 +425,7 @@ expect fun UnifyPlatformDatePicker(
     onDateSelected: (Long) -> Unit,
     modifier: Modifier = Modifier,
     minDate: Long? = null,
-    maxDate: Long? = null
+    maxDate: Long? = null,
 )
 
 /**
@@ -432,7 +434,7 @@ expect fun UnifyPlatformDatePicker(
 expect fun shareContent(
     content: String,
     title: String = "",
-    mimeType: String = "text/plain"
+    mimeType: String = "text/plain",
 )
 
 /**
@@ -442,7 +444,7 @@ expect fun showNotification(
     title: String,
     content: String,
     channelId: String = "default",
-    importance: Int = 3
+    importance: Int = 3,
 )
 
 /**
@@ -450,7 +452,7 @@ expect fun showNotification(
  */
 expect fun vibrate(
     duration: Long = 100L,
-    amplitude: Int = 255
+    amplitude: Int = 255,
 )
 
 /**
@@ -466,7 +468,10 @@ expect fun setScreenBrightness(brightness: Float)
 /**
  * 平台特定的音量控制
  */
-expect fun setVolume(volume: Float, streamType: Int = 3)
+expect fun setVolume(
+    volume: Float,
+    streamType: Int = 3,
+)
 
 /**
  * 平台特定的网络状态监听
@@ -488,7 +493,7 @@ data class BatteryStatus(
     val chargingType: ChargingType,
     val temperature: Float,
     val voltage: Int,
-    val health: BatteryHealth
+    val health: BatteryHealth,
 )
 
 /**
@@ -500,7 +505,7 @@ enum class ChargingType {
     AC,
     USB,
     WIRELESS,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -514,7 +519,7 @@ enum class BatteryHealth {
     OVER_VOLTAGE,
     UNSPECIFIED_FAILURE,
     COLD,
-    UNKNOWN
+    UNKNOWN,
 }
 
 /**
@@ -527,66 +532,66 @@ object UnifyPlatformUtils {
     fun getCurrentPlatform(): PlatformType {
         return getCurrentPlatformAdapter().getSystemInfo().platformType
     }
-    
+
     /**
      * 检查平台特性支持
      */
     fun isFeatureSupported(feature: PlatformFeature): Boolean {
         return getCurrentPlatformAdapter().isFeatureSupported(feature)
     }
-    
+
     /**
      * 获取设备信息
      */
     fun getDeviceInfo(): DeviceInfo {
         return getCurrentPlatformAdapter().getDeviceInfo()
     }
-    
+
     /**
      * 获取系统信息
      */
     fun getSystemInfo(): SystemInfo {
         return getCurrentPlatformAdapter().getSystemInfo()
     }
-    
+
     /**
      * 判断是否为移动平台
      */
     fun isMobilePlatform(): Boolean {
         val platform = getCurrentPlatform()
-        return platform == PlatformType.ANDROID || 
-               platform == PlatformType.IOS || 
-               platform == PlatformType.HARMONY_OS
+        return platform == PlatformType.ANDROID ||
+            platform == PlatformType.IOS ||
+            platform == PlatformType.HARMONY_OS
     }
-    
+
     /**
      * 判断是否为桌面平台
      */
     fun isDesktopPlatform(): Boolean {
         return getCurrentPlatform() == PlatformType.DESKTOP
     }
-    
+
     /**
      * 判断是否为Web平台
      */
     fun isWebPlatform(): Boolean {
         return getCurrentPlatform() == PlatformType.WEB
     }
-    
+
     /**
      * 判断是否为可穿戴设备
      */
     fun isWearablePlatform(): Boolean {
         return getCurrentPlatform() == PlatformType.WATCH
     }
-    
+
     /**
      * 判断是否为TV平台
      */
     fun isTVPlatform(): Boolean {
         return getCurrentPlatform() == PlatformType.TV
     }
-    
+
     /**
      * 判断是否为小程序平台
      */

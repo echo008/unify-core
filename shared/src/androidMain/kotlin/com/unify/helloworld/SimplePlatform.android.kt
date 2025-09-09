@@ -8,7 +8,6 @@ import android.provider.Settings
  * Android平台的SimplePlatform实现
  */
 class AndroidSimplePlatform(private val context: Context) {
-    
     fun getPlatformSpecificInfo(): Map<String, String> {
         return mapOf(
             "platform" to "Android",
@@ -28,10 +27,10 @@ class AndroidSimplePlatform(private val context: Context) {
             "type" to Build.TYPE,
             "user" to Build.USER,
             "deviceId" to getDeviceId(),
-            "supportedAbis" to Build.SUPPORTED_ABIS.joinToString(",")
+            "supportedAbis" to Build.SUPPORTED_ABIS.joinToString(","),
         )
     }
-    
+
     private fun getDeviceId(): String {
         return try {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
@@ -39,13 +38,13 @@ class AndroidSimplePlatform(private val context: Context) {
             "unknown"
         }
     }
-    
+
     fun isTablet(): Boolean {
         val configuration = context.resources.configuration
-        return (configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK) >= 
-               android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
+        return (configuration.screenLayout and android.content.res.Configuration.SCREENLAYOUT_SIZE_MASK) >=
+            android.content.res.Configuration.SCREENLAYOUT_SIZE_LARGE
     }
-    
+
     fun getScreenDensity(): String {
         val density = context.resources.displayMetrics.density
         return when {

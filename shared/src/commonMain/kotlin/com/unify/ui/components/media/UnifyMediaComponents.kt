@@ -3,8 +3,6 @@ package com.unify.ui.components.media
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -14,11 +12,20 @@ import androidx.compose.ui.unit.dp
  */
 
 enum class MediaType {
-    AUDIO, VIDEO, IMAGE, LIVE_STREAM
+    AUDIO,
+    VIDEO,
+    IMAGE,
+    LIVE_STREAM,
 }
 
 enum class PlaybackState {
-    IDLE, LOADING, PLAYING, PAUSED, STOPPED, ERROR, BUFFERING
+    IDLE,
+    LOADING,
+    PLAYING,
+    PAUSED,
+    STOPPED,
+    ERROR,
+    BUFFERING,
 }
 
 data class MediaItem(
@@ -28,13 +35,13 @@ data class MediaItem(
     val type: MediaType,
     val duration: Long = 0L,
     val thumbnail: String? = null,
-    val metadata: Map<String, Any> = emptyMap()
+    val metadata: Map<String, Any> = emptyMap(),
 )
 
 data class PlaybackProgress(
     val currentPosition: Long,
     val duration: Long,
-    val bufferedPosition: Long = 0L
+    val bufferedPosition: Long = 0L,
 )
 
 @Composable
@@ -45,7 +52,7 @@ expect fun UnifyVideoPlayer(
     showControls: Boolean = true,
     onPlaybackStateChange: (PlaybackState) -> Unit = {},
     onProgressChange: (PlaybackProgress) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 @Composable
@@ -57,7 +64,7 @@ expect fun UnifyAudioPlayer(
     showWaveform: Boolean = false,
     onPlaybackStateChange: (PlaybackState) -> Unit = {},
     onProgressChange: (PlaybackProgress) -> Unit = {},
-    onError: (String) -> Unit = {}
+    onError: (String) -> Unit = {},
 )
 
 @Composable
@@ -69,7 +76,7 @@ expect fun UnifyImageViewer(
     enableZoom: Boolean = true,
     enableSwipe: Boolean = true,
     showIndicator: Boolean = true,
-    onImageClick: (Int) -> Unit = {}
+    onImageClick: (Int) -> Unit = {},
 )
 
 @Composable
@@ -82,7 +89,7 @@ expect fun UnifyMediaGallery(
     showPlayIcon: Boolean = true,
     enableSelection: Boolean = false,
     selectedItems: Set<String> = emptySet(),
-    onSelectionChange: (Set<String>) -> Unit = {}
+    onSelectionChange: (Set<String>) -> Unit = {},
 )
 
 @Composable
@@ -93,7 +100,7 @@ expect fun UnifyLiveStream(
     enableChat: Boolean = false,
     onChatMessage: (String) -> Unit = {},
     onViewerCountChange: (Int) -> Unit = {},
-    onStreamStateChange: (PlaybackState) -> Unit = {}
+    onStreamStateChange: (PlaybackState) -> Unit = {},
 )
 
 @Composable
@@ -104,11 +111,14 @@ expect fun UnifyMediaRecorder(
     maxDuration: Long = 60000L,
     quality: RecordingQuality = RecordingQuality.MEDIUM,
     showTimer: Boolean = true,
-    enablePause: Boolean = true
+    enablePause: Boolean = true,
 )
 
 enum class RecordingQuality {
-    LOW, MEDIUM, HIGH, ULTRA
+    LOW,
+    MEDIUM,
+    HIGH,
+    ULTRA,
 }
 
 @Composable
@@ -123,7 +133,7 @@ expect fun UnifyMediaControls(
     onFullscreen: () -> Unit = {},
     showSpeed: Boolean = true,
     playbackSpeed: Float = 1.0f,
-    onSpeedChange: (Float) -> Unit = {}
+    onSpeedChange: (Float) -> Unit = {},
 )
 
 @Composable
@@ -133,7 +143,7 @@ expect fun UnifyMediaThumbnail(
     size: Dp = 120.dp,
     showDuration: Boolean = true,
     showPlayIcon: Boolean = true,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
 )
 
 @Composable
@@ -143,5 +153,5 @@ expect fun UnifyMediaUploader(
     allowedTypes: Set<MediaType> = setOf(MediaType.IMAGE, MediaType.VIDEO, MediaType.AUDIO),
     maxFileSize: Long = 100 * 1024 * 1024L, // 100MB
     maxFiles: Int = 10,
-    showPreview: Boolean = true
+    showPreview: Boolean = true,
 )
