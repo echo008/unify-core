@@ -526,7 +526,7 @@ private fun PerformanceDemo() {
                             val freeMemory = UnifyRuntimeUtils.getAvailableMemory()
                             val usedMemory = totalMemory - freeMemory
                             val memoryUsage = (usedMemory.toDouble() / totalMemory.toDouble()) * 100
-                            performanceResult = "内存使用: $usedMemory MB / $totalMemory MB (${UnifyStringUtils.format("%.2f", memoryUsage.toFloat())}%)"
+                            performanceResult = "内存使用: $usedMemory MB / $totalMemory MB (${com.unify.core.utils.UnifyStringUtils.format("%.2f", memoryUsage.toFloat())}%)"
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -540,7 +540,7 @@ private fun PerformanceDemo() {
                             val threadCount = UnifyRuntimeUtils.getThreadCount()
                             val endTime = getNanoTime()
                             val latency = (endTime - startTime) / 1_000_000.0
-                            performanceResult = "IO延迟测试: ${UnifyStringUtils.format("%.2f", latency.toFloat())} ms"
+                            performanceResult = "IO延迟测试: ${com.unify.core.utils.UnifyStringUtils.format("%.2f", latency.toFloat())} ms"
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {

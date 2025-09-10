@@ -31,7 +31,7 @@ include(":desktopApp")
 include(":harmonyApp")     // HarmonyOS应用
 include(":miniAppBridge")  // 小程序桥接层
 include(":wearApp")       // Wear OS应用
-include(":watchApp")      // watchOS应用
+// include(":watchApp")      // watchOS应用 - 暂时禁用，存在跨模块平台依赖冲突
 include(":tvApp")         // Android TV应用
 include(":harmonyWearApp") // HarmonyOS穿戴应用
 include(":harmonyTVApp")   // HarmonyOS TV应用

@@ -507,7 +507,7 @@ private fun SliderRow(
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(text = label)
-            Text(text = UnifyStringUtils.format("%.1f", value))
+            Text(text = com.unify.core.utils.UnifyStringUtils.format("%.1f", value))
         }
         Slider(
             value = value,

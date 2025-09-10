@@ -1,0 +1,424 @@
+# Unify-Core 生产环境监控系统配置
+
+# Prometheus 配置
+prometheus:
+  global:
+    scrape_interval: 15s
+    evaluation_interval: 15s
+    
+  rule_files:
+    - "alerts/*.yml"
+    
+  scrape_configs:
+    # 应用监控
+    - job_name: 'unify-core-app'
+      static_configs:
+        - targets: ['app:8080']
+      metrics_path: /actuator/prometheus
+      scrape_interval: 30s
+      
+    # JVM监控
+    - job_name: 'unify-core-jvm'
+      static_configs:
+        - targets: ['app:8080']
+      metrics_path: /actuator/prometheus
+      scrape_interval: 30s
+      
+    # 数据库监控
+    - job_name: 'postgresql'
+      static_configs:
+        - targets: ['postgres-exporter:9187']
+      scrape_interval: 30s
+      
+    # Redis监控
+    - job_name: 'redis'
+      static_configs:
+        - targets: ['redis-exporter:9121']
+      scrape_interval: 30s
+      
+    # Kafka监控
+    - job_name: 'kafka'
+      static_configs:
+        - targets: ['kafka-exporter:9308']
+      scrape_interval: 30s
+      
+    # 系统监控
+    - job_name: 'node-exporter'
+      static_configs:
+        - targets: ['node-exporter:9100']
+      scrape_interval: 30s
+
+# Grafana 仪表板配置
+grafana:
+  dashboards:
+    # 应用性能仪表板
+    - name: "Unify-Core Application Performance"
+      panels:
+        - title: "Request Rate"
+          type: graph
+          targets:
+            - expr: 'rate(http_requests_total{job="unify-core-app"}[5m])'
+            
+        - title: "Response Time"
+          type: graph
+          targets:
+            - expr: 'histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="unify-core-app"}[5m]))'
+            
+        - title: "Error Rate"
+          type: singlestat
+          targets:
+            - expr: 'rate(http_requests_total{job="unify-core-app",status=~"5.."}[5m]) / rate(http_requests_total{job="unify-core-app"}[5m])'
+            
+        - title: "Active Connections"
+          type: graph
+          targets:
+            - expr: 'tomcat_sessions_active_current{job="unify-core-app"}'
+            
+    # JVM性能仪表板
+    - name: "JVM Performance"
+      panels:
+        - title: "Heap Memory Usage"
+          type: graph
+          targets:
+            - expr: 'jvm_memory_used_bytes{job="unify-core-app",area="heap"}'
+            - expr: 'jvm_memory_max_bytes{job="unify-core-app",area="heap"}'
+            
+        - title: "GC Activity"
+          type: graph
+          targets:
+            - expr: 'rate(jvm_gc_collection_seconds_sum{job="unify-core-app"}[5m])'
+            
+        - title: "Thread Count"
+          type: graph
+          targets:
+            - expr: 'jvm_threads_current{job="unify-core-app"}'
+            
+        - title: "CPU Usage"
+          type: graph
+          targets:
+            - expr: 'process_cpu_usage{job="unify-core-app"}'
+            
+    # 数据库性能仪表板
+    - name: "Database Performance"
+      panels:
+        - title: "Connection Pool"
+          type: graph
+          targets:
+            - expr: 'hikaricp_connections_active{job="unify-core-app"}'
+            - expr: 'hikaricp_connections_idle{job="unify-core-app"}'
+            
+        - title: "Query Performance"
+          type: graph
+          targets:
+            - expr: 'rate(postgresql_queries_total[5m])'
+            
+        - title: "Database Size"
+          type: singlestat
+          targets:
+            - expr: 'postgresql_database_size_bytes'
+
+# 告警规则配置
+alerting:
+  rules:
+    # 应用告警
+    - name: "application.rules"
+      rules:
+        - alert: HighErrorRate
+          expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate detected"
+            description: "Error rate is {{ $value | humanizePercentage }} for the last 5 minutes"
+            
+        - alert: HighResponseTime
+          expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High response time detected"
+            description: "95th percentile response time is {{ $value }}s"
+            
+        - alert: ApplicationDown
+          expr: up{job="unify-core-app"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Application is down"
+            description: "Unify-Core application has been down for more than 1 minute"
+            
+    # JVM告警
+    - name: "jvm.rules"
+      rules:
+        - alert: HighHeapUsage
+          expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High heap memory usage"
+            description: "Heap memory usage is {{ $value | humanizePercentage }}"
+            
+        - alert: HighGCTime
+          expr: rate(jvm_gc_collection_seconds_sum[5m]) > 0.1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High GC time"
+            description: "GC time is {{ $value }}s per second"
+            
+    # 数据库告警
+    - name: "database.rules"
+      rules:
+        - alert: DatabaseConnectionPoolExhausted
+          expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database connection pool nearly exhausted"
+            description: "Connection pool usage is {{ $value | humanizePercentage }}"
+            
+        - alert: DatabaseDown
+          expr: up{job="postgresql"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Database is down"
+            description: "PostgreSQL database has been down for more than 1 minute"
+            
+    # 系统资源告警
+    - name: "system.rules"
+      rules:
+        - alert: HighCPUUsage
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU usage"
+            description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+            
+        - alert: HighMemoryUsage
+          expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory usage"
+            description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+            
+        - alert: DiskSpaceLow
+          expr: (1 - (node_filesystem_avail_bytes / node_filesystem_size_bytes)) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low disk space"
+            description: "Disk usage is {{ $value | humanizePercentage }} on {{ $labels.instance }}"
+
+# 通知配置
+notifications:
+  # Slack通知
+  slack:
+    api_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#unify-core-alerts"
+    username: "Prometheus"
+    title: "Unify-Core Alert"
+    text: "{{ range .Alerts }}{{ .Annotations.summary }}\n{{ .Annotations.description }}{{ end }}"
+    
+  # 邮件通知
+  email:
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: 587
+    smtp_username: "${SMTP_USERNAME}"
+    smtp_password: "${SMTP_PASSWORD}"
+    from: "alerts@unify-core.com"
+    to:
+      - "ops-team@unify-core.com"
+      - "dev-team@unify-core.com"
+    subject: "Unify-Core Alert: {{ .GroupLabels.alertname }}"
+    
+  # PagerDuty集成
+  pagerduty:
+    service_key: "${PAGERDUTY_SERVICE_KEY}"
+    severity: "{{ .CommonLabels.severity }}"
+    
+# 日志聚合配置
+logging:
+  # ELK Stack配置
+  elasticsearch:
+    hosts:
+      - "elasticsearch-1:9200"
+      - "elasticsearch-2:9200"
+      - "elasticsearch-3:9200"
+    index_template:
+      name: "unify-core-logs"
+      pattern: "unify-core-*"
+      settings:
+        number_of_shards: 3
+        number_of_replicas: 1
+        
+  logstash:
+    input:
+      beats:
+        port: 5044
+    filter:
+      grok:
+        match:
+          message: "%{TIMESTAMP_ISO8601:timestamp} \\[%{DATA:thread}\\] %{LOGLEVEL:level} %{DATA:logger} - %{GREEDYDATA:message}"
+    output:
+      elasticsearch:
+        hosts: ["elasticsearch-1:9200"]
+        index: "unify-core-%{+YYYY.MM.dd}"
+        
+  kibana:
+    dashboards:
+      - name: "Application Logs"
+        visualizations:
+          - type: "line"
+            title: "Log Volume by Level"
+            query: "level:ERROR OR level:WARN OR level:INFO"
+            
+          - type: "table"
+            title: "Recent Errors"
+            query: "level:ERROR"
+            sort: "@timestamp desc"
+            
+          - type: "pie"
+            title: "Log Distribution by Component"
+            query: "*"
+            aggregation: "terms"
+            field: "logger"
+
+# 链路追踪配置
+tracing:
+  jaeger:
+    collector:
+      endpoint: "http://jaeger-collector:14268/api/traces"
+    query:
+      endpoint: "http://jaeger-query:16686"
+    sampling:
+      type: "probabilistic"
+      param: 0.1
+      
+  # 追踪仪表板
+  dashboards:
+    - name: "Request Tracing"
+      panels:
+        - title: "Request Latency Distribution"
+          type: "histogram"
+          
+        - title: "Service Dependencies"
+          type: "graph"
+          
+        - title: "Error Traces"
+          type: "table"
+
+# 健康检查配置
+health_checks:
+  endpoints:
+    - name: "application"
+      url: "http://app:8080/actuator/health"
+      interval: 30s
+      timeout: 5s
+      
+    - name: "database"
+      url: "http://app:8080/actuator/health/db"
+      interval: 60s
+      timeout: 10s
+      
+    - name: "cache"
+      url: "http://app:8080/actuator/health/redis"
+      interval: 60s
+      timeout: 5s
+      
+  # 健康检查告警
+  alerts:
+    - name: "HealthCheckFailed"
+      condition: "status != 'UP'"
+      for: "2m"
+      severity: "critical"
+
+# 性能基准监控
+performance_benchmarks:
+  # 关键性能指标
+  kpis:
+    - name: "response_time_p95"
+      query: 'histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))'
+      threshold: 2.0
+      
+    - name: "throughput"
+      query: 'rate(http_requests_total[5m])'
+      threshold: 100
+      
+    - name: "error_rate"
+      query: 'rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m])'
+      threshold: 0.01
+      
+    - name: "cpu_usage"
+      query: 'process_cpu_usage'
+      threshold: 0.7
+      
+    - name: "memory_usage"
+      query: 'jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"}'
+      threshold: 0.8
+      
+  # 性能回归检测
+  regression_detection:
+    enabled: true
+    comparison_period: "7d"
+    threshold_percentage: 20
+    
+# 容量规划
+capacity_planning:
+  # 资源使用趋势
+  trends:
+    - metric: "cpu_usage"
+      period: "30d"
+      projection: "90d"
+      
+    - metric: "memory_usage"
+      period: "30d"
+      projection: "90d"
+      
+    - metric: "disk_usage"
+      period: "30d"
+      projection: "90d"
+      
+  # 扩容建议
+  scaling_recommendations:
+    cpu_threshold: 70
+    memory_threshold: 75
+    disk_threshold: 80
+    
+# 安全监控
+security_monitoring:
+  # 安全事件检测
+  events:
+    - name: "failed_authentication"
+      query: 'increase(authentication_failures_total[5m]) > 10'
+      severity: "warning"
+      
+    - name: "suspicious_activity"
+      query: 'rate(http_requests_total{status="403"}[5m]) > 5'
+      severity: "warning"
+      
+    - name: "potential_attack"
+      query: 'rate(http_requests_total{status="429"}[1m]) > 50'
+      severity: "critical"
+      
+  # 合规性监控
+  compliance:
+    - name: "data_access_audit"
+      enabled: true
+      retention: "1y"
+      
+    - name: "encryption_status"
+      enabled: true
+      check_interval: "1h"

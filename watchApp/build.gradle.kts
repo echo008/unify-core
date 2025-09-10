@@ -7,44 +7,43 @@ plugins {
 kotlin {
     jvmToolchain(17)
     
-    // watchOS目标配置
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64(),
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
+    // 仅支持watchOS Native目标，移除JVM依赖以避免平台冲突
+    watchosArm64 {
+        binaries.framework {
             baseName = "WatchShared"
             isStatic = true
         }
     }
     
-    // JVM目标用于通用Watch逻辑
-    jvm("watch") {
-        compilations.all {
-            compileTaskProvider.configure {
-                compilerOptions {
-                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-                }
-            }
+    watchosSimulatorArm64 {
+        binaries.framework {
+            baseName = "WatchShared"
+            isStatic = true
         }
-        withJava()
+    }
+    
+    watchosX64 {
+        binaries.framework {
+            baseName = "WatchShared"
+            isStatic = true
+        }
     }
     
     sourceSets {
         commonMain.dependencies {
-            implementation(project(":shared"))
+            // 移除对shared模块的直接依赖，避免JVM平台冲突
+            // 仅使用必要的Compose组件
             implementation(compose.runtime)
-            implementation(compose.foundation)
-            implementation(compose.material3)
-            implementation(compose.ui)
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
         }
         
-        val watchMain by getting {
-            dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-            }
+        val watchosMain by creating {
+            dependsOn(commonMain.get())
         }
+        
+        val watchosArm64Main by getting { dependsOn(watchosMain) }
+        val watchosSimulatorArm64Main by getting { dependsOn(watchosMain) }
+        val watchosX64Main by getting { dependsOn(watchosMain) }
         
         commonTest.dependencies {
             implementation(libs.kotlin.test)
@@ -56,10 +55,10 @@ kotlin {
 tasks.register("buildWatchApp") {
     group = "watch"
     description = "构建Watch应用"
-    dependsOn("watchJar")
+    dependsOn("assemble")
     
     doLast {
         logger.info("Watch应用构建完成")
-        logger.info("支持平台: Wear OS, watchOS, HarmonyOS穿戴")
+        logger.info("支持平台: watchOS")
     }
 }

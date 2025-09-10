@@ -1,6 +1,7 @@
 package com.unify.core
 
 import com.unify.core.data.UnifyDataManager
+import com.unify.core.network.UnifyNetworkManager
 import com.unify.core.ui.UnifyUIManager
 import com.unify.device.UnifyDeviceManager
 
@@ -11,8 +12,7 @@ import com.unify.device.UnifyDeviceManager
 interface UnifyCore {
     val uiManager: UnifyUIManager
     val dataManager: UnifyDataManager
-
-    // val networkManager: UnifyNetworkManager // 暂时禁用，等待修复编译器内部错误
+    val networkManager: UnifyNetworkManager
     val deviceManager: UnifyDeviceManager
 
     suspend fun initialize()

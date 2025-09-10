@@ -1,0 +1,322 @@
+# Unify-Core 生产环境配置
+
+# 应用配置
+application:
+  name: unify-core
+  version: ${VERSION}
+  environment: production
+  
+  # 服务器配置
+  server:
+    port: 8080
+    host: 0.0.0.0
+    max-connections: 1000
+    connection-timeout: 30s
+    read-timeout: 60s
+    write-timeout: 60s
+    
+  # 线程池配置
+  thread-pool:
+    core-size: 10
+    max-size: 50
+    queue-capacity: 1000
+    keep-alive: 60s
+
+# 数据库配置
+database:
+  primary:
+    driver: postgresql
+    host: ${DB_HOST}
+    port: ${DB_PORT}
+    database: ${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    
+    # 连接池配置
+    pool:
+      initial-size: 5
+      min-idle: 5
+      max-active: 20
+      max-wait: 30s
+      validation-query: SELECT 1
+      test-on-borrow: true
+      test-while-idle: true
+      
+  # 只读副本
+  readonly:
+    driver: postgresql
+    host: ${DB_READONLY_HOST}
+    port: ${DB_READONLY_PORT}
+    database: ${DB_NAME}
+    username: ${DB_READONLY_USERNAME}
+    password: ${DB_READONLY_PASSWORD}
+    
+    pool:
+      initial-size: 3
+      min-idle: 3
+      max-active: 10
+      max-wait: 30s
+
+# 缓存配置
+cache:
+  redis:
+    cluster:
+      nodes:
+        - ${REDIS_NODE_1}
+        - ${REDIS_NODE_2}
+        - ${REDIS_NODE_3}
+    password: ${REDIS_PASSWORD}
+    timeout: 3s
+    max-redirects: 3
+    
+    # 连接池配置
+    pool:
+      max-active: 20
+      max-idle: 10
+      min-idle: 5
+      max-wait: 3s
+
+# 消息队列配置
+message-queue:
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS}
+    security-protocol: SASL_SSL
+    sasl-mechanism: PLAIN
+    sasl-username: ${KAFKA_USERNAME}
+    sasl-password: ${KAFKA_PASSWORD}
+    
+    # 生产者配置
+    producer:
+      acks: all
+      retries: 3
+      batch-size: 16384
+      linger-ms: 5
+      buffer-memory: 33554432
+      compression-type: snappy
+      
+    # 消费者配置
+    consumer:
+      group-id: unify-core-prod
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      max-poll-records: 500
+      session-timeout-ms: 30000
+
+# 安全配置
+security:
+  # JWT配置
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 24h
+    refresh-expiration: 7d
+    issuer: unify-core
+    
+  # 加密配置
+  encryption:
+    algorithm: AES-256-GCM
+    key: ${ENCRYPTION_KEY}
+    
+  # CORS配置
+  cors:
+    allowed-origins:
+      - https://app.unify-core.com
+      - https://admin.unify-core.com
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - Authorization
+      - Content-Type
+      - X-Requested-With
+    max-age: 3600
+
+# 监控配置
+monitoring:
+  # 健康检查
+  health:
+    enabled: true
+    endpoint: /health
+    show-details: when-authorized
+    
+  # 指标收集
+  metrics:
+    enabled: true
+    endpoint: /metrics
+    export:
+      prometheus:
+        enabled: true
+        step: 30s
+        
+  # 链路追踪
+  tracing:
+    enabled: true
+    jaeger:
+      endpoint: ${JAEGER_ENDPOINT}
+      service-name: unify-core
+      sampler-type: probabilistic
+      sampler-param: 0.1
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.unify.core: DEBUG
+    org.springframework: WARN
+    
+  # 日志输出
+  appenders:
+    console:
+      enabled: true
+      pattern: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+      
+    file:
+      enabled: true
+      file: /var/log/unify-core/application.log
+      max-file-size: 100MB
+      max-history: 30
+      total-size-cap: 3GB
+      
+    # ELK Stack
+    logstash:
+      enabled: true
+      destination: ${LOGSTASH_HOST}:${LOGSTASH_PORT}
+      
+# 性能配置
+performance:
+  # JVM配置
+  jvm:
+    heap-size: 2g
+    metaspace-size: 256m
+    gc-algorithm: G1GC
+    gc-options:
+      - "-XX:MaxGCPauseMillis=200"
+      - "-XX:G1HeapRegionSize=16m"
+      - "-XX:+UseStringDeduplication"
+      
+  # 缓存配置
+  cache:
+    default-ttl: 1h
+    max-size: 10000
+    
+  # 连接池配置
+  connection-pool:
+    validation-timeout: 5s
+    leak-detection-threshold: 60s
+
+# 备份配置
+backup:
+  database:
+    enabled: true
+    schedule: "0 2 * * *"  # 每天凌晨2点
+    retention: 30d
+    storage:
+      type: s3
+      bucket: ${BACKUP_S3_BUCKET}
+      region: ${AWS_REGION}
+      
+  files:
+    enabled: true
+    schedule: "0 3 * * *"  # 每天凌晨3点
+    paths:
+      - /var/lib/unify-core/data
+      - /var/log/unify-core
+    retention: 7d
+
+# 扩展配置
+scaling:
+  # 自动扩缩容
+  auto-scaling:
+    enabled: true
+    min-instances: 2
+    max-instances: 10
+    target-cpu-utilization: 70
+    target-memory-utilization: 80
+    scale-up-cooldown: 300s
+    scale-down-cooldown: 600s
+    
+  # 负载均衡
+  load-balancer:
+    algorithm: round-robin
+    health-check:
+      path: /health
+      interval: 30s
+      timeout: 5s
+      healthy-threshold: 2
+      unhealthy-threshold: 3
+
+# 第三方服务配置
+external-services:
+  # AI服务配置
+  ai-services:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      base-url: https://api.openai.com/v1
+      timeout: 30s
+      max-retries: 3
+      
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY}
+      base-url: https://api.anthropic.com
+      timeout: 30s
+      max-retries: 3
+      
+  # 通知服务
+  notification:
+    email:
+      provider: ses
+      region: ${AWS_REGION}
+      from: noreply@unify-core.com
+      
+    sms:
+      provider: twilio
+      account-sid: ${TWILIO_ACCOUNT_SID}
+      auth-token: ${TWILIO_AUTH_TOKEN}
+      
+    push:
+      provider: fcm
+      server-key: ${FCM_SERVER_KEY}
+
+# 环境变量模板
+environment-variables:
+  # 数据库
+  DB_HOST: "prod-db-cluster.amazonaws.com"
+  DB_PORT: "5432"
+  DB_NAME: "unify_core_prod"
+  DB_USERNAME: "unify_core_user"
+  DB_PASSWORD: "{{ vault.db_password }}"
+  
+  # Redis
+  REDIS_NODE_1: "prod-redis-001.amazonaws.com:6379"
+  REDIS_NODE_2: "prod-redis-002.amazonaws.com:6379"
+  REDIS_NODE_3: "prod-redis-003.amazonaws.com:6379"
+  REDIS_PASSWORD: "{{ vault.redis_password }}"
+  
+  # Kafka
+  KAFKA_BOOTSTRAP_SERVERS: "prod-kafka-1:9092,prod-kafka-2:9092,prod-kafka-3:9092"
+  KAFKA_USERNAME: "unify_core_producer"
+  KAFKA_PASSWORD: "{{ vault.kafka_password }}"
+  
+  # 安全
+  JWT_SECRET: "{{ vault.jwt_secret }}"
+  ENCRYPTION_KEY: "{{ vault.encryption_key }}"
+  
+  # 监控
+  JAEGER_ENDPOINT: "http://jaeger-collector:14268/api/traces"
+  LOGSTASH_HOST: "logstash.monitoring.svc.cluster.local"
+  LOGSTASH_PORT: "5044"
+  
+  # 备份
+  BACKUP_S3_BUCKET: "unify-core-backups-prod"
+  AWS_REGION: "us-west-2"
+  
+  # API密钥
+  OPENAI_API_KEY: "{{ vault.openai_api_key }}"
+  ANTHROPIC_API_KEY: "{{ vault.anthropic_api_key }}"
+  
+  # 通知服务
+  TWILIO_ACCOUNT_SID: "{{ vault.twilio_account_sid }}"
+  TWILIO_AUTH_TOKEN: "{{ vault.twilio_auth_token }}"
+  FCM_SERVER_KEY: "{{ vault.fcm_server_key }}"

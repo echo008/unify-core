@@ -10,20 +10,7 @@ import kotlinx.coroutines.*
 import kotlinx.serialization.*
 import kotlinx.serialization.json.*
 
-/**
- * 网络请求配置
- */
-@Serializable
-data class NetworkConfig(
-    val baseUrl: String = "",
-    val timeout: Long = 30000L,
-    val retryAttempts: Int = 3,
-    val retryDelay: Long = 1000L,
-    val enableCache: Boolean = true,
-    val cacheTimeout: Long = 300000L, // 5分钟
-    val userAgent: String = "UnifyCore/1.0",
-    val headers: Map<String, String> = emptyMap(),
-)
+import com.unify.core.network.NetworkConfig
 
 /**
  * 网络响应结果

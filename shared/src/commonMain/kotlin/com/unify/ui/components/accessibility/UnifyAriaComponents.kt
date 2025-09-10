@@ -218,7 +218,7 @@ fun UnifyAccessibleSlider(
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     steps: Int = 0,
     enabled: Boolean = true,
-    valueFormatter: (Float) -> String = { UnifyStringUtils.format("%.1f", it * 100) },
+    valueFormatter: (Float) -> String = { com.unify.core.utils.UnifyStringUtils.format("%.1f", it * 100) },
 ) {
     Column(
         modifier =

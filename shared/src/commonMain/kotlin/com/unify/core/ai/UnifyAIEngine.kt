@@ -1,10 +1,14 @@
 package com.unify.core.ai
 import com.unify.core.platform.getCurrentTimeMillis
+import io.ktor.client.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 /**
  * AI能力类型枚举
@@ -20,6 +24,10 @@ enum class AICapabilityType {
     TRANSLATION,
     SUMMARIZATION,
     QUESTION_ANSWERING,
+    SPEECH_RECOGNITION,
+    SENTIMENT_ANALYSIS,
+    DOCUMENT_ANALYSIS,
+    CONVERSATION_MEMORY
 }
 
 /**
@@ -43,6 +51,26 @@ class UnifyAIEngine {
     }
 
     private val configurationManager = AIConfigurationManager()
+    
+    // 创建HTTP客户端用于API调用
+    private val httpClient = HttpClient {
+        install(ContentNegotiation) {
+            json(Json {
+                ignoreUnknownKeys = true
+                isLenient = true
+            })
+        }
+    }
+    
+    // AI API客户端
+    private val apiClient = UnifyAIApiClient(httpClient)
+    
+    // API密钥管理器
+    private val keyManager = UnifyAIKeyManager()
+    
+    // API配置存储
+    private val _apiConfigurations = MutableStateFlow<Map<AIProvider, APIConfiguration>>(emptyMap())
+    val apiConfigurations: StateFlow<Map<AIProvider, APIConfiguration>> = _apiConfigurations.asStateFlow()
 
     private val _engineState = MutableStateFlow(AIEngineState.IDLE)
     val engineState: StateFlow<AIEngineState> = _engineState.asStateFlow()
@@ -53,6 +81,40 @@ class UnifyAIEngine {
     private val _modelCache = mutableMapOf<String, AIModel>()
     private val _resultCache = mutableMapOf<String, AIResult>()
 
+    /**
+     * 设置AI提供商API密钥
+     */
+    fun setAPIKey(provider: AIProvider, apiKey: String): Boolean {
+        val success = keyManager.setAPIKey(provider, apiKey)
+        if (success) {
+            // 自动配置API客户端
+            keyManager.getActiveAPIConfiguration()?.let { config ->
+                apiClient.configure(config)
+                val currentConfigs = _apiConfigurations.value.toMutableMap()
+                currentConfigs[provider] = config
+                _apiConfigurations.value = currentConfigs
+            }
+        }
+        return success
+    }
+    
+    /**
+     * 获取密钥管理器（用于UI组件）
+     */
+    fun getKeyManager(): UnifyAIKeyManager = keyManager
+    
+    /**
+     * 配置AI API
+     */
+    fun configureAPI(provider: AIProvider, config: APIConfiguration) {
+        val currentConfigs = _apiConfigurations.value.toMutableMap()
+        currentConfigs[provider] = config
+        _apiConfigurations.value = currentConfigs
+        
+        // 配置API客户端使用指定的提供商
+        apiClient.configure(config)
+    }
+    
     /**
      * 初始化AI引擎
      */
@@ -65,6 +127,17 @@ class UnifyAIEngine {
 
             // 检查系统资源
             checkSystemResources()
+            
+            // 检查API密钥配置
+            if (!keyManager.hasValidAPIKey()) {
+                // 如果没有配置API密钥，引擎仍可初始化，但需要用户配置密钥后才能使用
+                println("警告: 未配置AI API密钥，请使用setAPIKey()方法配置")
+            } else {
+                // 使用已配置的API密钥设置客户端
+                keyManager.getActiveAPIConfiguration()?.let { config ->
+                    apiClient.configure(config)
+                }
+            }
 
             _engineState.value = AIEngineState.READY
             true
@@ -106,6 +179,10 @@ class UnifyAIEngine {
                     AICapabilityType.TRANSLATION -> processTranslation(request)
                     AICapabilityType.SUMMARIZATION -> processSummarization(request)
                     AICapabilityType.QUESTION_ANSWERING -> processQuestionAnswering(request)
+                    AICapabilityType.SPEECH_RECOGNITION -> processSpeechRecognition(request)
+                    AICapabilityType.SENTIMENT_ANALYSIS -> processSentimentAnalysis(request)
+                    AICapabilityType.DOCUMENT_ANALYSIS -> processDocumentAnalysis(request)
+                    AICapabilityType.CONVERSATION_MEMORY -> processConversationMemory(request)
                 }
 
             // 缓存结果
@@ -149,20 +226,57 @@ class UnifyAIEngine {
             configurationManager.getModelConfiguration(AICapabilityType.TEXT_GENERATION)
                 ?: return AIResult.Error("文本生成模型配置未找到")
 
-        // 模拟AI处理
-        delay(1000)
-
-        return AIResult.Success(
-            content = "生成的文本内容: ${request.input}",
-            confidence = HIGH_CONFIDENCE,
-            processingTimeMs = 1000L,
-            modelUsed = config.modelId,
-            metadata =
-                mapOf(
-                    "tokens_used" to "150",
-                    "temperature" to config.temperature.toString(),
-                ),
-        )
+        val startTime = getCurrentTimeMillis()
+        
+        return try {
+            // 构建聊天消息
+            val messages = listOf(
+                ChatMessage(role = "user", content = request.input)
+            )
+            
+            // 从请求参数中获取配置，如果没有则使用默认值
+            val temperature = request.parameters["temperature"]?.toFloatOrNull() ?: config.temperature
+            val maxTokens = request.parameters["maxTokens"]?.toIntOrNull() ?: config.maxTokens
+            val model = request.parameters["model"] ?: config.modelId
+            
+            // 调用真实API
+            val apiResult = apiClient.chatCompletion(
+                messages = messages,
+                model = model,
+                temperature = temperature,
+                maxTokens = maxTokens
+            )
+            
+            val processingTime = getCurrentTimeMillis() - startTime
+            
+            when (apiResult) {
+                is AIApiResult.Success -> {
+                    AIResult.Success(
+                        content = apiResult.data,
+                        confidence = HIGH_CONFIDENCE,
+                        processingTimeMs = processingTime,
+                        modelUsed = apiResult.model,
+                        metadata = mapOf(
+                            "tokens_used" to apiResult.tokensUsed.toString(),
+                            "temperature" to temperature.toString(),
+                            "provider" to (_apiConfigurations.value.values.firstOrNull()?.provider?.name ?: "unknown")
+                        )
+                    )
+                }
+                is AIApiResult.Error -> {
+                    AIResult.Error(
+                        message = "API调用失败: ${apiResult.message}",
+                        errorCode = apiResult.code
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            val processingTime = getCurrentTimeMillis() - startTime
+            AIResult.Error(
+                message = "文本生成处理失败: ${e.message}",
+                errorCode = "PROCESSING_ERROR"
+            )
+        }
     }
 
     /**
@@ -353,26 +467,94 @@ class UnifyAIEngine {
     }
 
     /**
-     * 问答处理
+     * 处理问答请求
      */
     private suspend fun processQuestionAnswering(request: AIRequest): AIResult {
-        val config =
-            configurationManager.getModelConfiguration(AICapabilityType.QUESTION_ANSWERING)
-                ?: return AIResult.Error("问答模型配置未找到")
+        return try {
+            // 模拟问答处理
+            delay(100)
+            AIResult.Success(
+                content = "这是对问题的回答",
+                confidence = 0.9f,
+                processingTimeMs = 100L,
+                modelUsed = "qa-model",
+                metadata = mapOf("type" to "question_answering")
+            )
+        } catch (e: Exception) {
+            AIResult.Error("问答处理失败: ${e.message}")
+        }
+    }
 
-        delay(1000)
+    /**
+     * 处理语音识别请求
+     */
+    private suspend fun processSpeechRecognition(request: AIRequest): AIResult {
+        return try {
+            delay(100)
+            AIResult.Success(
+                content = "识别的语音文本",
+                confidence = 0.85f,
+                processingTimeMs = 100L,
+                modelUsed = "speech-model",
+                metadata = mapOf("type" to "speech_recognition")
+            )
+        } catch (e: Exception) {
+            AIResult.Error("语音识别失败: ${e.message}")
+        }
+    }
 
-        return AIResult.Success(
-            content = "答案: 基于提供的上下文，${request.input}",
-            confidence = HIGH_CONFIDENCE,
-            processingTimeMs = 1000L,
-            modelUsed = config.modelId,
-            metadata =
-                mapOf(
-                    "context_length" to "500",
-                    "answer_confidence" to HIGH_CONFIDENCE.toString(),
-                ),
-        )
+    /**
+     * 处理情感分析请求
+     */
+    private suspend fun processSentimentAnalysis(request: AIRequest): AIResult {
+        return try {
+            delay(50)
+            AIResult.Success(
+                content = "positive",
+                confidence = 0.92f,
+                processingTimeMs = 50L,
+                modelUsed = "sentiment-model",
+                metadata = mapOf("type" to "sentiment_analysis", "score" to "0.8")
+            )
+        } catch (e: Exception) {
+            AIResult.Error("情感分析失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 处理文档分析请求
+     */
+    private suspend fun processDocumentAnalysis(request: AIRequest): AIResult {
+        return try {
+            delay(200)
+            AIResult.Success(
+                content = "文档分析结果",
+                confidence = 0.88f,
+                processingTimeMs = 200L,
+                modelUsed = "document-model",
+                metadata = mapOf("type" to "document_analysis")
+            )
+        } catch (e: Exception) {
+            AIResult.Error("文档分析失败: ${e.message}")
+        }
+    }
+
+    /**
+     * 处理对话记忆请求
+     */
+    private suspend fun processConversationMemory(request: AIRequest): AIResult {
+        return try {
+            delay(30)
+            AIResult.Success(
+                content = "对话记忆已更新",
+                confidence = 1.0f,
+                processingTimeMs = 30L,
+                modelUsed = "memory-model",
+                metadata = mapOf("type" to "conversation_memory")
+            )
+        } catch (e: Exception) {
+            AIResult.Error("对话记忆处理失败: ${e.message}")
+        }
     }
 
     /**

@@ -6,9 +6,12 @@ package com.unify.ui.memory
 
 actual fun getPlatformMemoryInfo(): PlatformMemoryInfo {
     return PlatformMemoryInfo(
-        totalMemory = 8L * 1024 * 1024 * 1024, // 8GB
-        usedMemory = 2L * 1024 * 1024 * 1024, // 2GB
-        availableMemory = 6L * 1024 * 1024 * 1024, // 6GB
+        // 8GB
+        totalMemory = 8L * 1024 * 1024 * 1024,
+        // 2GB
+        usedMemory = 2L * 1024 * 1024 * 1024,
+        // 6GB
+        availableMemory = 6L * 1024 * 1024 * 1024,
     )
 }
 

@@ -4,9 +4,9 @@ plugins {
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
-    // alias(libs.plugins.sqldelight)  // 暂时禁用未配置的SQLDelight
-    // alias(libs.plugins.ksp)
-    // alias(libs.plugins.room)  // 暂时禁用未配置的Room
+    alias(libs.plugins.sqldelight)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
     alias(libs.plugins.detekt)
     alias(libs.plugins.ktlint)
     alias(libs.plugins.binary.compatibility.validator)
@@ -32,6 +32,22 @@ android {
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
+}
+
+// SQLDelight配置
+sqldelight {
+    databases {
+        create("UnifyDatabase") {
+            packageName.set("com.unify.database")
+            srcDirs.setFrom("src/commonMain/sqldelight")
+            schemaOutputDirectory.set(file("src/commonMain/sqldelight/databases"))
+        }
+    }
+}
+
+// Room配置
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 kotlin {
@@ -69,21 +85,27 @@ kotlin {
     macosArm64()
     mingwX64()
 
-    // HarmonyOS 目标 (参考KuiklyUI方案，暂时通过Native平台支持)
-    // 注意：HarmonyOS需要专门的Native适配，不能简单使用linuxArm64
-    // 当前通过nativeMain源集提供基础支持，具体实现需要HarmonyOS SDK
+    // HarmonyOS 目标 - 暂时通过linuxX64模拟，等待官方支持
+    // 实际部署时需要使用HarmonyOS SDK和ArkUI
+    // linuxArm64("harmonyos") {
+    //     binaries {
+    //         executable {
+    //             entryPoint = "com.unify.harmonyos.main"
+    //         }
+    //     }
+    // }
 
     // TV 和 Watch 通过 Android 变体支持
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                // Compose UI框架
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
-                implementation(compose.materialIconsExtended)
+                // Compose UI框架 - 仅在支持的平台使用
+                // implementation(compose.runtime)
+                // implementation(compose.foundation)
+                // implementation(compose.material3)
+                // implementation(compose.ui)
+                // implementation(compose.materialIconsExtended)
 
                 // 网络请求
                 implementation(libs.ktor.client.core)
@@ -96,6 +118,13 @@ kotlin {
 
                 // 协程
                 implementation(libs.kotlinx.coroutines.core)
+                
+                // 日期时间
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
+                
+                // 数据库
+                implementation(libs.sqldelight.runtime)
+                implementation(libs.sqldelight.coroutines)
             }
         }
 
@@ -110,28 +139,39 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
-                implementation(libs.androidx.activity.compose)
-                implementation(libs.androidx.security.crypto)
-
-                // Android网络引擎
+                // Compose UI框架 - Android平台
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.materialIconsExtended)
+                
+                // Android特定依赖
                 implementation(libs.ktor.client.android)
-
-                // Android协程
-                implementation(libs.kotlinx.coroutines.core)
-
-                // JSON序列化
-                implementation("com.google.code.gson:gson:2.10.1")
+                implementation("androidx.core:core-ktx:1.15.0")
+                implementation("androidx.activity:activity-compose:1.9.3")
+                implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+                implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
 
                 // OkHttp for network operations
                 implementation("com.squareup.okhttp3:okhttp:4.12.0")
+                
+                // Gson for JSON serialization
+                implementation("com.google.code.gson:gson:2.10.1")
 
+                // SQLDelight Android驱动
+                implementation(libs.sqldelight.android)
+                
                 // Room数据库依赖
-                implementation("androidx.room:room-runtime:2.6.1")
-                implementation("androidx.room:room-ktx:2.6.1")
+                implementation(libs.room.runtime)
+                implementation(libs.room.ktx)
 
                 // DataStore依赖
                 implementation("androidx.datastore:datastore-preferences:1.0.0")
                 implementation("androidx.datastore:datastore-core:1.0.0")
+                
+                // Android安全存储依赖
+                implementation("androidx.security:security-crypto:1.1.0-alpha06")
 
                 // Compose基础依赖
                 implementation("androidx.compose.foundation:foundation-layout:1.5.15")
@@ -150,7 +190,15 @@ kotlin {
         val iosMain by creating {
             dependsOn(commonMain)
             dependencies {
+                // Compose UI框架 - iOS平台
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.materialIconsExtended)
+                
                 implementation(libs.ktor.client.darwin)
+                implementation(libs.sqldelight.native)
             }
         }
 
@@ -160,22 +208,36 @@ kotlin {
 
         val desktopMain by getting {
             dependencies {
+                // Compose UI框架 - Desktop平台
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.ui)
+                implementation(compose.materialIconsExtended)
                 implementation(compose.desktop.common)
+                
                 implementation(libs.ktor.client.cio)
+                implementation(libs.sqldelight.native)
             }
         }
 
         val jsMain by getting {
             dependencies {
+                // Compose UI框架 - Web平台
+                implementation(compose.runtime)
                 implementation(compose.html.core)
+                
                 implementation(libs.ktor.client.js)
+                implementation(libs.sqldelight.runtime)
             }
         }
 
         val nativeMain by creating {
             dependsOn(commonMain)
             dependencies {
+                // Native平台网络和数据库依赖
                 implementation(libs.ktor.client.cio)
+                implementation(libs.sqldelight.native)
             }
         }
 
@@ -184,11 +246,15 @@ kotlin {
         val macosArm64Main by getting { dependsOn(nativeMain) }
         val mingwX64Main by getting { dependsOn(nativeMain) }
 
-        // HarmonyOS 平台配置 (暂时禁用)
-        // val harmonyMain by getting {
-        //     dependsOn(nativeMain)
+        // HarmonyOS 平台配置 - 暂时禁用，等待官方支持
+        // val harmonyosMain by getting {
+        //     dependsOn(commonMain)
         //     dependencies {
+        //         // HarmonyOS 特定依赖 - 仅核心功能，不包含Compose
         //         implementation(libs.ktor.client.cio)
+        //         implementation(libs.sqldelight.native)
+        //         implementation(libs.kotlinx.coroutines.core)
+        //         implementation(libs.serialization.json)
         //     }
         // }
 
@@ -198,6 +264,8 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.test)
                 implementation(libs.kotlinx.coroutines.test)
+                implementation("org.jetbrains.kotlin:kotlin-test-junit:${libs.versions.kotlin.get()}")
+                implementation("junit:junit:4.13.2")
             }
         }
 
@@ -224,7 +292,21 @@ kotlin {
             dependencies {
                 implementation(libs.kotlin.test)
                 implementation(libs.kotlinx.coroutines.test)
+                // JS平台使用kotlin-test-js，不使用JUnit
             }
         }
+        
+        val nativeTest by creating {
+            dependsOn(commonTest)
+            dependencies {
+                implementation(libs.kotlin.test)
+                implementation(libs.kotlinx.coroutines.test)
+            }
+        }
+        
+        val linuxX64Test by getting { dependsOn(nativeTest) }
+        val macosX64Test by getting { dependsOn(nativeTest) }
+        val macosArm64Test by getting { dependsOn(nativeTest) }
+        val mingwX64Test by getting { dependsOn(nativeTest) }
     }
 }

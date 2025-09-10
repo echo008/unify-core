@@ -5,6 +5,8 @@ import com.unify.core.data.UnifyDataManager
 import com.unify.core.data.UnifyDataManagerFactory
 import com.unify.core.ui.UnifyUIManager
 import com.unify.core.ui.UnifyUIManagerFactory
+import com.unify.core.network.UnifyNetworkManager
+import com.unify.core.network.UnifyNetworkManagerFactory
 import com.unify.device.UnifyDeviceManager
 import com.unify.device.UnifyDeviceManagerFactory
 
@@ -14,9 +16,7 @@ import com.unify.device.UnifyDeviceManagerFactory
 class UnifyCoreImpl(private val context: Context) : UnifyCore {
     override val uiManager: UnifyUIManager by lazy { UnifyUIManagerFactory.create() }
     override val dataManager: UnifyDataManager by lazy { UnifyDataManagerFactory.create() }
-
-    // 网络管理器暂时禁用，等待修复编译器内部错误
-    // override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
+    override val networkManager: UnifyNetworkManager by lazy { UnifyNetworkManagerFactory.create() }
     override val deviceManager: UnifyDeviceManager by lazy { UnifyDeviceManagerFactory.create() }
 
     private var initialized = false

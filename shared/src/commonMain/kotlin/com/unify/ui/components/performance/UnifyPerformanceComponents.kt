@@ -388,7 +388,7 @@ fun UnifyCPUMonitor(modifier: Modifier = Modifier) {
             ) {
                 Column {
                     Text(
-                        text = "${UnifyStringUtils.format("%.1f", cpuInfo.usage)}%",
+                        text = "${com.unify.core.utils.UnifyStringUtils.format("%.1f", cpuInfo.usage)}%",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold,
                         color =
@@ -419,7 +419,7 @@ fun UnifyCPUMonitor(modifier: Modifier = Modifier) {
                 if (cpuInfo.frequency > 0) {
                     Column {
                         Text(
-                            text = "${UnifyStringUtils.format("%.1f", cpuInfo.frequency)}GHz",
+                            text = "${com.unify.core.utils.UnifyStringUtils.format("%.1f", cpuInfo.frequency)}GHz",
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.Bold,
                         )
@@ -493,21 +493,21 @@ fun UnifyNetworkMonitor(modifier: Modifier = Modifier) {
                 NetworkMetricItem(
                     icon = Icons.Default.Download,
                     label = "下载",
-                    value = "${UnifyStringUtils.format("%.1f", networkInfo.downloadSpeed)} MB/s",
+                    value = "${com.unify.core.utils.UnifyStringUtils.format("%.1f", networkInfo.downloadSpeed)} MB/s",
                     color = Color(0xFF4CAF50),
                 )
 
                 NetworkMetricItem(
                     icon = Icons.Default.Upload,
                     label = "上传",
-                    value = "${UnifyStringUtils.format("%.1f", networkInfo.uploadSpeed)} MB/s",
+                    value = "${com.unify.core.utils.UnifyStringUtils.format("%.1f", networkInfo.uploadSpeed)} MB/s",
                     color = Color(0xFF2196F3),
                 )
 
                 NetworkMetricItem(
                     icon = Icons.Default.Speed,
                     label = "延迟",
-                    value = "${UnifyStringUtils.format("%.0f", networkInfo.latency)} ms",
+                    value = "${com.unify.core.utils.UnifyStringUtils.format("%.0f", networkInfo.latency)} ms",
                     color =
                         when {
                             networkInfo.latency > 100 -> Color(0xFFF44336)

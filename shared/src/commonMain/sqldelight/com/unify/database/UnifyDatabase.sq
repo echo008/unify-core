@@ -1,0 +1,113 @@
+-- Unify-Core 统一数据库模式
+-- 支持跨平台数据存储和同步
+
+-- 用户表
+CREATE TABLE User (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    displayName TEXT NOT NULL,
+    avatarUrl TEXT,
+    createdAt INTEGER NOT NULL,
+    updatedAt INTEGER NOT NULL,
+    isActive INTEGER NOT NULL DEFAULT 1
+);
+
+-- 应用配置表
+CREATE TABLE AppConfig (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'string',
+    description TEXT,
+    updatedAt INTEGER NOT NULL
+);
+
+-- 缓存表
+CREATE TABLE Cache (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    expiresAt INTEGER,
+    createdAt INTEGER NOT NULL
+);
+
+-- 同步记录表
+CREATE TABLE SyncRecord (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tableName TEXT NOT NULL,
+    recordId TEXT NOT NULL,
+    action TEXT NOT NULL, -- 'create', 'update', 'delete'
+    data TEXT,
+    timestamp INTEGER NOT NULL,
+    synced INTEGER NOT NULL DEFAULT 0
+);
+
+-- 查询语句
+selectAllUsers:
+SELECT * FROM User WHERE isActive = 1 ORDER BY createdAt DESC;
+
+selectUserById:
+SELECT * FROM User WHERE id = ?;
+
+selectUserByUsername:
+SELECT * FROM User WHERE username = ? AND isActive = 1;
+
+insertUser:
+INSERT INTO User (username, email, displayName, avatarUrl, createdAt, updatedAt)
+VALUES (?, ?, ?, ?, ?, ?);
+
+updateUser:
+UPDATE User SET 
+    email = ?, 
+    displayName = ?, 
+    avatarUrl = ?, 
+    updatedAt = ?
+WHERE id = ?;
+
+deleteUser:
+UPDATE User SET isActive = 0, updatedAt = ? WHERE id = ?;
+
+-- 配置查询
+selectAllConfigs:
+SELECT * FROM AppConfig ORDER BY key;
+
+selectConfigByKey:
+SELECT * FROM AppConfig WHERE key = ?;
+
+insertOrUpdateConfig:
+INSERT OR REPLACE INTO AppConfig (key, value, type, description, updatedAt)
+VALUES (?, ?, ?, ?, ?);
+
+deleteConfig:
+DELETE FROM AppConfig WHERE key = ?;
+
+-- 缓存查询
+selectCacheByKey:
+SELECT * FROM Cache WHERE key = ? AND (expiresAt IS NULL OR expiresAt > ?);
+
+insertOrUpdateCache:
+INSERT OR REPLACE INTO Cache (key, value, expiresAt, createdAt)
+VALUES (?, ?, ?, ?);
+
+insertCacheData:
+INSERT OR REPLACE INTO Cache (key, value, expiresAt, createdAt)
+VALUES (?, ?, ?, ?);
+
+deleteExpiredCache:
+DELETE FROM Cache WHERE expiresAt IS NOT NULL AND expiresAt <= ?;
+
+clearAllCache:
+DELETE FROM Cache;
+
+-- 同步查询
+selectUnsyncedRecords:
+SELECT * FROM SyncRecord WHERE synced = 0 ORDER BY timestamp ASC;
+
+insertSyncRecord:
+INSERT INTO SyncRecord (tableName, recordId, action, data, timestamp)
+VALUES (?, ?, ?, ?, ?);
+
+markRecordSynced:
+UPDATE SyncRecord SET synced = 1 WHERE id = ?;
+
+deleteOldSyncRecords:
+DELETE FROM SyncRecord WHERE synced = 1 AND timestamp < ?;
